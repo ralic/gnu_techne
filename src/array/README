@@ -1,0 +1,213 @@
+luaarray
+
+Copyright (C) 2012 Dimitris Papavasileiou <dpapavas@gmail.com>
+
+luaarray is a module that can serve as a C array to Lua table bridge.
+It allows the creation of C arrays of any dimensionality from within
+Lua and its subsequent treatment as if they were normal Lua tables.
+You can also use the C api to expose a C array from within the host
+application as a Lua table.  Its use is in the efficient
+representation and manipulation of structures which are array-like by
+nature, such as images, sounds or vectors and matrices.
+
+The Lua API
+===========
+
+To use the module you must first require it as usual:
+
+array = require "array"
+
+You can explicitly create an array of some type like this:
+
+a = array.doubles {{1, 2},
+    		   {3, 4}}
+
+This creates an array encapsulating a C array of type doulbe[2][2]
+which is a userdata with suitable metamethods so that you can use it
+in almost any way you would use a normal Lua table, including indexing
+of specific elements and iteration via pairs and ipairs.  Instead of
+doubles you can use any of the types: floats, ulongs, longs, uints,
+ints, ushorts, shorts, uchars, chars.  The table can also be of any
+dimensionality providing that it's dimensions are consistent.  You
+cannot convert this table to an array for example as it can't be
+directly and unambiguously mapped to a C array:
+
+> a = array.doubles {{1, 2}, {1, 2, 3}}
+Inconsistent array structure (subarray at depth 1 should have 2 elements but has 3).
+stack traceback:
+        [C]: in function 'doubles'
+        stdin:1: in main chunk
+        [C]: in ?
+
+In order to facilitate interoperation with modules which pass around
+arrays as binary data enclosed in strings or light userdata you can
+convert both of these types to arrays as well but in this case you
+must explicitly specify the dimensions.  For example:
+
+a = array.doubles (2, 2, some_string_or_userdata)
+
+You can ommit the dimensions in case of strings.  The returned array
+will have one dimension (it will be a vector) of size equal to the
+size of the array divided by the size in bytes of the data type.
+
+Finally you can also use the most generic form of the array
+constructors with tables as well.  If the dimensionality of the table
+doesn't match the dimensions specified you'll get an error so this
+allows easy type checking.  For example:
+
+> t = {1, 2, 3, 4}
+> a = array.doubles (2, 2, t)
+Initialization from incompatible table (dimensions don't match).
+stack traceback:
+        [C]: in function 'doubles'
+        stdin:1: in main chunk
+        [C]: in ?
+
+It is not always necessary to explicitly create an array.  Most if not
+all functions operating on such arrays in this as well as other
+modules that will be built on this accept a normal table in the place
+of an array and implicitly promote to to an array of a suitable type.
+As an example the divide function which divides two arrays element by
+element can be used in any of the following ways.
+
+-- Operate on two explicitly defined arrays.
+
+a, b = array.floats {1, 2, 3}, array.floats {2, 2, 2}
+c = array.divide (a, b)
+
+-- Use a normal table in place of the second argument.  This is
+-- implicitly promoted to a float array.
+
+a = array.floats {1, 2, 3}
+b = array.divide (a, {2, 2, 2}) 
+
+-- Specify both arguments as normal tables which are both implicitly
+-- promoted to double arrays (since it's the only type guaranteed not
+-- to lead to loss of precision.
+
+a = array.divide ({1, 2, 3}, {2, 2, 2})
+
+The result is always an array of the same type as the arguments, so a
+float array in the first two cases but a double array in the last.
+ 
+Apart from division you can perform element-by-element
+multiplications, addition, substraction, scaling by a constant and
+raising to a power with array.multiply, array.add, array.subtract,
+array.scale and array.raise respectively).  The latter two accept the
+scalar as the second argument so array.scale (a, 2) doubles each
+element of array a, while array.raise (a, 2) squares it.  In any case,
+operating on arrays of incompatible types results in an error.
+
+You can also copy an array with array.copy, which creates an entirely
+separate copy of the array, allocating new memory for it.  To set all
+elements of an array to some number use array.set.  For example
+array.set (a, 0) initializes the array a, which can be of any
+dimensionality, to all zero elements.  An array can also be cast to
+some other dimensionality (in the C sense) with array.cast.  This
+creates a new array of different dimensionality which references the
+same memory as the initial array.  Changing an element in either will
+be reflected in the other.  For example:
+
+>  a = array.doubles {1, 2, 3, 4}
+>  b = array.cast (2, 2, a)
+>  =array.pretty (a)
+{1, 2, 3, 4}
+>  =array.pretty (b)
+{
+  {1, 2},
+  {3, 4}
+}
+>  b[2][2] = 5
+>  =array.pretty (a)
+{1, 2, 3, 5}
+
+You can also slice an array which creates a copy (so it won't
+reference the elements of the initial array) of the same
+dimensionality but with only a subrange within each dimension.  The
+array is specified as the first argument and the lowest and highest
+index of each dimension should be specified in subsequent arguments.
+For example:
+
+> a = array.doubles {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}
+> =array.pretty (a)
+{
+  {1, 2, 3}, 
+  {4, 5, 6}, 
+  {7, 8, 9}
+}
+> b = array.slice (a, 2, 3, 2, 3)
+> =array.pretty (b)
+{
+  {5, 6}, 
+  {8, 9}
+}
+
+The C API
+=========
+
+This module can be used by a host application which embeds Lua as an
+extension and configuration language as well allowing efficient
+exporting of internal C arrays for manipulation by the Lua
+environment.  The API is essentially the same as the Lua API outlined
+above:
+
+void array_toarray (lua_State *L, int index,
+     		    array_Type type, int rank, ...);
+void array_toarrayv (lua_State *L, int index,
+     		     array_Type type, int rank, int *size);
+
+Push onto the stack an array of the given rank and type out of the
+value at location index in the stack which can be a table, string or
+light userdata.  The rank is the number of dimensions of the array and
+the length along each dimension is given either as an array of
+integers (in the case of array_toarrayv or as additional arguments
+passed after rank.  The type can be any of the following constants:
+ARRAY_TDOUBLE, ARRAY_TFLOAT, ARRAY_TULONG, ARRAY_TLONG, ARRAY_TUINT,
+ARRAY_TINT, ARRAY_TUSHORT, ARRAY_TSHORT, ARRAY_TUCHAR, ARRAY_TCHAR.
+
+void array_createarrayv (lua_State *L, array_Type type, void *values,
+			 int rank, int *size);
+void array_createarray (lua_State *L, array_Type type, void *values,
+			int rank, ...);
+
+Push onto the stack a newly created array of the specified rank, type
+and size and initialize it with the C array (which must be of the same
+type and size) specified in values.  If values is NULL memory is still
+allocated to hold the elements of the array but it is not initialized
+to anything.
+
+void array_copy (lua_State *L, int index);
+
+Push onto the stack a copy of the array at stack location index.
+
+void array_set (lua_State *L, int index, lua_Number c);
+
+Set all elements of the array at stack location index to the number c.
+
+void array_cast (lua_State *L, int index, int rank, ...);
+void array_castv (lua_State *L, int index, int rank, int *size);
+
+Push onto the stack an new array which is a cast of the array at
+location index in the stack.  The new array references the same memory
+as the original array but has different rank and lengths.
+
+void array_slicev (lua_State *L, int index, int *slices);
+
+Push onto the stack an new array which is a slice of the array at
+location index in the stack.  The range of elements along each
+dimension of the slice is give in the array slices.
+
+The following functions test whether a given value on the stach is an array or not.  The difference between the test and check variations is that the former will simply test whether the value is an actual array while the latter will also accept any value that can pass as array, such as a table converting it to an array in-place.  In most cases therefore, when writing code that has to operate on array one should use the array_check* functions so that a table can always be used in place of the array.
+
+array_Array *array_testarray (lua_State *L, int index);
+array_Array *array_checkarray (lua_State *L, int index);
+array_Array *array_checkcompatible (lua_State *L, int index,
+				    array_Type type, int rank, ...);
+array_Array *array_testcompatible (lua_State *L, int index,
+				   array_Type type, int rank, ...);
+
+License
+=======
+
+luaarray is released under the terms and conditions of the MIT/X11
+license.

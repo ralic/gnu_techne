@@ -1,0 +1,12 @@
+luatransform
+
+Copyright (C) 2012 Dimitris Papavasileiou <dpapavas@gmail.com>
+
+luatransform is a module which provides linear algebra operations to
+Lua such as generation of rotation, reflection, projection and shear
+matrices, concatenation of transforms and application to vectors as
+well as elementary matrix and vector operations.
+
+It is mainly targeted towards use for computer graphics applications
+and is built on top of luaarray which provides efficient
+imlplementatation of vector and matrix-like structures for Lua.

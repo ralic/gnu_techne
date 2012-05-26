@@ -1,0 +1,26 @@
+Techne 0.3
+
+Copyright (C) 2008-2012 Dimitris Papavasileiou <dpapavas@gmail.com>
+
+Techne is a general purpose, programmable physical simulator and
+renderer.  It reads in a set of scripts wherein every aspect of a
+physical system is specified and then proceeds to simulate and render
+the system onscreen.  This is the general idea.  The main goal is to
+decouple computer programming, in its involved low-level form at
+least, from digital art creation thus shifting effort away from
+worrying about graphics library quirks and memory allocation and
+towards understanding and modelling the physical and aesthetic aspects
+of a given system.  This can't be accomplished if you have to recreate
+the underlying framework for each separate task though.  The secondary
+goal therefore is to design the system in such a way that new
+features, for instance physical models or shading algorithms, can be
+added and accumulated seamlessly, implemented with the least possible
+assumptions about their intended use so that they may be reused in
+diverse situations.
+
+License
+=======
+
+Techne is released under the terms of the GNU General Public
+License. See COPYING for details.
+

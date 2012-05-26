@@ -1,0 +1,37 @@
+2009-10-01  Dimitris Papavasileiou  <dpapavas@gmail.com>
+
+	* First public release.
+
+2010-12-06  Dimitris Papavasileiou  <dpapavas@gmail.com>
+
+	* Way too many changes to mention here since version 0.1.
+	* Off the top of my head additions include:
+	* A revised joint system.
+	* A basic peer-to-peer networking node.
+	* An experimentation mode for doing just simulation.
+	* A fixed stepping system that is actually deterministic!
+	* A basic profiling module.
+	* An imaging module.
+	* Server pages for internal state.
+	* A bunch of new nodes needed for Airrace.
+	* A lot of other things. I'm forgetting.
+
+2011-02-11  Dimitris Papavasileiou  <dpapavas@gmail.com>
+
+	* Fixed a duplicate class member which caused GCC 4.6 to fail
+	  during compile.
+
+2011-09-10  Dimitris Papavasileiou  <dpapavas@gmail.com>
+
+	* This release is meant to support Slipstream.
+	* A new automotive module with engine, tyre and chain nodes
+	  has been added.
+
+2012-01-24  Dimitris Papavasileiou  <dpapavas@gmail.com>
+
+	* This release is meant to support Slipstream 0.2.
+	* Revised the ROAM tesselator to work with 16-bit heights.
+	* Added accurate heightfield collision support for wheels.
+	* Greatly imporved terrain shading.
+	* Other minor features and bugfixes.
+

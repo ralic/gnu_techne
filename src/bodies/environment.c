@@ -20,6 +20,7 @@
 #include <lauxlib.h>
 
 #include "techne.h"
+#include "dynamics.h"
 #include "environment.h"
 #include "body.h"
 

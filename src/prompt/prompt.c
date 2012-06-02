@@ -21,13 +21,27 @@
  * SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <wordexp.h>
 #include <ctype.h>
 #include <unistd.h>
+
+#ifndef HAVE_ASPRINTF
+#include <compat/asprintf.h>
+#endif
+
+#ifdef HAVE_IOCTL
 #include <sys/ioctl.h>
+#endif
+
+#ifdef HAVE_WORDEXP
+#include <wordexp.h>
+#endif
 
 #include <lualib.h>
 #include <lauxlib.h>
@@ -53,20 +67,24 @@ extern char *readline ();
 /* This is a simple readline-like function in case readline is not
  * available. */
 
+#define MAXINPUT 1024
+
 static char *readline(char *prompt)
 {
     char *line = NULL;
-    size_t n;
     int k;
+
+    line = malloc (MAXINPUT);
     
     fputs(prompt, stdout);
     fflush(stdout);
-    k = getline (&line, &n, stdin);
-
-    if (k < 0) {
+    
+    if (!fgets(line, MAXINPUT, stdin)) {
 	return NULL;
     }
     
+    k = strlen (line);
+
     if (line[k - 1] == '\n') {
 	line[k - 1] = '\0';
     }
@@ -86,9 +104,9 @@ extern void add_history ();
 extern int write_history ();
 extern int read_history ();
 #  endif /* defined(HAVE_READLINE_HISTORY_H) */
-static char *logfile;
-
 #endif /* HAVE_READLINE_HISTORY */
+
+static char *logfile;
 
 #define print_output(...) fprintf (stdout, __VA_ARGS__), fflush(stdout)
 #define print_error(...) fprintf (stderr, __VA_ARGS__), fflush(stderr)
@@ -826,9 +844,8 @@ static void describe (lua_State *L, int index)
 
 char *luap_describe (lua_State *L, int index)
 {
+#ifdef HAVE_IOCTL
     struct winsize w;
-
-    index = absolute (L, index);    
 
     /* Initialize the state. */
     
@@ -837,7 +854,11 @@ char *luap_describe (lua_State *L, int index)
     } else {
 	linewidth = w.ws_col;
     }
-
+#else
+    linewidth = 80;
+#endif
+    
+    index = absolute (L, index);
     offset = 0;
     indent = 0;
     column = 0;
@@ -857,6 +878,7 @@ char *luap_describe (lua_State *L, int index)
 
 /* These are custom commands. */
 
+#ifdef HAVE_LIBREADLINE
 static int describe_stack (int count, int key)
 {
     int i, h;
@@ -886,10 +908,12 @@ static int describe_stack (int count, int key)
     }
     
     print_output ("%s\n", COLOR(0));
+
     rl_on_new_line ();
 
     return 0;
 }
+#endif
 
 int luap_call (lua_State *L, int n) {
     int h, status;
@@ -920,14 +944,21 @@ int luap_call (lua_State *L, int n) {
 void luap_setprompts(lua_State *L, const char *single, char *multi)
 {
     prompts[0] = realloc (prompts[0], strlen (single) + 16);
-    sprintf (prompts[0], "\001%s\002%s\001%s\002", COLOR(6), single, COLOR(0));
-
     prompts[1] = realloc (prompts[1], strlen (multi) + 16);
-    sprintf (prompts[1], "\001%s\002%s\001%s\002", COLOR(6), multi, COLOR(0));
+#ifdef HAVE_LIBREADLINE
+    sprintf (prompts[0], "\001%s\002%s\001%s\002",
+	     COLOR(6), single, COLOR(0));
+    sprintf (prompts[1], "\001%s\002%s\001%s\002",
+	     COLOR(6), multi, COLOR(0));
+#else
+    sprintf (prompts[0], "%s%s%s", COLOR(6), single, COLOR(0));
+    sprintf (prompts[0], "%s%s%s", COLOR(6), multi, COLOR(0));
+#endif
 }
 
 void luap_sethistory(lua_State *L, const char *file)
 {
+#ifdef HAVE_WORDEXP
     wordexp_t words;
 
     wordexp(file, &words, 0);
@@ -940,6 +971,10 @@ void luap_sethistory(lua_State *L, const char *file)
     }
 
     wordfree (&words);
+#else
+    logfile = realloc (logfile, strlen(file) + 1);
+    strcpy (logfile, file);
+#endif
 }
 
 void luap_setcolor(lua_State *L, int enable)

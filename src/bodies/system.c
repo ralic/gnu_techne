@@ -21,6 +21,7 @@
 #include <ode/ode.h>
 
 #include "techne.h"
+#include "dynamics.h"
 #include "system.h"
 #include "body.h"
 

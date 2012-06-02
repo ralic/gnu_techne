@@ -25,7 +25,7 @@
 int main(int argc, char **argv)
 {
     Techne *techne;
-    
+
     techne = [[Techne alloc] initWithArgc: argc andArgv: argv];
 
     t_print_message ("Entering the main loop.\n");

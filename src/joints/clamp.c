@@ -21,6 +21,7 @@
 
 #include "clamp.h"
 #include "techne.h"
+#include "dynamics.h"
 
 @implementation Clamp
 

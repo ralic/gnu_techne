@@ -17,6 +17,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "techne.h"
 #include "event.h"
@@ -104,8 +105,10 @@
 
 	if (k > 255 || !isalnum(k)) {
 	    char *new, *c;
+
+	    /* Make a temporary copy of the name and down-case it. */
 	    
-	    new = strdupa (name);
+	    new = strcpy(alloca(strlen(name) + 1), name);
 
 	    for (c = new ; *c ; c += 1) {
 		if (isupper(*c)) {

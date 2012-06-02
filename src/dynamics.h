@@ -18,7 +18,13 @@
 #define _DYNAMICS_H_
 
 #include <lua.h>
+#include <ode/ode.h>
+
 #include "transform.h"
+
+dWorldID _WORLD;
+dJointGroupID _GROUP;
+dSpaceID _SPACE;
 
 @interface Dynamics: Node {
 }

@@ -24,6 +24,7 @@
 
 #include "array/array.h"
 #include "techne.h"
+#include "dynamics.h"
 #include "doubleball.h"
 #include "body.h"
 

@@ -14,11 +14,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <config.h>
+#include <stdio.h>
 #include <getopt.h>
-#include <time.h>
 #include <unistd.h>
-#include <execinfo.h>
+
+#ifndef __WIN32__
 #include <signal.h>
+#endif
+
+#ifdef HAVE_BACKTRACE
+#include <execinfo.h>
+#endif
 
 #include <lualib.h>
 #include <lauxlib.h>
@@ -116,6 +123,27 @@ static int handler (lua_State *L)
     return 1;
 }
 
+static void print_c_stack()
+{
+#ifdef HAVE_BACKTRACE
+    void *frames[64];
+    char **lines;
+    int i, n;
+    
+    /* Print the C stack. */
+
+    t_print_error("\n%sC stack trace:\n", COLOR(0, 31));
+    
+    n = backtrace (frames, 64);
+    lines = backtrace_symbols (frames, n);
+
+    for (i = 0 ; i < n ; i += 1) {
+	t_print_error("%s#%-2d%s %s\n", COLOR(0, 31), i, COLOR(0,), lines[i]);
+    }
+#endif    
+}
+
+#ifndef __WIN32__
 static void remove_handlers()
 {
     struct sigaction action;
@@ -136,41 +164,6 @@ static void remove_handlers()
     sigaction (SIGUSR2, &action, NULL);
 }
 
-static void print_c_stack()
-{
-    void *frames[64];
-    char **lines;
-    int i, n;
-    
-    /* Print the C stack. */
-
-    t_print_error("\n%sC stack trace:\n", COLOR(0, 31));
-    
-    n = backtrace (frames, 64);
-    lines = backtrace_symbols (frames, n);
-
-    for (i = 0 ; i < n ; i += 1) {
-	t_print_error("%s#%-2d%s %s\n", COLOR(0, 31), i, COLOR(0,), lines[i]);
-    }    
-}
-
-static int panic(lua_State *L)
-{
-    remove_handlers();
-
-    t_print_error("%s%s", COLOR(1, 37), lua_tostring(L, -1));
-
-    push_lua_stack(_L);
-    t_print_error(lua_tostring (_L, -1));
-    lua_pop (_L, 1);
-    
-    print_c_stack();
-
-    t_print_error("\nThis is bad.  Aborting.\n");
-    
-    abort();
-}
-
 static void handle_signal(int signum)
 {
     remove_handlers();
@@ -186,6 +179,26 @@ static void handle_signal(int signum)
     t_print_error("This is bad.  Aborting.\n");
     
     abort();    
+}
+#endif
+
+static int panic(lua_State *L)
+{
+#ifndef __WIN32__
+    remove_handlers();
+#endif
+
+    t_print_error("%s%s", COLOR(1, 37), lua_tostring(L, -1));
+
+    push_lua_stack(_L);
+    t_print_error(lua_tostring (_L, -1));
+    lua_pop (_L, 1);
+    
+    print_c_stack();
+
+    t_print_error("\nThis is bad.  Aborting.\n");
+    
+    abort();
 }
 
 static int hooks_call (lua_State *L)
@@ -354,9 +367,6 @@ void t_print_error (const char *format, ...)
 @implementation Techne
 -(id) initWithArgc: (int)argc andArgv: (char **)argv
 {
-    struct timespec time;
-    struct sigaction action;
-
     static struct option options[] = {
 	{"option", 1, 0, 'O'},
 	{"engineering", 0, 0, 'e'},
@@ -383,22 +393,28 @@ void t_print_error (const char *format, ...)
 	colorize = 1;
     }
     
+#ifndef __WIN32__
     /* Set up signal handlers for some signals so that we can attempt
      * to provide stack traces. */
 
-    action.sa_handler = handle_signal;
-    action.sa_flags = 0;
-    sigemptyset (&action.sa_mask);
-    
-    sigaction (SIGILL, &action, NULL);
-    sigaction (SIGABRT, &action, NULL);
-    sigaction (SIGSEGV, &action, NULL);
-    sigaction (SIGPIPE, &action, NULL);
-    sigaction (SIGALRM, &action, NULL);
-    sigaction (SIGFPE, &action, NULL);
-    sigaction (SIGUSR1, &action, NULL);
-    sigaction (SIGUSR2, &action, NULL);
+    {
+	struct sigaction action;
 
+	action.sa_handler = handle_signal;
+	action.sa_flags = 0;
+	sigemptyset (&action.sa_mask);
+    
+	sigaction (SIGILL, &action, NULL);
+	sigaction (SIGABRT, &action, NULL);
+	sigaction (SIGSEGV, &action, NULL);
+	sigaction (SIGPIPE, &action, NULL);
+	sigaction (SIGALRM, &action, NULL);
+	sigaction (SIGFPE, &action, NULL);
+	sigaction (SIGUSR1, &action, NULL);
+	sigaction (SIGUSR2, &action, NULL);
+    }
+#endif
+    
     /* Create and initialize the Lua state. */
     
     _L = luaL_newstate();
@@ -513,11 +529,12 @@ void t_print_error (const char *format, ...)
 		t_print_warning ("Ignoring unknown color "
 				 "setting '%s'.\n", optarg);
 	    }
+	    luap_setcolor (_L, colorize);
 	} else if (option == 'c') {
 	    const char *prefixes[] = {"./", PKGDATADIR"/scripts/", ""};
 	    char *path;
 	    int i;
-
+		
 	    /* Try to find the specified script in a bunch of
 	       predetermined directories. */
 		
@@ -576,6 +593,7 @@ void t_print_error (const char *format, ...)
 
     luap_sethistory (_L, "~/.techne_history");
     luap_setname (_L, "techne");
+    luap_setcolor (_L, colorize);
 
     lua_pushcfunction (_L, trace);
     lua_setglobal (_L, "trace");
@@ -586,11 +604,7 @@ void t_print_error (const char *format, ...)
     /* Greet the user. */
 
     t_print_message ("This is Techne, version %s.\n", VERSION);
-    
-    clock_getres(CLOCK_REALTIME, &time);
-    t_print_message ("The resolution of the realitme clock is %ld ns\n", time.tv_nsec);
-    clock_getres(CLOCK_PROCESS_CPUTIME_ID, &time);
-    t_print_message ("The resolution of the process clock is %ld ns\n", time.tv_nsec);
+    t_print_timing_resolution();
     
     dynamics = [[Dynamics alloc] init];
     lua_setglobal (_L, "dynamics");
@@ -638,10 +652,8 @@ void t_print_error (const char *format, ...)
 	t_print_message ("No input files provided.\n");
     }
 
-    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &time);
-	
     t_print_message ("Spent %f CPU seconds initializing.\n",
-		     time.tv_sec + time.tv_nsec / 1e9);
+		     (double)t_get_cpu_time() / 1e9);
     
     return self;
 }
@@ -690,10 +702,7 @@ void t_print_error (const char *format, ...)
  
 -(int) _get_time
 {
-    struct timespec time;
-    
-    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &time);
-    lua_pushnumber (_L, time.tv_sec + time.tv_nsec / 1e9);
+    lua_pushnumber (_L, t_get_cpu_time() / 1e9);
     
     return 1;
 }

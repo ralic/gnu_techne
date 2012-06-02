@@ -23,6 +23,7 @@
 
 #include "array/array.h"
 #include "techne.h"
+#include "dynamics.h"
 #include "spherical.h"
 
 @implementation Spherical

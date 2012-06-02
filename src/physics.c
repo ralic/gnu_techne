@@ -20,6 +20,7 @@
 
 #include "array/array.h"
 #include "techne.h"
+#include "dynamics.h"
 #include "body.h"
 #include "joint.h"
 

@@ -24,6 +24,7 @@
 
 #include "array/array.h"
 #include "techne.h"
+#include "dynamics.h"
 #include "doublehinge.h"
 #include "body.h"
 

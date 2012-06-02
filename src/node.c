@@ -15,6 +15,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <lualib.h>
 #include <lauxlib.h>
 #include <ctype.h>
@@ -107,14 +108,19 @@ void t_export_nodes (lua_State *L, Class *classes)
     lua_newtable (L);
 
     for (i = 0 ; classes[i] ; i += 1) {
-	char *name;
+	const char *name;
+	char *lower;
 
-	name = strdupa ([classes[i] name]);
-	name[0] = tolower(name[0]);
+	name = [classes[i] name];
+
+	/* Make a temporary copy of the name and down-case it. */
+	    
+	lower = strcpy(alloca(strlen(name) + 1), name);
+	lower[0] = tolower(lower[0]);
 
 	lua_pushlightuserdata (L, classes[i]);
 	lua_pushcclosure (L, constructnode, 1);
-	lua_setfield(L, -2, name);
+	lua_setfield(L, -2, lower);
     }	
 }
 
@@ -670,13 +676,13 @@ static int __index(lua_State *L)
 	k = lua_tostring (L, 2);
 
 	/* Look through the node's protocol and see if we have a
-	 * matching method for getting.  Note that this makes use of
-	 * the fact that strings in Lua are reused so that only one
-	 * copy of each string exists and you can compare strings by
-	 * simply comparing pointers. */
+	 * matching method for getting. */
 
 	for (i = 0 ; i < protocol->size ; i += 1) {
-	    if (protocol->properties[0][i].name == k) {
+	    const char *name;
+
+	    name = protocol->properties[0][i].name;
+	    if (name && !strcmp(name, k)) {
 		IMP implementation;
 		SEL selector;
 
@@ -773,7 +779,10 @@ static int __newindex(lua_State *L)
 	/* Try to find a setter for the key and call it. */
 
 	for (i = 0 ; i < protocol->size ; i += 1) {
-	    if (protocol->properties[1][i].name == k) {
+	    const char *name;
+
+	    name = protocol->properties[1][i].name;
+	    if (name && !strcmp(name, k)) {
 		IMP implementation;
 		SEL selector;
 

@@ -23,6 +23,7 @@
 #include <GL/glu.h>
 
 #include "techne.h"
+#include "dynamics.h"
 #include "wheel.h"
 
 #define sign(x) ((x) >= 0 ? 1.0 : -1.0)

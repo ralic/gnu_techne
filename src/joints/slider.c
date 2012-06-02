@@ -22,6 +22,7 @@
 
 #include "array/array.h"
 #include "techne.h"
+#include "dynamics.h"
 #include "slider.h"
 
 @implementation Slider

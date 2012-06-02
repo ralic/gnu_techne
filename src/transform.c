@@ -16,6 +16,7 @@
 
 #include <lua.h>
 #include <lauxlib.h>
+#include <string.h>
 
 #include "array/array.h"
 #include "transform.h"

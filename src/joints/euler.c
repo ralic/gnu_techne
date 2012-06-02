@@ -19,6 +19,8 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include "techne.h"
+#include "dynamics.h"
 #include "euler.h"
 
 @implementation Euler

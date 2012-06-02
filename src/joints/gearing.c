@@ -23,6 +23,7 @@
 
 #include "../array/array.h"
 #include "techne.h"
+#include "dynamics.h"
 #include "gearing.h"
 #include "body.h"
 

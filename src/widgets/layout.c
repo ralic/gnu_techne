@@ -14,10 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
 #include <lua.h>
 #include <lauxlib.h>
 
 #include <GL/gl.h>
+#include <GL/glext.h>
 #include <GL/glu.h>
 
 #include "techne.h"

@@ -18,8 +18,6 @@
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
-#include <time.h>
-#include <sys/time.h>
 
 #include <ode/ode.h>
 
@@ -35,7 +33,7 @@ static double timescale = 1, stepsize = 0.01, ceiling = 1.0 / 0.0;
 static double interval = -1;
 static int iterations = 0, collision = LUA_REFNIL;
     
-static struct timespec once;
+static long int once;
 static double now, then;
 
 static struct chunk {
@@ -362,7 +360,7 @@ static void callback (void *data, dGeomID a, dGeomID b)
 
     /* Get the current real time. */
     
-    clock_gettime (CLOCK_REALTIME, &once);
+    once = t_get_real_time();
 
     /* Export the joints iterator. */
     
@@ -375,13 +373,12 @@ static void callback (void *data, dGeomID a, dGeomID b)
 -(void) iterate: (Transform *)root
 {
     double delta;
-    struct timespec time;
+    long int time;
     
-    clock_gettime (CLOCK_REALTIME, &time);
+    time = t_get_real_time();
 
     if (interval < 0) {
-	delta = timescale * (time.tv_sec - once.tv_sec +
-			     (time.tv_nsec - once.tv_nsec) / 1e9);
+	delta = timescale * ((double)(time - once) / 1e9);
     } else {
 	delta = timescale * interval;
     }
@@ -446,8 +443,8 @@ static void callback (void *data, dGeomID a, dGeomID b)
     tprof_end (TPROF_TRANSFORM);
 	
     /* Advance the real-world time. */
-	
-    memcpy (&once, &time, sizeof (struct timespec));
+
+    once = time;
 }
 
 -(int) _get_stepsize

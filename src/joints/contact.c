@@ -20,6 +20,7 @@
 #include <lauxlib.h>
 
 #include "techne.h"
+#include "dynamics.h"
 #include "../array/array.h"
 #include "contact.h"
 #include "body.h"

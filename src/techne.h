@@ -17,22 +17,25 @@
 #ifndef _TECHNE_H_
 #define _TECHNE_H_
 
+/* Workarounds for buggy platforms. */
+
+#ifndef HAVE_ASPRINTF
+#include <compat/asprintf.h>
+#endif
+
+/* Debugging convenience macros. */
+
 #define _TRACE t_print_message ("\033[22;31m%s: %d: \033[22;37m", __FILE__, __LINE__), t_print_message
 #define _TOP _TRACE ("@%d\n", lua_gettop(_L))
 #define _TYPE(i) _TRACE ("%s@%d\n", lua_typename(_L, lua_type(_L, (i))), i)
 #define _STACK {int i; _TRACE ("\033[22;31m\n  >>>>>>>>>>\033[22;37m\n"); for (i = 1 ; i <= lua_gettop(_L) ; i += 1) { t_print_message ("\033[22;31m  %d: %s\033[22;37m\n", i, lua_typename(_L, lua_type(_L, (i)))); } t_print_message ("\033[22;31m  <<<<<<<<<<\n\033[22;37m\n");}
 
 #include <lua.h>
-#include <ode/ode.h>
 #include <assert.h>
 
 #include "node.h"
 
 lua_State *_L;
-
-dWorldID _WORLD;
-dJointGroupID _GROUP;
-dSpaceID _SPACE;
 
 typedef enum {
     TPROF_BEGIN,
@@ -54,6 +57,10 @@ void tprof_new_row ();
 void tprof_begin (tprof_Frame reading);
 void tprof_end (tprof_Frame reading);
 void tprof_report ();
+
+void t_print_timing_resolution();
+long long int t_get_real_time ();
+long long int t_get_cpu_time ();
 
 int luaopen_moremath (lua_State *L);
 

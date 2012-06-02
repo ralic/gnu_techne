@@ -18,6 +18,7 @@
 #include <lauxlib.h>
 
 #include "techne.h"
+#include "dynamics.h"
 #include "clamp.h"
 #include "planar.h"
 #include "hinge.h"

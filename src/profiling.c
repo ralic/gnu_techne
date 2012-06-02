@@ -15,6 +15,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <sys/time.h>
 
@@ -39,23 +40,20 @@ static struct chunk {
 static int allocated[2];
 static struct reading *frame, *row;
 
-static struct timespec once;
+static long int once;
 
 static void profilinghook (lua_State *L, lua_Debug *ar)
 {
-    static struct timespec now, then;
+    static long int now, then;
 
     assert (frame);
     
     if (lua_getstack (L, 1, ar) == 0) {
 	if (ar->event == LUA_HOOKCALL) {
-	    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &then);
+	    then = t_get_cpu_time();
 	} else if (ar->event == LUA_HOOKRET) {
-	    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &now);
-	    
-	    frame->user +=
-		now.tv_sec - then.tv_sec +
-		(now.tv_nsec - then.tv_nsec) / 1e9;
+	    now = t_get_cpu_time();
+	    frame->user += (now - then) / 1e6;
 	}
     }
 }
@@ -97,22 +95,20 @@ void tprof_begin (tprof_Frame reading)
     assert (reading < READINGS);
     frame = &row[reading];
 
-    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &once);
+    once = t_get_cpu_time();
     lua_sethook (_L, profilinghook, LUA_MASKCALL | LUA_MASKRET, 0);
 }
 
 void tprof_end (tprof_Frame reading)
 {
-    struct timespec now;
+    long int now;
     
     assert (reading < READINGS);
     assert (row + reading == frame);
 
-    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &now);
+    now = t_get_cpu_time();
 
-    frame->core +=
-	(now.tv_sec - once.tv_sec) * 1e3 +
-	(now.tv_nsec - once.tv_nsec) / 1e6;
+    frame->core += (now - once) / 1e6;
 }
 
 void tprof_report ()

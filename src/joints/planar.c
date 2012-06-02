@@ -21,6 +21,7 @@
 
 #include "planar.h"
 #include "techne.h"
+#include "dynamics.h"
 
 @implementation Planar
 

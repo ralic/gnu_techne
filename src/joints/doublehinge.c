@@ -34,9 +34,6 @@
 {
     self->joint = dJointCreateDHinge (_WORLD, NULL);
     
-    self->stops[0] = -dInfinity;
-    self->stops[1] = dInfinity;
-    
     self->anchors[0][0] = 0;
     self->anchors[0][1] = 0;
     self->anchors[0][2] = 0;
@@ -111,71 +108,9 @@
     return 1;
 }
 
--(int) _get_motor
-{
-    int i;
-    
-    lua_newtable (_L);
-        
-    for(i = 0; i < 2; i += 1) {
-	lua_pushnumber (_L, self->motor[i]);
-	lua_rawseti (_L, -2, i + 1);
-    }
-
-    return 1;
-}
-
--(int) _get_stops
-{
-    int i;
-    
-    lua_newtable (_L);
-
-    lua_newtable (_L);
-    for(i = 0; i < 2; i += 1) {
-	lua_pushnumber (_L, self->stops[i]);
-	lua_rawseti (_L, -2, i + 1);
-    }
-    lua_rawseti (_L, -2, 1);
-	
-    lua_newtable (_L);
-    for(i = 0; i < 2; i += 1) {
-	lua_pushnumber (_L, self->hardness[i]);
-	lua_rawseti (_L, -2, i + 1);
-    }
-    lua_rawseti (_L, -2, 2);
-
-    lua_pushnumber (_L, self->bounce);
-    lua_rawseti (_L, -2, 3);
-
-    return 1;
-}
-
 -(int) _get_tolerance
 {
     lua_pushnumber (_L, self->tolerance);
-
-    return 1;
-}
-
--(int) _get_state
-{
-    dReal state[2];
-    int i;
-    
-    if (self->joint) {
-	state[0] = dJointGetDHingeAngle (self->joint);
-	state[1] = dJointGetDHingeAngleRate (self->joint);
-
-	lua_newtable (_L);
-        
-	for(i = 0 ; i < 2 ; i += 1) {
-	    lua_pushnumber (_L, state[i]);
-	    lua_rawseti (_L, -2, i + 1);
-	}
-    } else {
-	lua_pushnil (_L);
-    }
 
     return 1;
 }
@@ -243,82 +178,11 @@
     }
 }
 
--(void) _set_motor
-{
-    int i;
-    
-    if(lua_istable (_L, 3)) {
-	for(i = 0 ; i < 2 ; i += 1) {
-	    lua_rawgeti (_L, 3, i + 1);
-	    self->motor[i] = lua_tonumber (_L, -1);
-                
-	    lua_pop (_L, 1);
-	}
-
-	dJointSetDHingeParam (self->joint, dParamVel, self->motor[0]);
-	dJointSetDHingeParam (self->joint, dParamFMax, self->motor[1]);
-    }
-}
-
--(void) _set_stops
-{
-    int i;
-    
-    /* Resetting the stops makes sure that lo remains
-       smaller than hi between calls. */
-	
-    dJointSetDHingeParam (self->joint, dParamLoStop, -dInfinity);
-    dJointSetDHingeParam (self->joint, dParamHiStop, dInfinity);
-
-    if(lua_istable (_L, 3)) {
-	lua_rawgeti (_L, 3, 1);
-	for(i = 0 ; i < 2 ; i += 1) {
-	    lua_rawgeti (_L, -1, i + 1);
-		
-	    self->stops[i] = lua_tonumber (_L, -1);
-		
-	    lua_pop (_L, 1);
-	}
-	lua_pop (_L, 1);
-
-	lua_rawgeti (_L, 3, 2);
-	for(i = 0 ; i < 2 ; i += 1) {
-	    lua_rawgeti (_L, -1, i + 1);
-
-	    self->hardness[i] = lua_tonumber (_L, -1);
-
-	    lua_pop (_L, 1);
-	}
-	lua_pop (_L, 1);
-	
-	lua_rawgeti (_L, 3, 3);
-	self->bounce = lua_tonumber (_L, -1);
-	lua_pop (_L, 1);
-	    
-	dJointSetDHingeParam (self->joint, dParamLoStop,
-			     self->stops[0]);
-	dJointSetDHingeParam (self->joint, dParamHiStop,
-			     self->stops[1]);
-
-	dJointSetDHingeParam (self->joint, dParamStopCFM,
-			     self->hardness[0]);
-	dJointSetDHingeParam (self->joint, dParamStopERP,
-			     self->hardness[1]);
-
-	dJointSetDHingeParam (self->joint, dParamBounce, self->bounce);
-    }
-}
-
 -(void) _set_tolerance
 {
     self->tolerance = lua_tonumber (_L, 3);
 
     dJointSetDHingeParam (self->joint, dParamCFM, self->tolerance);
-}
-
--(void) _set_state
-{
-    /* Do nothing. */
 }
 
 -(void) traverse

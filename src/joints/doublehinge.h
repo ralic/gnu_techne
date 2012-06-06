@@ -23,23 +23,17 @@
 
 @interface Doublehinge: Joint {
 @public    
-    double axis[3], anchors[2][3], motor[2], stops[2];
-    double tolerance, hardness[2], bounce;
+    double axis[3], anchors[2][3];
+    double tolerance;
 }
 
 -(int) _get_anchors;
 -(int) _get_axis;
--(int) _get_motor;
--(int) _get_stops;
 -(int) _get_tolerance;
--(int) _get_state;
 
 -(void) _set_axis;
 -(void) _set_anchors;
--(void) _set_motor;
--(void) _set_stops;
 -(void) _set_tolerance;
--(void) _set_state;
 
 @end
 

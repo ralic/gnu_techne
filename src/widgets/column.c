@@ -23,30 +23,14 @@
 #include "row.h"
 #include "column.h"
 
-@implementation Row
+@implementation Column
 
--(double) measureWidth
+-(Column *) init
 {
-    Widget *child;
+    self = [super init];
+    self->rows = 0;
 
-    self->content[0] = 0;
-    
-    for(child = (Widget *)self->down;
-	child;
-	child = (Widget *)child->right) {
-	double w;
-
-	if (![child isKindOf: [Widget class]]) {
-	    continue;
-	}
-	
-	w = [child measureWidth];
-
-	child->allocation[0] = w;
-	self->content[0] += w;
-    }
-
-    return self->content[0] + self->padding[0] + self->padding[1];
+    return self;
 }
 
 -(double) measureHeight
@@ -54,9 +38,6 @@
     Widget *child;
 
     self->content[1] = 0;
-    
-    /* Measure all children and set out content height to the max of
-     * theirs. */
     
     for(child = (Widget *)self->down;
 	child;
@@ -66,14 +47,41 @@
 	if (![child isKindOf: [Widget class]]) {
 	    continue;
 	}
-	
-	h = [child measureHeight];	
-	self->content[1] = h > self->content[1] ? h : self->content[1];
+
+	h = [child measureHeight];
+
+	child->allocation[1] = h;
+	self->content[1] += h;
     }
+
+    return self->content[1] + self->padding[2] + self->padding[3];
+}
+
+-(double) measureWidth
+{
+    Widget *child;
+
+    self->content[0] = 0;
+
+    /* Measure all children and set out content width to the max of
+     * theirs. */
     
+    for(child = (Widget *)self->down;
+	child;
+	child = (Widget *)child->right) {
+	double w;
+
+	if (![child isKindOf: [Widget class]]) {
+	    continue;
+	}
+
+	w = [child measureWidth];
+	self->content[0] = w > self->content[0] ? w : self->content[0];
+    }
+
     /* If we're a table we need to readjust our grandchildren. */
     
-    if (self->columns > 0) {
+    if (self->rows > 0) {
 	Widget *grandchild;
 	int i, j, done = 0;
 	double max;
@@ -82,15 +90,15 @@
 	    done = 1;
 	    max = 0;
 
-	    /* Find the largest height for the ith row of each column
+	    /* Find the largest width for the ith column of each row
 	     * child. */
 	    
 	    for(child = (Widget *)self->down;
 		child;
 		child = (Widget *)child->right) {
 		
-		if ([child isKindOf: [Column class]]) {
-		    /* Find the ith widget child of the column (if it
+		if ([child isKindOf: [Row class]]) {
+		    /* Find the ith widget child of the row (if it
 		     * exists). */
 		    
 		    for(grandchild = (Widget *)child->down, j = 0;
@@ -106,8 +114,8 @@
 		    }
 
 		    if (grandchild) {
-			if (max < grandchild->allocation[1]) {
-			    max = grandchild->allocation[1];
+			if (max < grandchild->allocation[0]) {
+			    max = grandchild->allocation[0];
 			}
 			
 			done = 0;
@@ -115,21 +123,21 @@
 		}		
 	    }
 
-	    /* We're done when we're past the maximum row for all
-	     * colmuns. */
+	    /* We're done when we're past the maximum column for all
+	     * rows. */
 	    
 	    if (done) {
 		continue;
 	    }
 
-	    /* Now that we've found the row's height set the
-	     * allocation of all widgets in the row to that. */
+	    /* Now that we've found the column's width set the
+	     * allocation of all widgets in the column to that. */
 	    
 	    for(child = (Widget *)self->down;
 		child;
 		child = (Widget *)child->right) {
 		
-		if ([child isKindOf: [Column class]]) {
+		if ([child isKindOf: [Row class]]) {
 		    Widget *last = NULL;
 		    
 		    for(grandchild = (Widget *)child->down, j = 0;
@@ -147,25 +155,25 @@
 		    }
 
 		    if (grandchild) {
-			/* If there is an ith column cell expand its
-			 * height to the row height. */
+			/* If there is an ith row cell expand its
+			 * width to the column width. */
 			
-			child->content[1] += max - grandchild->allocation[1];
-			grandchild->allocation[1] = max;
+			child->content[0] += max - grandchild->allocation[0];
+			grandchild->allocation[0] = max;
 		    } else if (last) {
-			/* Otherwise if the column is too short (in
-			 * terms of cells) just accumlate the current
-			 * row's height on its last cell. */
+			/* Otherwise if the row is too short (in terms
+			 * of cells) just accumlate the current
+			 * column's width on its last cell. */
 
-			child->content[1] += max;
-			last->allocation[1] += max;
+			child->content[0] += max;
+			last->allocation[0] += max;
 		    }
 		} else if ([child isKindOf: [Widget class]]) {
-		    /* If the child is not a column then treat it as a
+		    /* If the child is not a row then treat it as a
 		     * row with one cell and accumulate all width on
 		     * that. */
 		    
-		    child->allocation[1] += max;
+		    child->allocation[0] += max;
 		}
 	    }
 	}
@@ -181,13 +189,13 @@
 		continue;
 	    }
 
-	    if (self->content[1] < child->content[1]) {
-		self->content[1] = child->content[1];
+	    if (self->content[0] < child->content[0]) {
+		self->content[0] = child->content[0];
 	    }
 	}
     }
 
-    /* Allocate our content height to each child. */
+    /* Allocate our content width to each child. */
     
     for(child = (Widget *)self->down;
 	child;
@@ -197,18 +205,18 @@
 	    continue;
 	}
 
-	child->allocation[1] = self->content[1];
+	child->allocation[0] = self->content[0];
     }
 
-    return self->content[1] + self->padding[2] + self->padding[3];
+    return self->content[0] + self->padding[0] + self->padding[1];
 }
 
 -(void) adopt: (Node *)child
 {
     [super adopt: child];
     
-    if ([child isKindOf: [Column class]]) {
-	self->columns += 1;
+    if ([child isKindOf: [Row class]]) {
+	self->rows += 1;
     }
 }
 
@@ -216,8 +224,8 @@
 {
     [super renounce: child];
     
-    if ([child isKindOf: [Column class]]) {
-	self->columns -= 1;
+    if ([child isKindOf: [Row class]]) {
+	self->rows -= 1;
     }
 }
 
@@ -228,7 +236,7 @@
 	
     /* Now distribute the children in the allocated space. */
 
-    for(child = (Widget *)self->down, delta = -0.5 * self->content[0];
+    for(child = (Widget *)self->down, delta = -0.5 * self->content[1];
 	child;
 	child = (Widget *)child->right) {
 
@@ -236,12 +244,12 @@
 	    continue;
 	}
 
-	delta += 0.5 * child->allocation[0];
+	delta += 0.5 * child->allocation[1];
 
-	child->offset[0] = delta;
-	child->offset[1] = 0;
+	child->offset[0] = 0;
+	child->offset[1] = delta;
 
-	delta += 0.5 * child->allocation[0];
+	delta += 0.5 * child->allocation[1];
     }
     
     [super transform];

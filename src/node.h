@@ -34,9 +34,14 @@ struct protocol {
 @public
     Node *left, *right, *up, *down;
     const struct protocol *protocol;
+    struct {
+	lua_Number number;
+	const char *string;
+	int reference;
+    } key;
     char *tag;
     int length, linked, rawaccess;
-    int key, children, link, unlink, step, get, set;
+    int children, link, unlink, step, get, set;
     int traverse, prepare, finish, begin;
 }
 

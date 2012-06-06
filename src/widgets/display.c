@@ -33,14 +33,15 @@
 	
     glGetIntegerv (GL_VIEWPORT, v);
 
-    self->allocated[0] = (double)v[2] / v[3];
-    self->allocated[1] = 1;
+    self->allocation[0] = (double)v[2] / v[3];
+    self->allocation[1] = 1;
     
-    /* Calculate our own allocation based on our children. */
+    /* The display widget should expand to fill up all space
+     * available. */
     
-    self->minimum[0] = self->allocated[0] -
+    self->content[0] = self->allocation[0] -
 	self->padding[0] - self->padding[1];
-    self->minimum[1] = self->allocated[1] -
+    self->content[1] = self->allocation[1] -
 	self->padding[2] - self->padding[3];
 
     for (child = (Widget *)self->down;
@@ -51,8 +52,8 @@
 	[child measureWidth];
 	[child measureHeight];
 	
-	child->allocated[0] = self->minimum[0];
-	child->allocated[1] = self->minimum[1];
+	child->allocation[0] = self->content[0];
+	child->allocation[1] = self->content[1];
     }
 
     [super transformRelativeTo: zero];

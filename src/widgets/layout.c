@@ -57,8 +57,8 @@ static PangoContext *context;
     self->texels[0] = 0;
     self->texels[1] = 0;
 
-    self->allocated[0] = 0;
-    self->allocated[1] = 0;
+    self->allocation[0] = 0;
+    self->allocation[1] = 0;
 
     self->opacity = 1;
 
@@ -85,15 +85,17 @@ static PangoContext *context;
 {
     GLint v[4];
 
+    glGetIntegerv(GL_VIEWPORT, v);
+
     if (self->scale > 0) {
-	self->minimum[0] = self->scale * (double)self->texels[0] /
+	self->content[0] = self->scale * (double)self->texels[0] /
 	                                 (double)self->texels[1];
     } else {
 	glGetIntegerv(GL_VIEWPORT, v);
-	self->minimum[0] = (double)self->texels[0] / v[3];
+	self->content[0] = (double)self->texels[0] / v[3];
     }
     
-    return self->minimum[0] + self->padding[0] + self->padding[1];
+    return self->content[0] + self->padding[0] + self->padding[1];
 }
 
 -(double) measureHeight
@@ -103,12 +105,12 @@ static PangoContext *context;
     glGetIntegerv(GL_VIEWPORT, v);
     
     if (self->scale > 0) {
-	self->minimum[1] = self->scale;
+	self->content[1] = self->scale;
     } else {
-	self->minimum[1] = (double)self->texels[1] / v[3];
+	self->content[1] = (double)self->texels[1] / v[3];
     }
     
-    return self->minimum[1] + self->padding[2] + self->padding[3];
+    return self->content[1] + self->padding[2] + self->padding[3];
 }
 
 -(void) update
@@ -225,13 +227,13 @@ static PangoContext *context;
     
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
-    glVertex2f(-0.5 * self->minimum[0], -0.5 * self->minimum[1]);
+    glVertex2f(-0.5 * self->content[0], -0.5 * self->content[1]);
     glTexCoord2f(1, 0);
-    glVertex2f(0.5 * self->minimum[0], -0.5 * self->minimum[1]);
+    glVertex2f(0.5 * self->content[0], -0.5 * self->content[1]);
     glTexCoord2f(1, 1);
-    glVertex2f(0.5 * self->minimum[0], 0.5 * self->minimum[1]);
+    glVertex2f(0.5 * self->content[0], 0.5 * self->content[1]);
     glTexCoord2f(0, 1);
-    glVertex2f(-0.5 * self->minimum[0], 0.5 * self->minimum[1]);
+    glVertex2f(-0.5 * self->content[0], 0.5 * self->content[1]);
     glEnd();
 
     glDepthMask (GL_TRUE);

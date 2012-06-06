@@ -19,6 +19,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 #include <ctype.h>
+#include <math.h>
 
 #include <objc/runtime.h>
 
@@ -1025,7 +1026,9 @@ static int __newindex(lua_State *L)
 
     self->rawaccess = 0;
     self->linked = 0;
-    self->key = LUA_REFNIL;
+    self->key.reference = LUA_REFNIL;
+    self->key.number = NAN;
+    self->key.string = NULL;;
 
     /* Initialize the hooks. */
 
@@ -1128,11 +1131,11 @@ static int __newindex(lua_State *L)
 
 -(void) adopt: (Node *)child
 {
-    Node *sibling;
+    Node *l, *r, *sibling;
 
     /* Before the child can get adopted by a parent we need to remove
      * it from the orphans list. */
-    
+
     assert (child->left);
     assert (child->right);
 
@@ -1145,16 +1148,57 @@ static int __newindex(lua_State *L)
 
     /* t_trace ("%s(%p) => %s(%p)\n", [self name], self, [child name], child); */
     if (self->down) {
-	sibling = self->down;
-	assert (!sibling->left);
+	/* Find where to insert the new child.  Children are ordered
+	 * according to key with numbers first and then strings in
+	 * ascending order.  Nodes with other types of keys are
+	 * unordered and come last in the list. */
 	
-	self->down = child;
-	child->right = sibling;
-	sibling->left = child;
-	assert (!child->left);
-    }
+	for (l = NULL, r = self->down ; r ; l = r, r = r->right) {
+	    if (!isnan(child->key.number)) {
+		if (!isnan(r->key.number) &&
+		    r->key.number > child->key.number) {
+		    break;
+		} else {
+		    continue;
+		}
+	    } else if (child->key.string != NULL) {
+		if (!isnan(r->key.number)) {
+		    continue;
+		} else if (r->key.string != NULL &&
+		    strcmp(r->key.string, child->key.string) > 0) {
+		    break;
+		} else {
+		    continue;
+		}
+	    } else {
+		if (!isnan(r->key.number) ||
+		    r->key.string != NULL) {
+		    continue;
+		} else {
+		    break;
+		}
+	    }
+	}
+	assert (r || l);
 
-    self->down = child;
+	child->left = l;
+	child->right = r;
+
+	if (l) {
+	    l->right = child;
+	}
+
+	if (r) {
+	    r->left = child;
+	}
+
+	if (!l) {
+	    assert (self->down == r);
+	    self->down = child;
+	}
+    } else {
+	self->down = child;
+    }
 
     /* Introduce the newcomer to the family. */
     
@@ -1505,7 +1549,7 @@ static int __newindex(lua_State *L)
 	lua_settable (_L, 3);
     } else if (self->up) {
 	t_push_userdata (_L, 1, self->up);
-	lua_rawgeti (_L, LUA_REGISTRYINDEX, self->key);
+	lua_rawgeti (_L, LUA_REGISTRYINDEX, self->key.reference);
 	lua_pushnil (_L);
 	lua_settable (_L, -3);
     }
@@ -1552,7 +1596,10 @@ static int __newindex(lua_State *L)
 		
 	[self renounce: child];
 
-	luaL_unref (_L, LUA_REGISTRYINDEX, child->key);
+	luaL_unref (_L, LUA_REGISTRYINDEX, child->key.reference);
+	child->key.reference = LUA_REFNIL;
+	child->key.number = NAN;
+	child->key.string = NULL;
 	
 	/* Remove the key->child entry. */
     
@@ -1579,25 +1626,40 @@ static int __newindex(lua_State *L)
 
 	    /* Remove the key->child entry from the old parent. */
 	    
-	    lua_rawgeti (_L, LUA_REGISTRYINDEX, child->key);
+	    lua_rawgeti (_L, LUA_REGISTRYINDEX, child->key.reference);
 	    lua_pushnil (_L);
 	    lua_rawset (_L, -3);
 	    
 	    lua_pop (_L, 1);
-	    
-	    luaL_unref (_L, LUA_REGISTRYINDEX, child->key);
 
 	    /* Remove from the old parent and toggle if necessary. */
 	    
 	    [child->up renounce: child];
+	    
+	    luaL_unref (_L, LUA_REGISTRYINDEX, child->key.reference);
+	    child->key.reference = LUA_REFNIL;
+	    child->key.number = NAN;
+	    child->key.string = NULL;
 
 	    if (child->linked) {
 		[child toggle];
 	    }
 	}
 
+	assert (child->key.reference == LUA_REFNIL);
+	assert (isnan(child->key.number));
+	assert (child->key.string == NULL);
+	
 	lua_pushvalue (_L, 2);
-	child->key = luaL_ref (_L, LUA_REGISTRYINDEX);
+	child->key.reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+
+	if (lua_type (_L, 2) == LUA_TNUMBER) {
+	    child->key.number = lua_tonumber (_L, 2);
+	}
+
+	if (lua_type (_L, 2) == LUA_TSTRING) {
+	    child->key.string = lua_tostring (_L, 2);
+	}
 
 	lua_replace (_L, 1);
 	lua_rawset (_L, 1);

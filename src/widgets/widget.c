@@ -55,12 +55,12 @@ static int drawlayout = -1;
 
 -(double) measureWidth
 {
-    return self->minimum[0] + self->padding[0] + self->padding[1];
+    return self->content[0] + self->padding[0] + self->padding[1];
 }
 
 -(double) measureHeight
 {
-    return self->minimum[1] + self->padding[2] + self->padding[3];
+    return self->content[1] + self->padding[2] + self->padding[3];
 }
 
 -(void) place
@@ -68,9 +68,9 @@ static int drawlayout = -1;
     double *d, *m, *p, *a, *A;
     
     d = self->offset;
-    m = self->minimum;
+    m = self->content;
     p = self->padding;
-    a = self->allocated;
+    a = self->allocation;
     A = self->align;
 
     glTranslated(d[0] + p[0] - 0.5 * (a[0] - m[0]) +
@@ -146,12 +146,13 @@ static int drawlayout = -1;
 	glMatrixMode (GL_MODELVIEW);
 	glPushMatrix();
 	glMultMatrixd (self->matrix);
-	
-	glColor3f (1, 1, 0);
 
-	m = self->minimum;
+	m = self->content;
 	p = self->padding;
     
+	glLineWidth(1);
+	glColor3f (1, 1, 0);
+
 	glBegin(GL_LINE_STRIP);
 	glVertex2f(-0.5 * m[0], -0.5 * m[1]);
 	glVertex2f(0.5 * m[0], -0.5 * m[1]);
@@ -161,6 +162,8 @@ static int drawlayout = -1;
 	glEnd();
 
 	glColor3f (0, 1, 0);
+	glLineStipple (3, 0x5555);
+	glEnable (GL_LINE_STIPPLE);
 
 	glBegin(GL_LINE_STRIP);
 	glVertex2f(-0.5 * m[0] - p[0], -0.5 * m[1] - p[2]);
@@ -170,6 +173,7 @@ static int drawlayout = -1;
 	glVertex2f(-0.5 * m[0] - p[0], -0.5 * m[1] - p[2]);
 	glEnd();
     
+	glDisable (GL_LINE_STIPPLE);	
 	glMatrixMode (GL_MODELVIEW);
 	glPopMatrix();
     }

@@ -20,7 +20,7 @@
 #include "transform.h"
 
 @interface Widget: Transform {
-    double padding[4], allocated[2], minimum[2], align[2], offset[2];
+    double padding[4], allocation[2], content[2], align[2], offset[2];
     int debug;
 }
 

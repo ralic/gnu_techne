@@ -20,6 +20,7 @@
 #include "widget.h"
 
 @interface Row: Widget {
+    int columns;
 }
 @end
 

@@ -108,6 +108,20 @@ static int drawlayout = -1;
     return 1;
 }
 
+-(int) _get_content
+{
+    int i;
+    
+    lua_newtable (_L);
+        
+    for(i = 0; i < 2; i += 1) {
+	lua_pushnumber (_L, self->content[i]);
+	lua_rawseti (_L, -2, i + 1);
+    }
+
+    return 1;
+}
+
 -(void) _set_align
 {
     int i;
@@ -138,6 +152,11 @@ static int drawlayout = -1;
     }
 }
 
+-(void) _set_content
+{
+    /* Do nothing. */
+}
+
 -(void) traverse
 {
     double *m, *p;
@@ -147,6 +166,8 @@ static int drawlayout = -1;
 	glPushMatrix();
 	glMultMatrixd (self->matrix);
 
+	[self place];
+	
 	m = self->content;
 	p = self->padding;
     

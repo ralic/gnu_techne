@@ -30,8 +30,10 @@
 
 -(int) _get_align;
 -(int) _get_padding;
+-(int) _get_content;
 -(void) _set_align;
 -(void) _set_padding;
+-(void) _set_content;
 
 @end
 

@@ -240,11 +240,11 @@ static PangoContext *context;
 
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
-
-    [super traverse];
     
     glMatrixMode (GL_MODELVIEW);
     glPopMatrix();
+
+    [super traverse];
 }
 
 -(int) _get_text

@@ -115,7 +115,8 @@ widgets_core_la_SOURCES = widgets/core.c widgets/display.c	\
 			  widgets/widget.h widgets/layout.c	\
 			  widgets/layout.h widgets/row.h	\
 			  widgets/row.c widgets/column.h	\
-			  widgets/column.c
+			  widgets/column.c widgets/assembly.h	\
+			  widgets/assembly.c
 widgets_core_la_CFLAGS = ${AM_CFLAGS} ${GDKGLEXT_CFLAGS}
 widgets_core_la_LDFLAGS = -module -avoid-version -no-undefined
 widgets_core_la_LIBADD = ${GDKGLEXT_LIBS} ${AM_LDADD}

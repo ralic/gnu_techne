@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Papavasileiou Dimitris                             
+/* Copyright (C) 2009 Papavasileiou Dimitris                             
  *                                                                      
  * This program is free software: you can redistribute it and/or modify 
  * it under the terms of the GNU General Public License as published by 
@@ -14,23 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
+#ifndef _ASSEMBLY_H_
+#define _ASSEMBLY_H_
 
-#include "display.h"
-#include "layout.h"
-#include "row.h"
-#include "column.h"
-#include "assembly.h"
 #include "widget.h"
 
-int luaopen_widgets_core (lua_State *L)
-{
-    Class classes[] = {[Display class], [Layout class], [Row class],
-		       [Column class], [Assembly class], NULL};
-
-    t_export_nodes (L, classes);
-    
-    return 1;
+@interface Assembly: Widget {
 }
+@end
+
+#endif

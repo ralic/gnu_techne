@@ -53,14 +53,8 @@ static int drawlayout = -1;
     return self;
 }
 
--(double) measureWidth
+-(void) measure
 {
-    return self->content[0] + self->padding[0] + self->padding[1];
-}
-
--(double) measureHeight
-{
-    return self->content[1] + self->padding[2] + self->padding[3];
 }
 
 -(void) place
@@ -162,12 +156,6 @@ static int drawlayout = -1;
     double *m, *p;
 
     if (self->debug) {
-	glMatrixMode (GL_MODELVIEW);
-	glPushMatrix();
-	glMultMatrixd (self->matrix);
-
-	[self place];
-	
 	m = self->content;
 	p = self->padding;
     
@@ -195,8 +183,6 @@ static int drawlayout = -1;
 	glEnd();
     
 	glDisable (GL_LINE_STIPPLE);	
-	glMatrixMode (GL_MODELVIEW);
-	glPopMatrix();
     }
     
     [super traverse];

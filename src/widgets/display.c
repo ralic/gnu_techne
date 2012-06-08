@@ -49,8 +49,7 @@
 	 child = (Widget *)child->right);
     
     if (child) {
-	[child measureWidth];
-	[child measureHeight];
+	[child measure];
 	
 	child->allocation[0] = self->content[0];
 	child->allocation[1] = self->content[1];

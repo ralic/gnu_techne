@@ -33,50 +33,36 @@
     return self;
 }
 
--(double) measureHeight
-{
-    Widget *child;
-
-    self->content[1] = 0;
-    
-    for(child = (Widget *)self->down;
-	child;
-	child = (Widget *)child->right) {
-	double h;
-
-	if (![child isKindOf: [Widget class]]) {
-	    continue;
-	}
-
-	h = [child measureHeight];
-
-	child->allocation[1] = h;
-	self->content[1] += h;
-    }
-
-    return self->content[1] + self->padding[2] + self->padding[3];
-}
-
--(double) measureWidth
+-(void) measure
 {
     Widget *child;
 
     self->content[0] = 0;
-
-    /* Measure all children and set out content width to the max of
-     * theirs. */
+    self->content[1] = 0;
+    
+    /* Measure all children and set our content width to the max of
+     * theirs and our content height to the sum. */
     
     for(child = (Widget *)self->down;
 	child;
 	child = (Widget *)child->right) {
-	double w;
+	double w, h;
 
 	if (![child isKindOf: [Widget class]]) {
 	    continue;
 	}
 
-	w = [child measureWidth];
-	self->content[0] = w > self->content[0] ? w : self->content[0];
+	[child measure];
+
+	w = child->content[0] + child->padding[0] + child->padding[1];
+	h = child->content[1] + child->padding[2] + child->padding[3];
+	
+	child->allocation[1] = h;
+	self->content[1] += h;
+
+	if (w > self->content[0]) {
+	    self->content[0] = w;
+	}
     }
 
     /* If we're a table we need to readjust our grandchildren. */
@@ -207,8 +193,6 @@
 
 	child->allocation[0] = self->content[0];
     }
-
-    return self->content[0] + self->padding[0] + self->padding[1];
 }
 
 -(void) adopt: (Node *)child

@@ -81,36 +81,21 @@ static PangoContext *context;
     [super free];
 }
 
--(double) measureWidth
+-(void) measure
 {
     GLint v[4];
-
-    glGetIntegerv(GL_VIEWPORT, v);
 
     if (self->scale > 0) {
 	self->content[0] = self->scale * (double)self->texels[0] /
 	                                 (double)self->texels[1];
-    } else {
-	glGetIntegerv(GL_VIEWPORT, v);
-	self->content[0] = (double)self->texels[0] / v[3];
-    }
-    
-    return self->content[0] + self->padding[0] + self->padding[1];
-}
-
--(double) measureHeight
-{
-    GLint v[4];
-
-    glGetIntegerv(GL_VIEWPORT, v);
-    
-    if (self->scale > 0) {
+	
 	self->content[1] = self->scale;
     } else {
+	glGetIntegerv(GL_VIEWPORT, v);
+
+	self->content[0] = (double)self->texels[0] / v[3];
 	self->content[1] = (double)self->texels[1] / v[3];
     }
-    
-    return self->content[1] + self->padding[2] + self->padding[3];
 }
 
 -(void) update
@@ -240,11 +225,11 @@ static PangoContext *context;
 
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
+
+    [super traverse];
     
     glMatrixMode (GL_MODELVIEW);
     glPopMatrix();
-
-    [super traverse];
 }
 
 -(int) _get_text

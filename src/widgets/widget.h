@@ -24,8 +24,7 @@
     int debug;
 }
 
--(double) measureWidth;
--(double) measureHeight;
+-(void) measure;
 -(void) place;
 
 -(int) _get_align;

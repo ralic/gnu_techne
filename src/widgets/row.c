@@ -25,50 +25,44 @@
 
 @implementation Row
 
--(double) measureWidth
+-(Row *) init
+{
+    self = [super init];
+    self->columns = 0;
+
+    return self;
+}
+
+-(void) measure
 {
     Widget *child;
 
     self->content[0] = 0;
-    
-    for(child = (Widget *)self->down;
-	child;
-	child = (Widget *)child->right) {
-	double w;
-
-	if (![child isKindOf: [Widget class]]) {
-	    continue;
-	}
-	
-	w = [child measureWidth];
-
-	child->allocation[0] = w;
-	self->content[0] += w;
-    }
-
-    return self->content[0] + self->padding[0] + self->padding[1];
-}
-
--(double) measureHeight
-{
-    Widget *child;
-
     self->content[1] = 0;
     
     /* Measure all children and set out content height to the max of
-     * theirs. */
+     * theirs and our width to thei sum. */
     
     for(child = (Widget *)self->down;
 	child;
 	child = (Widget *)child->right) {
-	double h;
+	double w, h;
 
 	if (![child isKindOf: [Widget class]]) {
 	    continue;
 	}
 	
-	h = [child measureHeight];	
-	self->content[1] = h > self->content[1] ? h : self->content[1];
+	[child measure];
+
+	w = child->content[0] + child->padding[0] + child->padding[1];
+	h = child->content[1] + child->padding[2] + child->padding[3];
+	
+	child->allocation[0] = w;
+	self->content[0] += w;
+
+	if (h > self->content[1]) {
+	    self->content[1] = h;
+	}
     }
     
     /* If we're a table we need to readjust our grandchildren. */
@@ -112,7 +106,7 @@
 			
 			done = 0;
 		    }
-		}		
+		}
 	    }
 
 	    /* We're done when we're past the maximum row for all
@@ -199,8 +193,6 @@
 
 	child->allocation[1] = self->content[1];
     }
-
-    return self->content[1] + self->padding[2] + self->padding[3];
 }
 
 -(void) adopt: (Node *)child

@@ -45,14 +45,14 @@
 	self->padding[2] - self->padding[3];
 
     for (child = (Widget *)self->down;
-	 child && ![child isKindOf:[Widget class]];
-	 child = (Widget *)child->right);
-    
-    if (child) {
-	[child measure];
+	 child;
+	 child = (Widget *)child->right) {
+	if ([child isKindOf:[Widget class]]) {
+	    [child measure];
 	
-	child->allocation[0] = self->content[0];
-	child->allocation[1] = self->content[1];
+	    child->allocation[0] = self->content[0];
+	    child->allocation[1] = self->content[1];
+	}
     }
 
     [super transformRelativeTo: zero];

@@ -17,9 +17,9 @@
 #ifndef _WIDGET_H_
 #define _WIDGET_H_
 
-#include "transform.h"
+#include "node.h"
 
-@interface Widget: Transform {
+@interface Widget: Node {
     double padding[4], allocation[2], content[2], align[2], offset[2];
     int debug;
 }
@@ -29,9 +29,11 @@
 
 -(int) _get_align;
 -(int) _get_padding;
+-(int) _get_offset;
 -(int) _get_content;
 -(void) _set_align;
 -(void) _set_padding;
+-(void) _set_offset;
 -(void) _set_content;
 
 @end

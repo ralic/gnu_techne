@@ -24,11 +24,9 @@
 
 @implementation Display
 
--(void) transform
+-(void) prepare
 {
     Widget *child;
-    
-    double zero[3] = {0, 0, 0};
     int v[4];
 	
     glGetIntegerv (GL_VIEWPORT, v);
@@ -52,10 +50,13 @@
 	
 	    child->allocation[0] = self->content[0];
 	    child->allocation[1] = self->content[1];
+
+	    child->offset[0] = 0;
+	    child->offset[1] = 0;
 	}
     }
 
-    [super transformRelativeTo: zero];
+    [super prepare];
 }
 
 -(void) traverse

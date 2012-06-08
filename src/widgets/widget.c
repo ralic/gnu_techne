@@ -102,6 +102,20 @@ static int drawlayout = -1;
     return 1;
 }
 
+-(int) _get_offset
+{
+    int i;
+    
+    lua_newtable (_L);
+        
+    for(i = 0; i < 2; i += 1) {
+	lua_pushnumber (_L, self->offset[i]);
+	lua_rawseti (_L, -2, i + 1);
+    }
+
+    return 1;
+}
+
 -(int) _get_content
 {
     int i;
@@ -140,6 +154,21 @@ static int drawlayout = -1;
 	    lua_pushinteger (_L, i + 1);
 	    lua_gettable (_L, 3);
 	    self->padding[i] = lua_tonumber (_L, -1);
+                
+	    lua_pop (_L, 1);
+	}
+    }
+}
+
+-(void) _set_offset
+{
+    int i;
+    
+    if(lua_istable (_L, 3)) {
+	for(i = 0 ; i < 2 ; i += 1) {
+	    lua_pushinteger (_L, i + 1);
+	    lua_gettable (_L, 3);
+	    self->offset[i] = lua_tonumber (_L, -1);
                 
 	    lua_pop (_L, 1);
 	}

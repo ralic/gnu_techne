@@ -213,7 +213,7 @@
     }
 }
 
--(void) transform
+-(void) prepare
 {
     Widget *child;
     double delta;
@@ -236,14 +236,13 @@
 	delta += 0.5 * child->allocation[1];
     }
     
-    [super transform];
+    [super prepare];
 }
 
 -(void) traverse
 {
     glMatrixMode (GL_MODELVIEW);
     glPushMatrix();
-    glMultMatrixd (self->matrix);
 	
     [self place];    
     [super traverse];

@@ -194,7 +194,6 @@ static PangoContext *context;
 {
     glMatrixMode (GL_MODELVIEW);
     glPushMatrix();
-    glMultMatrixd (self->matrix);
 	
     glColor4d (1, 1, 1, self->opacity);
     glUseProgramObjectARB(0);

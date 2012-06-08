@@ -56,24 +56,24 @@
 
 	/* Width. */
 	
-	if (fabs(child->position[0] - 0.5 * w) > w_2) {
-	    w_2 = fabs(child->position[0] - 0.5 * w);
+	if (fabs(child->offset[0] - 0.5 * w) > w_2) {
+	    w_2 = fabs(child->offset[0] - 0.5 * w);
 	}
 
-	if (fabs(child->position[0] + 0.5 * w) > w_2) {
-	    w_2 = fabs(child->position[0] + 0.5 * w);
+	if (fabs(child->offset[0] + 0.5 * w) > w_2) {
+	    w_2 = fabs(child->offset[0] + 0.5 * w);
 	}
 
 	child->allocation[0] = w;
 	
 	/* Height. */
 	
-	if (fabs(child->position[1] - 0.5 * h) > h_2) {
-	    h_2 = fabs(child->position[1] - 0.5 * h);
+	if (fabs(child->offset[1] - 0.5 * h) > h_2) {
+	    h_2 = fabs(child->offset[1] - 0.5 * h);
 	}
 
-	if (fabs(child->position[1] + 0.5 * h) > h_2) {
-	    h_2 = fabs(child->position[1] + 0.5 * h);
+	if (fabs(child->offset[1] + 0.5 * h) > h_2) {
+	    h_2 = fabs(child->offset[1] + 0.5 * h);
 	}
 
 	child->allocation[1] = h;
@@ -87,7 +87,6 @@
 {
     glMatrixMode (GL_MODELVIEW);
     glPushMatrix();
-    glMultMatrixd (self->matrix);
 	
     [self place];    
     [super traverse];

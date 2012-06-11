@@ -27,8 +27,6 @@
 #include "dynamics.h"
 #include "techne.h"
 
-#define CHUNK_SIZE 64
-
 static double timescale = 1, stepsize = 0.01, ceiling = 1.0 / 0.0;
 static double interval = -1;
 static int iterations = 0, collision = LUA_REFNIL;
@@ -36,59 +34,11 @@ static int iterations = 0, collision = LUA_REFNIL;
 static long int once;
 static double now, then;
 
-static struct chunk {
-    struct context {
-	dContact contact;
-	dJointFeedback feedback;
-    } pool[CHUNK_SIZE];
-
-    struct chunk *next;
-} *chunks, *current;
-
-static int allocated[2];
-
-static struct context *allocate_contact ()
-{
-    struct context *context;
-    int i;
-    
-    if (!chunks) {
-	/* This is the first allocation. */
-
-	current = chunks = malloc (sizeof (struct chunk));
-	current->next = NULL;
-
-	allocated[1] = 1;
-    }
-
-    i = allocated[0] % CHUNK_SIZE;
-    context = &current->pool[i];
-    
-    if ((i + 1) == CHUNK_SIZE) {
-	/* Allocate a new chunk if we've run out. */
-	    
-	if (!current->next) {
-	    current->next = malloc (sizeof (struct chunk));
-	    current->next->next = NULL;
-
-	    allocated[1] += 1;
-	}
-	    
-	current = current->next;
-    }
-
-    allocated[0] += 1;
-
-    return context;
-}
-
-static void reset_contacts()
-{
-    /* t_trace ("%d, %d\n", allocated[0], allocated[1]); */
-
-    allocated[0] = 0;
-    current = chunks;
-}
+static void *pool;
+struct context {
+    dContact contact;
+    dJointFeedback feedback;
+};
 
 static int next_joint(lua_State *L)
 {
@@ -286,7 +236,7 @@ static void callback (void *data, dGeomID a, dGeomID b)
 		/* Initialize a new contact joint with values returned
 		 * by the user. */
 		
-		context = allocate_contact();
+		context = t_allocate_from_pool(pool);
 		    
 		context->contact.geom = geoms[i];
 
@@ -362,6 +312,10 @@ static void callback (void *data, dGeomID a, dGeomID b)
     
     once = t_get_real_time();
 
+    /* Create the contact context pool. */
+
+    pool = t_build_pool (64, sizeof (struct context));
+    
     /* Export the joints iterator. */
     
     lua_pushcfunction (_L, joints_iterator);
@@ -404,7 +358,7 @@ static void callback (void *data, dGeomID a, dGeomID b)
 	/* Empty the contact group. */
 
 	dJointGroupEmpty (_GROUP);
-	reset_contacts ();
+	t_reset_pool (pool);
 
 	if (dSpaceGetNumGeoms (_SPACE) > 1) {
 	    dSpaceCollide (_SPACE, NULL, callback);

@@ -34,7 +34,8 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     transform.h body.c body.h joint.c joint.h		\
 		     event.c event.h space.c space.h array/array.c	\
 		     array/array.h prompt/prompt.c prompt/prompt.h	\
-		     joints/contact.c profiling.c moremath.c timing.c
+		     joints/contact.c profiling.c moremath.c timing.c	\
+		     memory.c
 
 techne_bin_CFLAGS = ${AM_CFLAGS} ${GDKGLEXT_CFLAGS} ${OPENAL_CFLAGS}	\
 		    ${ODE_CFLAGS}

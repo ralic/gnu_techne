@@ -62,6 +62,10 @@ void t_print_timing_resolution();
 long long int t_get_real_time ();
 long long int t_get_cpu_time ();
 
+void *t_build_pool(int factor, size_t size);
+void *t_allocate_from_pool (void *p);
+void t_reset_pool (void *p);
+
 int luaopen_moremath (lua_State *L);
 
 @interface Techne: Node {

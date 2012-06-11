@@ -588,8 +588,8 @@ static int __tostring(lua_State *L)
 
     object = *(Node **)lua_touserdata(L, 1);
 
-    if (object->tag) {
-	lua_pushstring(L, object->tag);
+    if (object->tag.reference != LUA_REFNIL) {
+	lua_pushstring(L, object->tag.string);
     } else {
 	lua_pushfstring(L, "%s: %p", [[object class] name], object);
     }
@@ -1019,7 +1019,8 @@ static int __newindex(lua_State *L)
 	list = self;
     }
 
-    self->tag = NULL;
+    self->tag.reference = LUA_REFNIL;
+    self->tag.string = NULL;
 
     self->up = NULL;
     self->down = NULL;
@@ -1353,22 +1354,21 @@ static int __newindex(lua_State *L)
 
 -(int) _get_tag
 {
-    lua_pushstring (_L, self->tag);
+    lua_pushstring (_L, self->tag.string);
     
     return 1;
 }
  
 -(void) _set_tag
 {
-    if (lua_type (_L, -1) == LUA_TSTRING) {
-	const char *t;
-
-	t = lua_tostring (_L, -1);
-	self->tag = realloc(self->tag, strlen (t) + 1);
-	strcpy (self->tag, t);
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->tag.reference);
+    
+    if (lua_isstring (_L, 3)) {
+	self->tag.string = lua_tostring (_L, 3);
+	self->tag.reference = luaL_ref (_L, LUA_REGISTRYINDEX);
     } else {
-	free (self->tag);
-	self->tag = NULL;
+	self->tag.string = NULL;
+	self->tag.reference = LUA_REFNIL;
     }
 }
 

@@ -39,7 +39,12 @@ struct protocol {
 	const char *string;
 	int reference;
     } key;
-    char *tag;
+    
+    struct {
+	const char *string;
+	int reference;
+    } tag;
+
     int length, linked, rawaccess;
     int children, link, unlink, step, get, set;
     int traverse, prepare, finish, begin;

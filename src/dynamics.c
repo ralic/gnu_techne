@@ -328,6 +328,8 @@ static void callback (void *data, dGeomID a, dGeomID b)
 {
     double delta;
     long int time;
+	
+    t_begin_interval (root, T_STEP_PHASE);
     
     time = t_get_real_time();
 
@@ -352,8 +354,6 @@ static void callback (void *data, dGeomID a, dGeomID b)
     for (delta = now - then;
 	 delta >= stepsize;
 	 then += stepsize, delta -= stepsize) {
-	
-	tprof_begin (TPROF_COLLIDE);
     
 	/* Empty the contact group. */
 
@@ -371,10 +371,6 @@ static void callback (void *data, dGeomID a, dGeomID b)
 		dSpaceCollide ((dSpaceID)geom, NULL, callback);
 	    }
 	}
-
-	tprof_end (TPROF_COLLIDE);
-
-	tprof_begin (TPROF_STEP);
     
 	[root stepBy: stepsize at: then];
 
@@ -383,18 +379,16 @@ static void callback (void *data, dGeomID a, dGeomID b)
 	} else {
 	    dWorldStep (_WORLD, stepsize);
 	}
-
-	tprof_end (TPROF_STEP);
     }    
+
+    t_end_interval (root, T_STEP_PHASE);
 
     /* Transform the tree to update absolute positions and
        orientations. */
     
-    tprof_begin (TPROF_TRANSFORM);
-
+    t_begin_interval (root, T_TRANSFORM_PHASE);
     [root transform];
-    
-    tprof_end (TPROF_TRANSFORM);
+    t_end_interval (root, T_TRANSFORM_PHASE);
 	
     /* Advance the real-world time. */
 

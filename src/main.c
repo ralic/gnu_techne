@@ -31,11 +31,6 @@ int main(int argc, char **argv)
     t_print_message ("Entering the main loop.\n");
 
     [techne iterate];
-
-    /* Close the state to collect all values and call the respective
-     * finalizers. */
-    
-    lua_close (_L);
     
     t_print_message("Bye!\n");
     exit (EXIT_SUCCESS);

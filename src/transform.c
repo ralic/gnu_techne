@@ -27,6 +27,8 @@ double zero[3] = {0, 0, 0}, *origin = zero;
 static void recurse (Node *root)
 {
     Node *child;
+
+    t_begin_interval (root, T_TRANSFORM_PHASE);
     
     if ([root isKindOf: [Transform class]]) {
 	[(id)root transform];
@@ -35,6 +37,8 @@ static void recurse (Node *root)
 	    recurse (child);
 	}
     }
+    
+    t_end_interval (root, T_TRANSFORM_PHASE);
 }
 
 @implementation Transform

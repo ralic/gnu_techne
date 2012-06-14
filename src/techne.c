@@ -293,6 +293,20 @@ static int construct_hooks(lua_State *L)
     return 1;
 }
 
+static void accumulate(Node *root, long long int (*intervals)[2]) {
+    Node *child;
+    int j;
+    
+    for (j = 0 ; j < T_PHASE_COUNT ; j += 1) {
+	intervals[j][0] += root->profile.intervals[j][0];
+	intervals[j][1] += root->profile.intervals[j][1];
+    }
+    
+    for (child = root->down ; child ; child = child->right) {
+	accumulate (child, intervals);
+    }
+}
+
 int t_call (lua_State *L, int nargs, int nresults)
 {
     static int nesting;
@@ -660,6 +674,16 @@ void t_print_error (const char *format, ...)
 
 -(void) iterate
 {
+    Node *node;
+    long long int runtime, totals[2], intervals[T_PHASE_COUNT][2];;
+    char *phases[T_PHASE_COUNT] = {"begin", "input", "step",
+				   "transform", "prepare", "traverse",
+				   "finish"};
+    double c;
+    int j;
+
+    runtime = t_get_cpu_time();
+    
     while (iterate || interactive) {
 	if (interactive) {
 	    luap_enter(_L);
@@ -667,23 +691,65 @@ void t_print_error (const char *format, ...)
 	    interactive = 0;
 	}
 	
-	tprof_new_row();
-
-	tprof_begin (TPROF_BEGIN);    
+	t_begin_interval (root, T_BEGIN_PHASE);    
 	[root begin];
-	tprof_end (TPROF_BEGIN);	
+	t_end_interval (root, T_BEGIN_PHASE);	
 
 	[dynamics iterate: root];
 	[graphics iterate: root];
     }
-    
+
+    runtime = t_get_cpu_time() - runtime;
+
     [dynamics toggle];
     [graphics toggle];
     [accoustics toggle];
     [techne toggle];
     [root toggle];
 
-    tprof_report();
+    c = 100.0 / runtime;
+    memset (intervals, 0, sizeof(intervals));
+    memset (totals, 0, sizeof(totals));
+
+    accumulate (root, intervals);
+    for (node = root->right ; node != root ; node = node->right) {
+	accumulate(node, intervals);
+    }
+	
+    for (j = 0 ; j < T_PHASE_COUNT ; j += 1) {
+	totals[0] += intervals[j][0] - intervals[j][1];
+	totals[1] += intervals[j][1];
+    }
+
+    t_print_message("Run for a total of %.1f seconds out of which "
+		    "%.1f in the core and %.1f in the application.\n",
+		    runtime * 1e-9, totals[0] * 1e-9, totals[1] * 1e-9);
+    t_print_message("Spent %.2f seconds (%.1f%%) processing collected"
+		    " nodes or in unprofiled code.\n",
+		    (runtime - totals[0] - totals[1]) * 1e-9,
+		    (double)(runtime - totals[0] - totals[1]) /
+		    runtime * 100);
+    t_print_message("Phase profile:\n"
+		    "+-----------------------+\n"
+		    "|phase       core   user|\n"
+		    "+-----------------------+\n");
+	
+    for (j = 0 ; j < T_PHASE_COUNT ; j += 1) {
+	t_print_message("|%-10s %4.1f%%  %4.1f%%|\n",
+			phases[j],
+			c * (intervals[j][0] - intervals[j][1]),
+			c * intervals[j][1]);
+    }
+
+    t_print_message("+-----------------------+\n"
+		    "|%-10s %4.1f%%  %4.1f%%|\n"
+		    "+-----------------------+\n",
+		    "total", c * totals[0], c * totals[1]);
+    
+    /* Close the state to collect all values and call the respective
+     * finalizers. */
+    
+    lua_close (_L);
 }
 
 -(int) _get_interactive

@@ -29,11 +29,28 @@ struct protocol {
 	SEL selector;
     } *properties[2];
 };
+ 
+typedef enum {
+    T_BEGIN_PHASE,
+    T_INPUT_PHASE,
+    T_STEP_PHASE,
+    T_TRANSFORM_PHASE,
+    T_PREPARE_PHASE,
+    T_TRAVERSE_PHASE,
+    T_FINISH_PHASE,
+
+    T_PHASE_COUNT
+} tprof_Phase;
     
 @interface Node: Object {
 @public
     Node *left, *right, *up, *down;
     const struct protocol *protocol;
+
+    struct {
+	long long int beginning[2], intervals[T_PHASE_COUNT][2];
+    } profile;
+    
     struct {
 	lua_Number number;
 	const char *string;
@@ -97,6 +114,9 @@ struct protocol {
 -(void) _set_set;
 
 @end
+
+void t_begin_interval (Node *, tprof_Phase reading);
+void t_end_interval (Node *, tprof_Phase reading);
 
 int t_is_node(lua_State *L, int index);
 id t_check_node(lua_State *L, int index, Class class);

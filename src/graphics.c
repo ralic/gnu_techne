@@ -57,7 +57,9 @@ static void recurse (Node *root, GdkEvent *event)
     }
     
     for (child = root->down ; child ; child = child->right) {
+	t_begin_interval (child, T_INPUT_PHASE);
 	recurse (child, event);
+	t_end_interval (child, T_INPUT_PHASE);
     }
 }
 
@@ -163,7 +165,7 @@ static void recurse (Node *root, GdkEvent *event)
 {
     GdkEvent *event;
     
-    tprof_begin (TPROF_INPUT);    
+    t_begin_interval (root, T_INPUT_PHASE);    
 
     while ((event = gdk_event_get()) != NULL) {
 	assert(event);
@@ -251,29 +253,27 @@ static void recurse (Node *root, GdkEvent *event)
 	gdk_event_free (event);
     }
 
-    tprof_end (TPROF_INPUT);
+    t_end_interval (root, T_INPUT_PHASE);
 
     /* Traverse the scene. */
 
+    t_begin_interval (root, T_PREPARE_PHASE);    
+    [root prepare];
+    t_end_interval (root, T_PREPARE_PHASE);
+
+    t_begin_interval (root, T_TRAVERSE_PHASE);    
     glClear(GL_DEPTH_BUFFER_BIT |
 	    GL_COLOR_BUFFER_BIT |
 	    GL_STENCIL_BUFFER_BIT);
     
-    tprof_begin (TPROF_PREPARE);    
-    [root prepare];
-    tprof_end (TPROF_PREPARE);
-
-    tprof_begin (TPROF_TRAVERSE);    
     [root traverse];
-    tprof_end (TPROF_TRAVERSE);
 
-    tprof_begin (TPROF_FINISH);    
-    [root finish];
-    tprof_end (TPROF_FINISH);
-
-    /* Swap the buffers. */
-	
     gdk_gl_drawable_swap_buffers (drawable);
+    t_end_interval (root, T_TRAVERSE_PHASE);
+
+    t_begin_interval (root, T_FINISH_PHASE);    
+    [root finish];
+    t_end_interval (root, T_FINISH_PHASE);
 }
 
 -(int) _get_window

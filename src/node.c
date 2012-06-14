@@ -1029,7 +1029,9 @@ static int __newindex(lua_State *L)
     self->linked = 0;
     self->key.reference = LUA_REFNIL;
     self->key.number = NAN;
-    self->key.string = NULL;;
+    self->key.string = NULL;
+
+    memset (&self->profile, 0, sizeof (self->profile));
 
     /* Initialize the hooks. */
 
@@ -1110,7 +1112,7 @@ static int __newindex(lua_State *L)
     luaL_unref (_L, LUA_REGISTRYINDEX, self->prepare);
     luaL_unref (_L, LUA_REGISTRYINDEX, self->finish);
     luaL_unref (_L, LUA_REGISTRYINDEX, self->begin);
-
+    
     return self;
 }
 
@@ -1294,7 +1296,10 @@ static int __newindex(lua_State *L)
     
     for(child = self->down ; child ; child = next) {
 	next = child->right;
+
+	t_begin_interval (child, T_BEGIN_PHASE);
 	[child begin];
+	t_end_interval (child, T_BEGIN_PHASE);
     }
 }
 
@@ -1309,7 +1314,10 @@ static int __newindex(lua_State *L)
     
     for(child = self->down ; child ; child = next) {
 	next = child->right;
+	
+	t_begin_interval (child, T_STEP_PHASE);
 	[child stepBy: h at: t];
+	t_end_interval (child, T_STEP_PHASE);
     }
 }
 
@@ -1322,7 +1330,10 @@ static int __newindex(lua_State *L)
     
     for(child = self->down ; child ; child = next) {
 	next = child->right;
+
+	t_begin_interval (child, T_PREPARE_PHASE);
 	[child prepare];
+	t_end_interval (child, T_PREPARE_PHASE);
     }
 }
 
@@ -1335,7 +1346,10 @@ static int __newindex(lua_State *L)
     
     for(child = self->down ; child ; child = next) {
 	next = child->right;
+
+	t_begin_interval (child, T_TRAVERSE_PHASE);
 	[child traverse];
+	t_end_interval (child, T_TRAVERSE_PHASE);
     }
 }
 
@@ -1348,7 +1362,10 @@ static int __newindex(lua_State *L)
     
     for(child = self->down ; child ; child = next) {
 	next = child->right;
+
+	t_begin_interval (child, T_FINISH_PHASE);
 	[child finish];
+	t_end_interval (child, T_FINISH_PHASE);
     }
 }
 

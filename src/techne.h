@@ -37,26 +37,10 @@
 
 lua_State *_L;
 
-typedef enum {
-    TPROF_BEGIN,
-    TPROF_INPUT,
-    TPROF_COLLIDE,
-    TPROF_STEP,
-    TPROF_TRANSFORM,
-    TPROF_PREPARE,
-    TPROF_TRAVERSE,
-    TPROF_FINISH,
-} tprof_Frame;
-
 int t_call (lua_State *L, int nargs, int nresults);
 void t_print_message (const char *format, ...);
 void t_print_warning (const char *format, ...);
 void t_print_error (const char *format, ...);
-
-void tprof_new_row ();
-void tprof_begin (tprof_Frame reading);
-void tprof_end (tprof_Frame reading);
-void tprof_report ();
 
 void t_print_timing_resolution();
 long long int t_get_real_time ();

@@ -34,6 +34,7 @@
 #include "prompt/prompt.h"
 #include "transform.h"
 #include "dynamics.h"
+#include "network.h"
 #include "graphics.h"
 #include "accoustics.h"
 
@@ -50,6 +51,7 @@ static int colorize = 1;      /* Color terminal output. */
 
 static char *name = "techne", *class = "Techne";
 
+static Network *network;
 static Dynamics *dynamics;
 static Graphics *graphics;
 static Accoustics *accoustics;
@@ -412,7 +414,7 @@ void t_print_error (const char *format, ...)
      * to provide stack traces. */
 
     {
-	struct sigaction action;
+	struct sigaction action, ignore;
 
 	action.sa_handler = handle_signal;
 	action.sa_flags = 0;
@@ -426,6 +428,15 @@ void t_print_error (const char *format, ...)
 	sigaction (SIGFPE, &action, NULL);
 	sigaction (SIGUSR1, &action, NULL);
 	sigaction (SIGUSR2, &action, NULL);
+
+	/* Install a handler to ignore broken pipes. */
+
+	ignore.sa_handler = SIG_IGN;
+	ignore.sa_flags = 0;
+	ignore.sa_restorer = NULL;
+
+	sigemptyset(&ignore.sa_mask);
+	sigaction(SIGPIPE, &ignore, NULL);
     }
 #endif
     
@@ -620,6 +631,9 @@ void t_print_error (const char *format, ...)
     t_print_message ("This is Techne, version %s.\n", VERSION);
     t_print_timing_resolution();
     
+    network = [[Network alloc] init];
+    lua_setglobal (_L, "network");
+    
     dynamics = [[Dynamics alloc] init];
     lua_setglobal (_L, "dynamics");
 
@@ -697,6 +711,7 @@ void t_print_error (const char *format, ...)
 
 	[dynamics iterate: root];
 	[graphics iterate: root];
+	[network iterate];
     }
 
     runtime = t_get_cpu_time() - runtime;
@@ -722,8 +737,11 @@ void t_print_error (const char *format, ...)
     }
 
     t_print_message("Run for a total of %.1f seconds out of which "
-		    "%.1f in the core and %.1f in the application.\n",
-		    runtime * 1e-9, totals[0] * 1e-9, totals[1] * 1e-9);
+		    "%.1f (%.1f%%) in the core and %.1f (%.1f%%) in "
+		    "the application.\n",
+		    runtime * 1e-9, totals[0] * 1e-9,
+		    c * totals[0], totals[1] * 1e-9, c * totals[1]);
+    
     t_print_message("Spent %.2f seconds (%.1f%%) processing collected"
 		    " nodes or in unprofiled code.\n",
 		    (runtime - totals[0] - totals[1]) * 1e-9,

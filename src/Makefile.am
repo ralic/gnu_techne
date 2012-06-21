@@ -35,13 +35,13 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     event.c event.h space.c space.h array/array.c	\
 		     array/array.h prompt/prompt.c prompt/prompt.h	\
 		     joints/contact.c profiling.c moremath.c timing.c	\
-		     memory.c
+		     memory.c network.c network.h
 
 techne_bin_CFLAGS = ${AM_CFLAGS} ${GDKGLEXT_CFLAGS} ${OPENAL_CFLAGS}	\
-		    ${ODE_CFLAGS}
+		    ${ODE_CFLAGS} ${MHD_CFLAGS}
 #techne_bin_LDFLAGS = -export-dynamic
-techne_bin_LDADD = ${LUA_LIBS} ${GDKGLEXT_LIBS}	\
-		   ${OPENAL_LIBS} ${ODE_LIBS} ${AM_LDADD} 
+techne_bin_LDADD = ${LUA_LIBS} ${GDKGLEXT_LIBS} ${OPENAL_LIBS}	\
+		   ${ODE_LIBS} ${MHD_LIBS} ${AM_LDADD}
 
 # console_core_so_SOURCES = console/core.c
 # console_core_so_CFLAGS = -fpic ${AM_CFLAGS} ${GVC_CFLAGS}

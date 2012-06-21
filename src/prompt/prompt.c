@@ -594,8 +594,8 @@ static void describe (lua_State *L, int index)
 		if (s[i] == '=') {
 		    level += 1;
 		} else if (s[i] == ']') {
-		    if (level == uselevel) {
-			uselevel += 1;
+		    if (level >= uselevel) {
+			uselevel = level + 1;
 		    }
 		} else {
 		    started = 0;

@@ -29,7 +29,7 @@ struct context {
     size_t size;
 };    
 
-static int connections, pages, mime, port, block;
+static int connections, pages, port, block;
 static struct MHD_Daemon *http;
 
 static int iterate_post  (void *cls,
@@ -261,20 +261,21 @@ static int respond (void *cls,
 
 	/* Retrieve the MIME type and content for the page. */
 			    
-	lua_rawgeti (_L, LUA_REGISTRYINDEX, mime);
-
-	if (lua_istable (_L, -1)) {
-	    lua_pushstring (_L, url);
-	    lua_gettable (_L, -2);
-	    lua_replace (_L, -2);
-	}
-			    
 	lua_rawgeti (_L, LUA_REGISTRYINDEX, pages);
 
 	if (lua_istable (_L, -1)) {
 	    lua_pushstring (_L, url);
 	    lua_gettable (_L, -2);
 	    lua_replace (_L, -2);
+
+	    if (lua_istable(_L, -1)) {
+		lua_rawgeti (_L, -1, 1);
+		lua_rawgeti (_L, -2, 2);
+		lua_remove (_L, -3);
+	    } else {
+		lua_pushliteral (_L, "text/html");
+		lua_insert (_L, -2);
+	    }
 
 	    if (lua_isfunction (_L, -1)) {
 		/* Call the supplied function passing method, url,
@@ -314,8 +315,7 @@ static int respond (void *cls,
 	    /* MHD_add_response_header (response, "Connection", "close"); */
 	    
 	    MHD_add_response_header (response, "Content-Type",
-				     lua_tostring (_L, -2) ?
-				     lua_tostring (_L, -2) : "text/html");
+				     lua_tostring (_L, -2));
 	    
 	    result = MHD_queue_response (connection, MHD_HTTP_OK, response);
 	    MHD_destroy_response (response);
@@ -424,13 +424,10 @@ static void run()
 
 -(id) init
 {
-    /* Create the page and mimetype tables. */
+    /* Create the page table. */
     
     lua_newtable (_L);
     pages = luaL_ref (_L, LUA_REGISTRYINDEX);
-    
-    lua_newtable (_L);
-    mime = luaL_ref (_L, LUA_REGISTRYINDEX);
     
     return [super init];
 }
@@ -463,13 +460,6 @@ static void run()
 -(int) _get_pages
 {
     lua_rawgeti(_L, LUA_REGISTRYINDEX, pages);
-
-    return 1;
-}
-
--(int) _get_mime
-{
-    lua_rawgeti(_L, LUA_REGISTRYINDEX, mime);
 
     return 1;
 }
@@ -512,12 +502,6 @@ static void run()
 {
     luaL_unref (_L, LUA_REGISTRYINDEX, pages);
     pages = luaL_ref (_L, LUA_REGISTRYINDEX);
-}
-
--(void) _set_mime
-{
-    luaL_unref (_L, LUA_REGISTRYINDEX, mime);
-    mime = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 
 @end

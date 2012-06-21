@@ -27,11 +27,9 @@
 -(int) _get_http;
 -(int) _get_block;
 -(int) _get_pages;
--(int) _get_mime;
 -(void) _set_http;
 -(void) _set_block;
 -(void) _set_pages;
--(void) _set_mime;
 
 @end
 

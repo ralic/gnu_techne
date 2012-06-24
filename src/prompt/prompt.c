@@ -333,6 +333,45 @@ static char *generator (const char *text, int state)
     
     if (which == 1) {
 	match = table_key_completions (text, state);
+
+	if (!match) {
+	    which = 2;
+	    state = 0;
+	}
+    }
+
+    /* Try to complete a filename. */
+    
+    if (which == 2) {
+	const char *start;
+
+	/* Ignore any unquoted characters, we'll only be trying to
+	 * complete file names inside strings. */
+	
+	for (start = text;
+	     *start && *(start - 1) != '\'' && *(start - 1) != '"';
+	     start += 1);
+
+	if (*start != '\0') {
+	    int n;
+
+	    /* Don't append a space at the end of the match.  It isn't
+	     * very helpful in this context. */
+	    
+	    rl_completion_suppress_append = 1;
+	    
+	    match = rl_filename_completion_function (start, state);
+	    if (match) {
+		/* If a match was produced, prepend the unquoted
+		 * characters. */
+		
+		n = strlen (match) + 1;
+	    
+		match = realloc (match, n + start - text);
+		memmove (match + (start - text), match, n);
+		strncpy (match, text, start - text);
+	    }
+	}
     }
 
     return match;

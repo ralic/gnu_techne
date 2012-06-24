@@ -25,10 +25,10 @@
 
 /* Debugging convenience macros. */
 
-#define _TRACE t_print_message ("\033[22;31m%s: %d: \033[22;37m", __FILE__, __LINE__), t_print_message
+#define _TRACE t_print_message ("\033[0;31m%s: %d: \033[0m", __FILE__, __LINE__), t_print_message
 #define _TOP _TRACE ("@%d\n", lua_gettop(_L))
 #define _TYPE(i) _TRACE ("%s@%d\n", lua_typename(_L, lua_type(_L, (i))), i)
-#define _STACK {int i; _TRACE ("\033[22;31m\n  >>>>>>>>>>\033[22;37m\n"); for (i = 1 ; i <= lua_gettop(_L) ; i += 1) { t_print_message ("\033[22;31m  %d: %s\033[22;37m\n", i, lua_typename(_L, lua_type(_L, (i)))); } t_print_message ("\033[22;31m  <<<<<<<<<<\n\033[22;37m\n");}
+#define _STACK {int i; _TRACE ("\033[0;31m\n  >>>>>>>>>>\033[0m\n"); for (i = 1 ; i <= lua_gettop(_L) ; i += 1) { if (lua_type(_L, (i)) == LUA_TNUMBER) { t_print_message ("\033[0;31m  %d: %s \033[0;32m[%f]\033[0m\n", i, lua_typename(_L, lua_type(_L, (i))), lua_tonumber (_L, (i))); } else if (lua_type(_L, (i)) == LUA_TSTRING) { t_print_message ("\033[0;31m  %d: %s \033[0;32m[%s]\033[0m\n", i, lua_typename(_L, lua_type(_L, (i))), lua_tostring (_L, (i))); } else { t_print_message ("\033[0;31m  %d: %s\033[0m\n", i, lua_typename(_L, lua_type(_L, (i)))); }} t_print_message ("\033[0;31m  <<<<<<<<<<\n\033[0m\n");}
 
 #include <lua.h>
 #include <assert.h>

@@ -18,6 +18,29 @@ local string = require "string"
 
 local serialize = {}
 
+local lookup = {
+   ["\b"] = "\\b",
+   ["\f"] = "\\f",
+   ["\n"] = "\\n",
+   ["\r"] = "\\r",
+   ["\t"] = "\\t"
+}
+
+for i = 0, 31 do
+   if not lookup[string.char(i)] then
+      lookup[string.char(i)] = string.format("\\u00%02x", i)
+   end
+end
+
+local function escape(s)
+
+   s = string.gsub(s, "\\", "\\\\")
+   s = string.gsub(s, "/", "\\/")
+   s = string.gsub(s, "%c", lookup)
+
+   return s
+end
+
 local function tolua(value)
    if type(value) == "table" then
       local serialized, fields = {}, {}
@@ -60,26 +83,29 @@ local function tojson(value)
       
          return "[" .. table.concat(fields) .. "]"
       else
-         local first = true
-
          if not serialized[value] then
+	    local first = true
+
             for key, element in pairs (value) do
-               table.insert (fields, string.format ("%s%s: %s",
-                                                    first and "" or ",",
-                                                    tojson(key),
-                                                    tojson(element)))
+	       if type(key) == "string" then
+		  table.insert (fields, string.format ("%s%s: %s",
+						       first and "" or ",",
+						       tojson(key),
+						       tojson(element) or "null"))
                
-               serialized[value] = true
-               first = false
+		  first = false
+	       end
             end
+
+	    serialized[value] = true
          end
       
          return "{" .. table.concat(fields) .. "}"
       end
    elseif type(value) == "string" then
-      return string.format ("%q", value)
+      return "\"" .. escape (value) .. "\""
    elseif type(value) == "number" then
-      return string.format ("%.17g", value)
+      return string.format ("%g", value)
    else
       return tostring(value)
    end

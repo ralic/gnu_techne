@@ -24,7 +24,7 @@ dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    primitives/primitives.lua shapes/shapes.lua		\
 		    misc/bindings.lua misc/units.lua			\
 		    misc/resources.lua automotive/automotive.lua	\
-		    widgets/widgets.lua
+		    widgets/widgets.lua misc/serialize.lua
 
 # console/console.lua
 

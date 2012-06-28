@@ -30,13 +30,13 @@
 -(int) _get_hide;
 -(int) _get_title;
 -(int) _get_decorate;
--(int) _get_cursor;
 -(int) _get_grabinput;
--(int) _get_canvas;
--(int) _get_frustum;
+-(int) _get_cursor;
+-(int) _get_pointer;
 -(int) _get_perspective;
+-(int) _get_frustum;
 -(int) _get_orthographic;	
--(int) _get_frames;	
+-(int) _get_canvas;
 -(int) _get_configure;	
 -(int) _get_focus;	
 -(int) _get_defocus;	

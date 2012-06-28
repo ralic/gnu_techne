@@ -60,7 +60,10 @@ int luaopen_moremath (lua_State *L);
 -(void) iterate;
 
 -(int) _get_iterate;
+-(int) _get_iterations;	
 -(void) _set_iterate;
+-(void) _set_iterations;
+
 @end
 
 #endif

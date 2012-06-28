@@ -38,7 +38,7 @@ static enum {
     ORTHOGRAPHIC, PERSPECTIVE, FRUSTUM
 } projection;
 
-static int frames, width, height;
+static int width, height;
 static int hide = 1, cursor = 1, decorate = 1;
 static double planes[6], frustum[3];
 static int focus = LUA_REFNIL, defocus = LUA_REFNIL;
@@ -350,6 +350,13 @@ static void recurse (Node *root, GdkEvent *event)
     return 1;
 }
 
+-(int) _get_pointer
+{
+    /* Implement this if needed. */
+    
+    return 0;
+}
+
 -(int) _get_perspective
 {
     int i;
@@ -382,13 +389,6 @@ static void recurse (Node *root, GdkEvent *event)
     } else {
 	lua_pushnil (_L);
     }
-
-    return 1;
-}
-	
--(int) _get_frames
-{
-    lua_pushnumber (_L, frames);
 
     return 1;
 }

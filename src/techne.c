@@ -46,6 +46,7 @@ static int iterate = 0;       /* Keep the main loop running. */
 static int interactive = 0;   /* Accept input on the tty. */
 
 static int colorize = 1;      /* Color terminal output. */
+static int iterations = 0;
 
 #define COLOR(i, j) (colorize ? "\033\[" #i ";" #j "m" : "")
 
@@ -712,6 +713,8 @@ void t_print_error (const char *format, ...)
 	[dynamics iterate: root];
 	[graphics iterate: root];
 	[network iterate];
+
+        iterations += 1;
     }
 
     runtime = t_get_cpu_time() - runtime;
@@ -736,17 +739,18 @@ void t_print_error (const char *format, ...)
 	totals[1] += intervals[j][1];
     }
 
-    t_print_message("Run for a total of %.1f seconds out of which "
-		    "%.1f (%.1f%%) in the core and %.1f (%.1f%%) in "
-		    "the application.\n",
-		    runtime * 1e-9, totals[0] * 1e-9,
-		    c * totals[0], totals[1] * 1e-9, c * totals[1]);
-    
-    t_print_message("Spent %.2f seconds (%.1f%%) processing collected"
+    t_print_message("Run a total of %d iterations in %.1f seconds at "
+                    "%.1f iterations per second.\n"
+                    "Spent %.1f (%.1f%%) in the core and %.1f (%.1f%%) in "
+		    "the application.\n"
+                    "Spent %.2f seconds (%.1f%%) processing collected"
 		    " nodes or in unprofiled code.\n",
-		    (runtime - totals[0] - totals[1]) * 1e-9,
+		    iterations, runtime * 1e-9, iterations * 1e9 / runtime, 
+                    totals[0] * 1e-9, c * totals[0], totals[1] * 1e-9,
+                    c * totals[1],  (runtime - totals[0] - totals[1]) * 1e-9,
 		    (double)(runtime - totals[0] - totals[1]) /
-		    runtime * 100);
+		    runtime * 100, COLOR(0,));
+    
     t_print_message("Phase profile:\n"
 		    "+-----------------------+\n"
 		    "|phase       core   user|\n"
@@ -790,6 +794,13 @@ void t_print_error (const char *format, ...)
     
     return 1;
 }
+	
+-(int) _get_iterations
+{
+    lua_pushnumber (_L, iterations);
+
+    return 1;
+}
 
 -(void) _set_time
 {
@@ -804,6 +815,11 @@ void t_print_error (const char *format, ...)
 -(void) _set_interactive
 {
     interactive = lua_toboolean (_L, -1);
+}
+	
+-(void) _set_iterations
+{
+    /* Do nothing. */
 }
 
 @end

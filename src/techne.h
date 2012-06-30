@@ -37,6 +37,7 @@
 
 lua_State *_L;
 
+const char *t_ansi_color (int i, int j);
 int t_call (lua_State *L, int nargs, int nresults);
 void t_print_message (const char *format, ...);
 void t_print_warning (const char *format, ...);

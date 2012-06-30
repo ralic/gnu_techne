@@ -346,6 +346,27 @@ int t_call (lua_State *L, int nargs, int nresults)
     }
 }
 
+const char *t_ansi_color (int i, int j)
+{
+    char *strings[][2] = {
+	{COLOR(31, 0),  COLOR(31, 1)},
+	{COLOR(32, 0),  COLOR(32, 1)},
+	{COLOR(33, 0),  COLOR(33, 1)},
+	{COLOR(34, 0),  COLOR(34, 1)},
+	{COLOR(35, 0),  COLOR(35, 1)},
+	{COLOR(36, 0),  COLOR(36, 1)},
+	{COLOR(37, 0),  COLOR(37, 1)}
+    };
+
+    if (i == 0 && j == 0) {
+	return COLOR(0,);
+    } else {
+	assert (i >= 31 && i <= 37 && j >= 0 && j <= 1);
+	
+	return strings[i - 31][j];
+    }
+}
+
 void t_print_message (const char *format, ...)
 {
     va_list argp;

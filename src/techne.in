@@ -5,7 +5,6 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 datarootdir=@datarootdir@
 datadir=@datadir@
-debug=""
 
 # Run through the list of arguments given
 # and extract the ones that should be handled
@@ -14,8 +13,11 @@ debug=""
 args=""
 
 while [ -n "$1" ]; do
-    if [ $1 = "--debug" ]; then
-	debug="gdb --args"
+    if [ "$1" = "--debug" ]; then
+	debug=1
+    elif [ "$1" = "--backtrace" ]; then
+	debug=1
+	commands="set confirm off\nrun\nbt\n"
     else
 	args="$args $1"
     fi
@@ -23,4 +25,10 @@ while [ -n "$1" ]; do
     shift
 done
 
-${debug} ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne $args
+if [ $debug -a -n "$commands" ]; then
+    echo -e "$commands" | gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne $args
+elif [ $debug ]; then
+    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne $args
+else
+    ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne $args
+fi

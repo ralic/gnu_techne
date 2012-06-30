@@ -18,7 +18,7 @@ luap: luap.c prompt.c prompt.h
 dist: luap
 	if [ -e /tmp/prompt ]; then rm -rf /tmp/prompt; fi
 	mkdir /tmp/prompt
-	cp luap.c Makefile prompt.c prompt.h README /tmp/prompt
+	cp luap.c Makefile prompt.c prompt.h README ChangeLog /tmp/prompt
 	cd /tmp; tar zcf luaprompt.tar.gz prompt/
 
 install: luap

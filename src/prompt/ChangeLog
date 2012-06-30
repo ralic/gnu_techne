@@ -1,0 +1,16 @@
+2012-04-07  Dimitris Papavasileiou  <dpapavas@gmail.com>
+
+	* First public release.
+
+2012-04-16  Dimitris Papavasileiou  <dpapavas@gmail.com>
+
+	* Released version 0.1.2 with the following changes:
+	  - Fixed a bug preventing multi-line input with Lua 5.1.
+	  - Pretty-printing of userdata honours the __tostring
+	    metamethod.
+
+2012-06-30  Dimitris Papavasileiou  <dpapavas@gmail.com>
+
+	* Released version 0.2 with the following changes:
+	  - Fixed a couple of completion and pretty-printing glitches.
+	  - Added support for completing file names.

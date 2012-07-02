@@ -25,8 +25,8 @@
 #include "techne.h"
 #include "network.h"
 
-#define BEGIN_FIELD_TAG ("<?")
-#define END_FIELD_TAG ("?>")
+#define BEGIN_FIELD_TAG ("<@")
+#define END_FIELD_TAG ("@>")
 #define EVALUATION_TAG ("= ")
 #define BEGIN_BLOCK_TAG ("begin ")
 #define END_BLOCK_TAG ("finish ")
@@ -104,7 +104,7 @@ static int compile_template(lua_State *L)
             s = strstr (c, BEGIN_FIELD_TAG);
 
 	    /* If we're in a block add a statement to print all
-	     * input other wise complaing if non-whitespace input
+	     * input otherwise complain if non-whitespace input
 	     * is read. */
 		
             if (inblock) {
@@ -123,7 +123,7 @@ static int compile_template(lua_State *L)
 		    lua_pushfstring (L, " _pieces[#_pieces + 1] = [%s[%s]%s]; ",
 				     equal, c, equal);
                 } else {
-		    /* Complaing if no start-of-tag delimiter was found
+		    /* Complain if no start-of-tag delimiter was found
 		     * and we're inside a block.  This means the block
 		     * will not be properly closed. */
 		
@@ -260,9 +260,9 @@ static int compile_template(lua_State *L)
     lua_pushfstring (_L, " return _blocks.main() ");    
     lua_concat (L, lua_gettop(L) - h);
 
-    puts("####");
-    puts(lua_tostring(_L, h + 1));
-    puts("####");
+    /* puts("####"); */
+    /* puts(lua_tostring(_L, h + 1)); */
+    /* puts("####"); */
 
     /* Try to load the generated code and remove both it and the
      * supplied source. */

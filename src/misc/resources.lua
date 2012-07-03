@@ -14,6 +14,8 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local io = require "io"
+local table = require "table"
+
 local resources = {}
 
 local function resolve (name)
@@ -23,9 +25,9 @@ local function resolve (name)
       local list
 
       if type (options.prefix) == "string" then
-	 list = {options.prefix}
+	 list = {".", options.prefix}
       else
-	 list = options.prefix
+	 list = {".", table.unpack(options.prefix)}
       end
 
       for _, prefix in ipairs (list) do

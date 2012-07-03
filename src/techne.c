@@ -51,6 +51,7 @@ static int iterations = 0;
 #define COLOR(i, j) (colorize ? "\033\[" #i ";" #j "m" : "")
 
 static char *name = "techne", *class = "Techne";
+static long long int beginning;
 
 static Network *network;
 static Dynamics *dynamics;
@@ -718,7 +719,7 @@ void t_print_error (const char *format, ...)
     double c;
     int j;
 
-    runtime = t_get_cpu_time();
+    beginning = t_get_cpu_time();
     
     while (iterate || interactive) {
 	if (interactive) {
@@ -738,7 +739,7 @@ void t_print_error (const char *format, ...)
         iterations += 1;
     }
 
-    runtime = t_get_cpu_time() - runtime;
+    runtime = t_get_cpu_time() - beginning;
 
     [dynamics toggle];
     [graphics toggle];
@@ -811,7 +812,7 @@ void t_print_error (const char *format, ...)
  
 -(int) _get_time
 {
-    lua_pushnumber (_L, t_get_cpu_time() / 1e9);
+    lua_pushnumber (_L, (t_get_cpu_time() - beginning) / 1e9);
     
     return 1;
 }

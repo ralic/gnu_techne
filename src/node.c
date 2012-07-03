@@ -1388,6 +1388,32 @@ static int __newindex(lua_State *L)
 	self->tag.reference = LUA_REFNIL;
     }
 }
+ 
+-(int) _get_profile
+{
+    int i;
+
+    lua_newtable(_L);
+
+    for (i = 0 ; i < T_PHASE_COUNT ; i += 1) {
+	lua_newtable(_L);
+
+	lua_pushnumber(_L, self->profile.intervals[i][0] * 1e-9);
+	lua_rawseti(_L, -2, 1);
+
+	lua_pushnumber(_L, self->profile.intervals[i][1] * 1e-9);
+	lua_rawseti(_L, -2, 2);
+
+	lua_rawseti(_L, -2, i + 1);
+    }
+    
+    return 1;
+}
+
+-(void) _set_profile
+{
+    /* Do nothing. */
+}
 
 -(int) _get_linked
 {

@@ -85,6 +85,8 @@ typedef enum {
 
 -(int) _get_tag;
 -(void) _set_tag;
+-(int) _get_profile;
+-(void) _set_profile;
 
 -(int) _get_;
 -(int) _set_;

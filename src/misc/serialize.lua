@@ -42,20 +42,30 @@ local function escape(s)
 end
 
 local function tolua(value)
-   if type(value) == "table" then
+   local meta, array, hash
+
+   meta = getmetatable(value)   
+   array = (type(value) == "table") or (meta and meta.__ipairs ~= nil)
+   hash = (type(value) == "table") or (meta and meta.__pairs ~= nil)
+
+   if array or hash then
       local serialized, fields = {}, {}
 
-      for i, element in ipairs (value) do
-	 table.insert (fields, string.format ("%s,", tolua(element)))
+      if array then
+	 for i, element in ipairs (value) do
+	    table.insert (fields, string.format ("%s,", tolua(element)))
 
-	 serialized[i] = true
+	    serialized[i] = true
+	 end
       end
 
-      for key, element in pairs (value) do
-	 if not serialized[key] then
-	    table.insert (fields, string.format ("[%s] = %s,",
-						 tolua(key),
-						 tolua(element)))
+      if hash then
+	 for key, element in pairs (value) do
+	    if not serialized[key] then
+	       table.insert (fields, string.format ("[%s] = %s,",
+						    tolua(key),
+						    tolua(element)))
+	    end
 	 end
       end
       
@@ -70,10 +80,16 @@ local function tolua(value)
 end
 
 local function tojson(value)
-   if type(value) == "table" then
+   local meta, array, hash
+
+   meta = getmetatable(value)   
+   array = (type(value) == "table") or (meta and meta.__ipairs ~= nil)
+   hash = (type(value) == "table") or (meta and meta.__pairs ~= nil)
+
+   if array or hash then
       local serialized, fields = {}, {}
 
-      if #value > 0 then
+      if array and #value > 0 then
          for i, element in ipairs (value) do
             table.insert (fields,
                           string.format ("%s%s",
@@ -82,7 +98,7 @@ local function tojson(value)
          end
       
          return "[" .. table.concat(fields) .. "]"
-      else
+      elseif hash then
          if not serialized[value] then
 	    local first = true
 

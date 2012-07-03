@@ -590,7 +590,14 @@ static void describe (lua_State *L, int index)
     index = absolute (L, index);    
     type = lua_type (L, index);
     
-    if (type == LUA_TNUMBER) {
+    if (luaL_getmetafield (L, index, "__tostring")) {
+	lua_pushvalue (L, index);
+	lua_pcall (L, 1, 1, 0);
+	s = (char *)lua_tolstring (L, -1, &n);
+	lua_pop (L, 1);
+	
+	dump_string (s, n);
+    } else if (type == LUA_TNUMBER) {
 	/* Copy the value to avoid mutating it. */
 	
 	lua_pushvalue (L, index);
@@ -709,15 +716,8 @@ static void describe (lua_State *L, int index)
 		      COLOR(7), COLOR(8), lua_topointer (L, index));
 	dump_string (s, n);
     } else if (type == LUA_TUSERDATA) {
-	if (luaL_getmetafield (L, index, "__tostring")) {
-	    lua_pushvalue (L, index);
-	    lua_pcall (L, 1, 1, 0);
-	    s = (char *)lua_tolstring (L, -1, &n);
-	    lua_pop (L, 1);
-	} else {
-	    n = asprintf (&s, "<%suserdata:%s %p>",
-			  COLOR(7), COLOR(8), lua_topointer (L, index));
-	}
+	n = asprintf (&s, "<%suserdata:%s %p>",
+		      COLOR(7), COLOR(8), lua_topointer (L, index));
 	
 	dump_string (s, n);
     } else if (type == LUA_TTHREAD) {

@@ -9,7 +9,7 @@ AM_LDADD = -lobjc -lm
 
 bin_SCRIPTS = techne
 
-nobase_mybin_PROGRAMS = techne.bin
+nobase_mybin_PROGRAMS = techne.bin browser.bin
 
 nobase_pkglib_LTLIBRARIES = array/core.la transform/core.la	\
 			    joints/core.la bodies/core.la	\
@@ -42,6 +42,9 @@ techne_bin_CFLAGS = ${AM_CFLAGS} ${GDKGLEXT_CFLAGS} ${OPENAL_CFLAGS}	\
 #techne_bin_LDFLAGS = -export-dynamic
 techne_bin_LDADD = ${LUA_LIBS} ${GDKGLEXT_LIBS} ${OPENAL_LIBS}	\
 		   ${ODE_LIBS} ${MHD_LIBS} ${AM_LDADD}
+
+browser_bin_CFLAGS = ${AM_CFLAGS} ${WEBKIT_CFLAGS} ${GTK_CFLAGS}
+browser_bin_LDADD = ${WEBKIT_LIBS} ${GTK_LIBS} ${AM_LDADD}
 
 # console_core_so_SOURCES = console/core.c
 # console_core_so_CFLAGS = -fpic ${AM_CFLAGS} ${GVC_CFLAGS}

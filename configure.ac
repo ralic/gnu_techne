@@ -78,6 +78,7 @@ PKG_CHECK_MODULES([ODE], [ode])
 PKG_CHECK_MODULES([GDK], [gdk-2.0])
 PKG_CHECK_MODULES([GDKGLEXT], [gdkglext-1.0])
 PKG_CHECK_MODULES([MHD], [libmicrohttpd])
+PKG_CHECK_MODULES([WEBKIT], [webkit-1.0])
 dnl PKG_CHECK_MODULES([MAGICKWAND], [MagickWand])
 dnl PKG_CHECK_MODULES([GVC], [libgvc])
 

@@ -19,12 +19,74 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <webkit/webkit.h>
+#include <JavaScriptCore/JavaScript.h>
 
-static GtkWidget *window, *inspector_window;
-static GtkWidget *scrolled;
-static GtkWidget *paned;
+static GtkWindowGroup *group;
+static GtkWidget *window, *inspector_window, *scrolled, *paned;
 
 static int attached, closed = 1;
+
+static JSValueRef hide_browser(JSContextRef context,
+                               JSObjectRef function,
+                               JSObjectRef thisObject,
+                               size_t argumentCount,
+                               const JSValueRef arguments[],
+                               JSValueRef *exception)
+{
+    GList *toplevel = gtk_window_group_list_windows (group);
+
+    for (; toplevel ; toplevel = toplevel->next) {
+        gtk_widget_hide(GTK_WIDGET(toplevel->data));
+    }
+    
+    return JSValueMakeUndefined(context);
+}
+
+static JSValueRef show_browser(JSContextRef context,
+                               JSObjectRef function,
+                               JSObjectRef thisObject,
+                               size_t argumentCount,
+                               const JSValueRef arguments[],
+                               JSValueRef *exception)
+{
+    GList *toplevel = gtk_window_group_list_windows (group);
+
+    for (; toplevel ; toplevel = toplevel->next) {
+        gtk_widget_show(GTK_WIDGET(toplevel->data));
+    }
+    
+    return JSValueMakeUndefined(context);
+}
+
+static void window_object_cleared_cb(WebKitWebView *web_view,
+                                     WebKitWebFrame *frame,
+                                     gpointer context,
+                                     gpointer window_object,
+                                     gpointer user_data)
+
+{
+    const JSStaticFunction browser_staticfuncs[] = {
+        {"hide", hide_browser, kJSPropertyAttributeReadOnly},
+        {"show", show_browser, kJSPropertyAttributeReadOnly},
+        {NULL, NULL, 0}
+    };
+
+    const JSClassDefinition class_def = {
+        0, kJSClassAttributeNone, "Browser",
+        NULL, NULL, browser_staticfuncs,
+        NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL 
+    };
+
+    /* Add Browser class to JavaScriptCore */
+    
+    JSClassRef classDef = JSClassCreate(&class_def);
+    JSObjectRef classObj = JSObjectMake(context, classDef, context);
+    JSObjectRef globalObj = JSContextGetGlobalObject(context);
+    JSStringRef str = JSStringCreateWithUTF8CString("Browser");
+    JSObjectSetProperty(context, globalObj, str, classObj,
+                        kJSPropertyAttributeNone, NULL);
+}
 
 static gboolean show_inspector (WebKitWebInspector *inspector)
 {
@@ -100,10 +162,11 @@ static WebKitWebView *create_inspector (WebKitWebInspector *inspector,
     gtk_window_set_title (GTK_WINDOW(inspector_window), "Web inspector");
     gtk_widget_set_name (inspector_window, "Web inspector");
     gtk_window_set_default_size (GTK_WINDOW (inspector_window), 800, 300);
+    gtk_window_group_add_window (group, GTK_WINDOW (inspector_window));
     g_signal_connect_swapped(G_OBJECT(inspector_window),
-			      "delete-event",
-			      G_CALLBACK(close_inspector),
-			      inspector);
+                             "delete-event",
+                             G_CALLBACK(close_inspector),
+                             inspector);
 
     return inspector_view;
 }
@@ -288,12 +351,12 @@ static gboolean start_download (WebKitWebView *view,
     return TRUE;
 }
 
-gboolean decide_policy (WebKitWebView *webView,
-			WebKitWebFrame *frame,
-			WebKitNetworkRequest *request,
-			gchar *mimetype,
-			WebKitWebPolicyDecision *policy_decision,
-			gpointer user_data)
+static gboolean decide_policy (WebKitWebView *webView,
+                               WebKitWebFrame *frame,
+                               WebKitNetworkRequest *request,
+                               gchar *mimetype,
+                               WebKitWebPolicyDecision *policy_decision,
+                               gpointer user_data)
 {
     if (webkit_web_view_can_show_mime_type(webView, mimetype)) {
 	webkit_web_policy_decision_use (policy_decision);
@@ -314,6 +377,7 @@ static WebKitWebView *create_view (WebKitWebView *parent,
     gtk_window_set_title (GTK_WINDOW(window), "Techne");
     gtk_widget_set_name (window, "Techne");
     gtk_window_set_default_size (GTK_WINDOW (window), 800, 600);
+    gtk_window_group_add_window (group, GTK_WINDOW (window));
     /* gtk_window_set_deletable(GTK_WINDOW(window), FALSE); */
 
     scrolled = gtk_scrolled_window_new (NULL, NULL);
@@ -365,6 +429,10 @@ static WebKitWebView *create_view (WebKitWebView *parent,
     g_signal_connect (view, "mime-type-policy-decision-requested",
     		      G_CALLBACK (decide_policy), NULL);
 
+    g_signal_connect (view, "window-object-cleared",
+                      G_CALLBACK(window_object_cleared_cb), view);
+
+    /* Place the WebKitWebView in the GtkScrolledWindow */
     gtk_container_add (GTK_CONTAINER (scrolled), GTK_WIDGET (view));
     gtk_container_add (GTK_CONTAINER (window), scrolled);
 
@@ -374,7 +442,6 @@ static WebKitWebView *create_view (WebKitWebView *parent,
 int main (int argc, char *argv[])
 {
     WebKitWebView *view;
-    GtkWidget *window;
     char *uri = NULL, *geometry = NULL;
     int i;
     
@@ -394,9 +461,8 @@ int main (int argc, char *argv[])
 	}
     }
 
-    view = create_view (NULL, NULL, NULL);
-    
-    window = gtk_widget_get_toplevel (GTK_WIDGET (view));
+    group = gtk_window_group_new();
+    view = create_view (NULL, NULL, NULL);    
 
     g_signal_connect (window, "delete-event",
 		      G_CALLBACK (gtk_main_quit), NULL);

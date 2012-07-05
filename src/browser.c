@@ -15,16 +15,19 @@
  */
 
 #include <assert.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include <gtk/gtk.h>
 #include <webkit/webkit.h>
 #include <JavaScriptCore/JavaScript.h>
 
-static GtkWindowGroup *group;
-static GtkWidget *window, *inspector_window, *scrolled, *paned;
+struct context {
+    GtkWidget *window, *inspector_window, *scrolled, *paned;
+    int attached, open;
+};
 
-static int attached, closed = 1;
+static GtkWindowGroup *group;
 
 static JSValueRef hide_browser(JSContextRef context,
                                JSObjectRef function,
@@ -58,11 +61,11 @@ static JSValueRef show_browser(JSContextRef context,
     return JSValueMakeUndefined(context);
 }
 
-static void window_object_cleared_cb(WebKitWebView *web_view,
-                                     WebKitWebFrame *frame,
-                                     gpointer context,
-                                     gpointer window_object,
-                                     gpointer user_data)
+static void window_object_cleared(WebKitWebView *web_view,
+				  WebKitWebFrame *frame,
+				  gpointer context,
+				  gpointer window_object,
+				  gpointer user_data)
 
 {
     const JSStaticFunction browser_staticfuncs[] = {
@@ -88,131 +91,171 @@ static void window_object_cleared_cb(WebKitWebView *web_view,
                         kJSPropertyAttributeNone, NULL);
 }
 
-static gboolean show_inspector (WebKitWebInspector *inspector)
+static gboolean show_inspector (WebKitWebInspector *inspector,
+				struct context *context)
 {
     WebKitWebView *inspector_view;
     
     inspector_view = webkit_web_inspector_get_web_view(inspector);
 	
-    if (attached) {
-	gtk_container_remove(GTK_CONTAINER(window), GTK_WIDGET(scrolled));
+    if (context->attached) {
+	gtk_container_remove(GTK_CONTAINER(context->window),
+			     GTK_WIDGET(context->scrolled));
 
-	gtk_paned_add1(GTK_PANED(paned), GTK_WIDGET(inspector_view));
-	gtk_paned_add2(GTK_PANED(paned), GTK_WIDGET(scrolled));
-	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(paned));
+	gtk_paned_add1(GTK_PANED(context->paned),
+		       GTK_WIDGET(inspector_view));
+	gtk_paned_add2(GTK_PANED(context->paned),
+		       GTK_WIDGET(context->scrolled));
+	gtk_container_add(GTK_CONTAINER(context->window),
+			  GTK_WIDGET(context->paned));
 
-	gtk_widget_show(paned);    
+	gtk_widget_show(context->paned);    
     } else {
-	gtk_container_add(GTK_CONTAINER(inspector_window),
+	gtk_container_add(GTK_CONTAINER(context->inspector_window),
 			  GTK_WIDGET(inspector_view));
-	gtk_widget_show(GTK_WIDGET(inspector_window));
+	gtk_widget_show(GTK_WIDGET(context->inspector_window));
     }
 
-    closed = 0;
+    context->open = 1;
 
     return TRUE;
 }
 
-static gboolean close_inspector (WebKitWebInspector *inspector)
+static gboolean close_inspector (WebKitWebInspector *inspector,
+				 struct context *context)
 {
-    WebKitWebView *inspector_view;
+    GtkWidget *inspector_view;
 
-    if(closed) {
+    if(!context->open) {
 	return TRUE;
     }
-    
-    inspector_view = webkit_web_inspector_get_web_view(inspector);
-	
-    if (attached) {
-	gtk_widget_hide(paned);
-    
-	gtk_container_remove(GTK_CONTAINER(paned), scrolled);
-	gtk_container_remove(GTK_CONTAINER(paned),
-			     GTK_WIDGET(inspector_view));
 
-	gtk_container_remove(GTK_CONTAINER(window), paned);
-	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(scrolled));
+    if (context->attached) {
+	gtk_widget_hide(context->paned);
+
+	inspector_view = gtk_paned_get_child1(GTK_PANED(context->paned));
+
+	if (inspector_view) {
+	    gtk_container_remove(GTK_CONTAINER(context->paned),
+				 inspector_view);
+	}
+	
+	gtk_container_remove(GTK_CONTAINER(context->paned),
+			     context->scrolled);
+
+	if (gtk_bin_get_child(GTK_BIN(context->window))) {
+	    gtk_container_remove(GTK_CONTAINER(context->window),
+				 context->paned);
+	}
+	
+	gtk_container_add(GTK_CONTAINER(context->window),
+			  GTK_WIDGET(context->scrolled));
     } else {
-	gtk_container_remove(GTK_CONTAINER(inspector_window),
-			     GTK_WIDGET(inspector_view));
-	gtk_widget_hide(GTK_WIDGET(inspector_window));
+	inspector_view = gtk_bin_get_child(GTK_BIN(context->inspector_window));
+	gtk_container_remove(GTK_CONTAINER(context->inspector_window),
+			     inspector_view);
+	gtk_widget_hide(GTK_WIDGET(context->inspector_window));
     }
 
-    attached = 0;
-    closed = 1;
+    context->attached = 0;
+    context->open = 0;
     
+    return TRUE;
+}
+
+gboolean delete_inspector_window (GtkWidget *widget,
+				  GdkEvent *event,
+				  struct context *context)
+{
+    GtkWidget *content_view;
+    WebKitWebInspector *inspector;
+    
+    content_view = gtk_bin_get_child (GTK_BIN(widget));
+    inspector = webkit_web_view_get_inspector (WEBKIT_WEB_VIEW(content_view));
+    close_inspector (inspector, context);
+
     return TRUE;
 }
 
 static WebKitWebView *create_inspector (WebKitWebInspector *inspector,
 					WebKitWebView *content_view,
-					gpointer data)
+					struct context *context)
 {
     WebKitWebView *inspector_view;
     
     inspector_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
-    paned = gtk_vpaned_new();    
+    context->paned = gtk_vpaned_new();    
 
     g_object_ref (inspector_view);
-    g_object_ref (paned);
+    g_object_ref (context->paned);
 
     gtk_widget_show(GTK_WIDGET(inspector_view));
 
-    inspector_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title (GTK_WINDOW(inspector_window), "Web inspector");
-    gtk_widget_set_name (inspector_window, "Web inspector");
-    gtk_window_set_default_size (GTK_WINDOW (inspector_window), 800, 300);
-    gtk_window_group_add_window (group, GTK_WINDOW (inspector_window));
-    g_signal_connect_swapped(G_OBJECT(inspector_window),
-                             "delete-event",
-                             G_CALLBACK(close_inspector),
-                             inspector);
+    context->inspector_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title (GTK_WINDOW(context->inspector_window),
+			  "Web inspector");
+    gtk_widget_set_name (context->inspector_window, "Web inspector");
+    gtk_window_set_default_size (GTK_WINDOW (context->inspector_window),
+				 800, 300);
+    gtk_window_group_add_window (group,
+				 GTK_WINDOW (context->inspector_window));
+    
+    g_signal_connect(G_OBJECT(context->inspector_window),
+		     "delete-event",
+		     G_CALLBACK(delete_inspector_window),
+		     context);
 
     return inspector_view;
 }
 
-static gboolean attach_inspector (WebKitWebInspector *inspector)
+static gboolean attach_inspector (WebKitWebInspector *inspector,
+				  struct context *context)
 {
-    assert (!attached);
+    assert (!context->attached);
 
-    close_inspector(inspector);
-    attached = 1;
-    show_inspector(inspector);
+    close_inspector(inspector, context);
+    context->attached = 1;
+    show_inspector(inspector, context);
     
     return FALSE;
 }
 
-static gboolean detach_inspector (WebKitWebInspector *inspector)
+static gboolean detach_inspector (WebKitWebInspector *inspector,
+				  struct context *context)
 {
-    assert (attached);
+    assert (context->attached);
 
-    close_inspector(inspector);
-    attached = 0;
-    show_inspector(inspector);
+    close_inspector(inspector, context);
+    context->attached = 0;
+    show_inspector(inspector, context);
     
     return FALSE;
 }
 
-static gboolean finish_inspector (WebKitWebInspector *inspector)
+static gboolean finish_inspector (WebKitWebInspector *inspector,
+				  struct context *context)
 {
     WebKitWebView *inspector_view;
     
     inspector_view = webkit_web_inspector_get_web_view(inspector);
 	
     g_object_unref(inspector_view);
-    g_object_unref(paned);
+    g_object_unref(context->paned);
     gtk_widget_destroy(GTK_WIDGET(inspector_view));
-    gtk_widget_destroy(paned);
+    gtk_widget_destroy(context->paned);
 
     return FALSE;
 }
 
-static gboolean close_view(WebKitWebView *view, gpointer data)
+static gboolean close_view(WebKitWebView *view,
+			   struct context *context)
 {
     GtkWidget *parent;
 
     parent = gtk_widget_get_toplevel(GTK_WIDGET(view));
+    assert (context->window == parent);
     gtk_widget_destroy (parent);
+    free (context);
     
     return TRUE;
 }
@@ -371,44 +414,46 @@ static WebKitWebView *create_view (WebKitWebView *parent,
 				   WebKitWebFrame *frame,
 				   gpointer data)
 {
+    struct context *context;
     WebKitWebView *view;
+    WebKitWebInspector *inspector;
+    WebKitWebSettings *settings = webkit_web_settings_new();
 
-    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title (GTK_WINDOW(window), "Techne");
-    gtk_widget_set_name (window, "Techne");
-    gtk_window_set_default_size (GTK_WINDOW (window), 800, 600);
-    gtk_window_group_add_window (group, GTK_WINDOW (window));
-    /* gtk_window_set_deletable(GTK_WINDOW(window), FALSE); */
+    context = (struct context *)calloc (1, sizeof(struct context));
+    
+    context->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title (GTK_WINDOW(context->window), "Techne");
+    gtk_widget_set_name (context->window, "Techne");
+    gtk_window_set_default_size (GTK_WINDOW (context->window), 800, 600);
+    gtk_window_group_add_window (group, GTK_WINDOW (context->window));
+    /* gtk_window_set_deletable(GTK_WINDOW(context->window), FALSE); */
 
-    scrolled = gtk_scrolled_window_new (NULL, NULL);
-    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled),
+    context->scrolled = gtk_scrolled_window_new (NULL, NULL);
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (context->scrolled),
 				    GTK_POLICY_AUTOMATIC,
 				    GTK_POLICY_AUTOMATIC);
-    g_object_ref(scrolled);
+    g_object_ref(context->scrolled);
 
     view = WEBKIT_WEB_VIEW (webkit_web_view_new ());
 
-    {
-        /* Create a new websettings and disable java script */
-        WebKitWebInspector *inspector;
-        WebKitWebSettings *settings = webkit_web_settings_new();
-        g_object_set (G_OBJECT(settings), "enable-developer-extras", TRUE, NULL);
-        webkit_web_view_set_settings(WEBKIT_WEB_VIEW(view), settings);
+    /* Enable and setup the inspector. */
+    g_object_set (G_OBJECT(settings),
+		  "enable-developer-extras", TRUE, NULL);
+    webkit_web_view_set_settings(WEBKIT_WEB_VIEW(view), settings);
         
-        inspector = webkit_web_view_get_inspector(view);
-        g_signal_connect (G_OBJECT (inspector), "inspect-web-view",
-			  G_CALLBACK (create_inspector), NULL);
-        g_signal_connect (G_OBJECT (inspector), "show_window",
-			  G_CALLBACK (show_inspector), NULL);
-        g_signal_connect (G_OBJECT (inspector), "close_window",
-			  G_CALLBACK (close_inspector), NULL);
-        g_signal_connect (G_OBJECT (inspector), "attach_window",
-			  G_CALLBACK (attach_inspector), NULL);
-        g_signal_connect (G_OBJECT (inspector), "detach_window",
-			  G_CALLBACK (detach_inspector), NULL);
-        g_signal_connect (G_OBJECT (inspector), "finished",
-			  G_CALLBACK (finish_inspector), NULL);
-    }
+    inspector = webkit_web_view_get_inspector(view);
+    g_signal_connect (G_OBJECT (inspector), "inspect-web-view",
+		      G_CALLBACK (create_inspector), context);
+    g_signal_connect (G_OBJECT (inspector), "show_window",
+		      G_CALLBACK (show_inspector), context);
+    g_signal_connect (G_OBJECT (inspector), "close_window",
+		      G_CALLBACK (close_inspector), context);
+    g_signal_connect (G_OBJECT (inspector), "attach_window",
+		      G_CALLBACK (attach_inspector), context);
+    g_signal_connect (G_OBJECT (inspector), "detach_window",
+		      G_CALLBACK (detach_inspector), context);
+    g_signal_connect (G_OBJECT (inspector), "finished",
+		      G_CALLBACK (finish_inspector), context);
 
     connect_features (view, NULL, NULL);
 
@@ -423,18 +468,20 @@ static WebKitWebView *create_view (WebKitWebView *parent,
     g_signal_connect (view, "web-view-ready",
     		      G_CALLBACK (show_window), NULL);
     g_signal_connect (view, "close-web-view",
-    		      G_CALLBACK (close_view), NULL);
+    		      G_CALLBACK (close_view), context);
     g_signal_connect (view, "download-requested",
     		      G_CALLBACK (start_download), NULL);
     g_signal_connect (view, "mime-type-policy-decision-requested",
     		      G_CALLBACK (decide_policy), NULL);
 
     g_signal_connect (view, "window-object-cleared",
-                      G_CALLBACK(window_object_cleared_cb), view);
+                      G_CALLBACK(window_object_cleared), view);
 
     /* Place the WebKitWebView in the GtkScrolledWindow */
-    gtk_container_add (GTK_CONTAINER (scrolled), GTK_WIDGET (view));
-    gtk_container_add (GTK_CONTAINER (window), scrolled);
+    gtk_container_add (GTK_CONTAINER (context->scrolled),
+		       GTK_WIDGET (view));
+    gtk_container_add (GTK_CONTAINER (context->window),
+		       context->scrolled);
 
     return view;
 }
@@ -442,6 +489,7 @@ static WebKitWebView *create_view (WebKitWebView *parent,
 int main (int argc, char *argv[])
 {
     WebKitWebView *view;
+    GtkWidget *window;
     char *uri = NULL, *geometry = NULL;
     int i;
     
@@ -464,6 +512,8 @@ int main (int argc, char *argv[])
     group = gtk_window_group_new();
     view = create_view (NULL, NULL, NULL);    
 
+    window = gtk_widget_get_toplevel (GTK_WIDGET(view));
+    
     g_signal_connect (window, "delete-event",
 		      G_CALLBACK (gtk_main_quit), NULL);
     

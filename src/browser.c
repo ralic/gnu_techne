@@ -28,6 +28,7 @@ struct context {
 };
 
 static GtkWindowGroup *group;
+static int hidden;
 
 static JSValueRef hide_browser(JSContextRef context,
                                JSObjectRef function,
@@ -39,8 +40,10 @@ static JSValueRef hide_browser(JSContextRef context,
     GList *toplevel = gtk_window_group_list_windows (group);
 
     for (; toplevel ; toplevel = toplevel->next) {
-        gtk_widget_hide(GTK_WIDGET(toplevel->data));
+        gtk_widget_hide_all(GTK_WIDGET(toplevel->data));
     }
+
+    hidden = 1;
     
     return JSValueMakeUndefined(context);
 }
@@ -55,8 +58,10 @@ static JSValueRef show_browser(JSContextRef context,
     GList *toplevel = gtk_window_group_list_windows (group);
 
     for (; toplevel ; toplevel = toplevel->next) {
-        gtk_widget_show(GTK_WIDGET(toplevel->data));
+        gtk_widget_show_all(GTK_WIDGET(toplevel->data));
     }
+
+    hidden = 0;
     
     return JSValueMakeUndefined(context);
 }
@@ -108,12 +113,13 @@ static gboolean show_inspector (WebKitWebInspector *inspector,
 		       GTK_WIDGET(context->scrolled));
 	gtk_container_add(GTK_CONTAINER(context->window),
 			  GTK_WIDGET(context->paned));
-
-	gtk_widget_show(context->paned);    
     } else {
 	gtk_container_add(GTK_CONTAINER(context->inspector_window),
 			  GTK_WIDGET(inspector_view));
-	gtk_widget_show(GTK_WIDGET(context->inspector_window));
+
+	if (!hidden) {
+	    gtk_widget_show_all(GTK_WIDGET(context->inspector_window));
+	}
     }
 
     context->open = 1;
@@ -131,8 +137,6 @@ static gboolean close_inspector (WebKitWebInspector *inspector,
     }
 
     if (context->attached) {
-	gtk_widget_hide(context->paned);
-
 	inspector_view = gtk_paned_get_child1(GTK_PANED(context->paned));
 
 	if (inspector_view) {
@@ -154,7 +158,7 @@ static gboolean close_inspector (WebKitWebInspector *inspector,
 	inspector_view = gtk_bin_get_child(GTK_BIN(context->inspector_window));
 	gtk_container_remove(GTK_CONTAINER(context->inspector_window),
 			     inspector_view);
-	gtk_widget_hide(GTK_WIDGET(context->inspector_window));
+	gtk_widget_hide_all(GTK_WIDGET(context->inspector_window));
     }
 
     context->attached = 0;
@@ -188,8 +192,6 @@ static WebKitWebView *create_inspector (WebKitWebInspector *inspector,
 
     g_object_ref (inspector_view);
     g_object_ref (context->paned);
-
-    gtk_widget_show(GTK_WIDGET(inspector_view));
 
     context->inspector_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title (GTK_WINDOW(context->inspector_window),
@@ -353,7 +355,10 @@ static gboolean show_window (WebKitWebView *view, gpointer data)
     parent = gtk_widget_get_toplevel(GTK_WIDGET(view));
 
     gtk_widget_grab_focus (GTK_WIDGET (view));
-    gtk_widget_show_all (parent);
+
+    if (!hidden) {
+	gtk_widget_show_all (parent);
+    }
     
     return FALSE;
 }
@@ -499,6 +504,8 @@ int main (int argc, char *argv[])
 	if (!strcmp (argv[i], "--geometry") && i < argc - 1) {
 	    geometry = argv[i + 1];
 	    i += 1;
+	} else if (!strcmp (argv[i], "--hidden")) {
+	    hidden = 1;
 	} else if (!uri && (argv[i][0] != '-')) {
 	    uri = argv[i];
 	} else {

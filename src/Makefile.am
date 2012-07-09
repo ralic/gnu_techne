@@ -15,18 +15,15 @@ nobase_pkglib_LTLIBRARIES = array/core.la transform/core.la	\
 			    joints/core.la bodies/core.la	\
 			    primitives/core.la physics.la	\
 			    shapes/core.la widgets/core.la	\
-			    automotive/core.la
-
-# console/core.so
+			    automotive/core.la console/core.la
 
 dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    transform/transform.lua bodies/bodies.lua		\
 		    primitives/primitives.lua shapes/shapes.lua		\
 		    misc/bindings.lua misc/units.lua			\
 		    misc/resources.lua automotive/automotive.lua	\
-		    widgets/widgets.lua misc/serialize.lua
-
-# console/console.lua
+		    widgets/widgets.lua misc/serialize.lua		\
+		    console/console.lua
 
 techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     node.c node.h graphics.c graphics.h accoustics.c	\
@@ -46,10 +43,10 @@ techne_bin_LDADD = ${LUA_LIBS} ${GDKGLEXT_LIBS} ${OPENAL_LIBS}	\
 browser_bin_CFLAGS = ${AM_CFLAGS} ${WEBKIT_CFLAGS} ${GTK_CFLAGS}
 browser_bin_LDADD = ${WEBKIT_LIBS} ${GTK_LIBS} ${AM_LDADD}
 
-# console_core_so_SOURCES = console/core.c
-# console_core_so_CFLAGS = -fpic ${AM_CFLAGS} ${GVC_CFLAGS}
-# console_core_so_LDFLAGS = -shared -fpic
-# console_core_so_LDADD = ${AM_LDADD} ${GVC_LIBS} ${LUA_LIBS}
+console_core_la_SOURCES = console/core.c
+console_core_la_CFLAGS = ${AM_CFLAGS}
+console_core_la_LDFLAGS = -module -avoid-version -no-undefined
+console_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
 
 array_core_la_SOURCES = array/core.c array/array.h
 array_core_la_CFLAGS = ${AM_CFLAGS}

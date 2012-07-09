@@ -17,57 +17,27 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include <gvc.h>
-#include <graph.h>
-
+#include "prompt/prompt.h"
+#include "techne.h"
 #include "node.h"
 
-static Agnode_t *draw (Agraph_t *G, Node *root)
+static int trace (lua_State *L)
 {
-    Agnode_t *node, *other;
-    Node *child;
-    char name[16];
+    lua_Debug ar;
+    int i, h;
 
-    snprintf (name, 16, "%p", root);
+    lua_getstack (L, 1, &ar);
+    lua_getinfo (L, "Sl", &ar);
     
-    node = agnode (G, name);
+    h = lua_gettop (L);
     
-    if (root->tag) {
-	agsafeset (node, "label", (char *)root->tag, "");
-    } else {
-	agsafeset (node, "label", (char *)[root name], "");
+    for (i = 1 ; i <= h ; i += 1) {
+	t_print_message("%s%s:%d: %s%s\n",
+			t_ansi_color (31, 1),
+			ar.short_src, ar.currentline,
+			luap_describe(L, i),
+			t_ansi_color (0, 0));
     }
-
-    agsafeset (node, "URL", "http://foo.org", "");
-
-    for (child = root->down ; child ; child = child->right) {
-	other = draw (G, child);
-	agedge (G, node, other);
-    }
-
-    return node;
-}
-
-static int foo (lua_State *L)
-{
-    Node *object;
-
-    Agraph_t *G;
-    GVC_t *gvc;
-
-    gvc = gvContext();
-    G = agopen ("G", AGRAPHSTRICT);
-
-    object = *(Node **)lua_touserdata(L, 1);
-    draw (G, object);
-    
-    gvLayout (gvc, G, "dot");
-
-    gvRenderFilename (gvc, G, "svg", "/tmp/foo.svg");
-    
-    gvFreeLayout (gvc, G);
-    agclose (G);
-    gvFreeContext (gvc);
 
     return 0;
 }
@@ -75,7 +45,7 @@ static int foo (lua_State *L)
 int luaopen_console_core (lua_State *L)
 {
     luaL_Reg core[] = {
-	{"foo", foo},
+	{"trace", trace},
 	{NULL, NULL},
     };
     

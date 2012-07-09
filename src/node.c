@@ -38,7 +38,8 @@
 #define GET_ELEMENT_LENGTH (sizeof ("_get_element") - 1)
 #define SET_ELEMENT_LENGTH (sizeof ("_set_element") - 1)
 
-static int initialized, userdata = LUA_REFNIL, metatable = LUA_REFNIL;
+static int initialized;
+static int userdata = LUA_REFNIL, tags = LUA_REFNIL, metatable = LUA_REFNIL;
 static Node *list;
 static const void *signature;
 
@@ -180,6 +181,13 @@ int t_call_hook (lua_State *L, int reference, int n, int m)
 
 	return 0;
     }
+}
+
+static int tags_newindex(lua_State *L)
+{
+    /* Do nothing. */
+    
+    return 0;
 }
 
 static int next_attribute(lua_State *L)
@@ -589,9 +597,9 @@ static int __tostring(lua_State *L)
     object = *(Node **)lua_touserdata(L, 1);
 
     if (object->tag.reference != LUA_REFNIL) {
-	lua_pushstring(L, object->tag.string);
+	lua_pushfstring(L, "<%s: %s>", [[object class] name], object->tag.string);
     } else {
-	lua_pushfstring(L, "%s: %p", [[object class] name], object);
+	lua_pushfstring(L, "<%s: %p>", [[object class] name], object);
     }
 
     return 1;
@@ -990,6 +998,26 @@ static int __newindex(lua_State *L)
 
 	userdata = luaL_ref (_L, LUA_REGISTRYINDEX);
 
+	/* Create the userdata reference table. */
+
+	lua_newtable (_L);
+
+	lua_newtable (_L);
+	lua_pushstring (_L, "__mode");
+	lua_pushstring (_L, "kv");
+	lua_settable (_L, -3);
+	lua_pushstring (_L, "__newindex");
+	lua_pushcfunction (_L, tags_newindex);
+	lua_settable (_L, -3);
+	lua_setmetatable (_L, -2);
+
+        lua_pushvalue (_L, -1);
+        lua_setglobal (_L, "tags");
+        
+	tags = luaL_ref (_L, LUA_REGISTRYINDEX);
+
+        /* Export iterators and other utility functions. */
+        
 	lua_pushcfunction (_L, configuration_iterator);
 	lua_setglobal (_L, "configuration");
 
@@ -1371,13 +1399,22 @@ static int __newindex(lua_State *L)
 
 -(int) _get_tag
 {
-    lua_pushstring (_L, self->tag.string);
+    lua_rawgeti(_L, LUA_REGISTRYINDEX, self->tag.reference);
     
     return 1;
 }
  
 -(void) _set_tag
 {
+    /* Remove the old tag from the tags table. */
+    
+    if (self->tag.reference != LUA_REFNIL) {
+        lua_rawgeti(_L, LUA_REGISTRYINDEX, tags);
+        lua_rawgeti(_L, LUA_REGISTRYINDEX, self->tag.reference);
+        lua_pushnil(_L);
+        lua_rawset (_L, -3);
+    }
+    
     luaL_unref (_L, LUA_REGISTRYINDEX, self->tag.reference);
     
     if (lua_isstring (_L, 3)) {
@@ -1386,6 +1423,15 @@ static int __newindex(lua_State *L)
     } else {
 	self->tag.string = NULL;
 	self->tag.reference = LUA_REFNIL;
+    }
+    
+    /* Add the new tag to the tags table. */
+    
+    if (self->tag.reference != LUA_REFNIL) {
+        lua_rawgeti(_L, LUA_REGISTRYINDEX, tags);
+        lua_rawgeti(_L, LUA_REGISTRYINDEX, self->tag.reference);
+        lua_pushvalue(_L, 1);
+        lua_rawset (_L, -3);
     }
 }
  

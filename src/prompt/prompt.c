@@ -311,11 +311,12 @@ static char *table_key_completions (const char *text, int state)
 
 static char *generator (const char *text, int state)
 {
-    static int which;
+    static int which, completed;
     char *match = NULL;
 
     if (state == 0) {
 	which = 0;
+	completed = 0;
     }
 
     /* Try to complete a keyword. */
@@ -323,10 +324,12 @@ static char *generator (const char *text, int state)
     if (which == 0) {
 	match = keyword_completions (text, state);
 
-	if (!match) {
+	if (!match /* && !completed */) {
 	    which = 1;
 	    state = 0;
-	}
+	} else {
+            completed = 1;
+        }
     } 
 
     /* Try to complete a table access. */
@@ -334,10 +337,12 @@ static char *generator (const char *text, int state)
     if (which == 1) {
 	match = table_key_completions (text, state);
 
-	if (!match) {
+	if (!match && !completed) {
 	    which = 2;
 	    state = 0;
-	}
+	} else {
+            completed = 1;
+        }
     }
 
     /* Try to complete a filename. */

@@ -9,21 +9,24 @@ AM_LDADD = -lobjc -lm
 
 bin_SCRIPTS = techne
 
+# Support programs
+
+BUILT_SOURCES = 
+EXTRA_DIST = $(BUILT_SOURCES:.h=.glsl.c)
+SUFFIXES = .glsl.c
+.glsl.c.h: glsl/stringify
+	glsl/stringify $< > $@
+
+noinst_PROGRAMS = glsl/stringify
+
+glsl_stringify_SOURCES = glsl/stringify.c
+glsl_stringify_CPPFLAGS = 
+glsl_stringify_CFLAGS = -Wall
+glsl_stringify_LDFLAGS = 
+
+# The main programs
+
 nobase_mybin_PROGRAMS = techne.bin browser.bin
-
-nobase_pkglib_LTLIBRARIES = array/core.la transform/core.la	\
-			    joints/core.la bodies/core.la	\
-			    primitives/core.la physics.la	\
-			    shapes/core.la widgets/core.la	\
-			    automotive/core.la console/core.la
-
-dist_modules_DATA = joints/joints.lua array/array.lua			\
-		    transform/transform.lua bodies/bodies.lua		\
-		    primitives/primitives.lua shapes/shapes.lua		\
-		    misc/bindings.lua misc/units.lua			\
-		    misc/resources.lua automotive/automotive.lua	\
-		    widgets/widgets.lua misc/serialize.lua		\
-		    console/console.lua
 
 techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     node.c node.h graphics.c graphics.h accoustics.c	\
@@ -42,6 +45,22 @@ techne_bin_LDADD = ${LUA_LIBS} ${GDKGLEXT_LIBS} ${OPENAL_LIBS}	\
 
 browser_bin_CFLAGS = ${AM_CFLAGS} ${WEBKIT_CFLAGS} ${GTK_CFLAGS}
 browser_bin_LDADD = ${WEBKIT_LIBS} ${GTK_LIBS} ${AM_LDADD}
+
+# The modules
+
+nobase_pkglib_LTLIBRARIES = array/core.la transform/core.la	\
+			    joints/core.la bodies/core.la	\
+			    primitives/core.la physics.la	\
+			    shapes/core.la widgets/core.la	\
+			    automotive/core.la console/core.la
+
+dist_modules_DATA = joints/joints.lua array/array.lua			\
+		    transform/transform.lua bodies/bodies.lua		\
+		    primitives/primitives.lua shapes/shapes.lua		\
+		    misc/bindings.lua misc/units.lua			\
+		    misc/resources.lua automotive/automotive.lua	\
+		    widgets/widgets.lua misc/serialize.lua		\
+		    console/console.lua
 
 console_core_la_SOURCES = console/core.c
 console_core_la_CFLAGS = ${AM_CFLAGS}
@@ -134,4 +153,4 @@ automotive_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 automotive_core_la_LDFLAGS = -module -avoid-version -no-undefined
 automotive_core_la_LIBADD = ${GDKGLEXT_LIBS} ${ODE_LIBS} ${AM_LDADD}
 
-CLEANFILES = $(bin_SCRIPTS)
+CLEANFILES = $(bin_SCRIPTS) $(BUILT_SOURCES)

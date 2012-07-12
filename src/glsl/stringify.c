@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -13,7 +14,7 @@ int main(int argc, char *argv[])
     }
     
     name = calloc(1, strlen(argv[1]));
-    for (s = argv[1], t = name ; *s ; s += 1,  t += 1) {
+    for (s = argv[1], t = name ; *s && *s != '.' ; s += 1,  t += 1) {
         if (*s == '.' || *s == '/') {
             *t = '_';
         } else if (isalnum(*s) || *s == '_') {
@@ -27,17 +28,35 @@ int main(int argc, char *argv[])
         return 1;
     }
     
-    printf("char %s[] = {", name);
+    printf("const char *%s = \"", name);
     while (1) {
         c = fgetc(f);
 
         if (feof(f)) {
             break;
         }
-        
-        printf("%d, ", c);
+
+	switch (c) {
+	case '\\':
+	    putchar ('\\');
+	    putchar ('\\');
+	    break;
+
+	case '"':
+	    putchar ('\\');
+	    putchar ('\"');
+	    break;
+	    
+	case '\n':
+	    putchar ('\\');
+	    putchar ('n');
+	    break;
+	    
+	default:
+	    putchar (c);
+	}
     }
-    printf("0};\n");
+    printf("\";\n");
     fclose(f);
     
     return 0;

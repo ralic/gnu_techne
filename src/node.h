@@ -121,6 +121,7 @@ void t_begin_interval (Node *, tprof_Phase reading);
 void t_end_interval (Node *, tprof_Phase reading);
 
 int t_is_node(lua_State *L, int index);
+id t_test_node (lua_State *L, int index, Class class);
 id t_check_node(lua_State *L, int index, Class class);
 void t_export_nodes(lua_State *L, Class *classes);
 void t_push_userdata(lua_State *L, int n, ...);

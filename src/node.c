@@ -24,6 +24,7 @@
 #include <objc/runtime.h>
 
 #include "node.h"
+#include "proxy.h"
 #include "techne.h"
 
 #define GET_PREFIX "_get_"
@@ -56,6 +57,23 @@ int t_is_node (lua_State *L, int index)
 	    return 0;
 	}
     }
+}
+
+id t_test_node (lua_State *L, int index, Class class)
+{
+    id object;
+
+    if (!t_is_node(L, index)) {
+	return NULL;
+    }
+
+    object = *(id *)lua_touserdata (L, index);
+
+    if (![object isKindOf: class]) {
+	return NULL;
+    }
+
+    return object;
 }
 
 id t_check_node (lua_State *L, int index, Class class)
@@ -181,6 +199,18 @@ int t_call_hook (lua_State *L, int reference, int n, int m)
 
 	return 0;
     }
+}
+
+static int tags_index(lua_State *L)
+{
+    /* If there's no node with the requested tag yet, create and
+     * return a proxy. */
+    
+    [[Proxy alloc] init];
+    lua_pushvalue (L, 2);
+    lua_setfield (L, -2, "tag");
+    
+    return 1;
 }
 
 static int tags_newindex(lua_State *L)
@@ -892,67 +922,74 @@ static int __newindex(lua_State *L)
 
 	methods = class_copyMethodList ([self class], NULL);
 
-	for (i = 0 ; methods[i] ; i += 1) {
-	    const char *name;
-	    SEL selector;
-	    int j;
+	if (methods) {
+	    for (i = 0 ; methods[i] ; i += 1) {
+		const char *name;
+		SEL selector;
+		int j;
 
-	    selector = method_getName(methods[i]);
-	    name = sel_getName(selector);
+		selector = method_getName(methods[i]);
+		name = sel_getName(selector);
 
-	    /* Choose between setter and getter vectors and strip the
-	     * prefix from the name (minus one accounts for the
-	     * terminating null character). */
+		/* Choose between setter and getter vectors and strip the
+		 * prefix from the name (minus one accounts for the
+		 * terminating null character). */
 
-	    if (!strncmp(name, GET_ELEMENT, GET_ELEMENT_LENGTH)) {
-		name = NULL;
-		j = 0;
-	    } else if (!strncmp(name, SET_ELEMENT, SET_ELEMENT_LENGTH)) {
-		name = NULL;
-		j = 1;
-	    } else if (!strncmp(name, GET_PREFIX, GET_PREFIX_LENGTH)) {
-		name += GET_PREFIX_LENGTH;
-		j = 0;
-	    } else if (!strncmp(name, SET_PREFIX, SET_PREFIX_LENGTH)) {
-		name += SET_PREFIX_LENGTH;
-		j = 1;
-	    } else {
-		j = -1;
-	    }
-
-	    if (j >= 0) {
-		int k;
-
-		/* If name is NULL then no reference is made here.
-		 * This means that the method is intended for array
-		 * elements. */
-
-		lua_pushstring (_L, name);
-		name = lua_tostring (_L, -1);
-		luaL_ref (_L, LUA_REGISTRYINDEX);
-
-		/* Look through the protocol in case the method exists
-		 * in the superclass. */
-
-		for (k = 0;
-		     k < sizes[j] &&
-			 protocol->properties[j][k].name != name ;
-		     k += 1);
-
-		/* If not allocate a new spot. */
-
-		if (k == sizes[j]) {
-		    sizes[j] += 1;
-		    protocol->properties[j] = realloc (protocol->properties[j],
-						       sizes[j] * sizeof(protocol->properties[j][0]));
+		if (!strncmp(name, GET_ELEMENT,
+			     GET_ELEMENT_LENGTH)) {
+		    name = NULL;
+		    j = 0;
+		} else if (!strncmp(name, SET_ELEMENT,
+				    SET_ELEMENT_LENGTH)) {
+		    name = NULL;
+		    j = 1;
+		} else if (!strncmp(name, GET_PREFIX,
+				    GET_PREFIX_LENGTH)) {
+		    name += GET_PREFIX_LENGTH;
+		    j = 0;
+		} else if (!strncmp(name, SET_PREFIX,
+				    SET_PREFIX_LENGTH)) {
+		    name += SET_PREFIX_LENGTH;
+		    j = 1;
+		} else {
+		    j = -1;
 		}
 
-		protocol->properties[j][k].name = name;
-		protocol->properties[j][k].selector = selector;
-	    }
-	}
+		if (j >= 0) {
+		    int k;
 
-	free (methods);
+		    /* If name is NULL then no reference is made here.
+		     * This means that the method is intended for array
+		     * elements. */
+
+		    lua_pushstring (_L, name);
+		    name = lua_tostring (_L, -1);
+		    luaL_ref (_L, LUA_REGISTRYINDEX);
+
+		    /* Look through the protocol in case the method exists
+		     * in the superclass. */
+
+		    for (k = 0;
+			 k < sizes[j] &&
+			     protocol->properties[j][k].name != name ;
+			 k += 1);
+
+		    /* If not allocate a new spot. */
+
+		    if (k == sizes[j]) {
+			sizes[j] += 1;
+			protocol->properties[j] =
+			    realloc (protocol->properties[j],
+				     sizes[j] * sizeof(protocol->properties[j][0]));
+		    }
+
+		    protocol->properties[j][k].name = name;
+		    protocol->properties[j][k].selector = selector;
+		}
+	    }
+
+	    free (methods);
+	}
 
 	if (sizes[0] != sizes[1]) {
 	    fprintf (stderr, "%s: ", [self name]);
@@ -1008,6 +1045,9 @@ static int __newindex(lua_State *L)
 	lua_settable (_L, -3);
 	lua_pushstring (_L, "__newindex");
 	lua_pushcfunction (_L, tags_newindex);
+	lua_settable (_L, -3);
+	lua_pushstring (_L, "__index");
+	lua_pushcfunction (_L, tags_index);
 	lua_settable (_L, -3);
 	lua_setmetatable (_L, -2);
 
@@ -1413,6 +1453,7 @@ static int __newindex(lua_State *L)
         lua_rawgeti(_L, LUA_REGISTRYINDEX, self->tag.reference);
         lua_pushnil(_L);
         lua_rawset (_L, -3);
+	lua_pop (_L, 1);
     }
     
     luaL_unref (_L, LUA_REGISTRYINDEX, self->tag.reference);
@@ -1428,10 +1469,33 @@ static int __newindex(lua_State *L)
     /* Add the new tag to the tags table. */
     
     if (self->tag.reference != LUA_REFNIL) {
+	Node *node;
+	
         lua_rawgeti(_L, LUA_REGISTRYINDEX, tags);
         lua_rawgeti(_L, LUA_REGISTRYINDEX, self->tag.reference);
+
+	/* First check if there's a proxy for this node and if so
+	   resolve it. */
+	
+	lua_pushvalue (_L, -1);
+        lua_rawget (_L, -3);
+	node = t_test_node (_L, -1, [Proxy class]);
+	
+	if (node && node->up) {
+	    t_push_userdata(_L, 2, node->up, self);
+	    lua_rawgeti(_L, LUA_REGISTRYINDEX, node->key.reference);
+	    lua_insert (_L, -2);
+	    lua_settable (_L, -3);
+	    lua_pop (_L, 1);
+	}
+	
+	lua_pop (_L, 1);
+
+	/* Now add the node to the tags table. */
+	
         lua_pushvalue(_L, 1);
         lua_rawset (_L, -3);
+	lua_pop (_L, 1);
     }
 }
  

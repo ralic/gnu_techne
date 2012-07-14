@@ -14,6 +14,7 @@ bin_SCRIPTS = techne
 BUILT_SOURCES = 
 EXTRA_DIST = $(BUILT_SOURCES:.h=.glsl.c)
 SUFFIXES = .glsl.c
+$(BUILT_SOURCES): glsl/stringify
 .glsl.c.h: glsl/stringify
 	glsl/stringify $< > $@
 
@@ -35,7 +36,7 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     event.c event.h space.c space.h array/array.c	\
 		     array/array.h prompt/prompt.c prompt/prompt.h	\
 		     joints/contact.c profiling.c moremath.c timing.c	\
-		     memory.c network.c network.h
+		     memory.c network.c network.h proxy.c proxy.h
 
 techne_bin_CFLAGS = ${AM_CFLAGS} ${GDKGLEXT_CFLAGS} ${OPENAL_CFLAGS}	\
 		    ${ODE_CFLAGS} ${MHD_CFLAGS}

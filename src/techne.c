@@ -408,7 +408,8 @@ void t_print_error (const char *format, ...)
 {
     static struct option options[] = {
 	{"option", 1, 0, 'O'},
-	{"engineering", 0, 0, 'e'},
+	{"engineering", 0, 0, 'E'},
+	{"execute", 1, 0, 'e'},
 	{"interactive", 0, 0, 'i'},
 	{"mute", 0, 0, 'm'},
 	{"quiet", 0, 0, 'q'},
@@ -502,7 +503,7 @@ void t_print_error (const char *format, ...)
     /* Parse the command line. */
     
     while ((option = getopt_long (argc, argv,
-				  "O:c:d:heimq",
+				  "O:c:d:e:hEimq",
 				  options, 0)) != -1) {
 	if (option == 'O') {
 	    char *equal;
@@ -556,11 +557,23 @@ void t_print_error (const char *format, ...)
 	    /* Finally set the option value. */
 	    
 	    lua_settable (_L, -3);
+	} else if (option == 'e') {
+	    _TRACE ("%s\n", optarg);
+	    /* Compile the chunk and stash it away behind the options
+	     * table. */
+	    
+	    if(luaL_loadbuffer (_L, optarg, strlen(optarg),
+			      "=command line")) {
+		lua_error (_L);
+	    } else {
+		lua_insert (_L, 1);
+	    }
+	    
 	} else if (option == 'n') {
 	    name = optarg;
 	} else if (option == 'C') {
 	    class = optarg;
-	} else if (option == 'e') {
+	} else if (option == 'E') {
 	    engineering = 1;
 	} else if (option == 'i') {
 	    interactive = 1;
@@ -618,7 +631,9 @@ void t_print_error (const char *format, ...)
 		"Set the option OPTION with value VALUE.\n"
 		"  -i, --interactive                              "
 		"Drop to an interactive shell after initializing.\n"
-		"  -e, --engineering                              "
+		"  -e STAT, --execute=STAT                        "
+		"Execute the provided statement.\n"
+		"  -E, --engineering                              "
 		"Disable rendering and simulate only.\n"
 		"  -m, --mute                                     "
 		"Disable audio rendering.\n"

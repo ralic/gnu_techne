@@ -25,9 +25,9 @@ while [ -n "$1" ]; do
     shift
 done
 
-if [ $debug -a -n "$commands" ]; then
+if [ $debug -eq 1 -a -n "$commands" ]; then
     echo -e "$commands" | gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne $args
-elif [ $debug ]; then
+elif [ $debug -eq 1 ]; then
     gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne $args
 else
     ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne $args

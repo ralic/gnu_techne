@@ -1,0 +1,32 @@
+.\" Process this file with groff -man -Tascii techne-browser.1
+.\"
+.TH TECHNE\-BROWSER 1 "March 2012" Linux "User Commands"
+.SH NAME
+techne-browser \- A simple web browser for use with Techne.
+.SH SYNOPSIS
+.BI "techne-browser [--geometry " spec " --name " "name " "--class " class "] [" url "]"
+.SH DESCRIPTION
+.B Techne-browser
+is a simple WebKit based browser for use with Techne's http interface.  It's main advantages are that it is distributed with Techne and hence always available and that it doesn't take up precious screen real-estate with useless menus, toolbars and the like.  It also looks nicer in a minimalistic sort of way.
+.SH OPTIONS
+.TP
+.BI "--geometry " spec
+Specify the preferred size and position of the browser window. See
+.BR X (1)
+for the syntax of the geometry specification.
+.TP
+.B "--hidden"
+Do not show the browser window on startup.
+.TP
+.BI "--name " name " --class " class
+Specify the application window's WM_CLASS property.  This options
+helps the window manager identify which application name and icon to
+use for this window.  Usually if the application's name is Foo and
+there is a foo.desktop file installed the name should be set to `foo'
+and class to `Foo'.
+.SH BUGS
+Please report any bugs you find on the techne-devel mailing list or use the bug tracker in Techne's project page <http://savannah.nongnu.org/projects/techne>.
+.SH AUTHOR
+Dimitris Papavasiliou <dpapavas at gmail dot com>
+.SH "SEE ALSO"
+.BR techne (1)

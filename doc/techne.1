@@ -1,0 +1,102 @@
+.\" Process this file with groff -man -Tascii techne.1
+.\"
+.TH TECHNE 1 "November 2010" Linux
+.SH NAME
+techne \- A general purpose, programmable physical simulator and renderer.
+.SH SYNOPSIS
+.BI "techne [" OPTION... ]
+.SH DESCRIPTION
+.B Techne
+is a general purpose, programmable physical simulator and renderer.
+It reads in a set of scripts wherein every aspect of a physical system
+is specified and then proceeds to simulate and render the system
+onscreen.
+.SH OPTIONS
+.TP
+.B "-h, --help"
+Display a help message.
+.TP
+.BI "-c " FILE ", --configuration" =FILE
+Include
+.I FILE
+into the list of sources that are going to be executed by
+Techne at start up.  Multiple
+.B -c
+options can be used to specify any number of source files.
+.TP
+.BI "-O " "OPTION[=VALUE]" ", --option " "OPTION[=VALUE]"
+This defines an option with name
+.I OPTION
+and value
+.I VALUE.
+The meaning of the option itself depends on the executed program,
+Techne simply defines it.  If
+.I VALUE
+is left out it defaults to "true".  Multiple
+.B -O
+switches can be specified.  If more than one
+.B -O
+switches specify the same option the value of the option is set to a
+table of all specified values.
+.TP
+.B "-E, --engineering"
+This instructs Techne to skip the rendering stages of its loop and
+only perform simulation which can speed up execution when the running
+program is performing unattended experiments or other computations.
+.TP
+.BI "-e " "STAT" ", --execute" "=STAT"
+This option behaves as if a file containing the text 
+.I STAT
+which should comprise valid Lua statements had been specified via the 
+.B -c
+option, that is the statements will be compiled and added to the list
+of sources to run upon startup.
+.TP
+.B "-m, --mute"
+Disable audio rendering.
+.TP
+.BI "--name " name " --class " class
+Specify the application window's WM_CLASS property.  This options
+helps the window manager identify which application name and icon to
+use for this window.  Usually if the application's name is Foo and
+there is a foo.desktop file installed the name should be set to `foo'
+and class to `Foo'.
+.P
+There are a few options that can be specified through the 
+.B -O
+switch that are interpreted by Techne itself.  Of use to the end user might be:
+.TP
+.B someoption
+Describe someoption here.
+.SH SCRIPTS
+Some scripts are provided in the Techne distribution that are likely to be of use while programming or using an application.  They're executed like all scripts the only difference being that you don't have to specify a full path.  So far the following scripts are available:
+
+.TP
+.B base.lua
+This is just a basic script that you can use to set up a useful default configuration for some other script.  It is therefore not of much use on its own and was meant mainly to facilitate prototyping and as a base on which example code can be run.  So if you've written a script called
+.B prototype.lua
+in the current working directory in order to try out some neat idea you can run it like this:
+
+.nf
+techne -c base.lua -c prototype.lua
+.fi
+
+This will setup the simulator and renderer with some generic values which your script can later override at will and also set up some useful key bindings and options.  Currently you can use q to quit, p to pause and resume simulation and specify the framerate option to obtain a frame-rate gauge.
+
+.SH DOCUMENTATION
+Techne currently lacks a proper reference manual.  If you're thinking
+of using Techne for your own project please post a message on the
+techne-users mailing list.  If you need to hack one of the derivative
+products direct your messages to the respective project mailing lists
+(e.g. billiards-users, aviation-users, etc.).  It can only be hoped
+that public interest will motivate the author to allocate more time to
+the documentation of Techne.
+.SH BUGS
+Please report any bugs you find on the techne-devel mailing list or use the bug tracker in Techne's project page <http://savannah.nongnu.org/projects/techne>.
+.SH AUTHOR
+Dimitris Papavasiliou <dpapavas at gmail dot com>
+.SH "SEE ALSO"
+.BR techne-browser (1),
+.BR billiards (6),
+.BR aviation (6),
+.BR airrace (6),

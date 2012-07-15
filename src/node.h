@@ -69,6 +69,8 @@ typedef enum {
 
 +(const struct protocol *) introspect;
 
+-(void) describe;
+
 -(void) meetSibling: (Node *)sibling;
 -(void) missSibling: (Node *)sibling;
 -(void) meetParent: (Node *)parent;

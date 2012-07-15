@@ -42,10 +42,27 @@ static int trace (lua_State *L)
     return 0;
 }
 
+static int describe (lua_State *L)
+{
+    int i, h;
+    
+    h = lua_gettop (L);
+    
+    for (i = 1 ; i <= h ; i += 1) {
+	id node;
+
+	node = t_check_node (L, i, [Node class]);
+	[node describe];
+    }
+
+    return 0;
+}
+
 int luaopen_console_core (lua_State *L)
 {
     luaL_Reg core[] = {
 	{"trace", trace},
+	{"describe", describe},
 	{NULL, NULL},
     };
     

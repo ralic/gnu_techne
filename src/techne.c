@@ -60,24 +60,6 @@ static Accoustics *accoustics;
 static Techne *techne;
 static Transform *root;
 
-static int trace (lua_State *L)
-{
-    lua_Debug ar;
-    int i, h;
-
-    lua_getstack (L, 1, &ar);
-    lua_getinfo (L, "Sl", &ar);
-    
-    h = lua_gettop (L);
-    
-    for (i = 1 ; i <= h ; i += 1) {
-	t_print_message("\033[1;31m%s:%d: %s\033[0m\n",
-			ar.short_src, ar.currentline, luap_describe(L, i));
-    }
-
-    return 0;
-}
-
 static void push_lua_stack(lua_State *L)
 {
     lua_Debug ar;
@@ -478,7 +460,7 @@ void t_print_error (const char *format, ...)
     luaL_requiref(_L, "io", luaopen_io, 0);
     luaL_requiref(_L, "os", luaopen_os, 0);
     luaL_requiref(_L, "debug", luaopen_debug, 0);
-    /* luaL_openlibs (_L); */
+    
     lua_settop (_L, 0);
     
     /* Modify the Lua path and cpath. */
@@ -495,6 +477,14 @@ void t_print_error (const char *format, ...)
     lua_concat (_L, 2);
     lua_setfield (_L, -2, "cpath");
     lua_pop (_L, 1);
+
+    /* Load the console module on startup. */
+
+    lua_getglobal(_L, "require");
+    lua_pushstring(_L, "console");
+    if (lua_pcall(_L, 1, 0, 0) != LUA_OK) {
+	lua_pop (_L, 1);
+    }
 
     /* Create the options table. */
 
@@ -657,9 +647,6 @@ void t_print_error (const char *format, ...)
     luap_sethistory (_L, "~/.techne_history");
     luap_setname (_L, "techne");
     luap_setcolor (_L, colorize);
-
-    lua_pushcfunction (_L, trace);
-    lua_setglobal (_L, "trace");
 
     lua_pushcfunction (_L, construct_hooks);
     lua_setglobal (_L, "hooks");

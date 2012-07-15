@@ -1184,6 +1184,13 @@ static int __newindex(lua_State *L)
     return self;
 }
 
+-(void) describe
+{
+    t_print_message("%sNo description available.%s\n",
+		    t_ansi_color (31, 1),
+		    t_ansi_color (0, 0));    
+}
+
 -(void) meetParent: (Node *)parent
 {
 }

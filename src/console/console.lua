@@ -13,4 +13,7 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-return require 'console.core'
+for key, value in pairs(require 'console.core') do
+   _G[key] = value
+end
+

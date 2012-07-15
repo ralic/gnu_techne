@@ -127,11 +127,6 @@
     }
 }
 
--(void) _set_state
-{
-    /* Do nothing. */
-}
-
 -(void) traverse
 {
     if (self->debug) {

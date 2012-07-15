@@ -35,6 +35,8 @@
 #include "transform.h"
 #include "event.h"
 
+static PFNGLDEBUGMESSAGECONTROLARBPROC __glDebugMessageControlARB;
+
 static GdkWindow *window;
 static GdkGLDrawable *drawable = NULL;
 
@@ -97,6 +99,11 @@ static void APIENTRY debug_callback (GLenum source,
 		    s, id,
 		    t_ansi_color(0, 0),
 		    message);
+
+    /* Ignore this kind of message from now on. */
+    
+    __glDebugMessageControlARB (source, type, GL_DONT_CARE,
+				1, &id, GL_FALSE);
 }
 
 static void recurse (Node *root, GdkEvent *event)
@@ -287,28 +294,28 @@ static void recurse (Node *root, GdkEvent *event)
 	
     if (debugcontext) {	
 	PFNGLDEBUGMESSAGECALLBACKARBPROC glDebugMessageCallbackARB;
-	PFNGLDEBUGMESSAGECONTROLARBPROC glDebugMessageControlARB;
-
+	
 	glDebugMessageCallbackARB = (PFNGLDEBUGMESSAGECALLBACKARBPROC)glXGetProcAddressARB((const GLubyte *)"glDebugMessageCallbackARB");
-
-	glDebugMessageControlARB = (PFNGLDEBUGMESSAGECONTROLARBPROC)glXGetProcAddressARB((const GLubyte *)"glDebugMessageControlARB");
 	
 	glDebugMessageCallbackARB (debug_callback, NULL);
 	
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-	glDebugMessageControlARB (GL_DONT_CARE,
+
+	__glDebugMessageControlARB = (PFNGLDEBUGMESSAGECONTROLARBPROC)glXGetProcAddressARB((const GLubyte *)"glDebugMessageControlARB");
+
+	__glDebugMessageControlARB (GL_DONT_CARE,
 				  GL_DONT_CARE,
 				  GL_DEBUG_SEVERITY_HIGH_ARB,
 				  0, NULL,
 				  GL_TRUE);
 
-	glDebugMessageControlARB (GL_DONT_CARE,
+	__glDebugMessageControlARB (GL_DONT_CARE,
 				  GL_DONT_CARE,
 				  GL_DEBUG_SEVERITY_MEDIUM_ARB,
 				  0, NULL,
 				  debugcontext > 1 ? GL_TRUE : GL_FALSE);
 
-	glDebugMessageControlARB (GL_DONT_CARE,
+	__glDebugMessageControlARB (GL_DONT_CARE,
 				  GL_DONT_CARE,
 				  GL_DEBUG_SEVERITY_LOW_ARB,
 				  0, NULL,
@@ -341,7 +348,7 @@ static void recurse (Node *root, GdkEvent *event)
 
     t_print_message ("The rendering context is%sdirect.\n",
 	    gdk_gl_context_is_direct (context) == TRUE ? " " : " *not* ");
-
+    
     return self;
 }
 

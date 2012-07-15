@@ -19,6 +19,7 @@ while [ -n "$1" ]; do
 	debug=1
 	commands="set confirm off\nrun\nbt\n"
     else
+	debug=0
 	args="$args $1"
     fi
     

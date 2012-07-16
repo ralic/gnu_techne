@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
 
 #include <lua.h>
 #include <lualib.h>
@@ -53,14 +54,6 @@ static int size[2] = {3, 3};
 
 APPLY(apply_doubles, double)
 APPLY(apply_floats, float)
-APPLY(apply_ulongs, unsigned long)
-APPLY(apply_longs, signed long)
-APPLY(apply_uints, unsigned int)
-APPLY(apply_ints, signed int)
-APPLY(apply_ushorts, unsigned short)
-APPLY(apply_shorts, signed short)
-APPLY(apply_uchars, unsigned char)
-APPLY(apply_chars, signed char)
 
 static void pusharray (lua_State *L, double *M)
 {
@@ -124,6 +117,11 @@ static int apply (lua_State *L)
 	data = array_checktyped (L, 2, ARRAY_TDOUBLE);
     } else {
 	data = array_checkarray (L, 2);
+    
+	if (data->type != ARRAY_TDOUBLE &&
+	    data->type != ARRAY_TFLOAT) {
+	    luaL_argerror (L, 2, "Specified array has integer type.");
+	}
     }
 
     if (data->size[data->rank - 1] != 3) {
@@ -138,67 +136,17 @@ static int apply (lua_State *L)
     array_createarrayv (L, data->type, NULL, data->rank, data->size);
     result = lua_touserdata (L, -1);
 
-    switch (data->type) {
-    case ARRAY_TDOUBLE:
+    if (data->type == ARRAY_TDOUBLE) {
 	apply_doubles (transform->values.doubles,
 		       fixed ? fixed->values.doubles : NULL,
 		       data->values.doubles,
 		       result->values.doubles, result->rank, result->size);
-	break;
-    case ARRAY_TFLOAT:
+    } else {
+	assert (data->type == ARRAY_TFLOAT);
 	apply_floats (transform->values.doubles,
 		      fixed ? fixed->values.doubles : 0,
 		      data->values.floats,
 		      result->values.floats, result->rank, result->size);
-	break;
-    case ARRAY_TULONG:
-	apply_ulongs (transform->values.doubles,
-		      fixed ? fixed->values.doubles : 0,
-		      data->values.ulongs,
-		      result->values.ulongs, result->rank, result->size);
-	break;
-    case ARRAY_TLONG:
-	apply_longs (transform->values.doubles,
-		     fixed ? fixed->values.doubles : 0,
-		     data->values.longs,
-		     result->values.longs, result->rank, result->size);
-	break;
-    case ARRAY_TUINT:
-	apply_uints (transform->values.doubles,
-		     fixed ? fixed->values.doubles : 0,
-		     data->values.uints,
-		     result->values.uints, result->rank, result->size);
-	break;
-    case ARRAY_TINT:
-	apply_ints (transform->values.doubles,
-		    fixed ? fixed->values.doubles : 0,
-		    data->values.ints,
-		    result->values.ints, result->rank, result->size);
-	break;
-    case ARRAY_TUSHORT:
-	apply_ushorts (transform->values.doubles,
-		       fixed ? fixed->values.doubles : 0,
-		       data->values.ushorts,
-		       result->values.ushorts, result->rank, result->size);
-	break;
-    case ARRAY_TSHORT:
-	apply_shorts (transform->values.doubles,
-		      fixed ? fixed->values.doubles : 0,
-		      data->values.shorts,
-		      result->values.shorts, result->rank, result->size);
-	break;
-    case ARRAY_TUCHAR:
-	apply_uchars (transform->values.doubles,
-		      fixed ? fixed->values.doubles : 0,
-		      data->values.uchars,
-		      result->values.uchars, result->rank, result->size);
-	break;
-    case ARRAY_TCHAR:
-	apply_chars (transform->values.doubles,
-		     fixed ? fixed->values.doubles : 0,
-		     data->values.chars,
-		     result->values.chars, result->rank, result->size);
-	break;
     }
     
     return 1;

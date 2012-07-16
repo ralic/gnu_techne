@@ -43,12 +43,25 @@ static int create (lua_State *L)
 
     {
 	int size[i];
+	array_Type type;
 
 	for (j = 0 ; j < i ; j += 1) {
 	    size[j] = lua_tonumber (L, j + 1);
 	}
+
+	type = lua_tointeger (L, lua_upvalueindex(1));
+
+	if (lua_toboolean (L, i + 2)) {
+	    if (type == ARRAY_TFLOAT || type == ARRAY_TDOUBLE) {
+		lua_pushstring (L,
+				"Only integer arrays can be normalized.");
+		lua_error (L);
+	    }
+		
+	    type = -type;
+	}
 	
-	array_toarrayv (L, -1, lua_tointeger (L, lua_upvalueindex(1)), i, size);
+	array_toarrayv (L, i + 1, type, i, size);
     }		 
     
     return 1;
@@ -224,14 +237,14 @@ DEFINE_OPERATION(multiply, *)
 DEFINE_OPERATION(subtract, -)
 DEFINE_OPERATION(divide, /)
 
-#define SCALE(FUNC, TYPE)				\
-    static void FUNC (TYPE *A, TYPE c, TYPE *B, int n)	\
-    {							\
-	int i;						\
-							\
-	for (i = 0 ; i < n ; i += 1) {			\
-	    B[i] = c * A[i];				\
-	}						\
+#define SCALE(FUNC, TYPE)					\
+    static void FUNC (TYPE *A, lua_Number c, TYPE *B, int n)	\
+    {								\
+	int i;							\
+								\
+	for (i = 0 ; i < n ; i += 1) {				\
+	    B[i] = c * A[i];					\
+	}							\
     }
 
 SCALE(scale_doubles, double)
@@ -259,7 +272,7 @@ static int scale (lua_State *L)
     array_createarrayv (L, A->type, NULL, A->rank, A->size);
     B = (array_Array *)lua_touserdata (L, -1);
 
-    switch (A->type) {
+    switch (abs(A->type)) {
     case ARRAY_TDOUBLE:
 	scale_doubles (A->values.doubles, c, B->values.doubles, l);
 	break;

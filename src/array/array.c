@@ -48,7 +48,7 @@ static int __tostring (lua_State *L);
 
 static size_t sizeof_element (array_Type type)
 {
-    switch (type) {
+    switch (abs(type)) {
     case ARRAY_TDOUBLE:
 	return sizeof (double);
     case ARRAY_TFLOAT:
@@ -86,26 +86,50 @@ static void write_element (array_Array *array, int i, lua_Number value)
     case ARRAY_TULONG:
 	array->values.ulongs[i] = value;
 	break;
+    case ARRAY_TNULONG:
+	array->values.ulongs[i] = value * ULONG_MAX;
+	break;
     case ARRAY_TLONG:
 	array->values.longs[i] = value;
+	break;
+    case ARRAY_TNLONG:
+	array->values.longs[i] = value * LONG_MAX;
 	break;
     case ARRAY_TUINT:
 	array->values.uints[i] = value;
 	break;
+    case ARRAY_TNUINT:
+	array->values.uints[i] = value * UINT_MAX;
+	break;
     case ARRAY_TINT:
 	array->values.ints[i] = value;
+	break;
+    case ARRAY_TNINT:
+	array->values.ints[i] = value * INT_MAX;
 	break;
     case ARRAY_TUSHORT:
 	array->values.ushorts[i] = value;
 	break;
+    case ARRAY_TNUSHORT:
+	array->values.ushorts[i] = value * USHRT_MAX;
+	break;
     case ARRAY_TSHORT:
 	array->values.shorts[i] = value;
+	break;
+    case ARRAY_TNSHORT:
+	array->values.shorts[i] = value * SHRT_MAX;
 	break;
     case ARRAY_TUCHAR:
 	array->values.uchars[i] = value;
 	break;
+    case ARRAY_TNUCHAR:
+	array->values.uchars[i] = value * UCHAR_MAX;
+	break;
     case ARRAY_TCHAR:
 	array->values.chars[i] = value;
+	break;
+    case ARRAY_TNCHAR:
+	array->values.chars[i] = value * CHAR_MAX;
 	break;
     }
 }
@@ -119,20 +143,36 @@ static lua_Number read_element (array_Array *array, int i)
 	return (lua_Number)array->values.floats[i];
     case ARRAY_TULONG:
 	return (lua_Number)array->values.ulongs[i];
+    case ARRAY_TNULONG:
+	return (lua_Number)array->values.ulongs[i] / ULONG_MAX;
     case ARRAY_TLONG:
 	return (lua_Number)array->values.longs[i];
+    case ARRAY_TNLONG:
+	return (lua_Number)array->values.longs[i] / LONG_MAX;
     case ARRAY_TUINT:
 	return (lua_Number)array->values.uints[i];
+    case ARRAY_TNUINT:
+	return (lua_Number)array->values.uints[i] / UINT_MAX;
     case ARRAY_TINT:
 	return (lua_Number)array->values.ints[i];
+    case ARRAY_TNINT:
+	return (lua_Number)array->values.ints[i] / INT_MAX;
     case ARRAY_TUSHORT:
 	return (lua_Number)array->values.ushorts[i];
+    case ARRAY_TNUSHORT:
+	return (lua_Number)array->values.ushorts[i] / USHRT_MAX;
     case ARRAY_TSHORT:
 	return (lua_Number)array->values.shorts[i];
+    case ARRAY_TNSHORT:
+	return (lua_Number)array->values.shorts[i] / SHRT_MAX;
     case ARRAY_TUCHAR:
 	return (lua_Number)array->values.uchars[i];
+    case ARRAY_TNUCHAR:
+	return (lua_Number)array->values.uchars[i] / UCHAR_MAX;
     case ARRAY_TCHAR:
 	return (lua_Number)array->values.chars[i];
+    case ARRAY_TNCHAR:
+	return (lua_Number)array->values.chars[i] / CHAR_MAX;
     }
 
     return 0;
@@ -140,7 +180,7 @@ static lua_Number read_element (array_Array *array, int i)
 
 static void *reference_element (array_Array *array, int i)
 {
-    switch (array->type) {
+    switch (abs(array->type)) {
     case ARRAY_TDOUBLE:
 	return &array->values.doubles[i];
     case ARRAY_TFLOAT:
@@ -168,7 +208,7 @@ static void *reference_element (array_Array *array, int i)
 
 static void copy_elements (array_Array *from, array_Array *to, int i, int rank)
 {
-    switch (from->type) {
+    switch (abs(from->type)) {
     case ARRAY_TDOUBLE:
 	memcpy(&to->values.doubles[i],
 	       from->values.doubles,

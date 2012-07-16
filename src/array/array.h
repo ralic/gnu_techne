@@ -25,16 +25,26 @@
 #define _ARRAY_H_
 
 typedef enum {
-    ARRAY_TDOUBLE,
-    ARRAY_TFLOAT,
-    ARRAY_TULONG,
-    ARRAY_TLONG,
-    ARRAY_TUINT,
-    ARRAY_TINT,
-    ARRAY_TUSHORT,
-    ARRAY_TSHORT,
-    ARRAY_TUCHAR,
-    ARRAY_TCHAR
+    ARRAY_TNULONG = -3,
+    ARRAY_TNLONG = -4,
+    ARRAY_TNUINT = -5,
+    ARRAY_TNINT = -6,
+    ARRAY_TNUSHORT = -7,
+    ARRAY_TNSHORT = -8,
+    ARRAY_TNUCHAR = -9,
+    ARRAY_TNCHAR = -10,
+
+    ARRAY_TDOUBLE = 1,
+    ARRAY_TFLOAT = 2,
+
+    ARRAY_TULONG = 3,
+    ARRAY_TLONG = 4,
+    ARRAY_TUINT = 5,
+    ARRAY_TINT = 6,
+    ARRAY_TUSHORT = 7,
+    ARRAY_TSHORT = 8,
+    ARRAY_TUCHAR = 9,
+    ARRAY_TCHAR = 10
 } array_Type;
 
 typedef struct {

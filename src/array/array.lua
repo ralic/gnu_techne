@@ -66,4 +66,9 @@ end
 array.pretty = pretty
 array.size = size
 
+local meta = getmetatable(array.doubles{})
+local oldtostring = meta.__tostring
+meta.__tostring = function(self)
+                     return oldtostring(self) .. "\n" .. pretty(self)
+                  end
 return array

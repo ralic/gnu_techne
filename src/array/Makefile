@@ -2,8 +2,8 @@ PREFIX=/usr/local
 LIBDIR=$(PREFIX)/lib/lua/5.2/array
 SHAREDIR=$(PREFIX)/share/lua/5.2
 
-LUA_CFLAGS=-I/usr/include/lua5.2
-LUA_LDFLAGS=-llua5.2
+LUA_CFLAGS=`pkg-config --cflags lua5.2`
+LUA_LDFLAGS=`pkg-config --libs lua5.2`
 
 CFLAGS=-fpic -g -Wall -std=c99 -pedantic
 LDFLAGS=-shared -fpic
@@ -11,7 +11,7 @@ LDFLAGS=-shared -fpic
 INSTALL=/usr/bin/install
 
 core:
-	$(CC) -o core.so ${CFLAGS} ${LDFLAGS} core.c array.c ${LUA_CFLAGS} ${LUA_LDFLAGS}
+	$(CC) -o core.so ${CFLAGS} ${LDFLAGS} core.c array.c operations.c ${LUA_CFLAGS} ${LUA_LDFLAGS}
 
 install: core
 	mkdir -p $(LIBDIR)/

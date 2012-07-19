@@ -581,7 +581,8 @@ static int fromtable (lua_State *L, int index, array_Array *array)
     lua_settop (L, h);
 
     array->free = FREE_BOTH;
-    array->values.any = malloc (l * sizeof_element (array->type));
+    array->length = l * sizeof_element (array->type);
+    array->values.any = malloc (array->length);
 
     dump (L, index, array, 0, 0);
     construct (L, array, 0);
@@ -594,13 +595,13 @@ static void fromstring (lua_State *L, int index, array_Array *array)
     int i, l;
 
     for (i = 0, l = 1 ; i < array->rank ; l *= array->size[i], i += 1);
-
+    l *= sizeof_element (array->type);
+    
     array->free = FREE_SIZE;
+    array->length = lua_rawlen (L, index);
     array->values.any = (void *)lua_tostring (L, index);
 
-    l *= sizeof_element (array->type);
-	
-    if (l != lua_rawlen (L, index)) {
+    if (l != array->length) {
 	lua_pushfstring (L, "Invalid array data length (should be %d bytes but is %d bytes).", l, lua_rawlen (L, index));
 	lua_error (L);
     }
@@ -611,6 +612,7 @@ static void fromstring (lua_State *L, int index, array_Array *array)
 static void fromuserdata (lua_State *L, int index, array_Array *array)
 {
     array->free = FREE_SIZE;
+    array->length = lua_rawlen(L, index);
     array->values.any = (void *)lua_touserdata (L, index);
 
     construct (L, array, lua_gettop(L));
@@ -622,10 +624,9 @@ static void fromzeros (lua_State *L, array_Array *array)
 
     for (i = 0, l = 1 ; i < array->rank ; l *= array->size[i], i += 1);
 
-    l *= sizeof_element (array->type);
-
     array->free = FREE_BOTH;
-    array->values.any = malloc (l);
+    array->length = l * sizeof_element (array->type);
+    array->values.any = malloc (array->length);
 
     memset (array->values.any, 0, l);
 
@@ -794,7 +795,8 @@ void array_createarrayv (lua_State *L, array_Type type,
     }
 
     array.free = FREE_BOTH;
-    array.values.any = malloc (l);
+    array.length = l;
+    array.values.any = malloc (array.length);
 
     if (values) {
 	memcpy (array.values.any, values, l);
@@ -914,6 +916,7 @@ void array_castv (lua_State *L, int index, int rank, int *size)
     }
 	
     cast.type = array->type;
+    cast.length = array->length;
     cast.rank = rank;
     cast.values.any = array->values.any;
     cast.free = FREE_SIZE;
@@ -945,6 +948,7 @@ void array_copy (lua_State *L, int index)
     array = lua_touserdata(L, index);
 
     copy.type = array->type;
+    copy.length = array->length;
     copy.rank = array->rank;
     copy.free = FREE_BOTH;
 
@@ -955,7 +959,7 @@ void array_copy (lua_State *L, int index)
 	 i < array->rank;
 	 d *= array->size[i], i += 1);
 
-    copy.values.any = malloc (d * sizeof_element (array->type));
+    copy.values.any = malloc (copy.length);
     memcpy(copy.values.any, array->values.any,
 	   d * sizeof_element (array->type));
 
@@ -1048,7 +1052,8 @@ void array_slicev (lua_State *L, int index, int *slices)
 	m *= slice.size[j];
     }
 
-    slice.values.any = malloc (m * sizeof_element (array->type));
+    slice.length = m * sizeof_element (array->type);
+    slice.values.any = malloc (slice.length);
 
     cut (array, &slice,
     	 array->values.any, slice.values.any,

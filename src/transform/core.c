@@ -55,6 +55,7 @@ static int size[2] = {3, 3};
 APPLY(apply_doubles, double)
 APPLY(apply_floats, float)
 
+static int multiply (lua_State *L);
 static void pusharray (lua_State *L, double *M)
 {
     array_Array array;
@@ -66,6 +67,11 @@ static void pusharray (lua_State *L, double *M)
     array.free = FREE_VALUES;
 
     array_pusharray (L, &array);
+
+    lua_getmetatable (L, -1);
+    lua_pushcfunction (L, multiply);
+    lua_setfield (L, -2, "__concat");
+    lua_pop(L, 1);
 }
 
 static int concatenate (lua_State *L)

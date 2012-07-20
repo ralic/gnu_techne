@@ -2,8 +2,8 @@ PREFIX=/usr/local
 BINDIR=${PREFIX}/bin
 LIBDIR=$(PREFIX)/lib/lua/5.2
 
-LUA_CFLAGS=-I/usr/include/lua5.2
-LUA_LDFLAGS=-llua5.2
+LUA_CFLAGS=`pkg-config --cflags lua5.2`
+LUA_LDFLAGS=`pkg-config --libs lua5.2`
 
 CFLAGS=-g -Wall -D_GNU_SOURCE -DHAVE_LIBREADLINE -DHAVE_READLINE_READLINE_H -DHAVE_READLINE_HISTORY -DHAVE_READLINE_HISTORY_H -DHAVE_ASPRINTF -I..
 LDFLAGS=-lreadline -lhistory

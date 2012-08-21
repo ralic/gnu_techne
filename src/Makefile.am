@@ -4,7 +4,7 @@ modulesdir = ${pkgdatadir}/modules
 AM_CPPFLAGS = -x objective-c \
 	      -D_GNU_SOURCE -DGL_GLEXT_PROTOTYPES \
 	      -DPKGDATADIR='"$(pkgdatadir)"' -DPKGLIBDIR='"$(pkglibdir)"'
-AM_CFLAGS = -Wall -Wno-div-by-zero -I$(top_srcdir) -I$(srcdir) ${LUA_CFLAGS}
+AM_CFLAGS = -Wall -Wextra -Wno-unused-parameter -Wno-div-by-zero -I$(top_srcdir) -I$(srcdir) ${LUA_CFLAGS}
 AM_LDADD = -lobjc -lm
 
 bin_SCRIPTS = techne
@@ -12,7 +12,6 @@ bin_SCRIPTS = techne
 # Support programs
 
 BUILT_SOURCES = 
-EXTRA_DIST = $(BUILT_SOURCES:.h=.glsl.c)
 SUFFIXES = .glsl.c
 $(BUILT_SOURCES): glsl/stringify
 .glsl.c.h: glsl/stringify
@@ -25,24 +24,30 @@ glsl_stringify_CPPFLAGS =
 glsl_stringify_CFLAGS = -Wall
 glsl_stringify_LDFLAGS = 
 
+opengl.c opengl.h: mkopengl.sh
+	./mkopengl.sh
+
+EXTRA_DIST = $(BUILT_SOURCES:.h=.glsl.c) mkopengl.sh
+
 # The main programs
 
 nobase_mybin_PROGRAMS = techne.bin browser.bin
 
 techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
-		     node.c node.h graphics.c graphics.h accoustics.c	\
-		     accoustics.h dynamics.c dynamics.h transform.c	\
-		     transform.h body.c body.h joint.c joint.h		\
-		     event.c event.h space.c space.h array/array.c	\
-		     array/operations.c array/array.h prompt/prompt.c	\
-		     prompt/prompt.h joints/contact.c profiling.c	\
-		     moremath.c timing.c memory.c network.c network.h	\
-		     proxy.c proxy.h
+		     node.c node.h opengl.c opengl.h graphics.c		\
+		     graphics.h accoustics.c accoustics.h dynamics.c	\
+		     dynamics.h transform.c transform.h body.c body.h	\
+		     joint.c joint.h event.c event.h space.c space.h	\
+		     array/array.c array/operations.c array/array.h	\
+		     prompt/prompt.c prompt/prompt.h joints/contact.c	\
+		     profiling.c moremath.c timing.c memory.c		\
+		     network.c network.h proxy.c proxy.h
+EXTRA_techne_bin_SOURCES = compat/asprintf.h
 
-techne_bin_CFLAGS = ${AM_CFLAGS} ${GDKGLEXT_CFLAGS} ${OPENAL_CFLAGS}	\
-		    ${ODE_CFLAGS} ${MHD_CFLAGS}
+techne_bin_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS} ${GL_CFLAGS}		\
+		    ${OPENAL_CFLAGS} ${ODE_CFLAGS} ${MHD_CFLAGS}
 #techne_bin_LDFLAGS = -export-dynamic
-techne_bin_LDADD = ${LUA_LIBS} ${GDKGLEXT_LIBS} ${OPENAL_LIBS}	\
+techne_bin_LDADD = ${LUA_LIBS} ${GDK_LIBS} ${GL_LIBS} ${OPENAL_LIBS}	\
 		   ${ODE_LIBS} ${MHD_LIBS} ${AM_LDADD}
 
 browser_bin_CFLAGS = ${AM_CFLAGS} ${WEBKIT_CFLAGS} ${GTK_CFLAGS}
@@ -90,8 +95,7 @@ bodies_core_la_SOURCES = bodies/core.c bodies/point.c bodies/point.h	\
 			 bodies/ball.c bodies/ball.h
 bodies_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 bodies_core_la_LDFLAGS = -module -avoid-version -no-undefined
-bodies_core_la_LIBADD = ${GDKGLEXT_LIBS} ${ODE_LIBS}	\
-			${AM_LDADD}
+bodies_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
 
 joints_core_la_SOURCES = joints/core.c joints/clamp.c joints/clamp.h	\
 			 joints/hinge.c joints/hinge.h			\
@@ -108,15 +112,14 @@ joints_core_la_SOURCES = joints/core.c joints/clamp.c joints/clamp.h	\
 			 joints/contact.c joints/contact.h
 joints_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 joints_core_la_LDFLAGS = -module -avoid-version -no-undefined
-joints_core_la_LIBADD = ${GDKGLEXT_LIBS} ${ODE_LIBS}	\
-			${AM_LDADD}
+joints_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
 
 primitives_core_la_SOURCES = primitives/core.c primitives/observer.c	\
 			     primitives/observer.h			\
 			     primitives/cursor.c primitives/cursor.h
 primitives_core_la_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS}
 primitives_core_la_LDFLAGS = -module -avoid-version -no-undefined
-primitives_core_la_LIBADD = ${GDKGLEXT_LIBS} ${AM_LDADD}
+primitives_core_la_LIBADD = ${GDK_LIBS} ${AM_LDADD}
 
 physics_la_SOURCES = physics.c
 physics_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
@@ -128,9 +131,9 @@ shapes_core_la_SOURCES = shapes/core.c shapes/shape.c shapes/shape.h	\
 			 shapes/polygon.h shapes/points.c		\
 			 shapes/points.h shapes/lines.c			\
 			 shapes/lines.h
-shapes_core_la_CFLAGS = ${AM_CFLAGS} ${GDKGLEXT_CFLAGS}
+shapes_core_la_CFLAGS = ${AM_CFLAGS} ${GL_CFLAGS}
 shapes_core_la_LDFLAGS = -module -avoid-version -no-undefined
-shapes_core_la_LIBADD = ${GDKGLEXT_LIBS} ${AM_LDADD}
+shapes_core_la_LIBADD = ${GL_LIBS} ${AM_LDADD}
 
 widgets_core_la_SOURCES = widgets/core.c widgets/display.c	\
 			  widgets/display.h widgets/widget.c	\
@@ -139,9 +142,9 @@ widgets_core_la_SOURCES = widgets/core.c widgets/display.c	\
 			  widgets/row.c widgets/column.h	\
 			  widgets/column.c widgets/assembly.h	\
 			  widgets/assembly.c
-widgets_core_la_CFLAGS = ${AM_CFLAGS} ${GDKGLEXT_CFLAGS}
+widgets_core_la_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS} ${GL_CFLAGS}
 widgets_core_la_LDFLAGS = -module -avoid-version -no-undefined
-widgets_core_la_LIBADD = ${GDKGLEXT_LIBS} ${AM_LDADD}
+widgets_core_la_LIBADD = ${GDK_LIBS} ${GL_LIBS} ${AM_LDADD}
 
 automotive_core_la_SOURCES = automotive/core.c automotive/chain.c	\
 		  	     automotive/chain.h				\
@@ -153,6 +156,6 @@ automotive_core_la_SOURCES = automotive/core.c automotive/chain.c	\
 		  	     automotive/ground.c automotive/ground.h
 automotive_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 automotive_core_la_LDFLAGS = -module -avoid-version -no-undefined
-automotive_core_la_LIBADD = ${GDKGLEXT_LIBS} ${ODE_LIBS} ${AM_LDADD}
+automotive_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
 
-CLEANFILES = $(bin_SCRIPTS) $(BUILT_SOURCES)
+CLEANFILES = $(bin_SCRIPTS) $(BUILT_SOURCES) opengl.[ch]

@@ -21,13 +21,8 @@
 
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
-#include <gdk/gdkgl.h>
-#include <gdk/x11/gdkglx.h>
 
-#include <GL/gl.h>
-#include <GL/glx.h>
-#include <GL/glxext.h>
-#include <GL/glu.h>
+#include "opengl.h"
 
 #include "array/array.h"
 #include "techne.h"
@@ -35,10 +30,9 @@
 #include "transform.h"
 #include "event.h"
 
-static PFNGLDEBUGMESSAGECONTROLARBPROC __glDebugMessageControlARB;
-
+static GdkDisplay *display;
+static GdkScreen *screen;
 static GdkWindow *window;
-static GdkGLDrawable *drawable = NULL;
 
 static enum {
     ORTHOGRAPHIC, PERSPECTIVE, FRUSTUM
@@ -56,13 +50,13 @@ static int allocated;
 
 static int debugcontext = -1;
 
-static void APIENTRY debug_callback (GLenum source,
-				     GLenum type,
-				     GLuint id,
-				     GLenum severity,
-				     GLsizei length,
-				     const GLchar *message,
-				     GLvoid *userParam)
+static void debug_callback (GLenum source,
+                            GLenum type,
+                            GLuint id,
+                            GLenum severity,
+                            GLsizei length,
+                            const GLchar *message,
+                            GLvoid *userParam)
 {
     int c;
     const char *s;
@@ -102,8 +96,8 @@ static void APIENTRY debug_callback (GLenum source,
 
     /* Ignore this kind of message from now on. */
     
-    __glDebugMessageControlARB (source, type, GL_DONT_CARE,
-				1, &id, GL_FALSE);
+    glDebugMessageControlARB (source, type, GL_DONT_CARE,
+                              1, &id, GL_FALSE);
 }
 
 static void recurse (Node *root, GdkEvent *event)
@@ -125,9 +119,37 @@ static void recurse (Node *root, GdkEvent *event)
 
 -(id) initWithName: (char *)name andClass: (char *)class
 {
-    GdkWindowAttr attributes;
-    GdkGLConfig *config;
-    GdkGLContext *context;
+    GdkWindowAttr window_attributes;
+    GdkVisual *visual;
+    GLXFBConfig *configurations, configuration;
+    GLXContext context;
+    XVisualInfo *info;
+        
+    int context_attributes[] = {
+        GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+        GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+        GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+        GLX_CONTEXT_FLAGS_ARB, (GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB |
+                                GLX_CONTEXT_DEBUG_BIT_ARB),
+        None
+    };
+ 
+    int visual_attributes[] = {
+        GLX_X_RENDERABLE    , True,
+        GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
+        GLX_RENDER_TYPE     , GLX_RGBA_BIT,
+        GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
+        GLX_RED_SIZE        , 8,
+        GLX_GREEN_SIZE      , 8,
+        GLX_BLUE_SIZE       , 8,
+        GLX_ALPHA_SIZE      , 8,
+        GLX_DEPTH_SIZE      , 24,
+        GLX_STENCIL_SIZE    , 8,
+        GLX_DOUBLEBUFFER    , True,
+        /* GLX_SAMPLE_BUFFERS  , 1, */
+        /* GLX_SAMPLES         , 4, */
+        None
+    };
 
     int argc = 0;
     char **argv = NULL;
@@ -150,124 +172,110 @@ static void recurse (Node *root, GdkEvent *event)
     }
 
     self = [super init];
-
+    
     /* Create the rendering context and associated visual. */
 
     gdk_init(&argc, &argv);
-    gdk_gl_init(&argc, &argv);
 
-    if (!debugcontext) {
-        int configuration[] = {GDK_GL_RGBA,
-                               GDK_GL_DOUBLEBUFFER,
-                               GDK_GL_RED_SIZE, 1,
-                               GDK_GL_GREEN_SIZE, 1,
-                               GDK_GL_BLUE_SIZE, 1,
-                               GDK_GL_ALPHA_SIZE, 1,
-                               GDK_GL_DEPTH_SIZE, 12,
-                               GDK_GL_STENCIL_SIZE, 1,
-                               GDK_GL_ATTRIB_LIST_NONE};
-
-        config = gdk_gl_config_new(configuration);
-
-        if (!config) {
-            t_print_error ("I could not find a suitable framebuffer "
-			   "configuration.\n");
-            exit(1);
-        }
-    } else {
-        int context_attributes[] = {
-            GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-            GLX_CONTEXT_MINOR_VERSION_ARB, 3,
-            GLX_RENDER_TYPE, GLX_RGBA_TYPE,
-            GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-            GLX_CONTEXT_FLAGS_ARB, (GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB |
-                                    GLX_CONTEXT_DEBUG_BIT_ARB),
-            None
-        };
- 
-        int visual_attributes[] = {
-            GLX_X_RENDERABLE    , True,
-            GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
-            GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-            GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-            GLX_RED_SIZE        , 8,
-            GLX_GREEN_SIZE      , 8,
-            GLX_BLUE_SIZE       , 8,
-            GLX_ALPHA_SIZE      , 8,
-            GLX_DEPTH_SIZE      , 24,
-            GLX_STENCIL_SIZE    , 8,
-            GLX_DOUBLEBUFFER    , True,
-            /* GLX_SAMPLE_BUFFERS  , 1, */
-            /* GLX_SAMPLES         , 4, */
-            None
-        };
-
-        Display * display;
-        GLXFBConfig *glxconfigs, glxconfig;
-        GLXContext glxcontext;
-        XVisualInfo *info;
-        
-        PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB;
-
-	/* Get the API entry point. */
-	
-        glXCreateContextAttribsARB = (PFNGLXCREATECONTEXTATTRIBSARBPROC)glXGetProcAddressARB((const GLubyte *)"glXCreateContextAttribsARB");
-        
-        display = gdk_x11_get_default_xdisplay();
+    display = gdk_display_get_default ();
+    screen = gdk_display_get_default_screen (display);
     
-        /* Check the version. */
+    /* Check the version. */
 	
-        if (!glXQueryVersion(display, &i, &j) ||
-	    (i == 1 && j < 4) || i < 1) {
-            t_print_error ("This GLX version is not supported.\n");
-            exit(1);
-        }
-
-	/* Query the framebuffer configurations. */
-	
-        glxconfigs = glXChooseFBConfig(display, DefaultScreen(display), 
-                                       visual_attributes, &j);
-        if (!glxconfigs) {
-            t_print_error("Failed to retrieve any framebuffer configurations.\n");
-            exit(1);
-        }
-        
-        t_print_message("Found %d matching framebuffer configurations.\n", j);
-
-	/* Choose a configuration at random and create a GLX context. */
-	
-        glxconfig = glxconfigs[0];
-        glxcontext = glXCreateContextAttribsARB(display, glxconfig, 0,
-                                                True, context_attributes);
-
-        XSync(display, False);        
- 
-	t_print_message("Created a core profile, forward-compatible, debugging GLX context.\n");
-
-	/* Convert framebuffer configuration and GLX context to GdkGL. */
-	
-        info = glXGetVisualFromFBConfig(display, glxconfig);
-        config = gdk_x11_gl_config_new_from_visualid (info->visualid);
-        
-        context = gdk_x11_gl_context_foreign_new (config, NULL, glxcontext);
-
-	/* Clean up. */
-	
-        XFree(glxconfigs);
-        XFree(info);
+    if (!glXQueryVersion(GDK_DISPLAY_XDISPLAY(display), &i, &j) ||
+        (i == 1 && j < 4) || i < 1) {
+        t_print_error ("This GLX version is not supported.\n");
+        exit(1);
     }
+
+    /* Query the framebuffer configurations. */
+
+    configurations = glXChooseFBConfig(GDK_DISPLAY_XDISPLAY(display),
+                                       GDK_SCREEN_XNUMBER(screen), 
+                                       visual_attributes, &j);
+    if (!configurations) {
+        t_print_error("Failed to retrieve any framebuffer configurations.\n");
+        exit(1);
+    }
+        
+    t_print_message("Found %d matching framebuffer configurations.\n", j);
+
+    /* Choose a configuration at random and create a GLX context. */
+	
+    configuration = configurations[0];
+
+    if (debugcontext) {
+        context = glXCreateContextAttribsARB(GDK_DISPLAY_XDISPLAY(display),
+                                             configuration, 0,
+                                             True, context_attributes);
+
+        t_print_message("Created a core profile, forward-compatible, debugging "
+                        "GLX context.\n");
+    } else {
+        context = glXCreateNewContext(GDK_DISPLAY_XDISPLAY(display),
+                                      configuration, GLX_RGBA_TYPE, 0, True);
+    }
+
+    gdk_display_sync(display);
+ 
+    if (!context) {
+        t_print_error ("I could not create a rendering context.\n");
+        exit(1);
+    }
+        
+    /* Print useful debug information. */
+        
+    t_print_message ("The graphics renderer is: '%s %s'.\n",
+                     glGetString(GL_RENDERER), glGetString(GL_VERSION));
+    t_print_message ("The shading language version is: '%s'.\n",
+                     glGetString(GL_SHADING_LANGUAGE_VERSION));
+        
+    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                          GLX_RED_SIZE, &r);
+        
+    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                          GLX_GREEN_SIZE, &g);
+        
+    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                          GLX_BLUE_SIZE, &b);
+        
+    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                          GLX_ALPHA_SIZE, &a);
+        
+    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                          GLX_DEPTH_SIZE, &z);
+        
+    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                          GLX_STENCIL_SIZE, &s);
+
+    t_print_message ("The configuration of the framebuffer is "
+                     "[%d, %d, %d, %d, %d, %d].\n", r, g, b, a, z, s);
+
+    t_print_message ("The rendering context is%sdirect.\n",
+                     glXIsDirect (GDK_DISPLAY_XDISPLAY(display), context) ?
+                     " " : " *not* ");
+
+    /* Get the visual. */
+	
+    info = glXGetVisualFromFBConfig(GDK_DISPLAY_XDISPLAY(display), configuration);
+    visual = gdk_x11_screen_lookup_visual (screen, info->visualid);
+
+    /* Clean up. */
+	
+    XFree(configurations);
+    XFree(info);
     
     /* Create the window. */
 
-    attributes.window_type = GDK_WINDOW_TOPLEVEL;
-    attributes.wclass = GDK_INPUT_OUTPUT;
-    attributes.wmclass_name = name;
-    attributes.wmclass_class = class;
-    attributes.colormap = gdk_gl_config_get_colormap(config);
-    attributes.visual = gdk_gl_config_get_visual(config);
-    attributes.width = 640;
-    attributes.height = 480;
-    attributes.event_mask = (GDK_STRUCTURE_MASK |
+    window_attributes.window_type = GDK_WINDOW_TOPLEVEL;
+    window_attributes.wclass = GDK_INPUT_OUTPUT;
+    window_attributes.wmclass_name = name;
+    window_attributes.wmclass_class = class;
+    window_attributes.colormap = gdk_colormap_new(visual, FALSE);
+    window_attributes.visual = visual;
+    window_attributes.width = 640;
+    window_attributes.height = 480;
+    window_attributes.event_mask = (GDK_STRUCTURE_MASK |
 			     GDK_FOCUS_CHANGE_MASK |
 			     GDK_BUTTON_PRESS_MASK |
 			     GDK_BUTTON_RELEASE_MASK |
@@ -277,77 +285,36 @@ static void recurse (Node *root, GdkEvent *event)
 			     GDK_SCROLL_MASK);
 
     window = gdk_window_new(gdk_get_default_root_window(),
-			    &attributes, 
+			    &window_attributes, 
 			    GDK_WA_COLORMAP | GDK_WA_VISUAL |
 			    GDK_WA_WMCLASS);
+
+    glXMakeCurrent(GDK_DISPLAY_XDISPLAY(display),
+                   GDK_WINDOW_XWINDOW(window),
+                   context);
 	
-    gdk_window_set_gl_capability(window, config, NULL);
-    drawable = gdk_window_get_gl_drawable(window);
-	
-    /* Create the context. */
-    if (!debugcontext) {
-        context = gdk_gl_context_new(drawable, NULL, TRUE,
-				     GDK_GL_RGBA_TYPE);
+    if (debugcontext) {
+        glDebugMessageCallbackARB (debug_callback, NULL);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+
+        glDebugMessageControlARB (GL_DONT_CARE,
+        			  GL_DONT_CARE,
+        			  GL_DEBUG_SEVERITY_HIGH_ARB,
+        			  0, NULL,
+        			  GL_TRUE);
+
+        glDebugMessageControlARB (GL_DONT_CARE,
+        			  GL_DONT_CARE,
+        			  GL_DEBUG_SEVERITY_MEDIUM_ARB,
+        			  0, NULL,
+        			  debugcontext > 1 ? GL_TRUE : GL_FALSE);
+
+        glDebugMessageControlARB (GL_DONT_CARE,
+        			  GL_DONT_CARE,
+        			  GL_DEBUG_SEVERITY_LOW_ARB,
+        			  0, NULL,
+        			  debugcontext > 2 ? GL_TRUE : GL_FALSE);
     }
-
-    gdk_gl_drawable_make_current(drawable, context);
-	
-    if (debugcontext) {	
-	PFNGLDEBUGMESSAGECALLBACKARBPROC glDebugMessageCallbackARB;
-	
-	glDebugMessageCallbackARB = (PFNGLDEBUGMESSAGECALLBACKARBPROC)glXGetProcAddressARB((const GLubyte *)"glDebugMessageCallbackARB");
-	
-	glDebugMessageCallbackARB (debug_callback, NULL);
-	
-	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-
-	__glDebugMessageControlARB = (PFNGLDEBUGMESSAGECONTROLARBPROC)glXGetProcAddressARB((const GLubyte *)"glDebugMessageControlARB");
-
-	__glDebugMessageControlARB (GL_DONT_CARE,
-				  GL_DONT_CARE,
-				  GL_DEBUG_SEVERITY_HIGH_ARB,
-				  0, NULL,
-				  GL_TRUE);
-
-	__glDebugMessageControlARB (GL_DONT_CARE,
-				  GL_DONT_CARE,
-				  GL_DEBUG_SEVERITY_MEDIUM_ARB,
-				  0, NULL,
-				  debugcontext > 1 ? GL_TRUE : GL_FALSE);
-
-	__glDebugMessageControlARB (GL_DONT_CARE,
-				  GL_DONT_CARE,
-				  GL_DEBUG_SEVERITY_LOW_ARB,
-				  0, NULL,
-				  debugcontext > 2 ? GL_TRUE : GL_FALSE);
-    }
-
-    if (!context) {
-        t_print_error ("I could not create a rendering context.\n");
-        exit(1);
-    }
-
-    /* Print useful debug information. */    
-
-    gdk_gl_query_version(&i, &j);
-    gdk_gl_config_get_attrib(config, GDK_GL_RED_SIZE, &r);
-    gdk_gl_config_get_attrib(config, GDK_GL_GREEN_SIZE, &g);
-    gdk_gl_config_get_attrib(config, GDK_GL_BLUE_SIZE, &b);
-    gdk_gl_config_get_attrib(config, GDK_GL_ALPHA_SIZE, &a);
-    gdk_gl_config_get_attrib(config, GDK_GL_DEPTH_SIZE, &z);
-    gdk_gl_config_get_attrib(config, GDK_GL_STENCIL_SIZE, &s);
-        
-    t_print_message("The GdkGL extension version is %d.%d.\n", i, j);
-    t_print_message ("The graphics renderer is: '%s %s'.\n",
-	    glGetString(GL_RENDERER), glGetString(GL_VERSION));
-    t_print_message ("The shading language version is: '%s'.\n",
-		     glGetString(GL_SHADING_LANGUAGE_VERSION));
-
-    t_print_message ("The configuration of the framebuffer I got is "
-	    "[%d, %d, %d, %d, %d, %d].\n", r, g, b, a, z, s);
-
-    t_print_message ("The rendering context is%sdirect.\n",
-	    gdk_gl_context_is_direct (context) == TRUE ? " " : " *not* ");
     
     return self;
 }
@@ -459,7 +426,9 @@ static void recurse (Node *root, GdkEvent *event)
     
     [root traverse];
 
-    gdk_gl_drawable_swap_buffers (drawable);
+    glXSwapBuffers (GDK_DISPLAY_XDISPLAY(display),
+                    GDK_WINDOW_XWINDOW(window));
+    
     t_end_interval (root, T_TRAVERSE_PHASE);
 
     t_begin_interval (root, T_FINISH_PHASE);    
@@ -779,9 +748,7 @@ static void recurse (Node *root, GdkEvent *event)
     lua_pop (_L, 2);
     gdk_window_get_origin (window, &x_w, &y_w);
 
-    gdk_display_warp_pointer (gdk_display_get_default(),
-			      gdk_screen_get_default(),
-			      x_p + x_w, y_p + y_w);
+    gdk_display_warp_pointer (display, screen, x_p + x_w, y_p + y_w);
 }
 
 -(void) _set_perspective
@@ -817,7 +784,7 @@ static void recurse (Node *root, GdkEvent *event)
 	frustum[i] = lua_tonumber(_L, -1);
 	lua_pop (_L, 1);
     }
-
+    
     projection = FRUSTUM;
 
     glMatrixMode (GL_PROJECTION);

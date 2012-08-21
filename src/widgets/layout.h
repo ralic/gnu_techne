@@ -18,7 +18,6 @@
 #define _LAYOUT_H_
 
 #include <gdk/gdk.h>
-#include <gdk/gdkgl.h>
 #include "widget.h"
 
 @interface Layout: Widget {

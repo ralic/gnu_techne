@@ -14,14 +14,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LINE_H_
-#define _LINE_H_
+#ifndef _SHAPE_H_
+#define _SHAPE_H_
 
+#include <GL/gl.h>
 #include <lua.h>
-#include "shape.h"
 
-@interface Line: Shape {
+#include "array/array.h"
+#include "transform.h"
+
+typedef struct shape_Buffer {
+    struct shape_Buffer *next;
+    
+    char *key;
+    unsigned int name, index;
+
+    array_Type type;
+    int size, length;
+} shape_Buffer;
+
+@interface Shape: Transform {
+@public
+    shape_Buffer *buffers, *indices;
+    unsigned int name;
+    GLenum mode;
 }
+
+-(Shape *)initWithMode: (GLenum) mode;
+
 @end
 
 #endif

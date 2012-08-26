@@ -34,7 +34,6 @@
 -(int) _get_cursor;
 -(int) _get_pointer;
 -(int) _get_perspective;
--(int) _get_frustum;
 -(int) _get_orthographic;	
 -(int) _get_canvas;
 -(int) _get_configure;	
@@ -52,7 +51,6 @@
 -(void) _set_cursor;
 -(void) _set_pointer;
 -(void) _set_perspective;
--(void) _set_frustum;
 -(void) _set_orthographic;
 -(void) _set_canvas;
 -(void) _set_configure;
@@ -63,5 +61,8 @@
 -(void) _set_screen;
 
 @end
+
+void t_set_projection (float *matrix);
+void t_set_modelview (float *matrix);
 
 #endif

@@ -1398,7 +1398,7 @@ static int sampler_index(lua_State *L)
 
 	glMatrixMode (GL_MODELVIEW);
 	glPushMatrix();
-	glMultMatrixd (self->matrix);
+	glMultMatrixf (self->matrix);
 
 	glEnable (GL_DEPTH_TEST);
 	glEnable (GL_CULL_FACE);

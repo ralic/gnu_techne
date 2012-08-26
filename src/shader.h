@@ -14,14 +14,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _POINTS_H_
-#define _POINTS_H_
+#ifndef _SHADER_H_
+#define _SHADER_H_
 
 #include <lua.h>
-#include "shape.h"
+#include "node.h"
 
-@interface Points: Shape {
+typedef struct {
+    unsigned int block;
+    int type, size, offset, arraystride, matrixstride;
+} shader_Uniform;
+
+typedef enum {
+    VERTEX_STAGE,
+    GEOMETRY_STAGE,
+    FRAGMENT_STAGE
+}  shader_Stage;
+
+@interface Shader: Node {
+@public
+    unsigned int *blocks, name;
+    shader_Uniform *uniforms;
+    int range, ismold;
 }
+
+
++(int) addUniformBlock: (const char *)declaration
+		   for: (shader_Stage)stage;
+-(void) addSource: (const char *) source for: (shader_Stage)stage;
+-(void) link;
+-(id)initFrom: (Shader *) mold;
+
 @end
 
 #endif

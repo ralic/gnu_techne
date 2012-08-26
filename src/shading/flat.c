@@ -14,45 +14,42 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
+
 #include <lua.h>
 #include <lauxlib.h>
+
 #include <GL/gl.h>
+#include <GL/glx.h>
 
-#include "line.h"
+#include "techne.h"
+#include "flat.h"
+#include "shader.h"
 
-@implementation Line
+static Shader *mold;
+static int reference;
 
--(void) traverse
+@implementation Flat
+-(Flat *)init
 {
-    if (self->vertices) {
-	glMatrixMode (GL_MODELVIEW);
-	glPushMatrix();
-	glMultMatrixd (self->matrix);
-
-	glUseProgramObjectARB(0);
-	
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LINE_SMOOTH);
-	glEnable(GL_BLEND);
-	glLineWidth (self->width);
-
-	glColor4dv(self->color);
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_DOUBLE, 0, self->vertices->values.any);
-	glDrawArrays(GL_LINE_STRIP, 0, self->vertices->size[0]);
-	glDisableClientState(GL_VERTEX_ARRAY);
+#include "glsl/flat_vertex.h"	
+#include "glsl/flat_fragment.h"	
     
-	glDisable(GL_BLEND);
-	glDisable(GL_LINE_SMOOTH);
-	glDisable(GL_DEPTH_TEST);
-    
-	glMatrixMode (GL_MODELVIEW);
-	glPopMatrix();
+    /* If this is the first instance create the program. */
+
+    if (!mold) {
+	mold = [[Shader alloc] init];
+
+	[mold addSource: glsl_flat_vertex for: VERTEX_STAGE];
+	[mold addSource: glsl_flat_fragment for: FRAGMENT_STAGE];
+	[mold link];
+
+	reference = luaL_ref (_L, LUA_REGISTRYINDEX);
     }
     
-    [super traverse];
+    [self initFrom: mold];
+    
+    return self;
 }
 
 @end

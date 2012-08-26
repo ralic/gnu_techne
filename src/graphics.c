@@ -15,6 +15,9 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
@@ -32,8 +35,14 @@
 #include "array/array.h"
 #include "techne.h"
 #include "graphics.h"
+#include "shader.h"
 #include "transform.h"
 #include "event.h"
+
+#define PROJECTION_OFFSET (0)
+#define PROJECTION_SIZE (sizeof(float[16]))
+#define MODELVIEW_OFFSET (PROJECTION_OFFSET + PROJECTION_SIZE)
+#define MODELVIEW_SIZE (sizeof(float[16]))
 
 static PFNGLDEBUGMESSAGECONTROLARBPROC __glDebugMessageControlARB;
 
@@ -43,6 +52,8 @@ static GdkGLDrawable *drawable = NULL;
 static enum {
     ORTHOGRAPHIC, PERSPECTIVE, FRUSTUM
 } projection;
+
+static float matrix[16];
 
 static int width, height;
 static int hide = 1, cursor = 1, decorate = 1;
@@ -55,6 +66,7 @@ static unsigned int *keys;
 static int allocated;
 
 static int debugcontext = -1;
+static unsigned int buffer;
 
 static void APIENTRY debug_callback (GLenum source,
 				     GLenum type,
@@ -104,6 +116,10 @@ static void APIENTRY debug_callback (GLenum source,
     
     __glDebugMessageControlARB (source, type, GL_DONT_CARE,
 				1, &id, GL_FALSE);
+
+    if (debugcontext > 3) {
+	raise(2);
+    }
 }
 
 static void recurse (Node *root, GdkEvent *event)
@@ -119,6 +135,62 @@ static void recurse (Node *root, GdkEvent *event)
 	recurse (child, event);
 	t_end_interval (child, T_INPUT_PHASE);
     }
+}
+
+static void update_projection()
+{
+    double a;
+    
+    memset (matrix, 0, sizeof (float[16]));
+    
+    switch (projection) {
+    case FRUSTUM:
+	a = (double)width / height;
+	
+	/* Set planes based on frustum. */
+
+	planes[4] = frustum[1];
+	planes[5] = frustum[2];
+	planes[3] = frustum[1] * tan(frustum[0] * M_PI / 360.0);
+	planes[2] = -planes[3];
+
+	planes[0] = planes[2] * a;
+	planes[1] = planes[3] * a;
+    case PERSPECTIVE:
+	matrix[0] = 2 * planes[4] / (planes[1] - planes[0]);
+	matrix[2] = (planes[1] + planes[0]) / (planes[1] - planes[0]);
+	matrix[5] = 2 * planes[4] / (planes[3] - planes[2]);
+	matrix[6] = (planes[3] + planes[2]) / (planes[3] - planes[2]);
+	matrix[10] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
+	matrix[11] = -2 * planes[5] * planes[4] / (planes[5] - planes[4]);
+	matrix[14] = -1;
+	break;
+    case ORTHOGRAPHIC:
+	matrix[0] = 2 / (planes[1] - planes[0]);
+	matrix[3] = -(planes[1] + planes[0]) / (planes[1] - planes[0]);
+	matrix[5] = 2 / (planes[3] - planes[2]);
+	matrix[7] = -(planes[3] + planes[2]) / (planes[3] - planes[2]);
+	matrix[10] = -2 / (planes[5] - planes[4]);
+	matrix[11] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
+	matrix[15] = 1;	
+	break;
+    }
+    
+    t_set_projection(matrix);
+}
+
+void t_set_projection (float *matrix)
+{
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+    glBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,
+		    PROJECTION_SIZE, matrix);
+}
+
+void t_set_modelview (float *matrix)
+{
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+    glBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,
+		    MODELVIEW_SIZE, matrix);
 }
 
 @implementation Graphics
@@ -285,6 +357,7 @@ static void recurse (Node *root, GdkEvent *event)
     drawable = gdk_window_get_gl_drawable(window);
 	
     /* Create the context. */
+
     if (!debugcontext) {
         context = gdk_gl_context_new(drawable, NULL, TRUE,
 				     GDK_GL_RGBA_TYPE);
@@ -348,6 +421,34 @@ static void recurse (Node *root, GdkEvent *event)
 
     t_print_message ("The rendering context is%sdirect.\n",
 	    gdk_gl_context_is_direct (context) == TRUE ? " " : " *not* ");
+
+    {
+#include "glsl/transform_block.h"
+
+	float I[16] = {1, 0, 0, 0,
+		       0, 1, 0, 0,
+		       0, 0, 1, 0,
+		       0, 0, 0, 1};
+	int i;
+
+	/* Register the transform uniform block. */
+	
+	i = [Shader addUniformBlock: glsl_transform_block
+				for: VERTEX_STAGE];
+
+	/* Create the global shading context buffer object. */
+    
+	glGenBuffers(1, &buffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof (float[16]), NULL,
+		     GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, i, buffer);
+
+	/* Initialize the values. */
+    
+	t_set_projection (I);
+	t_set_modelview (I);
+    }
     
     return self;
 }
@@ -372,12 +473,9 @@ static void recurse (Node *root, GdkEvent *event)
 	     * changed. */
 	    
 	    if (projection == FRUSTUM) {
-		glMatrixMode (GL_PROJECTION);
-		glLoadIdentity();
-		gluPerspective (frustum[0],
-				(double)width / height,
-				frustum[1],
-				frustum[2]);
+		/* Set planes based on frustum. */
+
+		update_projection();
 	    }		
 
 	    t_push_userdata (_L, 1, self);
@@ -523,24 +621,6 @@ static void recurse (Node *root, GdkEvent *event)
     return 1;
 }
 
--(int) _get_frustum
-{
-    int i;
-    
-    if (projection == FRUSTUM) {
-	lua_newtable(_L);
-        
-	for(i = 0; i < 3; i += 1) {
-	    lua_pushnumber(_L, frustum[i]);
-	    lua_rawseti(_L, -2, i + 1);
-	}
-    } else {
-	lua_pushnil (_L);
-    }
-
-    return 1;
-}
-
 -(int) _get_pointer
 {
     /* Implement this if needed. */
@@ -557,6 +637,13 @@ static void recurse (Node *root, GdkEvent *event)
         
 	for(i = 0; i < 6; i += 1) {
 	    lua_pushnumber(_L, planes[i]);
+	    lua_rawseti(_L, -2, i + 1);
+	}
+    } else if (projection == FRUSTUM) {
+	lua_newtable(_L);
+        
+	for(i = 0; i < 3; i += 1) {
+	    lua_pushnumber(_L, frustum[i]);
 	    lua_rawseti(_L, -2, i + 1);
 	}
     } else {
@@ -786,45 +873,31 @@ static void recurse (Node *root, GdkEvent *event)
 
 -(void) _set_perspective
 {
-    int i;
+    int i, n;
 
-    for (i = 0 ; i < 6 ; i += 1) {
-	lua_pushinteger (_L, i + 1);
-	lua_gettable (_L, 3);
-	planes[i] = lua_tonumber(_L, -1);
-	lua_pop (_L, 1);
+    n = lua_rawlen(_L, 3);
+
+    if (n == 3) {
+	for (i = 0 ; i < 3 ; i += 1) {
+	    lua_pushinteger (_L, i + 1);
+	    lua_gettable (_L, 3);
+	    frustum[i] = lua_tonumber(_L, -1);
+	    lua_pop (_L, 1);
+	}
+
+	projection = FRUSTUM;
+    } else {
+	for (i = 0 ; i < 6 ; i += 1) {
+	    lua_pushinteger (_L, i + 1);
+	    lua_gettable (_L, 3);
+	    planes[i] = lua_tonumber(_L, -1);
+	    lua_pop (_L, 1);
+	}
+
+	projection = PERSPECTIVE;
     }
-
-    projection = PERSPECTIVE;
-
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity ();
-    glFrustum (planes[0],
-	       planes[1],
-	       planes[2],
-	       planes[3],
-	       planes[4],
-	       planes[5]);
-}
-
--(void) _set_frustum
-{
-    int i;
-
-    for (i = 0 ; i < 3 ; i += 1) {
-	lua_pushinteger (_L, i + 1);
-	lua_gettable (_L, 3);
-	frustum[i] = lua_tonumber(_L, -1);
-	lua_pop (_L, 1);
-    }
-
-    projection = FRUSTUM;
-
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity ();
-    gluPerspective (frustum[0],
-		    (double)width / height,
-		    frustum[1], frustum[2]);
+    
+    update_projection();
 }
 
 -(void) _set_orthographic
@@ -839,15 +912,7 @@ static void recurse (Node *root, GdkEvent *event)
     }
 
     projection = ORTHOGRAPHIC;
-
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity ();
-    glOrtho (planes[0],
-	     planes[1],
-	     planes[2],
-	     planes[3],
-	     planes[4],
-	     planes[5]);
+    update_projection();
 }
 
 -(void) _set_canvas
@@ -895,4 +960,5 @@ static void recurse (Node *root, GdkEvent *event)
 {
     /* Do nothing. */
 }
+
 @end

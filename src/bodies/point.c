@@ -42,7 +42,7 @@
 
 	glMatrixMode (GL_MODELVIEW);
 	glPushMatrix();
-	glMultMatrixd (self->matrix);
+	glMultMatrixf (self->matrix);
 
 	glPointSize (5);
 	glColor3f (1, 1, 0);

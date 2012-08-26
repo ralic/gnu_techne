@@ -21,7 +21,8 @@
 
 @interface Transform: Node {
     double position[3], orientation[9];
-    double translation[3], rotation[9], matrix[16];
+    double translation[3], rotation[9];
+    float matrix[16];
 
     int transform;
 }

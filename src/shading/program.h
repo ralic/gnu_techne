@@ -14,45 +14,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _PROGRAM_H_
+#define _PROGRAM_H_
+
 #include <lua.h>
-#include <lauxlib.h>
-#include <GL/gl.h>
+#include "shader.h"
 
-#include "lines.h"
-
-@implementation Lines
-
--(void) traverse
-{
-    if (self->vertices) {
-	glMatrixMode (GL_MODELVIEW);
-	glPushMatrix();
-	glMultMatrixd (self->matrix);
-
-	glUseProgramObjectARB(0);
-	
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LINE_SMOOTH);
-	glEnable(GL_BLEND);
-	glLineWidth (self->width);
-
-	glColor4dv(self->color);
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_DOUBLE, 0, self->vertices->values.any);
-	glDrawArrays(GL_LINES, 0, self->vertices->size[0]);
-	glDisableClientState(GL_VERTEX_ARRAY);
-    
-	glDisable(GL_BLEND);
-	glDisable(GL_LINE_SMOOTH);
-	glDisable(GL_DEPTH_TEST);
-    
-	glMatrixMode (GL_MODELVIEW);
-	glPopMatrix();
-    }
-    
-    [super traverse];
+@interface Program: Shader {
+@public
+    unsigned int program;
 }
 
+-(int) _get_sources;
+-(void) _set_sources;
+
 @end
+
+#endif

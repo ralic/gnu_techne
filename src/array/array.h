@@ -102,4 +102,11 @@ void array_createarray (lua_State *L, array_Type type, void *values,
 			int rank, ...);
 void array_pusharray (lua_State *L, array_Array *array);
 
+int array_add (lua_State *L);
+int array_subtract (lua_State *L);
+int array_multiply (lua_State *L);
+int array_divide (lua_State *L);
+int array_scale (lua_State *L);
+int array_raise (lua_State *L);
+
 #endif

@@ -19,6 +19,14 @@ Makefile.in
 !src/transform/Makefile
 !src/array/Makefile
 !src/prompt/Makefile
+src/prompt/luap
+src/glsl/*.h
+src/glsl/stringify
+src/opengl.[ch]
+src/browser.bin
+src/techne
+src/techne-browser
+src/techne.bin
 /stamp-*
 *.[oa]
 *.lo

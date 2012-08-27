@@ -69,8 +69,6 @@ typedef enum {
 
 +(const struct protocol *) introspect;
 
--(void) describe;
-
 -(void) meetSibling: (Node *)sibling;
 -(void) missSibling: (Node *)sibling;
 -(void) meetParent: (Node *)parent;
@@ -84,6 +82,8 @@ typedef enum {
 -(void) stepBy: (double) h at: (double) t;
 -(void) traverse;
 -(void) finish;
+
+-(int) call;
 
 -(int) _get_tag;
 -(void) _set_tag;
@@ -125,6 +125,7 @@ void t_end_interval (Node *, tprof_Phase reading);
 int t_is_node(lua_State *L, int index);
 id t_test_node (lua_State *L, int index, Class class);
 id t_check_node(lua_State *L, int index, Class class);
+void t_configure_node (lua_State *L, int index);
 void t_export_nodes(lua_State *L, Class *classes);
 void t_push_userdata(lua_State *L, int n, ...);
 void t_push_hook(lua_State *L, int reference);

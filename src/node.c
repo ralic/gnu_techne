@@ -39,7 +39,6 @@
 #define GET_ELEMENT_LENGTH (sizeof ("_get_element") - 1)
 #define SET_ELEMENT_LENGTH (sizeof ("_set_element") - 1)
 
-static int initialized;
 static int userdata = LUA_REFNIL, tags = LUA_REFNIL, metatable = LUA_REFNIL;
 static Node *list;
 static const void *signature;
@@ -98,6 +97,22 @@ id t_check_node (lua_State *L, int index, Class class)
     return object;
 }
 
+void t_configure_node (lua_State *L, int index)
+{
+    /* Configure the node at the top of the stach with the values
+     * contained in the table at index. */
+    
+    if(lua_istable(L, index)) {
+	lua_pushnil(L);
+
+	while(lua_next(L, index)) {
+	    lua_pushvalue(L, -2);
+	    lua_insert(L, -2);
+	    lua_settable(L, -4);
+	}
+    }
+}
+
 static int constructnode (lua_State *L)
 {
     Class class;
@@ -105,18 +120,7 @@ static int constructnode (lua_State *L)
     class = (Class)lua_touserdata(L, lua_upvalueindex (1));
 
     [[class alloc] init];
-
-    /* ...and initialize it. */
-
-    if(lua_istable(L, 1)) {
-	lua_pushnil(L);
-
-	while(lua_next(L, 1)) {
-	    lua_pushvalue(L, -2);
-	    lua_insert(L, -2);
-	    lua_settable(L, 2);
-	}
-    }
+    t_configure_node (L, 1);
 
     return 1;
 }
@@ -671,6 +675,15 @@ static int __gc(lua_State *L)
     return 0;
 }
 
+static int __call(lua_State *L)
+{
+    Node *object;
+
+    object = *(Node **)lua_touserdata(L, 1);
+
+    return [object call];
+}
+
 static int __index(lua_State *L)
 {
     Node *object;
@@ -1016,13 +1029,9 @@ static int __newindex(lua_State *L)
     return protocol;
 }
 
--(id) init
++ (void)initialize
 {
-    self = [super init];
-
-    self->protocol = [[self class] introspect];
-
-    if (!initialized) {
+    if(self == [Node class]) {
 	/* Create the userdata reference table. */
 
 	lua_newtable (_L);
@@ -1069,9 +1078,14 @@ static int __newindex(lua_State *L)
 
 	lua_pushcfunction (_L, ancestor);
 	lua_setglobal (_L, "ancestor");
-
-	initialized = 1;
     }
+}
+
+-(id) init
+{
+    self = [super init];
+
+    self->protocol = [[self class] introspect];
 
     /* Put newly created nodes in the orphans list. */
 
@@ -1145,6 +1159,9 @@ static int __newindex(lua_State *L)
 	lua_pushstring(_L, "__gc");
 	lua_pushcfunction(_L, (lua_CFunction)__gc);
 	lua_settable(_L, -3);
+	lua_pushstring(_L, "__call");
+	lua_pushcfunction(_L, (lua_CFunction)__call);
+	lua_settable(_L, -3);
 
 	signature = lua_topointer (_L, -1);
 	metatable = luaL_ref (_L, LUA_REGISTRYINDEX);
@@ -1184,11 +1201,9 @@ static int __newindex(lua_State *L)
     return self;
 }
 
--(void) describe
+-(int) call
 {
-    t_print_message("%sNo description available.%s\n",
-		    t_ansi_color (31, 1),
-		    t_ansi_color (0, 0));    
+    return 0;
 }
 
 -(void) meetParent: (Node *)parent
@@ -1279,10 +1294,11 @@ static int __newindex(lua_State *L)
     }
 
     /* Introduce the newcomer to the family. */
+
+    [child meetParent: self];
     
     for (sibling = self->down ; sibling ; sibling = sibling->right) {
 	if (sibling != child) {
-	    [child meetParent: self];
 	    [child meetSibling: sibling];
 	    [sibling meetSibling: child];
 	}
@@ -1294,10 +1310,11 @@ static int __newindex(lua_State *L)
     Node *sibling;
     
     /* Say bye-bye to your family. */
+
+    [child missParent: self];
     
     for (sibling = self->down ; sibling ; sibling = sibling->right) {
 	if (sibling != child) {
-	    [child missParent: self];
 	    [child missSibling: sibling];
 	    [sibling missSibling: child];
 	}

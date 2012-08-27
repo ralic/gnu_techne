@@ -4,14 +4,15 @@ modulesdir = ${pkgdatadir}/modules
 AM_CPPFLAGS = -x objective-c \
 	      -D_GNU_SOURCE -DGL_GLEXT_PROTOTYPES \
 	      -DPKGDATADIR='"$(pkgdatadir)"' -DPKGLIBDIR='"$(pkglibdir)"'
-AM_CFLAGS = -Wall -Wextra -Wno-unused-parameter -Wno-div-by-zero -I$(top_srcdir) -I$(srcdir) ${LUA_CFLAGS}
+AM_CFLAGS = -Wall -Wno-div-by-zero -I$(top_srcdir) -I$(srcdir) ${LUA_CFLAGS}
 AM_LDADD = -lobjc -lm
 
 bin_SCRIPTS = techne
 
 # Support programs
 
-BUILT_SOURCES = 
+BUILT_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h	\
+		glsl/transform_block.h glsl/preamble.h
 SUFFIXES = .glsl.c
 $(BUILT_SOURCES): glsl/stringify
 .glsl.c.h: glsl/stringify
@@ -38,10 +39,11 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     graphics.h accoustics.c accoustics.h dynamics.c	\
 		     dynamics.h transform.c transform.h body.c body.h	\
 		     joint.c joint.h event.c event.h space.c space.h	\
-		     array/array.c array/operations.c array/array.h	\
-		     prompt/prompt.c prompt/prompt.h joints/contact.c	\
-		     profiling.c moremath.c timing.c memory.c		\
-		     network.c network.h proxy.c proxy.h
+		     shape.c shape.h shader.c shader.h array/array.c	\
+		     array/operations.c array/array.h prompt/prompt.c	\
+		     prompt/prompt.h joints/contact.c profiling.c	\
+		     moremath.c timing.c memory.c network.c network.h	\
+		     proxy.c proxy.h
 EXTRA_techne_bin_SOURCES = compat/asprintf.h
 
 techne_bin_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS} ${GL_CFLAGS}		\
@@ -59,7 +61,8 @@ nobase_pkglib_LTLIBRARIES = array/core.la transform/core.la	\
 			    joints/core.la bodies/core.la	\
 			    primitives/core.la physics.la	\
 			    shapes/core.la widgets/core.la	\
-			    automotive/core.la console/core.la
+			    automotive/core.la console/core.la	\
+			    shading/core.la
 
 dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    transform/transform.lua bodies/bodies.lua		\
@@ -67,7 +70,7 @@ dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    misc/bindings.lua misc/units.lua			\
 		    misc/resources.lua automotive/automotive.lua	\
 		    widgets/widgets.lua misc/serialize.lua		\
-		    console/console.lua
+		    console/console.lua shading/shading.lua
 
 console_core_la_SOURCES = console/core.c
 console_core_la_CFLAGS = ${AM_CFLAGS}
@@ -121,16 +124,21 @@ primitives_core_la_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS}
 primitives_core_la_LDFLAGS = -module -avoid-version -no-undefined
 primitives_core_la_LIBADD = ${GDK_LIBS} ${AM_LDADD}
 
+shading_core_la_SOURCES = shading/core.c shading/program.c	\
+			  shading/program.h shading/flat.c	\
+			  shading/flat.h
+shading_core_la_CFLAGS = ${AM_CFLAGS} ${GL_CFLAGS}
+shading_core_la_LDFLAGS = -module -avoid-version -no-undefined
+shading_core_la_LIBADD = ${GL_LIBS} ${AM_LDADD}
+
+EXTRA_shading_core_la_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h
+
 physics_la_SOURCES = physics.c
 physics_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 physics_la_LDFLAGS = -module -avoid-version -no-undefined
 physics_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
 
-shapes_core_la_SOURCES = shapes/core.c shapes/shape.c shapes/shape.h	\
-			 shapes/line.c shapes/line.h shapes/polygon.c	\
-			 shapes/polygon.h shapes/points.c		\
-			 shapes/points.h shapes/lines.c			\
-			 shapes/lines.h
+shapes_core_la_SOURCES = shapes/core.c
 shapes_core_la_CFLAGS = ${AM_CFLAGS} ${GL_CFLAGS}
 shapes_core_la_LDFLAGS = -module -avoid-version -no-undefined
 shapes_core_la_LIBADD = ${GL_LIBS} ${AM_LDADD}

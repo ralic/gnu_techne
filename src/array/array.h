@@ -76,6 +76,7 @@ typedef struct {
     } free;
     
     int rank, *size;
+    size_t length;
 } array_Array;
 
 int luaopen_array_core (lua_State *L);

@@ -1,0 +1,28 @@
+#!/bin/bash
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+datarootdir=@datarootdir@
+datadir=@datadir@
+
+# Wait for Techne to get up and running.
+
+echo "Waiting for Techne..."
+
+while [ -z "$(netstat -ln -A inet | tail -n +3 | awk '{print $4}' | grep ':29176')" ]; do
+    sleep 1
+done
+
+# Launch the browser.
+
+if [ $# -eq 0 ]; then
+    ${libdir}/techne/browser.bin http://localhost:29176 &
+else
+    ${libdir}/techne/browser.bin $* &
+fi
+
+PID=$!
+
+trap "kill -15 $PID" EXIT
+wait

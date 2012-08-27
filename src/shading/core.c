@@ -14,28 +14,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SHAPE_H_
-#define _SHAPE_H_
+#include <lua.h>
+#include <lauxlib.h>
 
-#include "transform.h"
-#include "array/array.h"
+#include "techne.h"
+#include "shape.h"
+#include "program.h"
+#include "flat.h"
 
-@interface Shape: Transform {
-    double width, color[4];
-    array_Array *vertices;
-    int reference;
+int luaopen_shading_core (lua_State *L)
+{
+    Class classes[] = {[Program class], [Flat class], NULL};
+
+    t_export_nodes (L, classes);
+    
+    return 1;
 }
-
--(int) _get_vertices;
--(int) _get_width;
--(int) _get_opacity;
--(int) _get_color;
-
--(void) _set_vertices;
--(void) _set_width;
--(void) _set_opacity;
--(void) _set_color;
-
-@end
-
-#endif

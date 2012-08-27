@@ -62,6 +62,7 @@ static void pusharray (lua_State *L, double *M)
 
     array.rank = 2;
     array.size = size;
+    array.length = 3 * 3 * sizeof(double);
     array.type = ARRAY_TDOUBLE;
     array.values.doubles = M;
     array.free = FREE_VALUES;

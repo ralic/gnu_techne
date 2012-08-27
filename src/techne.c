@@ -36,6 +36,7 @@
 #include "dynamics.h"
 #include "network.h"
 #include "graphics.h"
+#include "shader.h"
 #include "accoustics.h"
 
 static int quiet = 0;         /* Suppress messages. */
@@ -366,11 +367,11 @@ void t_print_warning (const char *format, ...)
     va_list argp;
 
     if (quiet < 2) {
-	va_start(argp, format);
 	fprintf (stderr, COLOR(1, 33));
+	va_start(argp, format);
 	vfprintf(stderr, format, argp);
-	fprintf (stderr, COLOR(0,));
 	va_end(argp);
+	fprintf (stderr, COLOR(0,));
     }
 }
 
@@ -446,23 +447,6 @@ void t_print_error (const char *format, ...)
     }
 #endif
     
-    /* Create and initialize the Lua state. */
-    
-    _L = luaL_newstate();
-
-    lua_atpanic (_L, panic);
-    luaL_requiref(_L, "base", luaopen_base, 1);
-    luaL_requiref(_L, "coroutine", luaopen_coroutine, 0);
-    luaL_requiref(_L, "string", luaopen_string, 0);
-    luaL_requiref(_L, "table", luaopen_table, 0);
-    luaL_requiref(_L, "math", luaopen_moremath, 0);
-    luaL_requiref(_L, "bit32", luaopen_bit32, 0);
-    luaL_requiref(_L, "io", luaopen_io, 0);
-    luaL_requiref(_L, "os", luaopen_os, 0);
-    luaL_requiref(_L, "debug", luaopen_debug, 0);
-    
-    lua_settop (_L, 0);
-    
     /* Modify the Lua path and cpath. */
 
     luaL_requiref(_L, "package", luaopen_package, 0);
@@ -485,6 +469,8 @@ void t_print_error (const char *format, ...)
     if (lua_pcall(_L, 1, 0, 0) != LUA_OK) {
 	lua_pop (_L, 1);
     }
+
+    lua_atpanic (_L, panic);
 
     /* Create the options table. */
 
@@ -548,7 +534,6 @@ void t_print_error (const char *format, ...)
 	    
 	    lua_settable (_L, -3);
 	} else if (option == 'e') {
-	    _TRACE ("%s\n", optarg);
 	    /* Compile the chunk and stash it away behind the options
 	     * table. */
 	    

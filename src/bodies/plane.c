@@ -90,7 +90,7 @@
 	T[14] *= 0;
 
 	glLoadMatrixd (T);
-	glMultMatrixd (self->matrix);
+	glMultMatrixf (self->matrix);
 
 	glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
 	glEnable (GL_DEPTH_TEST);

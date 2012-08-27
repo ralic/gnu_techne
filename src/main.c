@@ -25,6 +25,22 @@
 int main(int argc, char **argv)
 {
     Techne *techne;
+    
+    /* Create and initialize the Lua state. */
+    
+    _L = luaL_newstate();
+
+    luaL_requiref(_L, "base", luaopen_base, 1);
+    luaL_requiref(_L, "coroutine", luaopen_coroutine, 0);
+    luaL_requiref(_L, "string", luaopen_string, 0);
+    luaL_requiref(_L, "table", luaopen_table, 0);
+    luaL_requiref(_L, "math", luaopen_moremath, 0);
+    luaL_requiref(_L, "bit32", luaopen_bit32, 0);
+    luaL_requiref(_L, "io", luaopen_io, 0);
+    luaL_requiref(_L, "os", luaopen_os, 0);
+    luaL_requiref(_L, "debug", luaopen_debug, 0);
+    
+    lua_settop (_L, 0);
 
     techne = [[Techne alloc] initWithArgc: argc andArgv: argv];
 

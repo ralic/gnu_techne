@@ -21,16 +21,51 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include "lines.h"
-#include "line.h"
-#include "points.h"
-#include "polygon.h"
+#include "shape.h"
+
+#define DEFINE_SHAPE(shape, mode)				\
+    static int export_##shape (lua_State *L)			\
+    {								\
+	[[Shape alloc] initWithMode: mode];			\
+								\
+	/* ...and initialize it. */				\
+								\
+	if(lua_istable(L, 1)) {					\
+	    lua_pushnil(L);					\
+								\
+	    while(lua_next(L, 1)) {				\
+		lua_pushvalue(L, -2);				\
+		lua_insert(L, -2);				\
+		lua_settable(L, 2);				\
+	    }							\
+	}							\
+								\
+	return 1;						\
+    }
+
+DEFINE_SHAPE(points, GL_POINTS)
+DEFINE_SHAPE(line, GL_LINE_STRIP)
+DEFINE_SHAPE(loop, GL_LINE_LOOP)
+DEFINE_SHAPE(lines, GL_LINES)
+DEFINE_SHAPE(mesh, GL_TRIANGLES)
+DEFINE_SHAPE(strip, GL_TRIANGLE_STRIP)
+DEFINE_SHAPE(fan, GL_TRIANGLE_FAN)
 
 int luaopen_shapes_core (lua_State *L)
 {
-    Class classes[] = {[Lines class], [Line class], [Points class], [Polygon class], NULL};
+    const luaL_Reg shapes[] = {
+	{"points", export_points},
+	{"line", export_line},
+	{"loop", export_loop},
+	{"lines", export_lines},
+	{"mesh", export_mesh},
+	{"strip", export_strip},
+	{"fan", export_fan},
+	{NULL, NULL}
+    };
 
-    t_export_nodes (L, classes);
+    lua_newtable (L);
+    luaL_setfuncs (L, shapes, 0);
     
     return 1;
 }

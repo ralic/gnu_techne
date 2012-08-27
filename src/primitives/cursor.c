@@ -14,11 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include <lua.h>
 #include <lauxlib.h>
 
 #include <gdk/gdk.h>
-#include <GL/gl.h>
+
+#include "gl.h"
 
 #include "techne.h"
 #include "cursor.h"
@@ -61,32 +63,55 @@ static int pointer[2], uptodate;
 	int v[4];
 
 	glGetIntegerv (GL_VIEWPORT, v);
-
+	/* _TRACEV(4, "d", v); */
+	
 	/* We're only interested in color values.
 	   Updating the stencil would screw up
 	   the picking mechanism. */
 	
 	glDepthMask (GL_FALSE);
 	glStencilMask (0);
-	
-	glMatrixMode (GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(v[0], v[2], v[3], v[1], 0, 1);
 
-	glMatrixMode (GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	glTranslated (pointer[0], pointer[1], 0);
-	
-	glUseProgramObjectARB(0);
+	{
+	    static float M[16];
 
+	    /* glMatrixMode (GL_PROJECTION); */
+	    /* glLoadIdentity(); */
+	    /* glOrtho(0, 1024, 0, 640, -1, 1); */
+	    /* glGetFloatv(GL_PROJECTION_MATRIX, M); */
+
+	    /* _TRACEM(4, 4, ".5f", M); */
+	    
+	    memset (M, 0, sizeof (float[16]));
+
+	    M[0] = 2 / (float)v[2];
+	    M[3] = (float)(v[2] + 2 * v[0]) / v[2];
+	    M[5] = 2 / (float)v[3];
+	    M[7] = (float)(v[3] + 2 * v[1]) / v[3];
+	    M[10] = -1;
+	    M[11] = 0;
+	    M[15] = 1;
+
+	    /* _TRACEM(4, 4, ".5f", M); */
+
+	    t_set_projection(M);
+	}
+
+	
+	/* { */
+	/*     static float M[16]; */
+
+	/*     memset (M, 0, sizeof (float[16])); */
+
+	/*     M[3] = pointer[0]; */
+	/*     M[7] = pointer[1]; */
+
+	/*     t_set_modelview(M); */
+	/* } */
+	
 	[super traverse];
     
 	glMatrixMode (GL_MODELVIEW);
-	glPopMatrix();
-    
-	glMatrixMode (GL_PROJECTION);
 	glPopMatrix();
 	
 	glDepthMask (GL_TRUE);

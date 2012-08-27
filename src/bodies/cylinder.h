@@ -18,8 +18,9 @@
 #define _CYLINDER_H_
 
 #include <lua.h>
-#include <GL/glu.h>
 #include <ode/ode.h>
+
+#include "gl.h"
 #include "body.h"
 
 @interface Cylinder: Body {

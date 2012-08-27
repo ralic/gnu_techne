@@ -19,7 +19,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include <GL/gl.h>
+#include "gl.h"
 
 #include "../array/array.h"
 #include "techne.h"

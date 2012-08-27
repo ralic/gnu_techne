@@ -17,8 +17,9 @@
 #ifndef _SHAPE_H_
 #define _SHAPE_H_
 
-#include <GL/gl.h>
 #include <lua.h>
+
+#include "gl.h"
 
 #include "array/array.h"
 #include "transform.h"

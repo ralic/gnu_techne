@@ -18,7 +18,7 @@
 #define _GROUND_H_
 
 #include <lua.h>
-#include <GL/gl.h>
+#include "gl.h"
 #include <ode/ode.h>
 
 /* #include "elevation.h" */

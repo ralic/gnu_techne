@@ -15,10 +15,12 @@
  */
 
 #include <ode/ode.h>
-#include <GL/glu.h>
+
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+
+#include "gl.h"
 
 #include "techne.h"
 #include "capsule.h"

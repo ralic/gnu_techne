@@ -14,11 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ode/ode.h>
-#include <GL/gl.h>
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+
+#include <ode/ode.h>
+#include "gl.h"
 
 #include "array/array.h"
 #include "techne.h"

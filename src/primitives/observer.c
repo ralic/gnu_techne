@@ -16,9 +16,9 @@
 
 #include <lua.h>
 #include <lauxlib.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
 #include <AL/al.h>
+
+#include "gl.h"
 
 #include "techne.h"
 #include "observer.h"

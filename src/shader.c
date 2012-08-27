@@ -20,24 +20,11 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include <GL/gl.h>
-#include <GL/glx.h>
+#include "gl.h"
 
 #include "array/array.h"
 #include "techne.h"
 #include "shader.h"
-
-PFNGLGETUNIFORMINDICESPROC __t_glGetUniformIndices;
-PFNGLGETACTIVEUNIFORMBLOCKIVPROC __t_glGetActiveUniformBlockiv;
-PFNGLUNIFORMBLOCKBINDINGPROC __t_glUniformBlockBinding;
-PFNGLGETACTIVEUNIFORMBLOCKNAMEPROC __t_glGetActiveUniformBlockName;
-PFNGLGETACTIVEUNIFORMSIVPROC __t_glGetActiveUniformsiv;
-
-#define glGetActiveUniformBlockiv __t_glGetActiveUniformBlockiv
-#define glUniformBlockBinding __t_glUniformBlockBinding
-#define glGetActiveUniformBlockName __t_glGetActiveUniformBlockName
-#define glGetActiveUniformsiv __t_glGetActiveUniformsiv
-#define glGetUniformIndices __t_glGetUniformIndices
 
 #include "glsl/preamble.h"
 
@@ -283,14 +270,6 @@ static int uniforms_iterator(lua_State *L)
 }
 
 @implementation Shader
-+(void) load
-{
-    __t_glGetActiveUniformBlockiv = (PFNGLGETACTIVEUNIFORMBLOCKIVPROC)glXGetProcAddressARB((const GLubyte *)"glGetActiveUniformBlockiv");
-    __t_glUniformBlockBinding = (PFNGLUNIFORMBLOCKBINDINGPROC)glXGetProcAddressARB((const GLubyte *)"glUniformBlockBinding");
-    __t_glGetActiveUniformBlockName = (PFNGLGETACTIVEUNIFORMBLOCKNAMEPROC)glXGetProcAddressARB((const GLubyte *)"glGetActiveUniformBlockName");
-    __t_glGetUniformIndices = (PFNGLGETUNIFORMINDICESPROC)glXGetProcAddressARB((const GLubyte *)"glGetUniformIndices");
-    __t_glGetActiveUniformsiv = (PFNGLGETACTIVEUNIFORMSIVPROC)glXGetProcAddressARB((const GLubyte *)"glGetActiveUniformsiv");
-}
 
 +(void)initialize
 {

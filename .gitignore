@@ -22,7 +22,9 @@ Makefile.in
 src/prompt/luap
 src/glsl/*.h
 src/glsl/stringify
-src/opengl.[ch]
+src/opengl.c
+src/gl.h
+src/glx.h
 src/browser.bin
 src/techne
 src/techne-browser

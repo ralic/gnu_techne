@@ -19,7 +19,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include <GL/gl.h>
+#include "gl.h"
 
 #include "techne.h"
 #include "graphics.h"
@@ -254,18 +254,7 @@ static int attributes_iterator(lua_State *L)
 	b = malloc (sizeof (shape_Buffer));
 	b->key = strdup(k);
 
-	/* Create the buffer object and initialize it. */
-
-	target = isindices ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
-
-	glGenBuffers(1, &b->name);
-	glBindBuffer(target, b->name);
-	glBufferData(target, array->length, array->values.any,
-		     GL_STATIC_DRAW);
-
-	b->type = array->type;
-	b->length = array->size[0];
-	b->size = array->rank == 1 ? 1 : array->size[1];
+	/* Check if supplied data is sane. */
 	
 	if (isindices) {
 	    /* Expect only unsigned integral types for index data. */
@@ -284,13 +273,29 @@ static int attributes_iterator(lua_State *L)
 	} else {
 	    /* Check length consistency for vertex data. */
 	    
-	    if (self->buffers && self->buffers->length != b->length) {
+	    if (self->buffers &&
+		self->buffers->length != array->size[0]) {
 		t_print_error ("Shape vertex buffers have inconsistent "
 			       "lengths.\n");
 		abort();
 	    }
 	}
 
+	/* Create the buffer object and initialize it. */
+
+	target = isindices ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
+
+	glGenBuffers(1, &b->name);
+	glBindBuffer(target, b->name);
+	glBufferData(target, array->length, array->values.any,
+		     GL_STATIC_DRAW);
+
+	b->type = array->type;
+	b->length = array->size[0];
+	b->size = array->rank == 1 ? 1 : array->size[1];
+
+	/* Link in the buffer. */
+	
 	if (isindices) {
 	    self->indices = b;
 	} else {

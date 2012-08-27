@@ -19,7 +19,7 @@
 #include <lauxlib.h>
 
 #include <ode/ode.h>
-#include <GL/gl.h>
+#include "gl.h"
 
 #include "../array/array.h"
 #include "techne.h"

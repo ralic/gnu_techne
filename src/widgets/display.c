@@ -17,7 +17,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include <GL/gl.h>
+#include "gl.h"
 
 #include "techne.h"
 #include "display.h"

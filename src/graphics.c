@@ -25,7 +25,8 @@
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
 
-#include "opengl.h"
+#include "gl.h"
+#include "glx.h"
 
 #include "array/array.h"
 #include "techne.h"
@@ -62,13 +63,13 @@ static int allocated;
 static int debugcontext = -1;
 static unsigned int buffer;
 
-static void debug_callback (GLenum source,
-                            GLenum type,
-                            GLuint id,
-                            GLenum severity,
-                            GLsizei length,
-                            const GLchar *message,
-                            GLvoid *userParam)
+static void APIENTRY debug_callback (GLenum source,
+				     GLenum type,
+				     GLuint id,
+				     GLenum severity,
+				     GLsizei length,
+				     const GLchar *message,
+				     GLvoid *userParam)
 {
     int c;
     const char *s;
@@ -100,7 +101,7 @@ static void debug_callback (GLenum source,
 	break;
     }
     
-    t_print_message("%sARB_debug_output (%s %d):%s %s\n",
+    t_print_message("%sGL %s %d:%s %s\n",
 		    t_ansi_color(c, 1),
 		    s, id,
 		    t_ansi_color(0, 0),
@@ -281,11 +282,12 @@ void t_set_modelview (float *matrix)
                                              configuration, 0,
                                              True, context_attributes);
 
-        t_print_message("Created a core profile, forward-compatible, debugging "
-                        "GLX context.\n");
+        t_print_message("Created a core profile, forward-compatible, "
+			"debugging GLX context.\n");
     } else {
         context = glXCreateNewContext(GDK_DISPLAY_XDISPLAY(display),
-                                      configuration, GLX_RGBA_TYPE, 0, True);
+                                      configuration, GLX_RGBA_TYPE,
+				      0, True);
     }
 
     gdk_display_sync(display);

@@ -62,7 +62,4 @@
 
 @end
 
-void t_set_projection (float *matrix);
-void t_set_modelview (float *matrix);
-
 #endif

@@ -18,7 +18,6 @@
 #define _WHEEL_H_
 
 #include <lua.h>
-#include <GL/glu.h>
 #include <ode/ode.h>
 #include "body.h"
 

@@ -25,7 +25,7 @@ glsl_stringify_CPPFLAGS =
 glsl_stringify_CFLAGS = -Wall
 glsl_stringify_LDFLAGS = 
 
-opengl.c opengl.h: mkopengl.sh
+opengl.c gl.h glx.h: mkopengl.sh
 	./mkopengl.sh
 
 EXTRA_DIST = $(BUILT_SOURCES:.h=.glsl.c) mkopengl.sh
@@ -35,7 +35,7 @@ EXTRA_DIST = $(BUILT_SOURCES:.h=.glsl.c) mkopengl.sh
 nobase_mybin_PROGRAMS = techne.bin browser.bin
 
 techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
-		     node.c node.h opengl.c opengl.h graphics.c		\
+		     node.c node.h opengl.c gl.h glx.h graphics.c	\
 		     graphics.h accoustics.c accoustics.h dynamics.c	\
 		     dynamics.h transform.c transform.h body.c body.h	\
 		     joint.c joint.h event.c event.h space.c space.h	\
@@ -48,7 +48,7 @@ EXTRA_techne_bin_SOURCES = compat/asprintf.h
 
 techne_bin_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS} ${GL_CFLAGS}		\
 		    ${OPENAL_CFLAGS} ${ODE_CFLAGS} ${MHD_CFLAGS}
-#techne_bin_LDFLAGS = -export-dynamic
+techne_bin_LDFLAGS = -export-dynamic
 techne_bin_LDADD = ${LUA_LIBS} ${GDK_LIBS} ${GL_LIBS} ${OPENAL_LIBS}	\
 		   ${ODE_LIBS} ${MHD_LIBS} ${AM_LDADD}
 
@@ -166,4 +166,4 @@ automotive_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 automotive_core_la_LDFLAGS = -module -avoid-version -no-undefined
 automotive_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
 
-CLEANFILES = $(bin_SCRIPTS) $(BUILT_SOURCES) opengl.[ch]
+CLEANFILES = $(bin_SCRIPTS) $(BUILT_SOURCES) opengl.c gl.h glx.h

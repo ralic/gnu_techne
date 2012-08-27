@@ -16,7 +16,7 @@
 
 #include <ode/ode.h>
 
-#include <GL/gl.h>
+#include "gl.h"
 
 #include <lua.h>
 #include <lualib.h>

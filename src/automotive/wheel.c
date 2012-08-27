@@ -19,8 +19,8 @@
 #include <lauxlib.h>
 
 #include <ode/ode.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
+
+#include "gl.h"
 
 #include "techne.h"
 #include "dynamics.h"

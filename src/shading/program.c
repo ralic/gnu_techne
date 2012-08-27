@@ -19,8 +19,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include <GL/gl.h>
-#include <GL/glx.h>
+#include "gl.h"
 
 #include "techne.h"
 #include "program.h"

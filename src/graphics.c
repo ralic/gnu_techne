@@ -33,7 +33,6 @@
 #include "graphics.h"
 #include "shader.h"
 #include "transform.h"
-#include "event.h"
 
 static GdkWindow *window;
 static GdkDisplay *display;
@@ -56,9 +55,6 @@ static double planes[6], frustum[3];
 static int focus = LUA_REFNIL, defocus = LUA_REFNIL;
 static int configure = LUA_REFNIL, delete = LUA_REFNIL;
 static char *title;
-
-static unsigned int *keys;
-static int allocated;
 
 static int debugcontext = -1;
 static unsigned int buffer;
@@ -117,21 +113,6 @@ static void APIENTRY debug_callback (GLenum source,
     }
 }
 
-static void recurse (Node *root, GdkEvent *event)
-{
-    Node *child;
-    
-    if ([root respondsTo: @selector(inputWithEvent:)]) {
-	[(id)root inputWithEvent: event];
-    }
-    
-    for (child = root->down ; child ; child = child->right) {
-	t_begin_interval (child, T_INPUT_PHASE);
-	recurse (child, event);
-	t_end_interval (child, T_INPUT_PHASE);
-    }
-}
-
 static void update_projection()
 {
     double a;
@@ -179,6 +160,15 @@ void t_set_projection (float *matrix)
     glBindBuffer(GL_UNIFORM_BUFFER, buffer);
     glBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,
 		    PROJECTION_SIZE, matrix);
+
+    // {
+    // 	float M[16];
+	
+    // 	glGetBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,
+    // 			   PROJECTION_SIZE, &M);
+
+    // 	_TRACEM(4, 4, ".5f", M);
+    // }
 }
 
 void t_set_modelview (float *matrix)
@@ -186,6 +176,15 @@ void t_set_modelview (float *matrix)
     glBindBuffer(GL_UNIFORM_BUFFER, buffer);
     glBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,
 		    MODELVIEW_SIZE, matrix);
+
+    // {
+    // 	float M[16];
+	
+    // 	glGetBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,
+    // 			   MODELVIEW_SIZE, &M);
+
+    // 	_TRACEM(4, 4, ".5f", M);
+    // }
 }
 
 @implementation Graphics
@@ -428,9 +427,14 @@ void t_set_modelview (float *matrix)
     t_begin_interval (root, T_INPUT_PHASE);    
 
     while ((event = gdk_event_get()) != NULL) {
+	int quit = 0;
+	
 	assert(event);
+	
+	/* _TRACE ("%d\n", event->type); */
 
-	if(event->type == GDK_CONFIGURE) {
+	switch(event->type) {
+	case GDK_CONFIGURE:
 	    width = ((GdkEventConfigure *)event)->width;
 	    height = ((GdkEventConfigure *)event)->height;
 	    
@@ -448,66 +452,34 @@ void t_set_modelview (float *matrix)
 
 	    t_push_userdata (_L, 1, self);
 	    t_call_hook (_L, configure, 1, 0);
-	} else if (event->type == GDK_FOCUS_CHANGE) {
+	    break;
+	case GDK_FOCUS_CHANGE:
 	    t_push_userdata (_L, 1, self);
-
+	    
 	    if (((GdkEventFocus *)event)->in == TRUE) {
 		t_call_hook (_L, focus, 1, 0);
 	    } else {
 		t_call_hook (_L, defocus, 1, 0);
 	    }
-	} else if (event->type == GDK_DELETE) {
+	    break;
+	case GDK_DELETE:
 	    t_call_hook (_L, delete, 0, 0);
-	} else {
-	    /* Ignore consecutive keypresses for the same key.  These are
-	     * always a result of key autorepeat. */
-    
-	    if (event->type == GDK_KEY_PRESS) {
-		unsigned int k;
-		int i, j = -1;
-
-		k = ((GdkEventKey *)event)->keyval;
-	
-		for (i = 0 ; i < allocated ; i += 1) {
-		    if (keys[i] == 0) {
-			j = i;
-		    }
-	    
-		    if (keys[i] == k) {
-			return;
-		    }
-		}
-
-		if (j >= 0) {
-		    keys[j] = k;
-		} else {
-		    if (i == allocated) {
-			allocated += 1;
-			keys = realloc (keys, allocated * sizeof(unsigned int));
-		    }
-
-		    keys[i] = k;
-		}
-	    } else if (event->type == GDK_KEY_RELEASE) {
-		unsigned int k;
-		int i;
-
-		k = ((GdkEventKey *)event)->keyval;
-	
-		for (i = 0 ; i < allocated ; i += 1) {
-		    if (keys[i] == k) {
-			keys[i] = 0;
-			break;
-		    }
-		}
-	    }
-	    
-	    /* Pass it on to the node tree. */
-		    
-	    recurse(root, event);
+	    break;
+	case GDK_NOTHING:
+	case GDK_MAP:
+	case GDK_WINDOW_STATE:
+	case GDK_VISIBILITY_NOTIFY:
+	    break;
+	default:
+	    gdk_event_put(event);
+	    quit = 1;
 	}
 		
 	gdk_event_free (event);
+
+	if (quit) {
+	    break;
+	}
     }
 
     t_end_interval (root, T_INPUT_PHASE);

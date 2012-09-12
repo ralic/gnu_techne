@@ -540,7 +540,7 @@ static void match_attribute_to_buffer (unsigned int program,
     /* Set the transform. */
 
     /* _TRACEM(4, 4, "f", self->matrix); */
-    /* t_set_modelview (self->matrix); */
+    t_set_modelview (self->matrix);
 
     /* Bind the vertex array and draw the supplied indices or the
      * arrays if no indices we're supplied. */

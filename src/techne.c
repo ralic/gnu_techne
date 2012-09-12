@@ -35,6 +35,7 @@
 #include "transform.h"
 #include "dynamics.h"
 #include "network.h"
+#include "input.h"
 #include "graphics.h"
 #include "shader.h"
 #include "accoustics.h"
@@ -54,6 +55,7 @@ static int iterations = 0;
 static char *name = "techne", *class = "Techne";
 static long long int beginning;
 
+static Input *input;
 static Network *network;
 static Dynamics *dynamics;
 static Graphics *graphics;
@@ -641,6 +643,9 @@ void t_print_error (const char *format, ...)
     t_print_message ("This is Techne, version %s.\n", VERSION);
     t_print_timing_resolution();
     
+    input = [[Input alloc] init];
+    lua_setglobal (_L, "input");
+    
     network = [[Network alloc] init];
     lua_setglobal (_L, "network");
     
@@ -719,6 +724,7 @@ void t_print_error (const char *format, ...)
 	[root begin];
 	t_end_interval (root, T_BEGIN_PHASE);	
 
+	[input iterate: root];
 	[dynamics iterate: root];
 	[graphics iterate: root];
 	[network iterate];

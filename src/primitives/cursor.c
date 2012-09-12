@@ -25,7 +25,7 @@
 #include "techne.h"
 #include "cursor.h"
 
-static int pointer[2], uptodate;
+static int uptodate;
 
 @implementation Cursor
 
@@ -34,8 +34,8 @@ static int pointer[2], uptodate;
     assert (event);
 
     if (event->type == GDK_MOTION_NOTIFY) {
-	pointer[0] = (int)(((GdkEventMotion *)event)->x);
-	pointer[1] = (int)(((GdkEventMotion *)event)->y);
+	self->position[0] = (int)(((GdkEventMotion *)event)->x);
+	self->position[1] = (int)(((GdkEventMotion *)event)->y);
 
 	uptodate = 1;
     }
@@ -55,11 +55,15 @@ static int pointer[2], uptodate;
     double zero[3] = {0, 0, 0};
 
     [super transformRelativeTo: zero];
+
+    /* _TRACEM(4, 4, ".5f", self->matrix); */
+    /* _TRACE ("%f, %f\n", self->position[0], self->position[1]); */
 }
 
 -(void) traverse
 {
     if (uptodate) {
+	float M[16];
 	int v[4];
 
 	glGetIntegerv (GL_VIEWPORT, v);
@@ -72,47 +76,23 @@ static int pointer[2], uptodate;
 	glDepthMask (GL_FALSE);
 	glStencilMask (0);
 
-	{
-	    static float M[16];
-
-	    /* glMatrixMode (GL_PROJECTION); */
-	    /* glLoadIdentity(); */
-	    /* glOrtho(0, 1024, 0, 640, -1, 1); */
-	    /* glGetFloatv(GL_PROJECTION_MATRIX, M); */
-
-	    /* _TRACEM(4, 4, ".5f", M); */
-	    
-	    memset (M, 0, sizeof (float[16]));
-
-	    M[0] = 2 / (float)v[2];
-	    M[3] = (float)(v[2] + 2 * v[0]) / v[2];
-	    M[5] = 2 / (float)v[3];
-	    M[7] = (float)(v[3] + 2 * v[1]) / v[3];
-	    M[10] = -1;
-	    M[11] = 0;
-	    M[15] = 1;
-
-	    /* _TRACEM(4, 4, ".5f", M); */
-
-	    t_set_projection(M);
-	}
-
+	/* Set an orthographic projection matrix. */
 	
-	/* { */
-	/*     static float M[16]; */
+	memset (M, 0, sizeof (float[16]));
 
-	/*     memset (M, 0, sizeof (float[16])); */
+	M[0] = 2 / (float)v[2];
+	M[3] = -(1 + 2 * (float)v[0] / v[2]);
+	M[5] = -2 / (float)v[3];
+	M[7] = 1 + 2 * (float)v[1] / v[3];
+	M[10] = -1;
+	M[11] = 0;
+	M[15] = 1;
 
-	/*     M[3] = pointer[0]; */
-	/*     M[7] = pointer[1]; */
+	/* _TRACEM(4, 4, ".5f", M); */
 
-	/*     t_set_modelview(M); */
-	/* } */
+	t_set_projection(M);
 	
 	[super traverse];
-    
-	glMatrixMode (GL_MODELVIEW);
-	glPopMatrix();
 	
 	glDepthMask (GL_TRUE);
 	glStencilMask (~0);	

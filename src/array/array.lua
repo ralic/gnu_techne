@@ -33,9 +33,9 @@ local function pretty(a, prefix)
       last = a[m]
       number = type(last) == "number"
 
-      if m > 1 then
-	 s = prefix .. "{"
+      s = prefix .. "{"
 
+      if m >= 1 then
 	 if not number then
 	    s = s .. "\n"
 	 end

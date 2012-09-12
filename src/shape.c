@@ -76,9 +76,150 @@ static int attributes_iterator(lua_State *L)
     return 3;
 }
 
+static void match_attribute_to_buffer (unsigned int program,
+				       unsigned int attribute,
+				       shape_Buffer *buffer)
+{
+    char name;
+    GLenum type;
+    GLboolean normalized;	
+    int i, size, integral, precision;
+
+    glGetActiveAttrib (program, attribute, 0, NULL, &size, &type,
+		       &name);
+	
+    switch (type) {
+    case GL_DOUBLE_MAT2: case GL_DOUBLE_MAT3: case GL_DOUBLE_MAT4:
+    case GL_DOUBLE_MAT2x3: case GL_DOUBLE_MAT2x4:
+    case GL_DOUBLE_MAT3x2: case GL_DOUBLE_MAT3x4:
+    case GL_DOUBLE_MAT4x2: case GL_DOUBLE_MAT4x3:
+	t_print_error("Matrix type vertex attributes not "
+		      "supported.\n");
+	    
+	abort();
+	break;
+
+    case GL_DOUBLE_VEC2: case GL_DOUBLE_VEC3: case GL_DOUBLE_VEC4:
+    case GL_DOUBLE:
+	if (buffer->type != ARRAY_TDOUBLE) {
+	    t_print_error("Double precision floating point data "
+			  "expected for vertex attribute '%s'.\n",
+			  attribute);
+
+	    abort();
+	}
+
+	precision = 1;
+	break;
+
+    case GL_FLOAT_MAT2: case GL_FLOAT_MAT3: case GL_FLOAT_MAT4:
+    case GL_FLOAT_MAT2x3: case GL_FLOAT_MAT2x4:
+    case GL_FLOAT_MAT3x2: case GL_FLOAT_MAT3x4:
+    case GL_FLOAT_MAT4x2: case GL_FLOAT_MAT4x3:
+	t_print_error("Matrix type vertex attributes not "
+		      "supported.\n");
+	    
+	abort();
+	break;
+
+    case GL_FLOAT_VEC2: case GL_FLOAT_VEC3: case GL_FLOAT_VEC4:
+    case GL_FLOAT:
+	precision = 2;
+	break;
+
+    case GL_INT:
+    case GL_INT_VEC2: case GL_INT_VEC3: case GL_INT_VEC4:
+
+    case GL_UNSIGNED_INT:
+    case GL_UNSIGNED_INT_VEC2: case GL_UNSIGNED_INT_VEC3:
+    case GL_UNSIGNED_INT_VEC4:
+	if (buffer->type == ARRAY_TDOUBLE ||
+	    buffer->type == ARRAY_TFLOAT) {
+	    t_print_error("Integral data expected for vertex attribute "
+			  "'%s' node.\n", attribute);
+
+	    abort();
+	}
+
+	precision = 3;
+	break;
+    }
+
+    /* Try to map the supplied array type to a GL type. */
+	
+    switch(abs(buffer->type)) {
+    case ARRAY_TDOUBLE:
+	type = GL_DOUBLE;
+	normalized = GL_FALSE;
+	integral = 0;
+	break;
+    case ARRAY_TFLOAT:
+	type = GL_FLOAT;
+	normalized = GL_FALSE;
+	integral = 0;
+	break;
+    case ARRAY_TULONG:
+    case ARRAY_TLONG:
+	t_print_error("Array used for vertex attribute data is of "
+		      "unsuitable type.\n");
+	abort();	    
+	break;
+    case ARRAY_TUINT:
+	type = GL_UNSIGNED_INT;
+	integral = buffer->type > 0;
+	normalized = !integral ? GL_TRUE : GL_FALSE;
+	break;
+    case ARRAY_TINT:
+	type = GL_INT;
+	integral = buffer->type > 0;
+	normalized = !integral ? GL_TRUE : GL_FALSE;
+	break;
+    case ARRAY_TUSHORT:
+	type = GL_UNSIGNED_SHORT;
+	integral = buffer->type > 0;
+	normalized = !integral ? GL_TRUE : GL_FALSE;
+	break;
+    case ARRAY_TSHORT:
+	type = GL_SHORT;
+	integral = buffer->type > 0;
+	normalized = !integral ? GL_TRUE : GL_FALSE;
+	break;
+    case ARRAY_TUCHAR:
+	type = GL_UNSIGNED_BYTE;
+	integral = buffer->type > 0;
+	normalized = !integral ? GL_TRUE : GL_FALSE;
+	break;
+    case ARRAY_TCHAR:
+	type = GL_BYTE;
+	integral = buffer->type > 0;
+	normalized = !integral ? GL_TRUE : GL_FALSE;
+	break;
+    }
+
+    /* Bind the data into the vertex array object's state. */
+	
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->name);
+    i = glGetAttribLocation(program, buffer->key);	
+
+    switch (precision) {
+    case 1:
+	glVertexAttribIPointer(i, buffer->size, type, 0, (void *)0);
+	break;
+    case 2:
+	glVertexAttribPointer(i, buffer->size, type, normalized,
+			      0, (void *)0);
+	break;
+    case 3:
+	glVertexAttribIPointer(i, buffer->size, type, 0, (void *)0);
+	break;
+    }
+
+    glEnableVertexAttribArray(i);    
+}
+
 @implementation Shape
 
-+ (void)initialize
++(void)initialize
 {
     if(self == [Shape class]) {
 	lua_pushcfunction (_L, attributes_iterator);
@@ -178,7 +319,7 @@ static int attributes_iterator(lua_State *L)
     glGetBufferSubData(GL_ARRAY_BUFFER, 0, size, array.values.any);
 
     array_pusharray(_L, &array);
-    
+
     return 1;
 }
 
@@ -302,6 +443,38 @@ static int attributes_iterator(lua_State *L)
 	    b->next = self->buffers;
 	    self->buffers = b;
 	}
+
+	/* If the shape is already linked to a shader update the
+	 * attribute's binding. */
+	
+	if (self->up) {
+	    int n, l, j, program;
+
+	    program = ((Shader *)self->up)->name;
+	    
+	    glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &n);
+	    glGetProgramiv(program, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &l);
+    
+	    glBindVertexArray(self->name);
+
+	    /* Look for the vertex attribute's index and match it to
+	     * the specified buffer. */
+	    
+	    for (j = 0 ; j < n ; j += 1) {
+		char attribute[l];
+		GLenum type;
+		int size;
+		
+		glGetActiveAttrib (program, j, l, NULL, &size, &type,
+				   attribute);
+
+		if (strcmp(attribute, b->key)) {
+		    continue;
+		}
+
+		match_attribute_to_buffer(program, j, b);
+	    }				  
+	}
 	
 	return 1;
     } else {
@@ -311,7 +484,6 @@ static int attributes_iterator(lua_State *L)
 
 -(void) meetParent: (Shader *)parent
 {
-    shape_Buffer *b;
     int j, l, n;
 
     if (![parent isKindOf: [Shader class]]) {
@@ -335,14 +507,14 @@ static int attributes_iterator(lua_State *L)
     glGetProgramiv(parent->name, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &l);
     
     glBindVertexArray(self->name);
-
+    
     for (j = 0 ; j < n ; j += 1) {
+	shape_Buffer *b;
 	char attribute[l];
 	GLenum type;
-	GLboolean normalized;	
-	int i, size, integral, precision;
+	int size;
 
-	glGetActiveAttrib (parent->name, i, l, NULL, &size, &type,
+	glGetActiveAttrib (parent->name, j, l, NULL, &size, &type,
 			   attribute);
 
 	for (b = self->buffers;
@@ -357,134 +529,7 @@ static int attributes_iterator(lua_State *L)
 	    abort();
 	}
 
-	
-	switch (type) {
-	case GL_DOUBLE_MAT2: case GL_DOUBLE_MAT3: case GL_DOUBLE_MAT4:
-	case GL_DOUBLE_MAT2x3: case GL_DOUBLE_MAT2x4:
-	case GL_DOUBLE_MAT3x2: case GL_DOUBLE_MAT3x4:
-	case GL_DOUBLE_MAT4x2: case GL_DOUBLE_MAT4x3:
-	    t_print_error("Matrix type vertex attributes not "
-			  "supported.\n");
-	    
-	    abort();
-	    break;
-
-	case GL_DOUBLE_VEC2: case GL_DOUBLE_VEC3: case GL_DOUBLE_VEC4:
-	case GL_DOUBLE:
-	    if (b->type != ARRAY_TDOUBLE) {
-		t_print_error("Double precision floating point data "
-			      "expected for vertex attribute '%s' of "
-			      "%s node.\n", attribute, [self name]);
-
-		abort();
-	    }
-
-	    precision = 1;
-	    break;
-
-	case GL_FLOAT_MAT2: case GL_FLOAT_MAT3: case GL_FLOAT_MAT4:
-	case GL_FLOAT_MAT2x3: case GL_FLOAT_MAT2x4:
-	case GL_FLOAT_MAT3x2: case GL_FLOAT_MAT3x4:
-	case GL_FLOAT_MAT4x2: case GL_FLOAT_MAT4x3:
-	    t_print_error("Matrix type vertex attributes not "
-			  "supported.\n");
-	    
-	    abort();
-	    break;
-
-	case GL_FLOAT_VEC2: case GL_FLOAT_VEC3: case GL_FLOAT_VEC4:
-	case GL_FLOAT:
-	    precision = 2;
-	    break;
-
-	case GL_INT:
-	case GL_INT_VEC2: case GL_INT_VEC3: case GL_INT_VEC4:
-
-	case GL_UNSIGNED_INT:
-	case GL_UNSIGNED_INT_VEC2: case GL_UNSIGNED_INT_VEC3:
-	case GL_UNSIGNED_INT_VEC4:
-	    if (b->type == ARRAY_TDOUBLE ||
-		b->type == ARRAY_TFLOAT) {
-		t_print_error("Integral data expected for vertex attribute "
-			      "'%s' of %s node.\n", attribute, [self name]);
-
-		abort();
-	    }
-
-	    precision = 3;
-	    break;
-	}
-
-	/* Try to map the supplied array type to a GL type. */
-	
-	switch(abs(b->type)) {
-	case ARRAY_TDOUBLE:
-	    type = GL_DOUBLE;
-	    normalized = GL_FALSE;
-	    integral = 0;
-	    break;
-	case ARRAY_TFLOAT:
-	    type = GL_FLOAT;
-	    normalized = GL_FALSE;
-	    integral = 0;
-	    break;
-	case ARRAY_TULONG:
-	case ARRAY_TLONG:
-	    t_print_error("Array used for vertex attribute data is of "
-			  "unsuitable type.\n");
-	    abort();	    
-	    break;
-	case ARRAY_TUINT:
-	    type = GL_UNSIGNED_INT;
-	    integral = b->type > 0;
-	    normalized = !integral ? GL_TRUE : GL_FALSE;
-	    break;
-	case ARRAY_TINT:
-	    type = GL_INT;
-	    integral = b->type > 0;
-	    normalized = !integral ? GL_TRUE : GL_FALSE;
-	    break;
-	case ARRAY_TUSHORT:
-	    type = GL_UNSIGNED_SHORT;
-	    integral = b->type > 0;
-	    normalized = !integral ? GL_TRUE : GL_FALSE;
-	    break;
-	case ARRAY_TSHORT:
-	    type = GL_SHORT;
-	    integral = b->type > 0;
-	    normalized = !integral ? GL_TRUE : GL_FALSE;
-	    break;
-	case ARRAY_TUCHAR:
-	    type = GL_UNSIGNED_BYTE;
-	    integral = b->type > 0;
-	    normalized = !integral ? GL_TRUE : GL_FALSE;
-	    break;
-	case ARRAY_TCHAR:
-	    type = GL_BYTE;
-	    integral = b->type > 0;
-	    normalized = !integral ? GL_TRUE : GL_FALSE;
-	    break;
-	}
-
-	/* Bind the data into the vertex array object's state. */
-	
-	glBindBuffer(GL_ARRAY_BUFFER, b->name);
-	i = glGetAttribLocation(parent->name, b->key);	
-
-	switch (precision) {
-	case 1:
-	    glVertexAttribIPointer(i, b->size, type, 0, (void *)0);
-	    break;
-	case 2:
-	    glVertexAttribPointer(i, b->size, type, normalized,
-				  0, (void *)0);
-	    break;
-	case 3:
-	    glVertexAttribIPointer(i, b->size, type, 0, (void *)0);
-	    break;
-	}
-
-	glEnableVertexAttribArray(i);
+	match_attribute_to_buffer (parent->name, j, b);
     }
 
     glBindVertexArray(0);
@@ -493,8 +538,9 @@ static int attributes_iterator(lua_State *L)
 -(void) traverse
 {
     /* Set the transform. */
-    
-    t_set_modelview (self->matrix);
+
+    /* _TRACEM(4, 4, "f", self->matrix); */
+    /* t_set_modelview (self->matrix); */
 
     /* Bind the vertex array and draw the supplied indices or the
      * arrays if no indices we're supplied. */

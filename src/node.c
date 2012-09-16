@@ -30,14 +30,14 @@
 #define GET_PREFIX "_get_"
 #define SET_PREFIX "_set_"
 
-#define GET_PREFIX_LENGTH (sizeof ("_get_") - 1)
-#define SET_PREFIX_LENGTH (sizeof ("_set_") - 1)
+#define GET_PREFIX_LENGTH (sizeof (GET_PREFIX) - 1)
+#define SET_PREFIX_LENGTH (sizeof (SET_PREFIX) - 1)
 
 #define GET_ELEMENT "_get_element"
 #define SET_ELEMENT "_set_element"
 
-#define GET_ELEMENT_LENGTH (sizeof ("_get_element") - 1)
-#define SET_ELEMENT_LENGTH (sizeof ("_set_element") - 1)
+#define GET_ELEMENT_LENGTH (sizeof (GET_ELEMENT) - 1)
+#define SET_ELEMENT_LENGTH (sizeof (SET_ELEMENT) - 1)
 
 static int userdata = LUA_REFNIL, tags = LUA_REFNIL, metatable = LUA_REFNIL;
 static Node *list;
@@ -933,7 +933,10 @@ static int __newindex(lua_State *L)
 	    sizes[1] = 0;
 	}
 
-	methods = class_copyMethodList ([self class], NULL);
+	/* Get the method list and look for property setter/getter
+	 * methods. */
+	
+	methods = class_copyMethodList (self, NULL);
 
 	if (methods) {
 	    for (i = 0 ; methods[i] ; i += 1) {
@@ -971,21 +974,24 @@ static int __newindex(lua_State *L)
 		if (j >= 0) {
 		    int k;
 
-		    /* If name is NULL then no reference is made here.
-		     * This means that the method is intended for array
-		     * elements. */
+		    /* Look through the protocol in case the method
+		     * exists in the superclass.  (If name is NULL the
+		     * method is intended for array elements). */
 
-		    lua_pushstring (_L, name);
-		    name = lua_tostring (_L, -1);
-		    luaL_ref (_L, LUA_REGISTRYINDEX);
+		    if (name) {
+			name = strdup (name);
 
-		    /* Look through the protocol in case the method exists
-		     * in the superclass. */
-
-		    for (k = 0;
-			 k < sizes[j] &&
-			     protocol->properties[j][k].name != name ;
-			 k += 1);
+			for (k = 0;
+			     k < sizes[j] &&
+				 strcmp(protocol->properties[j][k].name,
+					name);
+			     k += 1);
+		    } else {
+			for (k = 0;
+			     k < sizes[j] &&
+				 protocol->properties[j][k].name;
+			     k += 1);
+		    }			
 
 		    /* If not allocate a new spot. */
 
@@ -1014,12 +1020,13 @@ static int __newindex(lua_State *L)
 
 	/* Cache the protocol structure in the registry. */
 
-	lua_pushlightuserdata (_L, [self class]);
+	lua_pushlightuserdata (_L, self);
 	lua_pushlightuserdata (_L, protocol);
 	lua_rawset (_L, LUA_REGISTRYINDEX);
 
-	t_print_message ("Established the protocol of class '%s'.\n",
-			 [[self class] name]);
+	t_print_message ("Established the protocol of '%s' nodes "
+			 "(%d properties).\n",
+			 [self name], protocol->size);
     } else {
 	protocol = lua_touserdata(_L, -1);
     }
@@ -1029,7 +1036,7 @@ static int __newindex(lua_State *L)
     return protocol;
 }
 
-+ (void)initialize
++(void)initialize
 {
     if(self == [Node class]) {
 	/* Create the userdata reference table. */
@@ -1084,7 +1091,7 @@ static int __newindex(lua_State *L)
 -(id) init
 {
     self = [super init];
-
+				  
     self->protocol = [[self class] introspect];
 
     /* Put newly created nodes in the orphans list. */

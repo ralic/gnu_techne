@@ -15,7 +15,7 @@ args=""
 while [ -n "$1" ]; do
     if [ "$1" = "--debug" ]; then
 	debug=1
-    elif [ "$1" = "--backtrace" ]; then
+    elif [ "$1" = "--trace" ]; then
 	debug=1
 	commands="set confirm off\nrun\nbt\n"
     else

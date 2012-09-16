@@ -14,38 +14,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SHAPE_H_
-#define _SHAPE_H_
+#ifndef _TIMER_H_
+#define _TIMER_H_
 
 #include <lua.h>
+#include <time.h>
+#include "node.h"
 
-#include "gl.h"
+@interface Timer: Node {
+    struct timespec checkpoint;
 
-#include "array/array.h"
-#include "transform.h"
-
-typedef struct shape_Buffer {
-    struct shape_Buffer *next;
-    
-    char *key;
-    unsigned int name, index;
-
-    array_Type type;
-    int size, length;
-} shape_Buffer;
-
-@interface Shape: Transform {
-@public
-    shape_Buffer *buffers, *indices;
-    unsigned int name;
-    int wireframe;
-    GLenum mode;
+    double period, elapsed, delta, count;
+    int tick;
 }
 
--(Shape *)initWithMode: (GLenum) mode;
--(int) _get_wireframe;
--(void) _set_wireframe;
+-(void) tick;
 
+-(int) _get_period;
+-(int) _get_tick;
+-(int) _get_state;
+-(void) _set_period;
+-(void) _set_tick;
+-(void) _set_state;
 @end
 
 #endif

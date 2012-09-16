@@ -234,6 +234,7 @@ static void match_attribute_to_buffer (unsigned int program,
     self->mode = m;
     self->buffers = NULL;
     self->indices = NULL;
+    self->wireframe = 0;
 
     /* Create the vertex array object. */
     
@@ -271,6 +272,18 @@ static void match_attribute_to_buffer (unsigned int program,
     glDeleteVertexArrays (1, &self->name);
 
     [super free];
+}
+
+-(int) _get_wireframe
+{
+    lua_pushboolean (_L, self->wireframe);
+    
+    return 1;
+}
+ 
+-(void) _set_wireframe
+{
+    self->wireframe = lua_toboolean (_L, 3);
 }
 
 -(int) _get_
@@ -521,15 +534,17 @@ static void match_attribute_to_buffer (unsigned int program,
 	     b && strcmp(b->key, attribute);
 	     b = b->next);
 	
-	if (!b) {
-	    t_print_error("%s node does not speicify vertex attribute "
-			  "'%s'.\n",
-			  [self name], attribute);
+	/* if (!b) { */
+	/*     t_print_error("%s node does not speicify vertex attribute " */
+	/* 		  "'%s'.\n", */
+	/* 		  [self name], attribute); */
 
-	    abort();
+	/*     abort(); */
+	/* } */
+
+	if (b) {
+	    match_attribute_to_buffer (parent->name, j, b);
 	}
-
-	match_attribute_to_buffer (parent->name, j, b);
     }
 
     glBindVertexArray(0);
@@ -544,6 +559,12 @@ static void match_attribute_to_buffer (unsigned int program,
 
     /* Bind the vertex array and draw the supplied indices or the
      * arrays if no indices we're supplied. */
+
+    if (self->wireframe) {
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+
+    glEnable (GL_CULL_FACE);
     
     glBindVertexArray(self->name);
 
@@ -566,6 +587,12 @@ static void match_attribute_to_buffer (unsigned int program,
 			     type, (void *)0);
     } else {
 	glDrawArrays (self->mode, 0, self->buffers->length);
+    }
+
+    glDisable (GL_CULL_FACE);
+
+    if (self->wireframe) {
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
     
     [super traverse];

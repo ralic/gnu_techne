@@ -56,8 +56,11 @@ static int focus = LUA_REFNIL, defocus = LUA_REFNIL;
 static int configure = LUA_REFNIL, delete = LUA_REFNIL;
 static char *title;
 
-static int debugcontext = -1;
 static unsigned int buffer;
+
+/* Context flags. */
+
+static int debug, reportonce, interrupt, arbcontext;
 
 static void APIENTRY debug_callback (GLenum source,
 				     GLenum type,
@@ -104,11 +107,13 @@ static void APIENTRY debug_callback (GLenum source,
 		    message);
 
     /* Ignore this kind of message from now on. */
-    
-    glDebugMessageControlARB (source, type, GL_DONT_CARE,
-                              1, &id, GL_FALSE);
 
-    if (debugcontext > 3) {
+    if (reportonce) {
+	glDebugMessageControlARB (source, type, GL_DONT_CARE,
+				  1, &id, GL_FALSE);
+    }
+
+    if (interrupt) {
 	raise(2);
     }
 }
@@ -161,14 +166,14 @@ void t_set_projection (float *matrix)
     glBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,
 		    PROJECTION_SIZE, matrix);
 
-    // {
-    // 	float M[16];
+    /* { */
+    /* 	float M[16]; */
 	
-    // 	glGetBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,
-    // 			   PROJECTION_SIZE, &M);
+    /* 	glGetBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET, */
+    /* 			   PROJECTION_SIZE, &M); */
 
-    // 	_TRACEM(4, 4, ".5f", M);
-    // }
+    /* 	_TRACEM(4, 4, ".5f", M); */
+    /* } */
 }
 
 void t_set_modelview (float *matrix)
@@ -198,11 +203,9 @@ void t_set_modelview (float *matrix)
     XVisualInfo *info;
         
     int context_attributes[] = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 3,
-        GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-        GLX_CONTEXT_FLAGS_ARB, (GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB |
-                                GLX_CONTEXT_DEBUG_BIT_ARB),
+        GLX_CONTEXT_MAJOR_VERSION_ARB, 1,
+        GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+        GLX_CONTEXT_FLAGS_ARB, 0,
         None
     };
  
@@ -228,20 +231,61 @@ void t_set_modelview (float *matrix)
 
     int i, j, r, g, b, a, z, s;
 
-    if (debugcontext < 0) {
-	/* Get the configuration. */
+    /* Get the configuration. */
     
-	lua_getglobal (_L, "options");
+    lua_getglobal (_L, "options");
+    lua_getfield (_L, -1, "context");
+    
+    arbcontext = lua_toboolean (_L, -1);
+    
+    if (lua_type(_L, -1) != LUA_TBOOLEAN) {
+	int n, i, isnumber;
+	const char *s;
 
-	lua_getfield (_L, -1, "debugcontext");
-	if (lua_type(_L, -1) == LUA_TBOOLEAN) {
-	    debugcontext = lua_toboolean (_L, -1);
-	} else {
-	    debugcontext = (int)lua_tonumber (_L, -1);
+	/* Encapsulate into a table if needed. */
+	
+	if (lua_type(_L, -1) != LUA_TTABLE) {
+	    lua_newtable(_L);
+	    lua_insert (_L, -2);
+	    lua_rawseti (_L, -2, 1);
 	}
 	
-	lua_pop (_L, 2);
+	n = lua_rawlen (_L, -1);
+
+	for (i = 0 ; i < n ; i += 1) {
+	    lua_rawgeti (_L, -1, i + 1);
+		    
+	    s = lua_tostring (_L, -1);
+	    lua_tonumberx (_L, -1, &isnumber);
+		
+	    if (isnumber) {
+		char *dot;
+
+		dot = strchr (s, '.');
+
+		if (dot) {
+		    *dot = '\0';
+
+		    context_attributes[3] = atoi(dot + 1);
+		}
+
+		context_attributes[1] = atoi(s);
+		context_attributes[5] |= GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
+	    } else if (!strcmp (s, "debug")) {
+		debug = 1;
+		    
+		context_attributes[5] |= GLX_CONTEXT_DEBUG_BIT_ARB;
+	    } else if (!strcmp (s, "reportonce")) {
+		reportonce = 1;
+	    } else if (!strcmp (s, "break")) {
+		interrupt = 1;
+	    }
+
+	    lua_pop (_L, 1);
+	}
     }
+	
+    lua_pop (_L, 2);
 
     self = [super init];
     
@@ -276,13 +320,10 @@ void t_set_modelview (float *matrix)
 	
     configuration = configurations[0];
 
-    if (debugcontext) {
+    if (arbcontext) {
         context = glXCreateContextAttribsARB(GDK_DISPLAY_XDISPLAY(display),
                                              configuration, 0,
                                              True, context_attributes);
-
-        t_print_message("Created a core profile, forward-compatible, "
-			"debugging GLX context.\n");
     } else {
         context = glXCreateNewContext(GDK_DISPLAY_XDISPLAY(display),
                                       configuration, GLX_RGBA_TYPE,
@@ -317,13 +358,13 @@ void t_set_modelview (float *matrix)
     window_attributes.width = 640;
     window_attributes.height = 480;
     window_attributes.event_mask = (GDK_STRUCTURE_MASK |
-			     GDK_FOCUS_CHANGE_MASK |
-			     GDK_BUTTON_PRESS_MASK |
-			     GDK_BUTTON_RELEASE_MASK |
-			     GDK_KEY_PRESS_MASK |
-			     GDK_KEY_RELEASE_MASK |
-			     GDK_POINTER_MOTION_MASK |
-			     GDK_SCROLL_MASK);
+				    GDK_FOCUS_CHANGE_MASK |
+				    GDK_BUTTON_PRESS_MASK |
+				    GDK_BUTTON_RELEASE_MASK |
+				    GDK_KEY_PRESS_MASK |
+				    GDK_KEY_RELEASE_MASK |
+				    GDK_POINTER_MOTION_MASK |
+				    GDK_SCROLL_MASK);
 
     window = gdk_window_new(gdk_get_default_root_window(),
 			    &window_attributes, 
@@ -333,28 +374,39 @@ void t_set_modelview (float *matrix)
     glXMakeCurrent(GDK_DISPLAY_XDISPLAY(display),
                    GDK_WINDOW_XWINDOW(window),
                    context);
+
+    /* Query the bound context. */
+    
+    {
+	int major, minor;
+
+	glGetIntegerv(GL_MAJOR_VERSION, &major);
+	glGetIntegerv(GL_MINOR_VERSION, &minor);
+
+        t_print_message("A version %d.%d, %s GLX context was created.\n", major, minor, arbcontext ? "ARB" : "old");
+    }
 	
-    if (debugcontext) {
+    if (debug) {
         glDebugMessageCallbackARB (debug_callback, NULL);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 
-        glDebugMessageControlARB (GL_DONT_CARE,
-        			  GL_DONT_CARE,
-        			  GL_DEBUG_SEVERITY_HIGH_ARB,
-        			  0, NULL,
-        			  GL_TRUE);
+        /* glDebugMessageControlARB (GL_DONT_CARE, */
+        /* 			  GL_DONT_CARE, */
+        /* 			  GL_DEBUG_SEVERITY_HIGH_ARB, */
+        /* 			  0, NULL, */
+        /* 			  high ? GL_TRUE : GL_FALSE); */
 
-        glDebugMessageControlARB (GL_DONT_CARE,
-        			  GL_DONT_CARE,
-        			  GL_DEBUG_SEVERITY_MEDIUM_ARB,
-        			  0, NULL,
-        			  debugcontext > 1 ? GL_TRUE : GL_FALSE);
+        /* glDebugMessageControlARB (GL_DONT_CARE, */
+        /* 			  GL_DONT_CARE, */
+        /* 			  GL_DEBUG_SEVERITY_MEDIUM_ARB, */
+        /* 			  0, NULL, */
+        /* 			  medium ? GL_TRUE : GL_FALSE); */
 
-        glDebugMessageControlARB (GL_DONT_CARE,
-        			  GL_DONT_CARE,
-        			  GL_DEBUG_SEVERITY_LOW_ARB,
-        			  0, NULL,
-        			  debugcontext > 2 ? GL_TRUE : GL_FALSE);
+        /* glDebugMessageControlARB (GL_DONT_CARE, */
+        /* 			  GL_DONT_CARE, */
+        /* 			  GL_DEBUG_SEVERITY_LOW_ARB, */
+        /* 			  0, NULL, */
+        /* 			  low ? GL_TRUE : GL_FALSE); */
     }
         
     /* Print useful debug information. */

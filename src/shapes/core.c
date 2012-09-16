@@ -47,7 +47,7 @@ DEFINE_SHAPE(points, GL_POINTS)
 DEFINE_SHAPE(line, GL_LINE_STRIP)
 DEFINE_SHAPE(loop, GL_LINE_LOOP)
 DEFINE_SHAPE(lines, GL_LINES)
-DEFINE_SHAPE(mesh, GL_TRIANGLES)
+DEFINE_SHAPE(triangles, GL_TRIANGLES)
 DEFINE_SHAPE(strip, GL_TRIANGLE_STRIP)
 DEFINE_SHAPE(fan, GL_TRIANGLE_FAN)
 
@@ -58,7 +58,7 @@ int luaopen_shapes_core (lua_State *L)
 	{"line", export_line},
 	{"loop", export_loop},
 	{"lines", export_lines},
-	{"mesh", export_mesh},
+	{"triangles", export_triangles},
 	{"strip", export_strip},
 	{"fan", export_fan},
 	{NULL, NULL}

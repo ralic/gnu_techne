@@ -23,11 +23,12 @@
 #include "event.h"
 #include "observer.h"
 #include "cursor.h"
+#include "timer.h"
 
 int luaopen_primitives_core (lua_State *L)
 {
     Class classes[] = {[Node class], [Transform class], [Event class],
-		       [Observer class], [Cursor class],
+		       [Observer class], [Cursor class], [Timer class],
 		       NULL};
 
     t_export_nodes (L, classes);

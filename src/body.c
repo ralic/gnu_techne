@@ -29,13 +29,11 @@ static int drawbodies = -1;
 static void call_poststep_hook (dBodyID body)
 {
     Body *object;
-    int reference;
 
     object = (Body *)dBodyGetData (body);
-    reference = object->poststep;
 
     t_push_userdata (_L, 1, object);
-    t_call_hook (_L, reference, 1, 0);
+    t_call_hook (_L, object->poststep, 1, 0);
 }
 
 @implementation Body

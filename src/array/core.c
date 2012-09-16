@@ -33,25 +33,25 @@
 
 static int create (lua_State *L)
 {
-    int i, j;
+    int n, j;
 
-    for (i = 0 ; lua_type (L, i + 1) == LUA_TNUMBER ; i += 1);
+    for (n = 0 ; lua_type (L, n + 1) == LUA_TNUMBER ; n += 1);
 
-    if (lua_gettop (L) == i) {
+    if (lua_gettop (L) == n) {
 	lua_pushnil(L);
     }
 
     {
-	int size[i];
+	int size[n];
 	array_Type type;
 
-	for (j = 0 ; j < i ; j += 1) {
+	for (j = 0 ; j < n ; j += 1) {
 	    size[j] = lua_tonumber (L, j + 1);
 	}
 
 	type = lua_tointeger (L, lua_upvalueindex(1));
 
-	if (lua_toboolean (L, i + 2)) {
+	if (lua_toboolean (L, n + 2)) {
 	    if (type == ARRAY_TFLOAT || type == ARRAY_TDOUBLE) {
 		lua_pushstring (L,
 				"Only integer arrays can be normalized.");
@@ -61,7 +61,7 @@ static int create (lua_State *L)
 	    type = -type;
 	}
 	
-	array_toarrayv (L, i + 1, type, i, size);
+	array_toarrayv (L, n + 1, type, n, size);
     }		 
     
     return 1;
@@ -69,25 +69,25 @@ static int create (lua_State *L)
 
 static int cast (lua_State *L)
 {
-    int i, j;
+    int n, j;
 
-    for (i = 0 ; lua_type (L, i + 1) == LUA_TNUMBER ; i += 1);
+    for (n = 0 ; lua_type (L, n + 1) == LUA_TNUMBER ; n += 1);
 
-    if (i < 1) {
+    if (n < 1) {
 	lua_pushstring (L, "Array dimensions undefined.");
 	lua_error (L);
     }
 
-    array_checkarray (L, i + 1);
+    array_checkarray (L, n + 1);
 
     {
-	int size[i];
+	int size[n];
 
-	for (j = 0 ; j < i ; j += 1) {
+	for (j = 0 ; j < n ; j += 1) {
 	    size[j] = lua_tonumber (L, j + 1);
 	}
 	
-	array_castv (L, i + 1, i, size);
+	array_castv (L, n + 1, n, size);
     }		 
     
     return 1;

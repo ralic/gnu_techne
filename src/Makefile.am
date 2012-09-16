@@ -119,7 +119,8 @@ joints_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
 
 primitives_core_la_SOURCES = primitives/core.c primitives/observer.c	\
 			     primitives/observer.h			\
-			     primitives/cursor.c primitives/cursor.h
+			     primitives/cursor.c primitives/cursor.h	\
+			     primitives/timer.c primitives/timer.h
 primitives_core_la_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS}
 primitives_core_la_LDFLAGS = -module -avoid-version -no-undefined
 primitives_core_la_LIBADD = ${GDK_LIBS} ${AM_LDADD}

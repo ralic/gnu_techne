@@ -1,3 +1,5 @@
+#!/bin/bash
+
 GLX_FUNCTIONS="glXCreateContextAttribsARB"
 GL_FUNCTIONS="glDebugMessageCallbackARB glDebugMessageControlARB glGetUniformIndices glGetActiveUniformBlockiv glUniformBlockBinding glGetActiveUniformBlockName glGetActiveUniformsiv"
 

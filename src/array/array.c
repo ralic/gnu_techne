@@ -372,6 +372,9 @@ static void construct (lua_State *L, array_Array *array, int reference)
 	lua_pushstring(L, "__gc");
 	lua_pushcfunction(L, (lua_CFunction)__gc);
 	lua_settable(L, -3);
+	lua_pushstring(L, "__array");
+	lua_pushboolean(L, 1);
+	lua_settable(L, -3);
 
 	signature = lua_topointer (L, -1);
 	metatable = luaL_ref (L, LUA_REGISTRYINDEX);
@@ -694,6 +697,10 @@ array_Array *array_testarray (lua_State *L, int index)
     } else {
 	if (lua_topointer (L, -1) == signature) {
 	    lua_pop (L, 1);
+	    return lua_touserdata (L, index);
+	} else if (lua_getfield (L, -1, "__array"),
+		   lua_toboolean (L, -1)) {
+	    lua_pop (L, 2);
 	    return lua_touserdata (L, index);
 	} else {
 	    lua_pop (L, 1);

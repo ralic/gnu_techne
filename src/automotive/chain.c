@@ -303,7 +303,7 @@
 
 -(void) _set_speed
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 -(void) traverse

@@ -177,7 +177,7 @@ static int drawlayout = -1;
 
 -(void) _set_content
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 -(void) traverse

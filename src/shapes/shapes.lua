@@ -19,45 +19,48 @@ local array = require 'array'
 local shapes = require 'shapes.core'
 
 function shapes.circle(parameters)
-   local node
+   local node, oldmeta
    local r, n = 1, 16
 
-   node = shapes.line {
-      get = function (self, key)
-	       if key == "radius" then
-		  return r
-	       elseif key == "segments" then
-		  return n
-	       else
-		  return self[key]
-	       end
-	    end,
+   node = shapes.line {}
+   oldmeta = getmetatable(node)
 
-      set = function (self, key, value)
-	       local v
-	       
-	       if key == "radius" then
-		  r = value
-	       elseif key == "segments" then
-		  n = value
-	       else
-		  self[key] = value
-		  return
-	       end
+   replacemetatable (node, {
+      __index = function (self, key)
+		   if key == "radius" then
+		      return r
+		   elseif key == "segments" then
+		      return n
+		   else
+		      return oldmeta.__index(self, key)
+		   end
+		end,
 
-	       local positions = array.floats(n, 3)
+      __newindex = function (self, key, value)
+		      local v
+		      
+		      if key == "radius" then
+			 r = value
+		      elseif key == "segments" then
+			 n = value
+		      else
+			 oldmeta.__newindex(self, key, value)
+			 return
+		      end
 
-	       for i = 1, n do
-		  theta = 2 * math.pi * (i - 1) / (n - 1)
+		      local positions = array.floats(n, 3)
 
-		  positions[i][1] = r * math.cos (theta)
-		  positions[i][2] = r * math.sin(theta)
-		  positions[i][3] = 0
-	       end
+		      for i = 1, n do
+			 theta = 2 * math.pi * (i - 1) / (n - 1)
 
-	       self.positions = positions
-	    end
-   }
+			 positions[i][1] = r * math.cos (theta)
+			 positions[i][2] = r * math.sin(theta)
+			 positions[i][3] = 0
+		      end
+
+		      self.positions = positions
+		   end
+   })
    
    for key, value in pairs (parameters) do
       node[key] = value
@@ -67,25 +70,28 @@ function shapes.circle(parameters)
 end
 
 function shapes.box(parameters)
-   local node
+   local node, oldmeta
    local a, b, c
 
-   node = shapes.triangles {
-      get = function (self, key)
+   node = shapes.triangles {}
+   oldmeta = getmetatable(node)
+
+   replacemetatable (node, {
+      __index = function (self, key)
 	       if key == "size" then
 		  return {a, b, c}
 	       else
-		  return self[key]
+		  return oldmeta.__index(self, key)
 	       end
 	    end,
 
-      set = function (self, key, value)
+      __newindex = function (self, key, value)
 	       local v
 	       
 	       if key == "size" then
 		  a, b, c = table.unpack(value)
 	       else
-		  self[key] = value
+		  oldmeta.__newindex(self, key, value)
 		  return
 	       end
 
@@ -121,7 +127,104 @@ function shapes.box(parameters)
 		  {a, -b, -c}, {a, -b, c}, {-a, -b, c},
 	       }
 	    end
-   }
+   })
+   
+   for key, value in pairs (parameters) do
+      node[key] = value
+   end
+
+   return node
+end
+
+function shapes.cylinder(parameters)
+   local node, oldmeta
+   local r, l, n = 1, 1, 16
+
+   node = shapes.triangles {}
+   oldmeta = getmetatable(node)
+
+   replacemetatable (node, {
+      __index = function (self, key)
+		   if key == "radius" then
+		      return r
+		   elseif key == "segments" then
+		      return n
+		   else
+		      return oldmeta.__index(self, key)
+		   end
+		end,
+
+      __newindex = function (self, key, value)
+		      local v
+		      
+		      if key == "radius" then
+			 r = value
+		      elseif key == "segments" then
+			 n = value
+		      else
+			 oldmeta.__newindex(self, key, value)
+			 return
+		      end
+
+		      local positions = array.floats(2 * n, 3)
+		      local indices = array.ushorts(4 * n - 3, 3)
+
+		      for i = 1, n do
+			 local theta, a, b
+
+			 theta = 2 * math.pi * (i - 1) / (n - 1)
+			 a = r * math.cos (theta)
+			 b = r * math.sin(theta)
+
+			 positions[i][1] = a
+			 positions[i][2] = b
+			 positions[i][3] = l / 2
+
+			 positions[n + i][1] = a
+			 positions[n + i][2] = b
+			 positions[n + i][3] = -l / 2
+		      end
+
+		      for i = 1, n - 2 do
+			 local a
+
+			 indices[i][1] = 0
+			 indices[i][2] = i
+			 indices[i][3] = i + 1
+
+			 a = n + i - 2
+
+			 indices[a][1] = n
+			 indices[a][2] = n + i + 1
+			 indices[a][3] = n + i
+		      end
+
+		      for i = 1, n - 1 do
+			 local b
+
+			 b = 2 * (n + i - 2)
+
+			 indices[b][1] = i
+			 indices[b][2] = i + n 
+			 indices[b][3] = i + 1
+
+			 indices[b + 1][1] = i + 1
+			 indices[b + 1][2] = i + n 
+			 indices[b + 1][3] = i + n + 1
+		      end
+
+		      indices[4 * n - 4][2] = 2 * n - 2 
+		      indices[4 * n - 4][1] = 2 * n - 1
+		      indices[4 * n - 4][3] = 0
+
+		      indices[4 * n - 3][2] = 0 
+		      indices[4 * n - 3][1] = 2 * n - 1
+		      indices[4 * n - 3][3] = n
+
+		      self.positions = positions
+		      self.indices = indices		      
+		   end
+   })
    
    for key, value in pairs (parameters) do
       node[key] = value

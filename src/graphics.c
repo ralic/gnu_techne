@@ -945,12 +945,12 @@ void t_set_modelview (float *matrix)
 
 -(void) _set_renderer
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 -(void) _set_screen
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 @end

@@ -92,7 +92,7 @@
 
 -(void) _set_renderer
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 @end

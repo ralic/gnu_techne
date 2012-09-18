@@ -494,7 +494,7 @@ static void callback (void *data, dGeomID a, dGeomID b)
 
 -(void) _set_time
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 -(void) _set_stepsize

@@ -412,8 +412,8 @@ static void match_attribute_to_buffer (unsigned int program,
 	
 	if (isindices) {
 	    /* Expect only unsigned integral types for index data. */
-	    
-	    switch (b->type) {
+
+	    switch (array->type) {
 	    case ARRAY_TUINT:
 	    case ARRAY_TUSHORT:
 	    case ARRAY_TUCHAR:

@@ -1336,12 +1336,12 @@ static int sampler_index(lua_State *L)
 
 -(void) _set_vertices
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 -(void) _set_sampler
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 -(void) _set_scale

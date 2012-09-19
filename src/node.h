@@ -18,8 +18,26 @@
 #define _NODE_H_
 
 #include <lua.h>
+#include <objc/runtime.h>
 
 #include "object.h"
+
+#define GET_PREFIX "_get_"
+#define SET_PREFIX "_set_"
+
+#define GET_PREFIX_LENGTH (sizeof (GET_PREFIX) - 1)
+#define SET_PREFIX_LENGTH (sizeof (SET_PREFIX) - 1)
+
+#define GET_ELEMENT "_get_element"
+#define SET_ELEMENT "_set_element"
+
+#define GET_ELEMENT_LENGTH (sizeof (GET_ELEMENT) - 1)
+#define SET_ELEMENT_LENGTH (sizeof (SET_ELEMENT) - 1)
+
+#define T_WARN_READONLY							\
+	t_print_warning ("Property '%s' of '%s' nodes cannot be set.\n", \
+			 sel_getName(_cmd) + SET_PREFIX_LENGTH,		\
+			 [self name]);
 
 struct protocol {
     Class class;
@@ -128,7 +146,6 @@ id t_check_node(lua_State *L, int index, Class class);
 void t_configure_node (lua_State *L, int index);
 void t_export_nodes(lua_State *L, Class *classes);
 void t_push_userdata(lua_State *L, int n, ...);
-void t_push_hook(lua_State *L, int reference);
 int t_call_hook (lua_State *L, int reference, int n, int m);
 
 #endif

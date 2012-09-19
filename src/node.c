@@ -27,18 +27,6 @@
 #include "proxy.h"
 #include "techne.h"
 
-#define GET_PREFIX "_get_"
-#define SET_PREFIX "_set_"
-
-#define GET_PREFIX_LENGTH (sizeof (GET_PREFIX) - 1)
-#define SET_PREFIX_LENGTH (sizeof (SET_PREFIX) - 1)
-
-#define GET_ELEMENT "_get_element"
-#define SET_ELEMENT "_set_element"
-
-#define GET_ELEMENT_LENGTH (sizeof (GET_ELEMENT) - 1)
-#define SET_ELEMENT_LENGTH (sizeof (SET_ELEMENT) - 1)
-
 static int userdata = LUA_REFNIL, tags = LUA_REFNIL, metatable = LUA_REFNIL;
 static Node *list;
 static const void *signature;
@@ -50,6 +38,9 @@ int t_is_node (lua_State *L, int index)
     } else {
 	if (lua_topointer (L, -1) == signature) {
 	    lua_pop (L, 1);
+	    return 1;
+	} else if (lua_getfield (L, -1, "__node"), lua_toboolean (L, -1)) {
+	    lua_pop (L, 2);
 	    return 1;
 	} else {
 	    lua_pop (L, 1);
@@ -168,26 +159,15 @@ void t_push_userdata (lua_State *L, int n, ...)
     lua_remove (L, h);
 }
 
-void t_push_hook (lua_State *L, int reference)
-{
-    lua_rawgeti(L, LUA_REGISTRYINDEX, reference);
-
-    if (!lua_isnoneornil (L, -1) &&
-	!lua_isfunction (L, -1) && !lua_isuserdata (L, -1)) {
-	t_print_error ("Value supplied as hook is a %s, which is not callable.\n",
-		       lua_typename (L, lua_type(L, -1)));
-	abort();
-    }
-}
-
 int t_call_hook (lua_State *L, int reference, int n, int m)
 {
     int h;
 
     if (reference != LUA_REFNIL) {
-	/* Insert the hook before any parameters. */
+	/* Push the hook and insert the hook before any parameters. */
+	
+	lua_rawgeti(L, LUA_REGISTRYINDEX, reference);
 
-	t_push_hook (L, reference);
 	if (n > 0) {
 	    lua_insert (L, -(n + 1));
 	}
@@ -306,7 +286,7 @@ static int next_attribute(lua_State *L)
 
 	for (i = 1;
 	     i < protocol->size &&
-		 k != protocol->properties[0][i - 1].name;
+		 strcmp(k, protocol->properties[0][i - 1].name);
 	     i += 1);
     }
 
@@ -1072,6 +1052,40 @@ static int __newindex(lua_State *L)
         
 	tags = luaL_ref (_L, LUA_REGISTRYINDEX);
 
+	/* Create the metatable for Nodes. */
+	
+	lua_newtable (_L);
+	lua_pushstring(_L, "__len");
+	lua_pushcfunction(_L, (lua_CFunction)__len);
+	lua_settable(_L, -3);
+	lua_pushstring(_L, "__index");
+	lua_pushcfunction(_L, (lua_CFunction)__index);
+	lua_settable(_L, -3);
+	lua_pushstring(_L, "__newindex");
+	lua_pushcfunction(_L, (lua_CFunction)__newindex);
+	lua_settable(_L, -3);
+	lua_pushstring(_L, "__tostring");
+	lua_pushcfunction(_L, (lua_CFunction)__tostring);
+	lua_settable(_L, -3);
+	lua_pushstring(_L, "__pairs");
+	lua_pushcfunction(_L, (lua_CFunction)__pairs);
+	lua_settable(_L, -3);
+	lua_pushstring(_L, "__ipairs");
+	lua_pushcfunction(_L, (lua_CFunction)__ipairs);
+	lua_settable(_L, -3);
+	lua_pushstring(_L, "__gc");
+	lua_pushcfunction(_L, (lua_CFunction)__gc);
+	lua_settable(_L, -3);
+	lua_pushstring(_L, "__call");
+	lua_pushcfunction(_L, (lua_CFunction)__call);
+	lua_settable(_L, -3);
+	lua_pushstring(_L, "__node");
+	lua_pushboolean(_L, 1);
+	lua_settable(_L, -3);
+
+	signature = lua_topointer (_L, -1);
+	metatable = luaL_ref (_L, LUA_REGISTRYINDEX);
+
         /* Export iterators and other utility functions. */
         
 	lua_pushcfunction (_L, configuration_iterator);
@@ -1142,37 +1156,6 @@ static int __newindex(lua_State *L)
     /* Create the object userdata. */
 
     *(id *)lua_newuserdata(_L, sizeof(id)) = self;
-
-    if (metatable == LUA_REFNIL) {
-	lua_newtable (_L);
-	lua_pushstring(_L, "__len");
-	lua_pushcfunction(_L, (lua_CFunction)__len);
-	lua_settable(_L, -3);
-	lua_pushstring(_L, "__index");
-	lua_pushcfunction(_L, (lua_CFunction)__index);
-	lua_settable(_L, -3);
-	lua_pushstring(_L, "__newindex");
-	lua_pushcfunction(_L, (lua_CFunction)__newindex);
-	lua_settable(_L, -3);
-	lua_pushstring(_L, "__tostring");
-	lua_pushcfunction(_L, (lua_CFunction)__tostring);
-	lua_settable(_L, -3);
-	lua_pushstring(_L, "__pairs");
-	lua_pushcfunction(_L, (lua_CFunction)__pairs);
-	lua_settable(_L, -3);
-	lua_pushstring(_L, "__ipairs");
-	lua_pushcfunction(_L, (lua_CFunction)__ipairs);
-	lua_settable(_L, -3);
-	lua_pushstring(_L, "__gc");
-	lua_pushcfunction(_L, (lua_CFunction)__gc);
-	lua_settable(_L, -3);
-	lua_pushstring(_L, "__call");
-	lua_pushcfunction(_L, (lua_CFunction)__call);
-	lua_settable(_L, -3);
-
-	signature = lua_topointer (_L, -1);
-	metatable = luaL_ref (_L, LUA_REGISTRYINDEX);
-    }
 
     lua_rawgeti (_L, LUA_REGISTRYINDEX, metatable);
     lua_setmetatable(_L, -2);
@@ -1553,7 +1536,7 @@ static int __newindex(lua_State *L)
 
 -(void) _set_profile
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 -(int) _get_linked
@@ -1565,7 +1548,7 @@ static int __newindex(lua_State *L)
  
 -(void) _set_linked
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 -(int) _get_link

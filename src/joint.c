@@ -298,12 +298,12 @@ static int drawjoints = -1;
 
 -(void) _set_forces
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 -(void) _set_torques
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 @end

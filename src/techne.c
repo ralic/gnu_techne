@@ -282,6 +282,43 @@ static int construct_hooks(lua_State *L)
     return 1;
 }
 
+static int replacemetatable(lua_State *L)
+{
+    luaL_checktype (L, 1, LUA_TUSERDATA);
+    luaL_checktype (L, 2, LUA_TTABLE);
+
+    if (lua_getmetatable (L, 1)) {
+	/* If the value already has a metatable, copy any fields that
+	 * are not set in the supplied one. */
+	
+	lua_pushnil (L);
+	
+	while (lua_next (L, -2)) {
+	    /* Check to see whether the field is overriden and if not
+	     * copy it to the new metatable. */
+	    
+	    lua_pushvalue (L, -2);
+	    lua_gettable (L, 2);
+
+	    if (lua_isnil (L, -1)) {
+		
+		lua_pop (L, 1);
+		lua_pushvalue (L, -2);
+		lua_insert (L, -2);		
+		lua_settable (L, 2);
+	    } else {
+		lua_pop (L, 2);
+	    }
+	}
+
+	lua_pop (L, 1);
+    }
+
+    lua_setmetatable (L, 1);
+
+    return 1;
+}
+
 static void accumulate(Node *root, long long int (*intervals)[2]) {
     Node *child;
     int j;
@@ -638,6 +675,9 @@ void t_print_error (const char *format, ...)
     lua_pushcfunction (_L, construct_hooks);
     lua_setglobal (_L, "hooks");
     
+    lua_pushcfunction (_L, replacemetatable);
+    lua_setglobal (_L, "replacemetatable");
+
     /* Greet the user. */
 
     t_print_message ("This is Techne, version %s.\n", VERSION);
@@ -754,7 +794,7 @@ void t_print_error (const char *format, ...)
 	totals[1] += intervals[j][1];
     }
 
-    t_print_message("Run a total of %d iterations in %.1f seconds at "
+    t_print_message("Ran a total of %d iterations in %.1f seconds at "
                     "%.1f iterations per second.\n"
                     "Spent %.1f (%.1f%%) in the core and %.1f (%.1f%%) in "
 		    "the application.\n"
@@ -819,7 +859,7 @@ void t_print_error (const char *format, ...)
 
 -(void) _set_time
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 -(void) _set_iterate
@@ -834,7 +874,7 @@ void t_print_error (const char *format, ...)
 	
 -(void) _set_iterations
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 @end

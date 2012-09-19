@@ -272,7 +272,7 @@
 
 -(void) _set_state
 {
-    /* Do nothing. */
+    T_WARN_READONLY;
 }
 
 -(void) traverse

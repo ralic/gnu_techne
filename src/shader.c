@@ -552,6 +552,12 @@ static int uniforms_iterator(lua_State *L)
     const char *k;
     unsigned int i;
 
+    /* Skip this if the shader has no uniforms. */
+
+    if (self->range == 0) {
+        return [super _get_];
+    }
+
     k = lua_tostring (_L, 2);
 
     /* Check if the key refers to a uniform and return the stored
@@ -574,6 +580,12 @@ static int uniforms_iterator(lua_State *L)
 {
     const char *k;
     unsigned int i;
+
+    /* Skip this if the shader has no uniforms. */
+
+    if (self->range == 0) {
+        return [super _set_];
+    }
 
     k = lua_tostring (_L, 2);
 

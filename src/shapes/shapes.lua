@@ -147,6 +147,8 @@ function shapes.cylinder(parameters)
       __index = function (self, key)
 		   if key == "radius" then
 		      return r
+		   elseif key == "length" then
+		      return l
 		   elseif key == "segments" then
 		      return n
 		   else
@@ -159,6 +161,8 @@ function shapes.cylinder(parameters)
 		      
 		      if key == "radius" then
 			 r = value
+		      elseif key == "length" then
+			 l = value
 		      elseif key == "segments" then
 			 n = value
 		      else

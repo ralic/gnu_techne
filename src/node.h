@@ -140,12 +140,12 @@ typedef enum {
 void t_begin_interval (Node *, tprof_Phase reading);
 void t_end_interval (Node *, tprof_Phase reading);
 
-int t_is_node(lua_State *L, int index);
-id t_test_node (lua_State *L, int index, Class class);
-id t_check_node(lua_State *L, int index, Class class);
-void t_configure_node (lua_State *L, int index);
-void t_export_nodes(lua_State *L, Class *classes);
-void t_push_userdata(lua_State *L, int n, ...);
-int t_call_hook (lua_State *L, int reference, int n, int m);
+int t_isnode(lua_State *L, int index);
+id t_testnode (lua_State *L, int index, Class class);
+id t_checknode(lua_State *L, int index, Class class);
+void t_configurenode (lua_State *L, int index);
+void t_exportnodes(lua_State *L, Class *classes);
+void t_pushuserdata(lua_State *L, int n, ...);
+int t_callhook (lua_State *L, int reference, int n, int m);
 
 #endif

@@ -30,7 +30,7 @@ int luaopen_widgets_core (lua_State *L)
     Class classes[] = {[Display class], [Layout class], [Row class],
 		       [Column class], [Assembly class], NULL};
 
-    t_export_nodes (L, classes);
+    t_exportnodes (L, classes);
     
     return 1;
 }

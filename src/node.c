@@ -31,7 +31,7 @@ static int userdata = LUA_REFNIL, tags = LUA_REFNIL, metatable = LUA_REFNIL;
 static Node *list;
 static const void *signature;
 
-int t_is_node (lua_State *L, int index)
+int t_isnode (lua_State *L, int index)
 {
     if (!lua_type (L, index) == LUA_TUSERDATA || !lua_getmetatable (L, index)) {
 	return 0;
@@ -49,11 +49,11 @@ int t_is_node (lua_State *L, int index)
     }
 }
 
-id t_test_node (lua_State *L, int index, Class class)
+id t_testnode (lua_State *L, int index, Class class)
 {
     id object;
 
-    if (!t_is_node(L, index)) {
+    if (!t_isnode(L, index)) {
 	return NULL;
     }
 
@@ -66,11 +66,11 @@ id t_test_node (lua_State *L, int index, Class class)
     return object;
 }
 
-id t_check_node (lua_State *L, int index, Class class)
+id t_checknode (lua_State *L, int index, Class class)
 {
     id object;
 
-    if (!t_is_node(L, index)) {
+    if (!t_isnode(L, index)) {
 	const char *s = lua_pushfstring(L, "%s expected, got %s",
 					[class name],
 					luaL_typename(L, index));
@@ -88,7 +88,7 @@ id t_check_node (lua_State *L, int index, Class class)
     return object;
 }
 
-void t_configure_node (lua_State *L, int index)
+void t_configurenode (lua_State *L, int index)
 {
     /* Configure the node at the top of the stach with the values
      * contained in the table at index. */
@@ -111,12 +111,12 @@ static int constructnode (lua_State *L)
     class = (Class)lua_touserdata(L, lua_upvalueindex (1));
 
     [[class alloc] init];
-    t_configure_node (L, 1);
+    t_configurenode (L, 1);
 
     return 1;
 }
 
-void t_export_nodes (lua_State *L, Class *classes)
+void t_exportnodes (lua_State *L, Class *classes)
 {
     int i;
 
@@ -139,7 +139,7 @@ void t_export_nodes (lua_State *L, Class *classes)
     }	
 }
 
-void t_push_userdata (lua_State *L, int n, ...)
+void t_pushuserdata (lua_State *L, int n, ...)
 {
     va_list ap;
     int i, h;
@@ -159,7 +159,7 @@ void t_push_userdata (lua_State *L, int n, ...)
     lua_remove (L, h);
 }
 
-int t_call_hook (lua_State *L, int reference, int n, int m)
+int t_callhook (lua_State *L, int reference, int n, int m)
 {
     int h;
 
@@ -210,7 +210,7 @@ static int next_attribute(lua_State *L)
     const struct protocol *protocol;
     int i;
 
-    if (!t_is_node (L, 1)) {
+    if (!t_isnode (L, 1)) {
 	lua_pushnil (L);
 
 	return 1;
@@ -335,7 +335,7 @@ static int next_attribute(lua_State *L)
 
 static int configuration_iterator(lua_State *L)
 {
-    t_check_node(L, 1, [Node class]);
+    t_checknode(L, 1, [Node class]);
 
     lua_pushcfunction (L, next_attribute);
     lua_pushvalue(L, 1);
@@ -348,7 +348,7 @@ static int children_iterator(lua_State *L)
 {
     Node *object;
 
-    object = t_check_node(L, 1, [Node class]);
+    object = t_checknode(L, 1, [Node class]);
 
     lua_getglobal (L, "next");
     lua_rawgeti (L, LUA_REGISTRYINDEX, object->children);    
@@ -362,13 +362,13 @@ static int ancestor(lua_State *L)
     Node *object;
     int i, n;
 
-    object = t_check_node(L, 1, [Node class]);
+    object = t_checknode(L, 1, [Node class]);
     n = luaL_optinteger(L, 2, 0);
 
     for (i = 0 ; i < n && object ; i += 1, object = object->up);
 
     if (object) {
-	t_push_userdata (L, 1, object);
+	t_pushuserdata (L, 1, object);
     } else {
 	lua_pushnil (L);
     }
@@ -553,7 +553,7 @@ static int ancestors_index(lua_State *L)
 	for (i = 0 ; i < n && object ; i += 1, object = object->up);
 
 	if (object) {
-	    t_push_userdata (_L, 1, object);
+	    t_pushuserdata (_L, 1, object);
 	} else {
 	    lua_pushnil (_L);
 	}
@@ -576,7 +576,7 @@ static int ancestors_newindex(lua_State *L)
 	for (i = 0 ; i < n - 1 && object ; i += 1, object = object->up);
 
 	if (object) {
-	    t_push_userdata (_L, 1, object);
+	    t_pushuserdata (_L, 1, object);
 	    lua_pushstring (_L, "parent");
 	    lua_pushvalue (_L, 3);
 	    lua_settable (_L, -3);
@@ -674,7 +674,7 @@ static int __index(lua_State *L)
 
     if (object->get != LUA_REFNIL && !object->rawaccess) {
 	object->rawaccess = 1;
-	i = t_call_hook (L, object->get, 2, LUA_MULTRET);
+	i = t_callhook (L, object->get, 2, LUA_MULTRET);
 	object->rawaccess = 0;
 	 
 	return i;
@@ -773,7 +773,7 @@ static int __newindex(lua_State *L)
 
     if (object->set != LUA_REFNIL && !object->rawaccess) {
 	object->rawaccess = 1;
-	t_call_hook (L, object->set, 3, 0);
+	t_callhook (L, object->set, 3, 0);
 	object->rawaccess = 0;
 	 
 	return 1;
@@ -1344,8 +1344,8 @@ static int __newindex(lua_State *L)
        into the ancestors. */
     
     if (!self->linked) {
-	t_push_userdata (_L, 1, self);
-    	t_call_hook (_L, self->link, 1, 0);
+	t_pushuserdata (_L, 1, self);
+    	t_callhook (_L, self->link, 1, 0);
     }
 
     /* Toggle ourselves. */
@@ -1364,8 +1364,8 @@ static int __newindex(lua_State *L)
        been unlinked. */
     
     if (!self->linked) {
-	t_push_userdata (_L, 1, self);
-    	t_call_hook (_L, self->unlink, 1, 0);
+	t_pushuserdata (_L, 1, self);
+    	t_callhook (_L, self->unlink, 1, 0);
     }
 }
 
@@ -1373,8 +1373,8 @@ static int __newindex(lua_State *L)
 {
     Node *child, *next;
 
-    t_push_userdata (_L, 1, self);
-    t_call_hook (_L, self->begin, 1, 0);
+    t_pushuserdata (_L, 1, self);
+    t_callhook (_L, self->begin, 1, 0);
     
     for(child = self->down ; child ; child = next) {
 	next = child->right;
@@ -1389,10 +1389,10 @@ static int __newindex(lua_State *L)
 {
     Node *child, *next;
 
-    t_push_userdata (_L, 1, self);
+    t_pushuserdata (_L, 1, self);
     lua_pushnumber (_L, h);
     lua_pushnumber (_L, t);
-    t_call_hook (_L, self->step, 3, 0);
+    t_callhook (_L, self->step, 3, 0);
     
     for(child = self->down ; child ; child = next) {
 	next = child->right;
@@ -1407,8 +1407,8 @@ static int __newindex(lua_State *L)
 {
     Node *child, *next;
 
-    t_push_userdata (_L, 1, self);
-    t_call_hook (_L, self->prepare, 1, 0);
+    t_pushuserdata (_L, 1, self);
+    t_callhook (_L, self->prepare, 1, 0);
     
     for(child = self->down ; child ; child = next) {
 	next = child->right;
@@ -1423,8 +1423,8 @@ static int __newindex(lua_State *L)
 {
     Node *child, *next;
 
-    t_push_userdata (_L, 1, self);
-    t_call_hook (_L, self->traverse, 1, 0);
+    t_pushuserdata (_L, 1, self);
+    t_callhook (_L, self->traverse, 1, 0);
     
     for(child = self->down ; child ; child = next) {
 	next = child->right;
@@ -1439,8 +1439,8 @@ static int __newindex(lua_State *L)
 {
     Node *child, *next;
 
-    t_push_userdata (_L, 1, self);
-    t_call_hook (_L, self->finish, 1, 0);
+    t_pushuserdata (_L, 1, self);
+    t_callhook (_L, self->finish, 1, 0);
     
     for(child = self->down ; child ; child = next) {
 	next = child->right;
@@ -1493,10 +1493,10 @@ static int __newindex(lua_State *L)
 	
 	lua_pushvalue (_L, -1);
         lua_rawget (_L, -3);
-	node = t_test_node (_L, -1, [Proxy class]);
+	node = t_testnode (_L, -1, [Proxy class]);
 	
 	if (node && node->up) {
-	    t_push_userdata(_L, 2, node->up, self);
+	    t_pushuserdata(_L, 2, node->up, self);
 	    lua_rawgeti(_L, LUA_REGISTRYINDEX, node->key.reference);
 	    lua_insert (_L, -2);
 	    lua_settable (_L, -3);
@@ -1710,12 +1710,12 @@ static int __newindex(lua_State *L)
 -(void) _set_parent
 {
     if (!lua_isnil (_L, 3)) {
-	t_check_node (_L, 3, [Node class]);
+	t_checknode (_L, 3, [Node class]);
 	lua_pushlightuserdata (_L, self);
 	lua_pushvalue (_L, 1);
 	lua_settable (_L, 3);
     } else if (self->up) {
-	t_push_userdata (_L, 1, self->up);
+	t_pushuserdata (_L, 1, self->up);
 	lua_rawgeti (_L, LUA_REGISTRYINDEX, self->key.reference);
 	lua_pushnil (_L);
 	lua_settable (_L, -3);
@@ -1753,7 +1753,7 @@ static int __newindex(lua_State *L)
     lua_pushvalue (_L, 2);
     lua_rawget (_L, -2);
  
-    if(t_is_node (_L, -1)) {
+    if(t_isnode (_L, -1)) {
 	child = *(Node **)lua_touserdata (_L, -1);
 	lua_pop (_L, 1);
             
@@ -1783,7 +1783,7 @@ static int __newindex(lua_State *L)
   
     /* Link the new node. */
 	
-    if(t_is_node (_L, 3)) {
+    if(t_isnode (_L, 3)) {
 	child = *(Node **)lua_touserdata (_L, 3);
 
 	/* Unlink the child if it already has a parent... */

@@ -31,7 +31,7 @@ int luaopen_primitives_core (lua_State *L)
 		       [Observer class], [Cursor class], [Timer class],
 		       NULL};
 
-    t_export_nodes (L, classes);
+    t_exportnodes (L, classes);
     
     return 1;
 }

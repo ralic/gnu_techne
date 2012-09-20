@@ -47,18 +47,18 @@
     if (event->type == GDK_BUTTON_PRESS ||
 	event->type == GDK_BUTTON_RELEASE) {
 
-	t_push_userdata (_L, 1, self);
+	t_pushuserdata (_L, 1, self);
 	lua_pushnumber (_L, ((GdkEventButton *)event)->button);
 	lua_pushnumber (_L, ((GdkEventButton *)event)->x);
 	lua_pushnumber (_L, ((GdkEventButton *)event)->y);
 	
 	if (event->type == GDK_BUTTON_PRESS) {
-	    t_call_hook (_L, self->buttonpress, 4, 0);
+	    t_callhook (_L, self->buttonpress, 4, 0);
 	} else {
-	    t_call_hook (_L, self->buttonrelease, 4, 0);
+	    t_callhook (_L, self->buttonrelease, 4, 0);
 	}
     } else if (event->type == GDK_SCROLL) {
-	t_push_userdata (_L, 1, self);
+	t_pushuserdata (_L, 1, self);
 
 	if (((GdkEventScroll *)event)->direction == GDK_SCROLL_UP) {
 	    lua_pushstring (_L, "up");
@@ -73,11 +73,11 @@
 	lua_pushnumber (_L, ((GdkEventScroll *)event)->x);
 	lua_pushnumber (_L, ((GdkEventScroll *)event)->y);
 	
-	t_call_hook (_L, self->scroll, 4, 0);
+	t_callhook (_L, self->scroll, 4, 0);
     } else if (event->type == GDK_MOTION_NOTIFY) {
 	int i;
 	    
-	t_push_userdata (_L, 1, self);
+	t_pushuserdata (_L, 1, self);
 
 	for (i = 0;
 	     (1 << i) - 1 < ((GdkEventMotion *)event)->state >> 8;
@@ -92,13 +92,13 @@
 	lua_pushnumber (_L, ((GdkEventMotion *)event)->x);
 	lua_pushnumber (_L, ((GdkEventMotion *)event)->y);
 
-	t_call_hook (_L, self->motion, 4, 0);
+	t_callhook (_L, self->motion, 4, 0);
     } else if (event->type == GDK_KEY_PRESS ||
 	       event->type == GDK_KEY_RELEASE) {
 	char *name;
 	unsigned int k;
 
-	t_push_userdata (_L, 1, self);
+	t_pushuserdata (_L, 1, self);
 
 	k = ((GdkEventKey *)event)->keyval;
 	name = gdk_keyval_name (k);
@@ -122,9 +122,9 @@
 	}
 
 	if (event->type == GDK_KEY_PRESS) {
-	    t_call_hook (_L, self->keypress, 2, 0);
+	    t_callhook (_L, self->keypress, 2, 0);
 	} else {
-	    t_call_hook (_L, self->keyrelease, 2, 0);
+	    t_callhook (_L, self->keyrelease, 2, 0);
 	}	
     }
 }

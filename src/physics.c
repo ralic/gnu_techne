@@ -136,7 +136,7 @@ static int addjointtorque (lua_State *L)
 {
     Joint *object;
 
-    object = t_check_node (L, 1, [Joint class]);
+    object = t_checknode (L, 1, [Joint class]);
 
     switch (dJointGetType (object->joint)) {
     case dJointTypeHinge:
@@ -372,8 +372,8 @@ static int contact (lua_State *L)
 
     simple = lua_toboolean (L, lua_upvalueindex (1));
 
-    a = t_check_node (L, 1, [Body class]);
-    b = t_check_node (L, 2, [Body class]);
+    a = t_checknode (L, 1, [Body class]);
+    b = t_checknode (L, 2, [Body class]);
     pos = array_checkcompatible (L, 3, ARRAY_TDOUBLE, 1, 3);
     normal = array_checkcompatible (L, 4, ARRAY_TDOUBLE, 1, 3);
 
@@ -471,8 +471,8 @@ static int joined (lua_State *L)
 {
     Body *a, *b;
 
-    a = t_check_node (L, 1, [Body class]);
-    b = t_check_node (L, 2, [Body class]);
+    a = t_checknode (L, 1, [Body class]);
+    b = t_checknode (L, 2, [Body class]);
 
     if (a->body && b->body) {
 	lua_pushboolean (L, dAreConnected(a->body, b->body));
@@ -491,7 +491,7 @@ static int pointfrombody(lua_State *L)
     array_Array *b;
     int i;
 
-    object = t_check_node (L, 1, [Body class]);
+    object = t_checknode (L, 1, [Body class]);
     b = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
     body = object->body;
 
@@ -518,7 +518,7 @@ static int vectorfrombody(lua_State *L)
     array_Array *b;
     int i;
 
-    object = t_check_node (L, 1, [Body class]);
+    object = t_checknode (L, 1, [Body class]);
     b = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
 
     dBodyVectorToWorld (object->body, b->values.doubles[0], b->values.doubles[1], b->values.doubles[2], w);
@@ -540,7 +540,7 @@ static int pointtobody(lua_State *L)
     array_Array *b;
     int i;
 
-    object = t_check_node (L, 1, [Body class]);
+    object = t_checknode (L, 1, [Body class]);
     b = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
 
     dBodyGetPosRelPoint (object->body,
@@ -566,7 +566,7 @@ static int vectortobody(lua_State *L)
     array_Array *b;
     int i;
 
-    object = t_check_node (L, 1, [Body class]);
+    object = t_checknode (L, 1, [Body class]);
     b = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
 
     dBodyVectorFromWorld (object->body,
@@ -592,7 +592,7 @@ static int pointvelocity(lua_State *L)
     array_Array *b;
     int i;
 
-    object = t_check_node (L, 1, [Body class]);
+    object = t_checknode (L, 1, [Body class]);
     b = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
 
     dBodyGetPointVel (object->body,
@@ -615,7 +615,7 @@ static int anaesthetize (lua_State *L)
 {
     Body *object;
 
-    object = t_check_node (L, 1, [Body class]);
+    object = t_checknode (L, 1, [Body class]);
 
     if (object->body) {
 	dBodyDisable (object->body);
@@ -628,7 +628,7 @@ static int wake (lua_State *L)
 {
     Body *object;
 
-    object = t_check_node (L, 1, [Body class]);
+    object = t_checknode (L, 1, [Body class]);
 
     if (object->body) {
 	dBodyEnable (object->body);
@@ -641,7 +641,7 @@ static int reattach (lua_State *L)
 {
     Joint *object;
 
-    object = t_check_node (L, 1, [Joint class]);
+    object = t_checknode (L, 1, [Joint class]);
     [object update];
     
     /* [object toggle]; */

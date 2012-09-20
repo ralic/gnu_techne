@@ -28,7 +28,7 @@ int luaopen_automotive_core (lua_State *L)
     Class classes[] = {[Fourstroke class], [Wheel class],
 		       [Racetrack class], [Chain class], NULL};
 
-    t_export_nodes (L, classes);
+    t_exportnodes (L, classes);
     
     return 1;
 }

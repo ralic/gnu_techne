@@ -108,8 +108,8 @@ static void recurse (Node *root)
     self->matrix[14] = 0;
     self->matrix[15] = 1;	    
 
-    t_push_userdata (_L, 1, self);
-    t_call_hook (_L, self->transform, 1, 0);
+    t_pushuserdata (_L, 1, self);
+    t_callhook (_L, self->transform, 1, 0);
 
     /* Here we save the sister node beforehand because the child
        node might be unlinked by its hook function which will

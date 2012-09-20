@@ -365,7 +365,7 @@ static dColliderFn * getCollider (int num)
 	if (!lua_isnil(_L, -1)) {
 	    /* Get the userdata. */
 	    
-	    t_push_userdata (_L, 2,
+	    t_pushuserdata (_L, 2,
 			     dGeomGetData(data->contact.g1),
 			     dGeomGetData(data->contact.g2));
 

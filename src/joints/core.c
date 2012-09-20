@@ -41,7 +41,7 @@ int luaopen_joints_core (lua_State *L)
 		       [Universal class], [Gearing class], [Contact class],
 		       [Slider class], [Spherical class], NULL};
 
-    t_export_nodes (L, classes);
+    t_exportnodes (L, classes);
     
     return 1;
 }

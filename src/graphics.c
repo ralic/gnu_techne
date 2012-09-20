@@ -502,20 +502,20 @@ void t_set_modelview (float *matrix)
 		update_projection();
 	    }		
 
-	    t_push_userdata (_L, 1, self);
-	    t_call_hook (_L, configure, 1, 0);
+	    t_pushuserdata (_L, 1, self);
+	    t_callhook (_L, configure, 1, 0);
 	    break;
 	case GDK_FOCUS_CHANGE:
-	    t_push_userdata (_L, 1, self);
+	    t_pushuserdata (_L, 1, self);
 	    
 	    if (((GdkEventFocus *)event)->in == TRUE) {
-		t_call_hook (_L, focus, 1, 0);
+		t_callhook (_L, focus, 1, 0);
 	    } else {
-		t_call_hook (_L, defocus, 1, 0);
+		t_callhook (_L, defocus, 1, 0);
 	    }
 	    break;
 	case GDK_DELETE:
-	    t_call_hook (_L, delete, 0, 0);
+	    t_callhook (_L, delete, 0, 0);
 	    break;
 	case GDK_NOTHING:
 	case GDK_MAP:

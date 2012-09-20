@@ -202,7 +202,7 @@ static int next_uniform(lua_State *L)
     Shader *shader;
     unsigned int i;
 
-    shader = t_check_node (L, 1, [Shader class]);
+    shader = t_checknode (L, 1, [Shader class]);
 
     if (lua_isnil (L, 2)) {
 	/* We need the first uniform so return 0. */

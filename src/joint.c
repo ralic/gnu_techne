@@ -110,17 +110,17 @@ static int drawjoints = -1;
 	    if (self->inverted) {
 		dJointAttach (self->joint,
 			      self->bodies[1], self->bodies[0]);
-		t_push_userdata (_L, 3, self,
+		t_pushuserdata (_L, 3, self,
 				 self->bodies[1],
 				 self->bodies[0]);
-		t_call_hook (_L, self->attach, 3, 0);
+		t_callhook (_L, self->attach, 3, 0);
 	    } else {
 		dJointAttach (self->joint,
 			      self->bodies[0], self->bodies[1]);
-		t_push_userdata (_L, 3, self,
+		t_pushuserdata (_L, 3, self,
 				 self->bodies[0],
 				 self->bodies[1]);
-		t_call_hook (_L, self->attach, 3, 0);
+		t_callhook (_L, self->attach, 3, 0);
 	    }
 	}
     } else {
@@ -235,10 +235,10 @@ static int drawjoints = -1;
 -(int) _get_bodies
 {
     if (self->explicit == 1) {
-	t_push_userdata (_L, 1, dBodyGetData(self->bodies[1]));
+	t_pushuserdata (_L, 1, dBodyGetData(self->bodies[1]));
     } else if (self->explicit == 2) {
 	lua_newtable (_L);
-	t_push_userdata (_L, 2, dBodyGetData(self->bodies[1]), dBodyGetData(self->bodies[0]));
+	t_pushuserdata (_L, 2, dBodyGetData(self->bodies[1]), dBodyGetData(self->bodies[0]));
 	lua_rawseti (_L, -2, 2);
 	lua_rawseti (_L, -2, 1);
     } else {
@@ -274,14 +274,14 @@ static int drawjoints = -1;
     } else if(lua_istable(_L, 3)) {
 	for (i = 0 ; i < 2 ; i += 1) {
 	    lua_rawgeti (_L, 3, i + 1);
-	    object = t_check_node (_L, -1, [Body class]);
+	    object = t_checknode (_L, -1, [Body class]);
 	    self->bodies[i] = object->body;
 	}
 
 	lua_pop (_L, 2);
 	self->explicit = 2;
     } else {
-	object = t_check_node (_L, 3, [Body class]);
+	object = t_checknode (_L, 3, [Body class]);
 	    
 	self->bodies[1] = object->body;
 	self->explicit = 1;

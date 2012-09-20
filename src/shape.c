@@ -31,7 +31,7 @@ static int next_attribute(lua_State *L)
     Shape *shape;
     shape_Buffer *b;
 
-    shape = t_check_node (L, 1, [Shape class]);
+    shape = t_checknode (L, 1, [Shape class]);
 
     if (lua_isnil (L, 2)) {
 	b = shape->buffers;

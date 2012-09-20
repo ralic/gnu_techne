@@ -26,7 +26,7 @@ int luaopen_shading_core (lua_State *L)
 {
     Class classes[] = {[Program class], [Flat class], NULL};
 
-    t_export_nodes (L, classes);
+    t_exportnodes (L, classes);
     
     return 1;
 }

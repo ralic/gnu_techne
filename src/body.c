@@ -32,8 +32,8 @@ static void call_poststep_hook (dBodyID body)
 
     object = (Body *)dBodyGetData (body);
 
-    t_push_userdata (_L, 1, object);
-    t_call_hook (_L, object->poststep, 1, 0);
+    t_pushuserdata (_L, 1, object);
+    t_callhook (_L, object->poststep, 1, 0);
 }
 
 @implementation Body

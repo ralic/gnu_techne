@@ -91,7 +91,7 @@
 -(int) call
 {
     [[Shader alloc] initFrom: (Shader *)self];
-    t_configure_node(_L, 2);
+    t_configurenode(_L, 2);
     
     return 1;
 }

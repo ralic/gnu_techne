@@ -65,12 +65,12 @@
 	self->checkpoint = time;
 	self->count += 1;
 
-	t_push_userdata (_L, 1, self);
+	t_pushuserdata (_L, 1, self);
 	lua_pushnumber (_L, self->count);
 	lua_pushnumber (_L, self->delta);
 	lua_pushnumber (_L, self->elapsed);
 
-	t_call_hook (_L, self->tick, 4, 0);
+	t_callhook (_L, self->tick, 4, 0);
     }
 }
 

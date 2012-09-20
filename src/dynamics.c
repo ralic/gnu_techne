@@ -46,7 +46,7 @@ static int next_joint(lua_State *L)
     Joint *joint;
     int i, n;
 
-    object = t_check_node (_L, 1, [Body class]);
+    object = t_checknode (_L, 1, [Body class]);
     i = lua_tointeger (L, 2);
     n = dBodyGetNumJoints(object->body);
 
@@ -61,7 +61,7 @@ static int next_joint(lua_State *L)
 	/* Push the full userdata for the joint. */
 	
 	j = dBodyGetJoint(object->body, i);
-	t_push_userdata (_L, 1, dJointGetData(j));
+	t_pushuserdata (_L, 1, dJointGetData(j));
 
 	/* If the userdata associated with the node does not
 	 * correspond with a Joint userdata value then it must be an
@@ -137,10 +137,10 @@ static void callback (void *data, dGeomID a, dGeomID b)
 		    
 		    h = lua_gettop (_L);
 
-		    t_push_userdata (_L, 2,
+		    t_pushuserdata (_L, 2,
 				     dGeomGetData(a),
 				     dGeomGetData(b));
-		    t_call_hook(_L, collision, 2, LUA_MULTRET);
+		    t_callhook(_L, collision, 2, LUA_MULTRET);
 
 		    /* The maximum number of joints to create. */
 		    

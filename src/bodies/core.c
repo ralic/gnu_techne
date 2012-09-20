@@ -34,7 +34,7 @@ int luaopen_bodies_core (lua_State *L)
 		       [Plane class], [Capsule class], [Cylinder class],
 		       [Polyhedron class], [Ball class], [System class], NULL};
 
-    t_export_nodes (L, classes);
+    t_exportnodes (L, classes);
     
     return 1;
 }

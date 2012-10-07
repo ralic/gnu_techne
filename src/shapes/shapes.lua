@@ -176,7 +176,7 @@ function shapes.cylinder(parameters)
 		      for i = 1, n do
 			 local theta, a, b
 
-			 theta = 2 * math.pi * (i - 1) / (n - 1)
+			 theta = 2 * math.pi * (i - 1) / n
 			 a = r * math.cos (theta)
 			 b = r * math.sin(theta)
 
@@ -190,40 +190,35 @@ function shapes.cylinder(parameters)
 		      end
 
 		      for i = 1, n - 2 do
-			 local a
+		      	 local a
 
-			 indices[i][1] = 0
-			 indices[i][2] = i
-			 indices[i][3] = i + 1
+		      	 indices[i][1] = 0
+		      	 indices[i][2] = i
+		      	 indices[i][3] = i + 1
 
-			 a = n + i - 2
+		      	 a = n + i - 2
 
-			 indices[a][1] = n
-			 indices[a][2] = n + i + 1
-			 indices[a][3] = n + i
+		      	 indices[a][1] = n
+		      	 indices[a][2] = n + i + 1
+		      	 indices[a][3] = n + i
 		      end
 
-		      for i = 1, n - 1 do
-			 local b
+		      for i = 1, n do
+		      	 local b
 
-			 b = 2 * (n + i - 2)
+		      	 b = 2 * (n + i - 2)
 
-			 indices[b][1] = i
-			 indices[b][2] = i + n 
-			 indices[b][3] = i + 1
+		      	 indices[b][1] = i - 1
+		      	 indices[b][2] = i + n - 1 
+		      	 indices[b][3] = i 
 
-			 indices[b + 1][1] = i + 1
-			 indices[b + 1][2] = i + n 
-			 indices[b + 1][3] = i + n + 1
+		      	 indices[b + 1][1] = i
+		      	 indices[b + 1][2] = i + n - 1
+		      	 indices[b + 1][3] = i + n
 		      end
 
-		      indices[4 * n - 4][2] = 2 * n - 2 
-		      indices[4 * n - 4][1] = 2 * n - 1
-		      indices[4 * n - 4][3] = 0
-
-		      indices[4 * n - 3][2] = 0 
-		      indices[4 * n - 3][1] = 2 * n - 1
-		      indices[4 * n - 3][3] = n
+		      indices[4 * n - 3][2] = 0
+		      indices[4 * n - 3][3] = n - 1
 
 		      self.positions = positions
 		      self.indices = indices		      

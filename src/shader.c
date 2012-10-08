@@ -29,6 +29,12 @@
 #include "glsl/preamble.h"
 
 static char *declarations[3];
+static struct {
+    const char *name;
+    unsigned int index;
+} *globals;
+
+static int globals_n;
 
 #define TYPE_ERROR()							\
     {									\
@@ -207,7 +213,7 @@ static int next_uniform(lua_State *L)
     if (lua_isnil (L, 2)) {
 	/* We need the first uniform so return 0. */
 	
-	if (shader->range > 0) {
+	if (shader->blocks_n > 0) {
 	    i = 0;
 	} else {
 	    i = GL_INVALID_INDEX;
@@ -222,7 +228,7 @@ static int next_uniform(lua_State *L)
 	
 	glGetUniformIndices(shader->name, 1, &k, &i);
 
-	if (i != shader->range - 1) {
+	if (i != shader->blocks_n - 1) {
 	    i += 1;
 	} else {
 	    i = GL_INVALID_INDEX;
@@ -281,12 +287,26 @@ static int uniforms_iterator(lua_State *L)
     }
 }
 
-+(int) addUniformBlock: (const char *)declaration
-		   for: (shader_Stage)stage
++(int) addUniformBlockNamed: (const char *)name
+                   forStage: (shader_Stage)stage
+                 withSource: (const char *)declaration
 {
-    static int n;
+    unsigned int i;
     int l;
 
+    /* Allocate a buffer object and add it to the globals list. */
+
+    glGenBuffers(1, &i);
+    
+    globals_n += 1;
+    globals = realloc (globals, globals_n * sizeof (globals[0]));
+
+    globals[globals_n - 1].name = name;
+    globals[globals_n - 1].index = i;
+
+    /* Add the declaration for the global block to the declaractions
+       string for the stage. */
+    
     if (declarations[stage]) {
 	l = strlen(declarations[stage]) + strlen(declaration) + 1;
 	declarations[stage] = realloc(declarations[stage], l * sizeof (char));
@@ -297,10 +317,10 @@ static int uniforms_iterator(lua_State *L)
 	strcpy(declarations[stage], declaration);
     }
 
-    return n++;
+    return i;
 }
 
--(id)init
+-(id) init
 {
     self = [super init];
     self->name = glCreateProgram();
@@ -476,12 +496,12 @@ static int uniforms_iterator(lua_State *L)
 
     /* Allocate uniform buffer objects. */
     
-    glGetProgramiv (self->name, GL_ACTIVE_UNIFORM_BLOCKS, &self->range);
+    glGetProgramiv (self->name, GL_ACTIVE_UNIFORM_BLOCKS, &self->blocks_n);
 
-    if (self->range > 0) {
-	self->blocks = malloc (self->range * sizeof (unsigned int));
+    if (self->blocks_n > 0) {
+	self->blocks = malloc (self->blocks_n * sizeof (unsigned int));
 
-	for (i = 0 ; i < self->range ; i += 1) {
+	for (i = 0 ; i < self->blocks_n ; i += 1) {
 	    int s, l;
 
 	    glUniformBlockBinding (self->name, i, i);
@@ -501,13 +521,19 @@ static int uniforms_iterator(lua_State *L)
 		glGetActiveUniformBlockName(self->name, i, l, NULL,
 					    blockname);
 
-		/* If the block name begins with two underscores its a
+		/* If the block name begins with two underscores it's a
 		 * global block so it'll have already been created and
 		 * bound. */
-		
+
 		if (!strncmp(blockname, "__", 2)) {
-		    self->blocks[i] = GL_INVALID_INDEX;
-		    assert(i == 0);
+                    int j;
+
+                    for (j = 0;
+                         j < globals_n && strcmp (globals[j].name, blockname);
+                         j += 1);
+
+                    assert (j != globals_n);
+		    self->blocks[i] = globals[j].index;
 		} else {
 		    glGenBuffers(1, &self->blocks[i]);
 		    glBindBuffer(GL_UNIFORM_BUFFER, self->blocks[i]);
@@ -525,10 +551,23 @@ static int uniforms_iterator(lua_State *L)
 
 -(id) free
 {
+    int i, j;
+    
     /* Free the uniform buffer objects. */
 
-    if (self->range > 0) {
-	glDeleteBuffers (self->range, self->blocks);
+    if (self->blocks_n > 0) {
+        /* Remove any global blocks from the list.  We don't want to
+           free those. */
+        
+        for (i = 0 ; i < self->blocks_n ; i += 1) {
+            for (j = 0 ; j < globals_n ; j += 1) {
+                if (self->blocks[i] == globals[j].index) {
+                    self->blocks[i] = GL_INVALID_INDEX;
+                }
+            }
+        }
+        
+	glDeleteBuffers (self->blocks_n, self->blocks);
 	free(self->blocks);
     }
 
@@ -554,7 +593,7 @@ static int uniforms_iterator(lua_State *L)
 
     /* Skip this if the shader has no uniforms. */
 
-    if (self->range == 0) {
+    if (self->blocks_n == 0) {
         return [super _get_];
     }
 
@@ -583,7 +622,7 @@ static int uniforms_iterator(lua_State *L)
 
     /* Skip this if the shader has no uniforms. */
 
-    if (self->range == 0) {
+    if (self->blocks_n == 0) {
         return [super _set_];
     }
 
@@ -623,7 +662,7 @@ static int uniforms_iterator(lua_State *L)
     
     glUseProgram(self->name);
     
-    for (i = 0 ; i < self->range ; i += 1) {
+    for (i = 0 ; i < self->blocks_n ; i += 1) {
 	if (self->blocks[i] != GL_INVALID_INDEX) {
 	    glBindBufferBase(GL_UNIFORM_BUFFER, i, self->blocks[i]);
 	}

@@ -35,12 +35,13 @@ typedef enum {
 @public
     unsigned int *blocks, name;
     shader_Uniform *uniforms;
-    int range, ismold;
+    int blocks_n, ismold;
 }
 
 
-+(int) addUniformBlock: (const char *)declaration
-		   for: (shader_Stage)stage;
++(int) addUniformBlockNamed: (const char *)name
+                   forStage: (shader_Stage)stage
+                 withSource: (const char *)declaration;
 -(void) addSource: (const char *) source for: (shader_Stage)stage;
 -(void) link;
 -(id)initFrom: (Shader *) mold;

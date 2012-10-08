@@ -448,20 +448,18 @@ void t_set_modelview (float *matrix)
 		       0, 1, 0, 0,
 		       0, 0, 1, 0,
 		       0, 0, 0, 1};
-	int i;
 
 	/* Register the transform uniform block. */
 	
-	i = [Shader addUniformBlock: glsl_transform_block
-				for: VERTEX_STAGE];
+	buffer = [Shader addUniformBlockNamed: "__transform_block"
+                                     forStage: VERTEX_STAGE
+                                   withSource: glsl_transform_block];
 
 	/* Create the global shading context buffer object. */
     
-	glGenBuffers(1, &buffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
 	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof (float[16]), NULL,
 		     GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_UNIFORM_BUFFER, i, buffer);
 
 	/* Initialize the values. */
     

@@ -24,7 +24,7 @@
 @interface Spherical: Joint {
 @public
     double anchor[3];
-double tolerance[3];
+    double tolerance[3];
 }
 
 -(int) _get_anchor;

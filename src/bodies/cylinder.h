@@ -24,7 +24,6 @@
 #include "body.h"
 
 @interface Cylinder: Body {
-    GLUquadric *quadric;
     dReal radius, height;
 }
 

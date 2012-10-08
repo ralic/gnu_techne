@@ -29,10 +29,6 @@
 
 -(Cylinder *) init
 {
-    self->quadric = gluNewQuadric();
-    gluQuadricDrawStyle(self->quadric, GLU_LINE);
-    gluQuadricNormals(self->quadric, GLU_NONE);
-
     self->geom = dCreateCylinder (NULL, 1, 1);
     dGeomSetData (self->geom, self);
 
@@ -70,39 +66,6 @@
     height = lua_tonumber (_L, 3);
 
     dGeomCylinderSetParams (self->geom, self->radius, self->height);
-}
-
--(void) traverse
-{
-    if (self->debug) {
-	glUseProgramObjectARB(0);
-
-	glMatrixMode (GL_MODELVIEW);
-	glPushMatrix();
-	glMultMatrixf (self->matrix);
-
-	glLineWidth (1);
-
-	glEnable (GL_DEPTH_TEST);
-
-	glColor3f (0, 1, 0);
-	glBegin (GL_LINES);
-	glVertex3f (0, 0, -0.5 * self->height - self->radius);
-	glVertex3f (0, 0, 0.5 * self->height + self->radius);
-	glEnd();
-	
-	glTranslatef (0, 0, -0.5 * self->height);
-
-	glColor3f (1, 0, 0);
-	gluCylinder (self->quadric, self->radius, self->radius,
-		     self->height, 16, 1);
-    
-	glDisable (GL_DEPTH_TEST);
-
-	glPopMatrix();
-    }
-    
-    [super traverse];
 }
 
 @end

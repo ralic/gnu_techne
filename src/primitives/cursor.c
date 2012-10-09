@@ -90,10 +90,12 @@ static int uptodate;
 
 	/* _TRACEM(4, 4, ".5f", M); */
 
-	t_set_projection(M);
+	t_push_projection(M);
 	
 	[super traverse];
 	
+	t_pop_projection(M);
+
 	glDepthMask (GL_TRUE);
 	glStencilMask (~0);	
     }

@@ -58,6 +58,37 @@ static char *title;
 
 static unsigned int buffer;
 
+static struct {
+    float (*array)[16];
+    int length, size;
+} modelviews, projections;
+
+#define t_stack_push(stack, value)					\
+    {									\
+	if (stack.length == stack.size) {				\
+	    if (stack.size == 0) {					\
+		stack.size = 2;						\
+	    } else {							\
+		stack.size = 2 * stack.size;				\
+	    }								\
+	    								\
+	    stack.array = realloc (stack.array,				\
+				   stack.size * sizeof(stack.array[0])); \
+	}								\
+									\
+	memcpy(stack.array[stack.length], value, sizeof(stack.array[0])); \
+	stack.length += 1;						\
+    }
+
+#define t_stack_pop(stack)			\
+    {						\
+	assert(stack.length > 0);		\
+	stack.length -= 1;			\
+    }
+
+#define t_stack_empty(stack) (stack.length == 0)
+#define t_stack_top(stack) (stack.array[stack.length - 1])
+
 /* Context flags. */
 
 static int debug, reportonce, interrupt, arbcontext;
@@ -160,36 +191,84 @@ static void update_projection()
     t_set_projection(matrix);
 }
 
+#define SET_PROJECTION(matrix)						\
+    {									\
+	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
+	glBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,		\
+			PROJECTION_SIZE, (matrix));			\
+									\
+	if(0) {								\
+		float M[16];						\
+									\
+		glGetBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET, \
+				   PROJECTION_SIZE, &M);		\
+									\
+		_TRACEM(4, 4, ".5f", M);				\
+	}								\
+    }
+
 void t_set_projection (float *matrix)
 {
-    glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-    glBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,
-		    PROJECTION_SIZE, matrix);
+    assert (!t_stack_empty(projections));
 
-    /* { */
-    /* 	float M[16]; */
-	
-    /* 	glGetBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET, */
-    /* 			   PROJECTION_SIZE, &M); */
+    t_stack_pop(projections);
+    t_stack_push (projections, matrix);
 
-    /* 	_TRACEM(4, 4, ".5f", M); */
-    /* } */
+    SET_PROJECTION(matrix);
 }
+
+void t_push_projection (float *matrix)
+{
+    t_stack_push (projections, matrix);
+
+    SET_PROJECTION(matrix);
+}
+
+void t_pop_projection ()
+{
+    t_stack_pop (projections);
+
+    SET_PROJECTION(t_stack_top(projections));
+}
+
+#define SET_MODELVIEW(matrix)						\
+    {									\
+	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
+	glBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,		\
+			MODELVIEW_SIZE, (matrix));			\
+									\
+	if(0) {								\
+		float M[16];						\
+									\
+		glGetBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET, \
+				   MODELVIEW_SIZE, &M);		\
+									\
+		_TRACEM(4, 4, ".5f", M);				\
+	}								\
+    }
 
 void t_set_modelview (float *matrix)
 {
-    glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-    glBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,
-		    MODELVIEW_SIZE, matrix);
+    assert (!t_stack_empty(modelviews));
 
-    // {
-    // 	float M[16];
-	
-    // 	glGetBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,
-    // 			   MODELVIEW_SIZE, &M);
+    t_stack_pop(modelviews);
+    t_stack_push (modelviews, matrix);
 
-    // 	_TRACEM(4, 4, ".5f", M);
-    // }
+    SET_MODELVIEW(matrix);
+}
+
+void t_push_modelview (float *matrix)
+{
+    t_stack_push (modelviews, matrix);
+
+    SET_MODELVIEW(matrix);
+}
+
+void t_pop_modelview ()
+{
+    t_stack_pop (modelviews);
+
+    SET_MODELVIEW(t_stack_top(modelviews));
 }
 
 @implementation Graphics
@@ -463,8 +542,8 @@ void t_set_modelview (float *matrix)
 
 	/* Initialize the values. */
     
-	t_set_projection (I);
-	t_set_modelview (I);
+	t_push_projection (I);
+	t_push_modelview (I);
     }
     
     return self;

@@ -22,6 +22,7 @@
 #include "gl.h"
 
 #include "techne.h"
+#include "structures.h"
 #include "graphics.h"
 #include "shape.h"
 #include "shader.h"
@@ -362,14 +363,7 @@ static void match_attribute_to_buffer (unsigned int program,
 	if (isindices) {
 	    self->indices = NULL;
 	} else {
-	    if (self->buffers == b) {
-		self->buffers = b->next;
-	    } else {
-		shape_Buffer *s;
-
-		for (s = self->buffers ; s->next != b ; s = s->next);
-		s->next = b->next;
-	    }
+            t_single_unlink_from(b, &self->buffers);
 	}
     
 	glDeleteBuffers(1, &b->name);
@@ -453,8 +447,7 @@ static void match_attribute_to_buffer (unsigned int program,
 	if (isindices) {
 	    self->indices = b;
 	} else {
-	    b->next = self->buffers;
-	    self->buffers = b;
+            t_single_link_at_head(b, &self->buffers);
 	}
 
 	/* If the shape is already linked to a shader update the

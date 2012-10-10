@@ -25,7 +25,7 @@
 #include "input.h"
 
 static unsigned int *keys;
-static int allocated;
+static int keys_n;
 
 static void recurse (Node *root, GdkEvent *event)
 {
@@ -66,7 +66,7 @@ static void recurse (Node *root, GdkEvent *event)
 
 	    k = ((GdkEventKey *)event)->keyval;
 	
-	    for (i = 0 ; i < allocated ; i += 1) {
+	    for (i = 0 ; i < keys_n ; i += 1) {
 		if (keys[i] == 0) {
 		    j = i;
 		}
@@ -79,9 +79,9 @@ static void recurse (Node *root, GdkEvent *event)
 	    if (j >= 0) {
 		keys[j] = k;
 	    } else {
-		if (i == allocated) {
-		    allocated += 1;
-		    keys = realloc (keys, allocated * sizeof(unsigned int));
+		if (i == keys_n) {
+		    keys_n += 1;
+		    keys = realloc (keys, keys_n * sizeof(unsigned int));
 		}
 
 		keys[i] = k;
@@ -92,7 +92,7 @@ static void recurse (Node *root, GdkEvent *event)
 
 	    k = ((GdkEventKey *)event)->keyval;
 	
-	    for (i = 0 ; i < allocated ; i += 1) {
+	    for (i = 0 ; i < keys_n ; i += 1) {
 		if (keys[i] == k) {
 		    keys[i] = 0;
 		    break;

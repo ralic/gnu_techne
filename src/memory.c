@@ -15,6 +15,7 @@
  */
 
 #include <stdlib.h>
+#include <structures.h>
 
 struct chunk {
     struct chunk *next;
@@ -39,10 +40,11 @@ static void add_new_chunk(struct pool *pool)
     }
 
     if (pool->current) {
-	pool->current->next = new;
+        t_single_link_at_head(new, &pool->current);
+    } else {
+        pool->current = new;
     }
     
-    pool->current = new;
     pool->allocated[1] += 1;    
 }
 

@@ -42,6 +42,8 @@ static GdkScreen *screen;
 #define PROJECTION_SIZE (sizeof(float[16]))
 #define MODELVIEW_OFFSET (PROJECTION_OFFSET + PROJECTION_SIZE)
 #define MODELVIEW_SIZE (sizeof(float[16]))
+#define PROJECTION_STACK_DEPTH 8
+#define MODELVIEW_STACK_DEPTH 8
 
 static enum {
     ORTHOGRAPHIC, PERSPECTIVE, FRUSTUM
@@ -58,36 +60,9 @@ static char *title;
 
 static unsigned int buffer;
 
-static struct {
-    float (*array)[16];
-    int length, size;
-} modelviews, projections;
-
-#define t_stack_push(stack, value)					\
-    {									\
-	if (stack.length == stack.size) {				\
-	    if (stack.size == 0) {					\
-		stack.size = 2;						\
-	    } else {							\
-		stack.size = 2 * stack.size;				\
-	    }								\
-	    								\
-	    stack.array = realloc (stack.array,				\
-				   stack.size * sizeof(stack.array[0])); \
-	}								\
-									\
-	memcpy(stack.array[stack.length], value, sizeof(stack.array[0])); \
-	stack.length += 1;						\
-    }
-
-#define t_stack_pop(stack)			\
-    {						\
-	assert(stack.length > 0);		\
-	stack.length -= 1;			\
-    }
-
-#define t_stack_empty(stack) (stack.length == 0)
-#define t_stack_top(stack) (stack.array[stack.length - 1])
+float modelviews[MODELVIEW_STACK_DEPTH][16];
+float projections[PROJECTION_STACK_DEPTH][16];
+int modelviews_n, projections_n;
 
 /* Context flags. */
 
@@ -209,26 +184,24 @@ static void update_projection()
 
 void t_set_projection (float *matrix)
 {
-    assert (!t_stack_empty(projections));
+    assert (projections_n > 0);
 
-    t_stack_pop(projections);
-    t_stack_push (projections, matrix);
-
+    memcpy(projections + projections_n, matrix, 16 * sizeof(float));
     SET_PROJECTION(matrix);
 }
 
 void t_push_projection (float *matrix)
 {
-    t_stack_push (projections, matrix);
-
-    SET_PROJECTION(matrix);
+    assert (projections_n < PROJECTION_STACK_DEPTH);
+    projections_n += 1;
+    t_set_projection(matrix);
 }
 
 void t_pop_projection ()
 {
-    t_stack_pop (projections);
+    projections_n -= 1;
 
-    SET_PROJECTION(t_stack_top(projections));
+    SET_PROJECTION(projections[projections_n]);
 }
 
 #define SET_MODELVIEW(matrix)						\
@@ -249,26 +222,25 @@ void t_pop_projection ()
 
 void t_set_modelview (float *matrix)
 {
-    assert (!t_stack_empty(modelviews));
+    assert (modelviews_n > 0);
 
-    t_stack_pop(modelviews);
-    t_stack_push (modelviews, matrix);
-
+    memcpy(modelviews + modelviews_n, matrix, 16 * sizeof(float));
     SET_MODELVIEW(matrix);
 }
 
 void t_push_modelview (float *matrix)
 {
-    t_stack_push (modelviews, matrix);
+    assert (modelviews_n < MODELVIEW_STACK_DEPTH);
 
-    SET_MODELVIEW(matrix);
+    modelviews_n += 1;
+    t_set_modelview(matrix);
 }
 
 void t_pop_modelview ()
 {
-    t_stack_pop (modelviews);
+    modelviews_n -= 1;
 
-    SET_MODELVIEW(t_stack_top(modelviews));
+    SET_MODELVIEW(modelviews[modelviews_n]);
 }
 
 @implementation Graphics

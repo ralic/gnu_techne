@@ -26,6 +26,7 @@
 #include "node.h"
 #include "proxy.h"
 #include "techne.h"
+#include "structures.h"
 
 static int userdata = LUA_REFNIL, tags = LUA_REFNIL, metatable = LUA_REFNIL;
 static Node *list;
@@ -1111,15 +1112,9 @@ static int __newindex(lua_State *L)
     /* Put newly created nodes in the orphans list. */
 
     if (list) {
-	self->right = list->right;
-	self->left = list;
-	list->right->left = self;
-	list->right = self;
+        t_circular_link_after(self, list);
     } else {
-	self->left = self;
-	self->right = self;
-
-	list = self;
+        list = t_make_circular(self);
     }
 
     self->tag.reference = LUA_REFNIL;
@@ -1222,11 +1217,8 @@ static int __newindex(lua_State *L)
     assert (child->left);
     assert (child->right);
 
-    child->left->right = child->right;
-    child->right->left = child->left;
-    
-    child->left = NULL;
-    child->right = NULL;
+    t_circular_unlink(child);
+
     child->up = self;
 
     /* t_trace ("%s(%p) => %s(%p)\n", [self name], self, [child name], child); */
@@ -1264,16 +1256,7 @@ static int __newindex(lua_State *L)
 	}
 	assert (r || l);
 
-	child->left = l;
-	child->right = r;
-
-	if (l) {
-	    l->right = child;
-	}
-
-	if (r) {
-	    r->left = child;
-	}
+        t_link_between(child, l, r);
 
 	if (!l) {
 	    assert (self->down == r);
@@ -1311,16 +1294,8 @@ static int __newindex(lua_State *L)
     }
 
     /* Remove the child. */
-    
-    if (child->right) {
-	child->right->left = child->left;
-    }
-	    
-    if (child->left){
-	child->left->right = child->right;
-    } else {
-	self->down = child->right;
-    }
+
+    t_unlink_from(child, &self->down);
 
     child->up = NULL;
 
@@ -1329,10 +1304,7 @@ static int __newindex(lua_State *L)
      * orphan so the list is already initialized. */
 
     assert (list);
-    child->right = list->right;
-    child->left = list;
-    list->right->left = child;
-    list->right = child;
+    t_circular_link_after (child, list);
 }
 
 -(void) toggle

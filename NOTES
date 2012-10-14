@@ -1,0 +1,35 @@
+Porting/cross-compiling:
+========================
+
+* graphics.window is initially {0, 0}
+* win32 port crashes when trying to set window size
+* version number should be augmented by platform if possible.
+* autoconf check for whether the terminal supports color output.
+
+Techne can be configured for cross-compiling like this:
+
+LUA_CFLAGS='-I/usr/local/mingw/include' LUA_LIBS='-L/usr/local/mingw/lib -llua -lm' MHD_CFLAGS='-I/usr/local/mingw/include' MHD_LIBS='-L/usr/local/mingw/lib -lmicrohttpd' ./configure --build=x86_64-linux-gnu --host=i686-pc-mingw32
+
+TODO (eventually):
+==================
+
+* Properly implement uniform _get_ in shader.c at some point.
+* Make network page functions return {mime, page} instead of page.
+* Consider making [Object init/free] return void.
+* Consider moving luaarray, luaprompt to github.
+
+TODO (ASAP):
+============
+
+* Also when updating an existing one the VBO needs to be updated.
+  - This is tricky.
+
+* Need debug meshes for the following items (remeber to delete traverse methods):
+  - Plane
+  - Racetrack
+  - Wheel
+
+* Need debug diagrams for joints.
+* Create:
+   array_adjust (lua_State *L, void *defaults, int rank, ...)
+   array_adjustv (lua_State *L, void *defaults, int rank, int *size)

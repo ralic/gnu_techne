@@ -75,6 +75,11 @@
 
 #include "node.h"
 
+typedef enum {
+    T_LOAD,
+    T_MULTIPLY,
+} t_Enumerated;
+
 lua_State *_L;
 
 const char *t_ansi_color (int i, int j);
@@ -91,12 +96,12 @@ void *t_build_pool(int factor, size_t size);
 void *t_allocate_from_pool (void *p);
 void t_reset_pool (void *p);
 
-void t_set_projection (float *matrix);
+void t_load_projection (float *matrix);
 void t_push_projection (float *matrix);
 void t_pop_projection ();
 
-void t_set_modelview (float *matrix);
-void t_push_modelview (float *matrix);
+void t_load_modelview (float *matrix, t_Enumerated mode);
+void t_push_modelview (float *matrix, t_Enumerated mode);
 void t_pop_modelview ();
 
 int luaopen_moremath (lua_State *L);

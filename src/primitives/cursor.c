@@ -63,6 +63,10 @@ static int uptodate;
 -(void) traverse
 {
     if (uptodate) {
+	float I[16] = {1, 0, 0, 0,
+		       0, 1, 0, 0,
+		       0, 0, 1, 0,
+		       0, 0, 0, 1};
 	float M[16];
 	int v[4];
 
@@ -91,10 +95,12 @@ static int uptodate;
 	/* _TRACEM(4, 4, ".5f", M); */
 
 	t_push_projection(M);
+	t_push_modelview (I, T_LOAD);
 	
 	[super traverse];
 	
-	t_pop_projection(M);
+	t_pop_modelview();
+	t_pop_projection();
 
 	glDepthMask (GL_TRUE);
 	glStencilMask (~0);	

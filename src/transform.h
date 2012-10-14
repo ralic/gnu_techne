@@ -37,10 +37,14 @@
 
 -(int) _get_position;
 -(int) _get_orientation;
+-(int) _get_translation;
+-(int) _get_rotation;
 -(int) _get_transform;
 
 -(void) _set_position;
 -(void) _set_orientation;
+-(void) _set_translation;
+-(void) _set_rotation;
 -(void) _set_transform;
 
 @end

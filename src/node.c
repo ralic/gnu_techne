@@ -44,7 +44,7 @@ int t_isnode (lua_State *L, int index)
 	    lua_pop (L, 2);
 	    return 1;
 	} else {
-	    lua_pop (L, 1);
+	    lua_pop (L, 2);
 	    return 0;
 	}
     }
@@ -316,8 +316,9 @@ static int next_attribute(lua_State *L)
 	selector = protocol->properties[0][i].selector;
 	implementation = class_getMethodImplementation(protocol->class, selector);
 	n = (*(int (*)(id, SEL, ...))implementation)(object, selector);
-
 	h = lua_gettop(_L);
+
+	assert(n > 0);
 
 	/* Clean up any garbage pushed by the getter onto the
 	 * stack. */
@@ -851,7 +852,7 @@ static int __newindex(lua_State *L)
 	    break;
 	}
     }
-
+    
     /* If the key is not part of the protocol store the value in the
      * environment. */
 
@@ -1816,7 +1817,7 @@ static int __newindex(lua_State *L)
 	/* Pop the children table since we're not goint to be adding
 	 * any children. */
 	
-	lua_pop (_L, 1);
+	lua_pop (_L, 1); 
 	
 	return 0;
     }

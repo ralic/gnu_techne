@@ -43,7 +43,9 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     array/operations.c array/array.h prompt/prompt.c	\
 		     prompt/prompt.h joints/contact.c profiling.c	\
 		     moremath.c timing.c memory.c network.c network.h	\
-		     proxy.c proxy.h input.c input.h structures.h
+		     proxy.c proxy.h input.c input.h structures.h	\
+		     math.h
+
 EXTRA_techne_bin_SOURCES = compat/asprintf.h
 
 techne_bin_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS} ${GL_CFLAGS}		\

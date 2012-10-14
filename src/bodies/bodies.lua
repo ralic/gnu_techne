@@ -14,10 +14,31 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local core = require 'bodies.core'
+
+if not options.drawbodies then
+   return core
+end
+
 local shading = require 'shading'
 local shapes = require 'shapes'
 
-local bodies = {
+return {
+   point = function (parameters)
+	    local point, oldmeta
+
+	    point = core.point (parameters)
+
+	    point.volume = shading.flat {
+	       color = {1, 0, 0, 1},
+
+	       shape = shapes.points {
+		  vertices = {{0, 0, 0}}
+	       },
+	    }
+
+	    return point
+	 end,
+
    box = function (parameters)
 	    local box, oldmeta
 
@@ -29,6 +50,8 @@ local bodies = {
 	       shape = shapes.box {
 		  wireframe = true,
 		  size = box.size,
+
+		  -- traverse = function (self) print (self) end,
 	       },
 	    }
 
@@ -77,7 +100,12 @@ local bodies = {
 			     })
 
 	    return cylinder
-	 end
-}
+	 end,
 
-return bodies
+   environment = core.environment,
+   plane = core.plane,
+   capsule = core.capsule,
+   polyhedron = core.polyhedron,
+   ball = core.ball,
+   system = core.system,
+} 

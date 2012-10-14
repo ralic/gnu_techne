@@ -30,31 +30,7 @@
 {
     self->geom = NULL;
     
-    self = [super init];
-
-    return self;
-}
-
--(void) traverse
-{
-    if (self->debug) {
-	glUseProgramObjectARB(0);
-
-	glMatrixMode (GL_MODELVIEW);
-	glPushMatrix();
-	glMultMatrixf (self->matrix);
-
-	glPointSize (5);
-	glColor3f (1, 1, 0);
-
-	glBegin (GL_POINTS);
-	glVertex3f (0, 0, 0);
-	glEnd();
-
-	glPopMatrix();
-    }
-    
-    [super traverse];
+    return [super init];
 }
 
 @end

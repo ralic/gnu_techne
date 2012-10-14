@@ -1117,105 +1117,105 @@ static dColliderFn * getCollider (int num)
     }
 }
 
--(void) traverse
-{
-    if (self->debug) {
-        struct wheeldata *data;
-	const dReal *r;
-	dReal *c, *n, rho, Rho;
-	int i;
+/* -(void) traverse */
+/* { */
+/*     if (self->debug) { */
+/*         struct wheeldata *data; */
+/* 	const dReal *r; */
+/* 	dReal *c, *n, rho, Rho; */
+/* 	int i; */
 	
-	r = dGeomGetPosition (self->geom);
-	data = dGeomGetClassData (self->geom);
+/* 	r = dGeomGetPosition (self->geom); */
+/* 	data = dGeomGetClassData (self->geom); */
 
-	Rho = data->radii[0];
-	rho = data->radii[1];
-	c = data->contact.pos;
-	n = data->contact.normal;
+/* 	Rho = data->radii[0]; */
+/* 	rho = data->radii[1]; */
+/* 	c = data->contact.pos; */
+/* 	n = data->contact.normal; */
       
-	glUseProgramObjectARB(0);
+/* 	glUseProgramObjectARB(0); */
 
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LINE_SMOOTH);
-	glEnable(GL_POINT_SMOOTH);
-	glEnable(GL_BLEND);
-	glDepthMask (GL_FALSE);
+/* 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); */
+/* 	glEnable(GL_DEPTH_TEST); */
+/* 	glEnable(GL_LINE_SMOOTH); */
+/* 	glEnable(GL_POINT_SMOOTH); */
+/* 	glEnable(GL_BLEND); */
+/* 	glDepthMask (GL_FALSE); */
 
-	glPointSize (3);
-	glLineWidth (1);
+/* 	glPointSize (3); */
+/* 	glLineWidth (1); */
 
-	glEnable (GL_DEPTH_TEST);
+/* 	glEnable (GL_DEPTH_TEST); */
 
-	if (!data->airborne) {
-	    glColor3f (1, 0, 0);
+/* 	if (!data->airborne) { */
+/* 	    glColor3f (1, 0, 0); */
 
-	    glBegin (GL_LINE_STRIP);
-	    glVertex3f (r[0], r[1], r[2]);
-	    glVertex3f (c[0] + rho * n[0], c[1] + rho * n[1], c[2] + rho * n[2]);
-	    glVertex3f (c[0], c[1], c[2]);
-	    glEnd();
+/* 	    glBegin (GL_LINE_STRIP); */
+/* 	    glVertex3f (r[0], r[1], r[2]); */
+/* 	    glVertex3f (c[0] + rho * n[0], c[1] + rho * n[1], c[2] + rho * n[2]); */
+/* 	    glVertex3f (c[0], c[1], c[2]); */
+/* 	    glEnd(); */
 
-	    glColor3f (0, 1, 0);
+/* 	    glColor3f (0, 1, 0); */
 
-	    glBegin (GL_LINES);
-	    glVertex3f (c[0], c[1], c[2]);
-	    glVertex3f (c[0] + 0.5 * n[0],
-			c[1] + 0.5 * n[1],
-			c[2] + 0.5 * n[2]);
-	    glEnd();
+/* 	    glBegin (GL_LINES); */
+/* 	    glVertex3f (c[0], c[1], c[2]); */
+/* 	    glVertex3f (c[0] + 0.5 * n[0], */
+/* 			c[1] + 0.5 * n[1], */
+/* 			c[2] + 0.5 * n[2]); */
+/* 	    glEnd(); */
 	    
-	    glColor3f (1, 1, 0);
+/* 	    glColor3f (1, 1, 0); */
 
-	    glBegin (GL_POINTS);
-	    glVertex3f (r[0], r[1], r[2]);
-	    glVertex3f (c[0] + rho * n[0], c[1] + rho * n[1], c[2] + rho * n[2]);
-	    glVertex3f (c[0], c[1], c[2]);
-	    glEnd();
-	}
+/* 	    glBegin (GL_POINTS); */
+/* 	    glVertex3f (r[0], r[1], r[2]); */
+/* 	    glVertex3f (c[0] + rho * n[0], c[1] + rho * n[1], c[2] + rho * n[2]); */
+/* 	    glVertex3f (c[0], c[1], c[2]); */
+/* 	    glEnd(); */
+/* 	} */
 	    
-	glColor3f (1, 1, 0);
+/* 	glColor3f (1, 1, 0); */
 
-	glMatrixMode (GL_MODELVIEW);
-	glPushMatrix();
+/* 	glMatrixMode (GL_MODELVIEW); */
+/* 	glPushMatrix(); */
 
-	{
-	    const dReal *p, *R;
-	    double T[16];
+/* 	{ */
+/* 	    const dReal *p, *R; */
+/* 	    double T[16]; */
 	    
-	    p = dBodyGetPosition (self->body);
-	    R = dBodyGetRotation (self->body);
+/* 	    p = dBodyGetPosition (self->body); */
+/* 	    R = dBodyGetRotation (self->body); */
 
-	    T[0] = R[0]; T[1] = R[4]; T[2] = R[8]; T[3] = 0;
-	    T[4] = R[1]; T[5] = R[5]; T[6] = R[9]; T[7] = 0;
-	    T[8] = R[2]; T[9] = R[6]; T[10] = R[10]; T[11] = 0;
-	    T[12] = p[0]; T[13] = p[1]; T[14] = p[2]; T[15] = 1;
+/* 	    T[0] = R[0]; T[1] = R[4]; T[2] = R[8]; T[3] = 0; */
+/* 	    T[4] = R[1]; T[5] = R[5]; T[6] = R[9]; T[7] = 0; */
+/* 	    T[8] = R[2]; T[9] = R[6]; T[10] = R[10]; T[11] = 0; */
+/* 	    T[12] = p[0]; T[13] = p[1]; T[14] = p[2]; T[15] = 1; */
 	    
-	    glMultMatrixd(T);
-	}
+/* 	    glMultMatrixd(T); */
+/* 	} */
 
-	glBegin (GL_LINE_STRIP);
+/* 	glBegin (GL_LINE_STRIP); */
 
-	for (i = 0 ; i < 25 ; i += 1) {
-	    glVertex3f ((Rho + rho) * cos(i * 2 * M_PI / 24),
-			0,
-			(Rho + rho) * sin(i * 2 * M_PI / 24));
-	}
+/* 	for (i = 0 ; i < 25 ; i += 1) { */
+/* 	    glVertex3f ((Rho + rho) * cos(i * 2 * M_PI / 24), */
+/* 			0, */
+/* 			(Rho + rho) * sin(i * 2 * M_PI / 24)); */
+/* 	} */
 	
-	glVertex3f (0, 0, 0);
+/* 	glVertex3f (0, 0, 0); */
 
-	glEnd();
+/* 	glEnd(); */
 
-	glDepthMask (GL_TRUE);
-	glDisable(GL_BLEND);
-	glDisable(GL_LINE_SMOOTH);
-	glDisable(GL_POINT_SMOOTH);
-	glDisable (GL_DEPTH_TEST);
+/* 	glDepthMask (GL_TRUE); */
+/* 	glDisable(GL_BLEND); */
+/* 	glDisable(GL_LINE_SMOOTH); */
+/* 	glDisable(GL_POINT_SMOOTH); */
+/* 	glDisable (GL_DEPTH_TEST); */
 
-	glPopMatrix();
-    }
+/* 	glPopMatrix(); */
+/*     } */
     
-    [super traverse];
-}
+/*     [super traverse]; */
+/* } */
 
 @end

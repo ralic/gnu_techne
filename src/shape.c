@@ -548,7 +548,7 @@ static void match_attribute_to_buffer (unsigned int program,
     /* Set the transform. */
 
     /* _TRACEM(4, 4, "f", self->matrix); */
-    t_set_modelview (self->matrix);
+    t_push_modelview (self->matrix, T_MULTIPLY);
 
     /* Bind the vertex array and draw the supplied indices or the
      * arrays if no indices we're supplied. */
@@ -587,6 +587,8 @@ static void match_attribute_to_buffer (unsigned int program,
     if (self->wireframe) {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+
+    t_pop_modelview ();
     
     [super traverse];
 }

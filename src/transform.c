@@ -22,18 +22,19 @@
 #include "transform.h"
 #include "techne.h"
 
-double zero[3] = {0, 0, 0}, *origin = zero;
+static double zero[3] = {0, 0, 0}, *origin = zero;
 
 static void recurse (Node *root)
 {
-    Node *child;
+    Node *child, *next;
 
     t_begin_interval (root, T_TRANSFORM_PHASE);
-    
+
     if ([root isKindOf: [Transform class]]) {
 	[(id)root transform];
     } else {
-	for (child = root->down ; child ; child = child->right) {
+	for (child = root->down ; child ; child = next) {
+	    next = child->right;	    
 	    recurse (child);
 	}
     }
@@ -175,7 +176,7 @@ static void recurse (Node *root)
     int i, j;
 
     parent = [self parentTransform];
-    
+
     if (parent) {
 	p = self->position;
 	W = self->orientation;
@@ -216,6 +217,20 @@ static void recurse (Node *root)
     return 1;
 }
 
+-(int) _get_translation
+{
+    array_createarray (_L, ARRAY_TDOUBLE, self->translation, 1, 3);
+
+    return 1;
+}
+
+-(int) _get_rotation
+{
+    array_createarray (_L, ARRAY_TDOUBLE, self->rotation, 2, 3, 3);
+
+    return 1;
+}
+
 -(int) _get_transform
 {
     lua_rawgeti (_L, LUA_REGISTRYINDEX, self->transform);
@@ -243,6 +258,16 @@ static void recurse (Node *root)
     if (array) {
 	memcpy (self->orientation, array->values.any, 9 * sizeof(double));
     }
+}
+ 
+-(void) _set_translation
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_rotation
+{
+    T_WARN_READONLY;
 }
 
 -(void) _set_transform

@@ -30,6 +30,7 @@
 
 #include "array/array.h"
 #include "techne.h"
+#include "algebra.h"
 #include "graphics.h"
 #include "shader.h"
 #include "transform.h"
@@ -60,9 +61,9 @@ static char *title;
 
 static unsigned int buffer;
 
-float modelviews[MODELVIEW_STACK_DEPTH][16];
-float projections[PROJECTION_STACK_DEPTH][16];
-int modelviews_n, projections_n;
+static float modelviews[MODELVIEW_STACK_DEPTH][16];
+static float projections[PROJECTION_STACK_DEPTH][16];
+static int modelviews_n, projections_n;
 
 /* Context flags. */
 
@@ -129,12 +130,17 @@ static void update_projection()
     double a;
     
     memset (matrix, 0, sizeof (float[16]));
-    
+
     switch (projection) {
     case FRUSTUM:
 	a = (double)width / height;
 	
-	/* Set planes based on frustum. */
+	/* Set planes based on frustum.  This will result in the same
+	 * matric as:
+	 *     gluPerspective (frustum[0], a, frustum[1], frustum[2]);
+	 *
+	 * Note: intentional absence of break at the end.
+	 */
 
 	planes[4] = frustum[1];
 	planes[5] = frustum[2];
@@ -163,7 +169,7 @@ static void update_projection()
 	break;
     }
     
-    t_set_projection(matrix);
+    t_load_projection(matrix);
 }
 
 #define SET_PROJECTION(matrix)						\
@@ -182,7 +188,7 @@ static void update_projection()
 	}								\
     }
 
-void t_set_projection (float *matrix)
+void t_load_projection (float *matrix)
 {
     assert (projections_n > 0);
 
@@ -194,7 +200,7 @@ void t_push_projection (float *matrix)
 {
     assert (projections_n < PROJECTION_STACK_DEPTH);
     projections_n += 1;
-    t_set_projection(matrix);
+    t_load_projection(matrix);
 }
 
 void t_pop_projection ()
@@ -220,20 +226,35 @@ void t_pop_projection ()
 	}								\
     }
 
-void t_set_modelview (float *matrix)
+void t_load_modelview (float *matrix, t_Enumerated mode)
 {
     assert (modelviews_n > 0);
 
-    memcpy(modelviews + modelviews_n, matrix, 16 * sizeof(float));
-    SET_MODELVIEW(matrix);
+    if (mode == T_MULTIPLY) {
+	float M[16];
+	
+	t_concatenate_4_4(M, modelviews[modelviews_n], matrix);
+	memcpy(modelviews[modelviews_n], M, 16 * sizeof(float));
+    } else {
+	memcpy(modelviews[modelviews_n], matrix, 16 * sizeof(float));
+    }
+
+    SET_MODELVIEW(modelviews[modelviews_n]);
 }
 
-void t_push_modelview (float *matrix)
+void t_push_modelview (float *matrix, t_Enumerated mode)
 {
     assert (modelviews_n < MODELVIEW_STACK_DEPTH);
 
+    if (mode == T_MULTIPLY) {
+	t_concatenate_4_4(modelviews[modelviews_n + 1],
+			  modelviews[modelviews_n], matrix);
+    } else {
+	memcpy(modelviews[modelviews_n + 1], matrix, 16 * sizeof(float));
+    }
+    
     modelviews_n += 1;
-    t_set_modelview(matrix);
+    SET_MODELVIEW(modelviews[modelviews_n]);
 }
 
 void t_pop_modelview ()
@@ -321,7 +342,14 @@ void t_pop_modelview ()
 		}
 
 		context_attributes[1] = atoi(s);
-		context_attributes[5] |= GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
+
+		/* Forward-compatible contexts are only defined for
+		 * versions 3.0 and later. */
+		
+		if (context_attributes[1] >= 3) {
+		    context_attributes[5] |=
+			GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
+		}
 	    } else if (!strcmp (s, "debug")) {
 		debug = 1;
 		    
@@ -515,7 +543,7 @@ void t_pop_modelview ()
 	/* Initialize the values. */
     
 	t_push_projection (I);
-	t_push_modelview (I);
+	t_push_modelview (I, T_LOAD);
     }
     
     return self;
@@ -667,8 +695,10 @@ void t_pop_modelview ()
 -(int) _get_pointer
 {
     /* Implement this if needed. */
+
+    lua_pushnil(_L);
     
-    return 0;
+    return 1;
 }
 
 -(int) _get_perspective

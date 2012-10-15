@@ -134,6 +134,29 @@ static int set (lua_State *L)
     return 1;
 }
 
+static int adjust (lua_State *L)
+{
+    array_Array *defaults;
+    int n, j;
+
+    for (n = 0 ; lua_type (L, n + 1) == LUA_TNUMBER ; n += 1);
+
+    array_checkarray (L, n + 1);
+    defaults = array_testarray (L, n + 2);
+
+    {
+	int size[n];
+
+	for (j = 0 ; j < n ; j += 1) {
+	    size[j] = lua_tonumber (L, j + 1);
+	}
+	
+	array_adjustv (L, n + 1, defaults ? defaults->values.any : NULL, n, size);
+    }		 
+    
+    return 1;
+}
+
 int luaopen_array_core (lua_State *L)
 {
     const luaL_Reg api[] = {
@@ -148,6 +171,8 @@ int luaopen_array_core (lua_State *L)
 	{"set", set},
 	{"cast", cast},
 	{"slice", slice},
+	{"adjust", adjust},
+        
 	{NULL, NULL}
     };
 

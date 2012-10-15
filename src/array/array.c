@@ -27,6 +27,7 @@
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+#include <assert.h>
 
 #include "array.h"
 
@@ -1112,4 +1113,91 @@ void array_slicev (lua_State *L, int index, int *slices)
     slice.free = FREE_SIZE;
 
     construct (L, &slice, index);
+}
+
+static void adjust(array_Array *source, array_Array *sink, void *defaults,
+                   int offset_s, int stride_s, int offset_k, int stride_k,
+                   int level, int use_defaults)
+{
+    int j;
+    
+    if (level <= sink->rank - 1) {
+        stride_s /= source->size[level];
+        stride_k /= sink->size[level];
+
+        for (j = 0 ; j < sink->size[level] ; j += 1) {
+            adjust (source, sink, defaults,
+                    offset_s + j * stride_s, stride_s,
+                    offset_k + j * stride_k, stride_k,
+                    level + 1, use_defaults || j >= source->size[level]);
+        }
+    } else {
+        assert (level <= source->rank);
+        assert(offset_k + stride_k <= sink->length);
+
+        if (use_defaults) {
+            if (!defaults) {
+                memset (((char *)sink->values.any) + offset_k,
+                        0,
+                        stride_k);
+            } else {
+                memcpy(((char *)sink->values.any) + offset_k,
+                       ((char *)defaults) + offset_k,
+                       stride_k);
+            }
+        } else {
+            memcpy(((char *)sink->values.any) + offset_k,
+                   ((char *)source->values.any) + offset_s,
+                   stride_k);
+        }
+    }
+}
+
+void array_adjustv (lua_State *L, int index, void *defaults, int rank, int *size)
+{
+    array_Array sink, *source;
+    int j, l, m;
+
+    source = lua_touserdata(L, index);
+    
+    if (source->rank == rank && !memcmp(source->size, size, rank * sizeof(int))) {
+        return;
+    }
+    
+    sink.type = source->type;
+    sink.rank = rank;
+    sink.size = malloc (rank * sizeof(int));
+
+    for (j = 0, l = sizeof_element(sink.type) ; j < rank ; j += 1) {
+	sink.size[j] = size[j];
+	l *= sink.size[j];
+    }
+
+    sink.free = FREE_BOTH;
+    sink.length = l;
+    sink.values.any = malloc (sink.length);
+
+    for (j = 0, m = sizeof_element(source->type);
+         j < source->rank;
+         m *= source->size[j], j += 1);
+
+    adjust (source, &sink, defaults, 0, m, 0, l, 0, 0);
+    
+    construct (L, &sink, 0);
+}
+
+void array_adjust (lua_State *L, int index, void *defaults, int rank, ...)
+{
+    va_list ap;
+    int j, size[rank];
+    
+    va_start (ap, rank);
+
+    for (j = 0 ; j < rank ; j += 1) {
+	size[j] = va_arg(ap, int);
+    }
+   
+    va_end(ap);
+
+    array_adjustv (L, index, defaults, rank, size);
 }

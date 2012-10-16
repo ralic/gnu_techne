@@ -32,10 +32,14 @@ static int addforce (lua_State *L)
     object = *(Body **)lua_touserdata (L, 1);
 
     if (!lua_isnil (L, 2) && object->body) {
-	F = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+	F = array_checkcompatible (L, 2,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 	
 	if (!lua_isnoneornil (L, 3)) {
-	    p = array_checkcompatible (L, 3, ARRAY_TDOUBLE, 1, 3);
+	    p = array_checkcompatible (L, 3,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 1, 3);
 	
 	    dBodyAddForceAtPos (object->body,
 				F->values.doubles[0],
@@ -65,10 +69,14 @@ static int addrelativeforce (lua_State *L)
     object = *(Body **)lua_touserdata (L, 1);
 
     if (!lua_isnil (L, 2) && object->body) {
-	F = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+	F = array_checkcompatible (L, 2,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 	
 	if (!lua_isnoneornil (L, 3)) {
-	    p = array_checkcompatible (L, 3, ARRAY_TDOUBLE, 1, 3);
+	    p = array_checkcompatible (L, 3,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 1, 3);
 	
 	    dBodyAddRelForceAtRelPos (object->body,
 				      F->values.doubles[0],
@@ -98,7 +106,9 @@ static int addtorque (lua_State *L)
     object = *(Body **)lua_touserdata (L, 1);
 
     if (!lua_isnil (L, 2) && object->body) {
-	T = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+	T = array_checkcompatible (L, 2,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 	
 	dBodyAddTorque (object->body,
 			T->values.doubles[0],
@@ -119,7 +129,9 @@ static int addrelativetorque (lua_State *L)
     object = *(Body **)lua_touserdata (L, 1);
 
     if (!lua_isnil (L, 2) && object->body) {
-	T = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+	T = array_checkcompatible (L, 2,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 	
 	dBodyAddRelTorque (object->body,
 			T->values.doubles[0],
@@ -203,13 +215,17 @@ static void tomass (lua_State *L, int t, dMass *mass)
 	/* Center of mass. */
 	
 	lua_rawgeti (L, 3, 2);	
-	array = array_checkcompatible (L, -1, ARRAY_TDOUBLE, 1, 3);
+	array = array_checkcompatible (L, -1,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 1, 3);
 	c = array->values.doubles;
 
 	/* Inertia. */
 	
 	lua_rawgeti (L, 3, 3);
-	array = array_checkcompatible (L, -1, ARRAY_TDOUBLE, 2, 3, 3);
+	array = array_checkcompatible (L, -1,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 2, 3, 3);
 	I = array->values.doubles;
 
 	dMassSetParameters (mass, m,
@@ -242,7 +258,9 @@ static int translatemass (lua_State *L)
     array_Array *r;
 
     luaL_checktype (L, 1, LUA_TTABLE);
-    r = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+    r = array_checkcompatible (L, 2,
+                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                               ARRAY_TDOUBLE, 1, 3);
 
     tomass (L, 1, &mass);
     dMassTranslate (&mass,
@@ -263,7 +281,9 @@ static int rotatemass (lua_State *L)
     int i, j;
 
     luaL_checktype (L, 1, LUA_TTABLE);
-    A = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+    A = array_checkcompatible (L, 2,
+                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                               ARRAY_TDOUBLE, 1, 3);
 
     for(j = 0; j < 3 ; j += 1) {
 	for(i = 0; i < 3 ; i += 1) {
@@ -374,8 +394,12 @@ static int contact (lua_State *L)
 
     a = t_checknode (L, 1, [Body class]);
     b = t_checknode (L, 2, [Body class]);
-    pos = array_checkcompatible (L, 3, ARRAY_TDOUBLE, 1, 3);
-    normal = array_checkcompatible (L, 4, ARRAY_TDOUBLE, 1, 3);
+    pos = array_checkcompatible (L, 3,
+                                 ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                 ARRAY_TDOUBLE, 1, 3);
+    normal = array_checkcompatible (L, 4,
+                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                    ARRAY_TDOUBLE, 1, 3);
 
     depth = (dReal)luaL_checknumber (L, 5);
     mu = (dReal)luaL_optnumber (L, 6, 0);
@@ -492,7 +516,9 @@ static int pointfrombody(lua_State *L)
     int i;
 
     object = t_checknode (L, 1, [Body class]);
-    b = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+    b = array_checkcompatible (L, 2,
+                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                               ARRAY_TDOUBLE, 1, 3);
     body = object->body;
 
     dBodyGetRelPointPos (body,
@@ -519,7 +545,9 @@ static int vectorfrombody(lua_State *L)
     int i;
 
     object = t_checknode (L, 1, [Body class]);
-    b = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+    b = array_checkcompatible (L, 2,
+                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                               ARRAY_TDOUBLE, 1, 3);
 
     dBodyVectorToWorld (object->body, b->values.doubles[0], b->values.doubles[1], b->values.doubles[2], w);
     
@@ -541,7 +569,9 @@ static int pointtobody(lua_State *L)
     int i;
 
     object = t_checknode (L, 1, [Body class]);
-    b = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+    b = array_checkcompatible (L, 2,
+                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                               ARRAY_TDOUBLE, 1, 3);
 
     dBodyGetPosRelPoint (object->body,
 			 b->values.doubles[0],
@@ -567,7 +597,9 @@ static int vectortobody(lua_State *L)
     int i;
 
     object = t_checknode (L, 1, [Body class]);
-    b = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+    b = array_checkcompatible (L, 2,
+                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                               ARRAY_TDOUBLE, 1, 3);
 
     dBodyVectorFromWorld (object->body,
 			  b->values.doubles[0],
@@ -593,7 +625,9 @@ static int pointvelocity(lua_State *L)
     int i;
 
     object = t_checknode (L, 1, [Body class]);
-    b = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+    b = array_checkcompatible (L, 2,
+                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                               ARRAY_TDOUBLE, 1, 3);
 
     dBodyGetPointVel (object->body,
 		      b->values.doubles[0],

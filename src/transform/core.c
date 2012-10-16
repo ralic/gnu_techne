@@ -81,12 +81,16 @@ static int concatenate (lua_State *L)
     double alpha[9], beta[9], *A, *B, *C;
     int i;
 
-    array = array_checkcompatible (L, 1, ARRAY_TDOUBLE, 2, 3, 3);
+    array = array_checkcompatible (L, 1,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 2, 3, 3);
     A = array->values.doubles;
     C = alpha;
     
     for (i = 2 ; i <= lua_gettop (L) ; i += 1) {
-	array = array_checkcompatible (L, i, ARRAY_TDOUBLE, 2, 3, 3);
+	array = array_checkcompatible (L, i,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 2, 3, 3);
 	B = array->values.doubles;
 
 	C[0] = A[0] * B[0] + A[1] * B[3] + A[2] * B[6];
@@ -118,10 +122,14 @@ static int apply (lua_State *L)
 {
     array_Array *transform, *data, *result, *fixed;
     
-    transform = array_checkcompatible (L, 1, ARRAY_TDOUBLE, 2, 3, 3);
+    transform = array_checkcompatible (L, 1,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 2, 3, 3);
 
     if (lua_type (L, 2) == LUA_TTABLE) {
-	data = array_checktyped (L, 2, ARRAY_TDOUBLE);
+	data = array_checkcompatible (L, 2,
+                                      ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                      ARRAY_TYPE, ARRAY_TDOUBLE);
     } else {
 	data = array_checkarray (L, 2);
     
@@ -138,7 +146,9 @@ static int apply (lua_State *L)
 	lua_error (L);
     }
 
-    fixed = array_testcompatible (L, 3, ARRAY_TDOUBLE, 1, 3);
+    fixed = array_testcompatible (L, 3,
+                                  ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                  ARRAY_TDOUBLE, 1, 3);
 
     array_createarrayv (L, data->type, NULL, data->rank, data->size);
     result = lua_touserdata (L, -1);
@@ -171,7 +181,9 @@ static int scaling (lua_State *L)
 
 	M[0] = M[4] = M[8] = lua_tonumber (L, 1);
     } else {
-	A = array_checkcompatible (L, 1, ARRAY_TDOUBLE, 1, 3);
+	A = array_checkcompatible (L, 1,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 	u = A->values.doubles;
 
 	M = malloc (9 * sizeof (double));
@@ -195,10 +207,14 @@ static int shear (lua_State *L)
 
     f = luaL_checknumber (L, 1);
     
-    A = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+    A = array_checkcompatible (L, 2,
+                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                               ARRAY_TDOUBLE, 1, 3);
     u = A->values.doubles;
 
-    B = array_checkcompatible (L, 3, ARRAY_TDOUBLE, 1, 3);
+    B = array_checkcompatible (L, 3,
+                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                               ARRAY_TDOUBLE, 1, 3);
     n = B->values.doubles;
 
     M = malloc (9 * sizeof (double));
@@ -240,7 +256,9 @@ static int reflection (lua_State *L)
     array_Array *A;
     double *M, *u;
 
-    A = array_checkcompatible (L, 1, ARRAY_TDOUBLE, 1, 3);
+    A = array_checkcompatible (L, 1,
+                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                               ARRAY_TDOUBLE, 1, 3);
     u = A->values.doubles;
 
     M = malloc (9 * sizeof (double));
@@ -266,7 +284,9 @@ static int projection (lua_State *L)
     double *M, *u, *v;
 
     if (lua_gettop (L) == 1) {
-	A = array_checkcompatible (L, 1, ARRAY_TDOUBLE, 1, 3);
+	A = array_checkcompatible (L, 1,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 	u = A->values.doubles;
 
 	M = malloc (9 * sizeof (double));
@@ -275,8 +295,12 @@ static int projection (lua_State *L)
 	M[3] = M[1]; M[4] = u[1] * u[1]; M[5] = u[1] * u[2];
 	M[6] = M[2]; M[7] = M[5]; M[8] = u[2] * u[2];
     } else {
-	A = array_checkcompatible (L, 1, ARRAY_TDOUBLE, 1, 3);
-	B = array_checkcompatible (L, 2, ARRAY_TDOUBLE, 1, 3);
+	A = array_checkcompatible (L, 1,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
+	B = array_checkcompatible (L, 2,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 
 	u = A->values.doubles;
 	v = B->values.doubles;
@@ -343,7 +367,9 @@ static int rotation (lua_State *L)
 	    lua_error (L);
 	}
     } else if (lua_type (L, 1) == LUA_TNUMBER &&
-	       array_testcompatible (L, 2, ARRAY_TDOUBLE, 1, 3)) {
+	       array_testcompatible (L, 2,
+                                     ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                     ARRAY_TDOUBLE, 1, 3)) {
 	double theta, c, c_1, s, *u;
 
 	theta = lua_tonumber (L, 1);
@@ -459,7 +485,9 @@ static int diagonal (lua_State *L)
 	    }
 	}
     } else {
-	diagonal = array_checkcompatible (L, 1, ARRAY_TDOUBLE, 1, 0);
+	diagonal = array_checkcompatible (L, 1,
+                                          ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                          ARRAY_TDOUBLE, 1, 0);
 	n = diagonal->size[0];
 	
 	array_createarray (L, ARRAY_TDOUBLE, NULL, 2, n, n);

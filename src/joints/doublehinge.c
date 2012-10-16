@@ -120,7 +120,9 @@
     array_Array *array;
     int i;
     
-    array = array_checkcompatible (_L, 3, ARRAY_TDOUBLE, 1, 3);
+    array = array_checkcompatible (_L, 3,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 
     dSafeNormalize3 (array->values.doubles);
 
@@ -147,7 +149,9 @@
 	lua_pushinteger (_L, 1);
 	lua_gettable (_L, 3);
 	
-	array = array_checkcompatible (_L, -1, ARRAY_TDOUBLE, 1, 3);
+	array = array_checkcompatible (_L, -1,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 1, 3);
 
 	dJointSetDHingeAnchor1 (self->joint,
 			       array->values.doubles[0],
@@ -163,7 +167,9 @@
 	lua_pushinteger (_L, 2);
 	lua_gettable (_L, 3);
 	
-	array = array_checkcompatible (_L, -1, ARRAY_TDOUBLE, 1, 3);
+	array = array_checkcompatible (_L, -1,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 1, 3);
 
 	dJointSetDHingeAnchor2 (self->joint,
 				array->values.doubles[0],

@@ -721,35 +721,22 @@ array_Array *array_checkarray (lua_State *L, int index)
     return lua_touserdata (L, index);
 }
 
-array_Array *array_testtyped (lua_State *L, int index, array_Type type)
-{
-    index = absolute (L, index);
-
-    if (lua_type (L, index) == LUA_TTABLE) {
-	array_toarray (L, index, type, 0);
-	lua_replace (L, index);
-    }
-
-    return array_testarray (L, index);
-}
-
-array_Array *array_checktyped (lua_State *L, int index, array_Type type)
-{
-    index = absolute (L, index);
-
-    if (!array_testtyped (L, index, type)) {
-	typeerror(L, index, "array");
-    }
-
-    return lua_touserdata (L, index);
-}
-
-array_Array *array_checkcompatible (lua_State *L, int index, array_Type type, int rank, ...)
-{
-    array_Array *array;
+array_Array *array_checkcompatible (lua_State *L, int index, int what, ...)
+{        
     va_list ap;
+    array_Array *array;
+    array_Type type;
+    int rank;
 
     index = absolute (L, index);
+
+    va_start (ap, what);
+	    
+    if (what & ARRAY_TYPE) {
+        type = va_arg (ap, array_Type);
+    } else {
+        type = ARRAY_TDOUBLE;
+    }
     
     if (lua_type (L, index) == LUA_TTABLE) {
 	array_toarray (L, index, type, 0);
@@ -758,17 +745,26 @@ array_Array *array_checkcompatible (lua_State *L, int index, array_Type type, in
     
     array = array_checkarray (L, index);
 
-    if (array->type != type) {
-	luaL_argerror (L, index,
-		       "expected array of different type");
-    } else if (array->rank != rank) {
-	luaL_argerror (L, index,
-		       "expected array of different dimensionality");
-    } else {
+    if (what & ARRAY_TYPE) {
+        if (array->type != type) {
+            luaL_argerror (L, index, "expected array of different type");
+        }
+    }
+
+    if (what & ARRAY_RANK) {
+        rank = va_arg (ap, int);
+
+        if (array->rank != rank) {
+            luaL_argerror (L, index,
+                           "expected array of different dimensionality");
+        }
+    }
+
+    if (what & ARRAY_SIZE) {
 	int i, l;
-	    
-	va_start (ap, rank);
-	    
+
+        assert (what & ARRAY_RANK);
+        
 	for (i = 0 ; i < rank ; i += 1) {
 	    l = va_arg (ap, int);
 	    
@@ -777,20 +773,30 @@ array_Array *array_checkcompatible (lua_State *L, int index, array_Type type, in
 			       "expected array of different size");
 	    }
 	}
-
-	va_end (ap);
     }
+
+    va_end (ap);
 
     return lua_touserdata (L, index);
 }
 
-array_Array *array_testcompatible (lua_State *L, int index, array_Type type, int rank, ...)
+array_Array *array_testcompatible (lua_State *L, int index, int what, ...)
 {
-    array_Array *array;
     va_list ap;
+    array_Array *array;
+    array_Type type;
+    int rank;
 
     index = absolute (L, index);
 
+    va_start (ap, what);
+	    
+    if (what & ARRAY_TYPE){
+        type = va_arg (ap, array_Type);
+    } else {
+        type = ARRAY_TDOUBLE;
+    }
+    
     if (lua_type (L, index) == LUA_TTABLE) {
 	array_toarray (L, index, type, 0);
 	lua_replace (L, index);
@@ -798,27 +804,37 @@ array_Array *array_testcompatible (lua_State *L, int index, array_Type type, int
     
     array = array_testarray (L, index);
 
-    if (array) {
-	if (array->type != type) {
-	    return NULL;
-	} else if (array->rank != rank) {
-	    return NULL;
-	} else {
-	    int i;
-	    
-	    va_start (ap, rank);
-	    
-	    for (i = 0 ; i < rank ; i += 1) {
-		if (array->size[i] != va_arg (ap, int)) {
-		    return NULL;
-		}
-	    }
-
-	    va_end (ap);
-	}
-    } else {
-	return NULL;
+    if (!array) {
+        return NULL;
     }
+    
+    if (what & ARRAY_TYPE){
+        if (array->type != type) {
+            return NULL;
+        }
+    }
+
+    if (what & ARRAY_RANK) {
+        rank = va_arg (ap, int);
+
+        if (array->rank != rank) {
+            return NULL;
+        }
+    }
+
+    if (what & ARRAY_SIZE) {
+        int i;
+        
+        assert (what & ARRAY_RANK);
+	    
+        for (i = 0 ; i < rank ; i += 1) {
+            if (array->size[i] != va_arg (ap, int)) {
+                return NULL;
+            }
+        }
+    }
+    
+    va_end (ap);
 
     return lua_touserdata (L, index);
 }
@@ -1153,15 +1169,20 @@ static void adjust(array_Array *source, array_Array *sink, void *defaults,
     }
 }
 
-void array_adjustv (lua_State *L, int index, void *defaults, int rank, int *size)
+array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, int *size)
 {
     array_Array sink, *source;
     int j, l, m;
 
-    source = lua_touserdata(L, index);
+    index = absolute (L, index);
+    source = array_testcompatible(L, index, ARRAY_RANK, rank);
+
+    if (!source) {
+        return NULL;
+    }
     
-    if (source->rank == rank && !memcmp(source->size, size, rank * sizeof(int))) {
-        return;
+    if (!memcmp(source->size, size, rank * sizeof(int))) {
+        return source;
     }
     
     sink.type = source->type;
@@ -1182,11 +1203,14 @@ void array_adjustv (lua_State *L, int index, void *defaults, int rank, int *size
          m *= source->size[j], j += 1);
 
     adjust (source, &sink, defaults, 0, m, 0, l, 0, 0);
-    
+
     construct (L, &sink, 0);
+    lua_replace (L, index);
+    
+    return lua_touserdata(L, -1);
 }
 
-void array_adjust (lua_State *L, int index, void *defaults, int rank, ...)
+array_Array *array_adjust (lua_State *L, int index, void *defaults, int rank, ...)
 {
     va_list ap;
     int j, size[rank];
@@ -1199,5 +1223,5 @@ void array_adjust (lua_State *L, int index, void *defaults, int rank, ...)
    
     va_end(ap);
 
-    array_adjustv (L, index, defaults, rank, size);
+    return array_adjustv (L, index, defaults, rank, size);
 }

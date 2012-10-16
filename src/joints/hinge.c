@@ -164,7 +164,9 @@
     array_Array *array;
     int i;
     
-    array = array_checkcompatible (_L, 3, ARRAY_TDOUBLE, 1, 3);
+    array = array_checkcompatible (_L, 3,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 
     dSafeNormalize3 (array->values.doubles);
 
@@ -185,7 +187,9 @@
     array_Array *array;
     int i;
     
-    array = array_checkcompatible (_L, 3, ARRAY_TDOUBLE, 1, 3);
+    array = array_checkcompatible (_L, 3,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 
     dJointSetHingeAnchor (self->joint,
 			  array->values.doubles[0],

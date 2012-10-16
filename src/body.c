@@ -403,7 +403,9 @@ static void call_poststep_hook (dBodyID body)
 {
     array_Array *array;
     
-    array = array_checkcompatible (_L, 3, ARRAY_TDOUBLE, 1, 3);
+    array = array_checkcompatible (_L, 3,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
     memcpy (self->velocity, array->values.any, 3 * sizeof(double));
 
     if (self->body) {
@@ -418,7 +420,9 @@ static void call_poststep_hook (dBodyID body)
 {
     array_Array *array;
     
-    array = array_checkcompatible (_L, 3, ARRAY_TDOUBLE, 1, 3);
+    array = array_checkcompatible (_L, 3,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
     memcpy (self->spin, array->values.any, 3 * sizeof(double));
 	
     if (self->body) {
@@ -445,13 +449,17 @@ static void call_poststep_hook (dBodyID body)
 	/* Center of mass. */
 	
 	lua_rawgeti (_L, 3, 2);	
-	array = array_checkcompatible (_L, -1, ARRAY_TDOUBLE, 1, 3);
+	array = array_checkcompatible (_L, -1,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 1, 3);
 	c = array->values.doubles;
 
 	/* Inertia. */
 	
 	lua_rawgeti (_L, 3, 3);
-	array = array_checkcompatible (_L, -1, ARRAY_TDOUBLE, 2, 3, 3);
+	array = array_checkcompatible (_L, -1,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 2, 3, 3);
 	I = array->values.doubles;
 
 	dMassSetParameters (&self->mass, m,

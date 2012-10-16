@@ -202,7 +202,10 @@
 	for(j = 0 ; j < 3 ; j += 1) {
 	    lua_pushinteger (_L, j + 1);
 	    lua_gettable (_L, 3);
-	    arrays[j] = array_checkcompatible (_L, -1, ARRAY_TDOUBLE, 1, 3);
+	    arrays[j] = array_checkcompatible (_L, -1,
+                                               ARRAY_TYPE | ARRAY_RANK |
+                                               ARRAY_SIZE,
+                                               ARRAY_TDOUBLE, 1, 3);
 	    dSafeNormalize3 (arrays[j]->values.doubles);
 	    lua_pop (_L, 1);
 

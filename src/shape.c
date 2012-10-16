@@ -378,7 +378,9 @@ static void match_attribute_to_buffer (unsigned int program,
      * buffers promote to the default (double) type. */
     
     if (isindices && lua_type(_L, 3) == LUA_TTABLE) {
-	array = array_testtyped (_L, 3, ARRAY_TUINT);
+	array = array_testcompatible (_L, 3,
+                                      ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                      ARRAY_TYPE, ARRAY_TUINT);
     } else {
 	array = array_testarray (_L, 3);
     }

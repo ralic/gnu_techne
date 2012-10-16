@@ -990,7 +990,9 @@ void t_pop_modelview ()
 {
     array_Array *array;
     
-    array = array_checkcompatible (_L, 3, ARRAY_TDOUBLE, 1, 3);
+    array = array_checkcompatible (_L, 3,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 
     glClearColor (array->values.doubles[0],
 		  array->values.doubles[1],

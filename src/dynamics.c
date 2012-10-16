@@ -549,7 +549,9 @@ static void callback (void *data, dGeomID a, dGeomID b)
     array_Array *g;
 	
     if(!lua_isnil(_L, 3)) {
-	g = array_checkcompatible (_L, 3, ARRAY_TDOUBLE, 1, 3);
+	g = array_checkcompatible (_L, 3,
+                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                   ARRAY_TDOUBLE, 1, 3);
 
 	dWorldSetGravity (_WORLD,
 			  g->values.doubles[0],

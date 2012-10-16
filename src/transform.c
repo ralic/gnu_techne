@@ -242,7 +242,8 @@ static void recurse (Node *root)
 {
     array_Array *array;
     
-    array = array_testcompatible (_L, 3, ARRAY_TDOUBLE, 1, 3);
+    array = array_testcompatible (_L, 3, ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                  ARRAY_TDOUBLE, 1, 3);
 
     if (array) {
 	memcpy (self->position, array->values.any, 3 * sizeof(double));
@@ -253,7 +254,8 @@ static void recurse (Node *root)
 {
     array_Array *array;
     
-    array = array_testcompatible (_L, 3, ARRAY_TDOUBLE, 2, 3, 3);
+    array = array_testcompatible (_L, 3, ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                  ARRAY_TDOUBLE, 2, 3, 3);
 
     if (array) {
 	memcpy (self->orientation, array->values.any, 9 * sizeof(double));

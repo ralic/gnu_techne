@@ -247,7 +247,8 @@
 {
     array_Array *array;
     
-    array = array_testcompatible (_L, 3, ARRAY_TDOUBLE, 1, 3);
+    array = array_testcompatible (_L, 3, ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                  ARRAY_TDOUBLE, 1, 3);
 
     if (array) {
 	memcpy (self->contact.geom.pos, array->values.any,
@@ -265,7 +266,9 @@
     
     if(!lua_isnil (_L, 3)) {
 	lua_rawgeti (_L, 3, 1);
-	array = array_testcompatible (_L, -1, ARRAY_TDOUBLE, 1, 3);
+	array = array_testcompatible (_L, -1,
+                                      ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                      ARRAY_TDOUBLE, 1, 3);
 
 	if (array) {
 	    memcpy (self->contact.fdir1, array->values.any,
@@ -275,7 +278,9 @@
 	dSafeNormalize3 (self->contact.fdir1);
 
 	lua_rawgeti (_L, 3, 3);
-	array = array_testcompatible (_L, -1, ARRAY_TDOUBLE, 1, 3);
+	array = array_testcompatible (_L, -1,
+                                      ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                      ARRAY_TDOUBLE, 1, 3);
 
 	if (array) {
 	    memcpy (self->contact.geom.normal, array->values.any,

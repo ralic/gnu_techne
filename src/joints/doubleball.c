@@ -107,7 +107,9 @@
 	lua_pushinteger (_L, 1);
 	lua_gettable (_L, 3);
 	
-	array = array_checkcompatible (_L, -1, ARRAY_TDOUBLE, 1, 3);
+	array = array_checkcompatible (_L, -1,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 1, 3);
 
 	dJointSetDBallAnchor1 (self->joint,
 			       array->values.doubles[0],
@@ -123,7 +125,9 @@
 	lua_pushinteger (_L, 2);
 	lua_gettable (_L, 3);
 	
-	array = array_checkcompatible (_L, -1, ARRAY_TDOUBLE, 1, 3);
+	array = array_checkcompatible (_L, -1,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 1, 3);
 
 	dJointSetDBallAnchor2 (self->joint,
 				array->values.doubles[0],

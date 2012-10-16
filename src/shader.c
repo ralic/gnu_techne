@@ -99,8 +99,10 @@ static int globals_n;
 		n = (ctype)lua_tonumber (_L, 3);			\
 		UPDATE_SINGLE (&n, elements * sizeof(ctype));		\
 	    } else {							\
-		array = array_testcompatible (_L, 3, arraytype, 1,	\
-					      elements);		\
+		array = array_testcompatible (_L, 3,                    \
+                                              ARRAY_TYPE | ARRAY_RANK | \
+                                              ARRAY_SIZE, arraytype,    \
+                                              1, elements);		\
 		if(!array) {						\
 		    TYPE_ERROR();					\
 		}							\
@@ -110,10 +112,14 @@ static int globals_n;
 	    }								\
 	} else if (size_1 == 1) {					\
 	    if (elements == 1) {					\
-		array = array_testcompatible (_L, 3, arraytype, 1,	\
+		array = array_testcompatible (_L, 3,                    \
+                                              ARRAY_TYPE | ARRAY_RANK | \
+                                              ARRAY_SIZE, arraytype, 1, \
 					      size_0);			\
 	    } else {							\
-		array = array_testcompatible (_L, 3, arraytype, 2,	\
+		array = array_testcompatible (_L, 3,                    \
+                                              ARRAY_TYPE | ARRAY_RANK | \
+                                              ARRAY_SIZE, arraytype, 2, \
 					      size_0, elements);	\
 	    }								\
 									\
@@ -124,7 +130,9 @@ static int globals_n;
 	    UPDATE_ARRAY (size_0, stride_0, array->values.any,		\
 			  elements * sizeof(ctype));			\
 	} else {							\
-	    array = array_testcompatible (_L, 3, arraytype, 3,		\
+	    array = array_testcompatible (_L, 3,                        \
+                                          ARRAY_TYPE | ARRAY_RANK |     \
+                                          ARRAY_SIZE, arraytype, 3,     \
 					  size_1, size_0, elements);	\
 									\
 	    if(!array) {						\

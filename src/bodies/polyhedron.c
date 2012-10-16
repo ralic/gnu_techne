@@ -118,7 +118,9 @@
     luaL_unref (_L, LUA_REGISTRYINDEX, self->references[1]);
     self->indices = NULL;
     
-    array = array_testtyped (_L, 3, ARRAY_TINT);
+    array = array_testcompatible (_L, 3,
+                                  ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                  ARRAY_TYPE, ARRAY_TINT);
 
     if (array &&
 	(array->type == ARRAY_TINT) &&

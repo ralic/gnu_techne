@@ -24,6 +24,10 @@
 #ifndef _ARRAY_H_
 #define _ARRAY_H_
 
+#define ARRAY_TYPE 1
+#define ARRAY_RANK 2
+#define ARRAY_SIZE 4
+
 typedef enum {
     ARRAY_TNULONG = -3,
     ARRAY_TNLONG = -4,
@@ -83,12 +87,8 @@ int luaopen_array_core (lua_State *L);
 
 array_Array *array_testarray (lua_State *L, int index);
 array_Array *array_checkarray (lua_State *L, int index);
-array_Array *array_testtyped (lua_State *L, int index, array_Type type);
-array_Array *array_checktyped (lua_State *L, int index, array_Type type);
-array_Array *array_checkcompatible (lua_State *L, int index,
-				    array_Type type, int rank, ...);
-array_Array *array_testcompatible (lua_State *L, int index,
-				   array_Type type, int rank, ...);
+array_Array *array_checkcompatible (lua_State *L, int index, int what, ...);
+array_Array *array_testcompatible (lua_State *L, int index, int what, ...);
 void array_copy (lua_State *L, int index);
 void array_set (lua_State *L, int index, lua_Number c);
 void array_cast (lua_State *L, int index, int rank, ...);
@@ -101,8 +101,8 @@ void array_createarrayv (lua_State *L, array_Type type, void *values,
 void array_createarray (lua_State *L, array_Type type, void *values,
 			int rank, ...);
 void array_pusharray (lua_State *L, array_Array *array);
-void array_adjustv (lua_State *L, int index, void *defaults, int rank, int *size);
-void array_adjust (lua_State *L, int index, void *defaults, int rank, ...);
+array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, int *size);
+array_Array *array_adjust (lua_State *L, int index, void *defaults, int rank, ...);
 
 int array_add (lua_State *L);
 int array_subtract (lua_State *L);

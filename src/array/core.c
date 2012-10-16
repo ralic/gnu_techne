@@ -141,7 +141,7 @@ static int adjust (lua_State *L)
 
     for (n = 0 ; lua_type (L, n + 1) == LUA_TNUMBER ; n += 1);
 
-    array_checkarray (L, n + 1);
+    array_checkcompatible (L, n + 1, ARRAY_RANK, n);
     defaults = array_testarray (L, n + 2);
 
     {
@@ -151,6 +151,21 @@ static int adjust (lua_State *L)
 	    size[j] = lua_tonumber (L, j + 1);
 	}
 	
+        if (defaults) {
+            if (defaults->rank != n) {
+                luaL_argerror (L, n + 2,
+                               "default array has incompatible rank");
+            }
+        
+            for (j = 0 ; j < n ; j += 1) {
+                if (defaults->size[j] != size[j]) {
+                    luaL_argerror (L, n + 2,
+                                   "default array has incompatible "
+                                   "dimensionality");
+                }
+            }
+        }
+        
 	array_adjustv (L, n + 1, defaults ? defaults->values.any : NULL, n, size);
     }		 
     

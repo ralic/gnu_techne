@@ -85,13 +85,17 @@ static int globals_n;
     }
 
 #define UPDATE_VALUE(size_0, stride_0, size_1, stride_1, elements,	\
-		     ctype, arraytype)					\
+		     ctype, arraytype, ismatrix)                        \
     {									\
-	array_Array *array;						\
+	array_Array *array = NULL;                                      \
 	ctype n;							\
-									\
+                                                                        \
 	if (size_0 == 1 && size_1 == 1) {				\
+            /* This is a non-array value. */                            \
+                                                                        \
 	    if (elements == 1) {					\
+                /* A scalar. */                                         \
+                                                                        \
 		if (lua_type (_L, 3) != LUA_TNUMBER ) {			\
 		    TYPE_ERROR();					\
 		}							\
@@ -99,10 +103,25 @@ static int globals_n;
 		n = (ctype)lua_tonumber (_L, 3);			\
 		UPDATE_SINGLE (&n, elements * sizeof(ctype));		\
 	    } else {							\
+                /* A vector. */                                         \
+                                                                        \
 		array = array_testcompatible (_L, 3,                    \
-                                              ARRAY_TYPE | ARRAY_RANK | \
-                                              ARRAY_SIZE, arraytype,    \
-                                              1, elements);		\
+                                      ARRAY_TYPE | ARRAY_RANK,          \
+                                      arraytype, 1);                    \
+                                                                        \
+                /* Adjust the array to the uniform's size if            \
+                 * needed. */                                           \
+                                                                        \
+                if (array->size[0] != elements) {                       \
+                    if (elements == 4) {                                \
+                        array = array_adjust(_L, 3,                     \
+                                             ((ctype[4]){0, 0, 0, 1}),  \
+                                             1, elements);              \
+                    } else {                                            \
+                        array = array_adjust(_L, 3, NULL, 1, elements); \
+                    }                                                   \
+                }                                                       \
+                                                                        \
 		if(!array) {						\
 		    TYPE_ERROR();					\
 		}							\
@@ -110,17 +129,56 @@ static int globals_n;
 		UPDATE_SINGLE (array->values.any,			\
 			       elements * sizeof(ctype));		\
 	    }								\
-	} else if (size_1 == 1) {					\
+	} else if (size_1 == 1) {                                       \
+            /* This is either an array or a matrix. */                  \
+                                                                        \
 	    if (elements == 1) {					\
-		array = array_testcompatible (_L, 3,                    \
-                                              ARRAY_TYPE | ARRAY_RANK | \
-                                              ARRAY_SIZE, arraytype, 1, \
-					      size_0);			\
+                /* A scalar array, adjust to size if needed. */         \
+                                                                        \
+		array_testcompatible (_L, 3,                            \
+                                      ARRAY_TYPE | ARRAY_RANK |         \
+                                      ARRAY_SIZE, arraytype, 1,         \
+                                      size_0);                          \
+                                                                        \
+                array = array_adjust(_L, 3, NULL, 1, size_0);           \
 	    } else {							\
+                /* Either a vector array or a matrix. */                \
+                                                                        \
 		array = array_testcompatible (_L, 3,                    \
-                                              ARRAY_TYPE | ARRAY_RANK | \
-                                              ARRAY_SIZE, arraytype, 2, \
-					      size_0, elements);	\
+                                              ARRAY_TYPE | ARRAY_RANK,  \
+                                              arraytype, 2);            \
+                                                                        \
+                /* Adjust to size if needed. */                         \
+                                                                        \
+                if (array &&                                            \
+                    (array->size[0] != size_0 ||                        \
+                     array->size[1] != elements)) {                     \
+                    ctype defaults[size_0][elements];                   \
+                    int i;                                              \
+                                                                        \
+                    memset (defaults, 0, sizeof (defaults));            \
+                                                                        \
+                    if(ismatrix) {                                      \
+                        /* If this is a matrix initialize the defaults  \
+                         * to the unit matrix. */                       \
+                                                                        \
+                        for(i = 0 ; i < size_0 ; i += 1) {              \
+                            defaults[i][i] = 1;                         \
+                        }                                               \
+                    } else {                                            \
+                        /* If this is a vector array adjust each        \
+                         * element to {0, 0, 0, 1}. */                  \
+                                                                        \
+                        if (elements == 4) {                            \
+                            for(i = 0 ; i < size_0 ; i += 1) {          \
+                                defaults[i][3] = 1;                     \
+                            }                                           \
+                        }                                               \
+                    }                                                   \
+                                                                        \
+                    array = array_adjust(_L, 3, defaults,               \
+                                         2, size_0, elements);          \
+                }                                                       \
 	    }								\
 									\
 	    if(!array) {						\
@@ -130,14 +188,26 @@ static int globals_n;
 	    UPDATE_ARRAY (size_0, stride_0, array->values.any,		\
 			  elements * sizeof(ctype));			\
 	} else {							\
+            /* A matrix array. */                                       \
+                                                                        \
 	    array = array_testcompatible (_L, 3,                        \
-                                          ARRAY_TYPE | ARRAY_RANK |     \
-                                          ARRAY_SIZE, arraytype, 3,     \
-					  size_1, size_0, elements);	\
-									\
+                                          ARRAY_TYPE | ARRAY_RANK,      \
+                                          arraytype, 3);                \
+                                                                        \
 	    if(!array) {						\
 		TYPE_ERROR();						\
 	    }								\
+                                                                        \
+            /* This inversion is intentional: size_1 is the array       \
+             * size, hence the number of matrices in the array and      \
+             * size_0 is the row size of the matrix. */                 \
+                                                                        \
+            if (array->size[0] != size_1 ||                             \
+                array->size[1] != size_0 ||                             \
+                array->size[2] != elements) {                           \
+                array = array_adjust(_L, 3, NULL,                       \
+                                     3, size_1, size_0, elements);      \
+            }                                                           \
 									\
 	    UPDATE_MATRIX_ARRAY (size_0, stride_0, size_1, stride_1, 	\
 				 array->values.any,			\
@@ -145,50 +215,50 @@ static int globals_n;
 	}								\
     }	    
 
-#define CASE_BLOCK_S_V(ctype, gltype, arraytype)	\
-    case gltype:					\
-        UPDATE_VALUE(u->size, u->arraystride, 1, 0, 1,	\
-		       ctype, arraytype); break;	\
-    case gltype##_VEC2:					\
-	UPDATE_VALUE(u->size, u->arraystride, 1, 0, 2,	\
-		       ctype, arraytype); break;	\
-    case gltype##_VEC3:					\
-	UPDATE_VALUE(u->size, u->arraystride, 1, 0, 3,	\
-		       ctype, arraytype); break;	\
-    case gltype##_VEC4:					\
-	UPDATE_VALUE(u->size, u->arraystride, 1, 0, 4,	\
-		       ctype, arraytype); break;	\
+#define CASE_BLOCK_S_V(ctype, gltype, arraytype)           \
+    case gltype:                                           \
+         UPDATE_VALUE(u->size, u->arraystride, 1, 0, 1,    \
+                 ctype, arraytype, 0); break;              \
+    case gltype##_VEC2:                                    \
+	UPDATE_VALUE(u->size, u->arraystride, 1, 0, 2,	   \
+                     ctype, arraytype, 0); break;          \
+    case gltype##_VEC3:					   \
+	UPDATE_VALUE(u->size, u->arraystride, 1, 0, 3,	   \
+                     ctype, arraytype, 0); break;          \
+    case gltype##_VEC4:					   \
+	UPDATE_VALUE(u->size, u->arraystride, 1, 0, 4,	   \
+                     ctype, arraytype, 0); break;          \
 
 #define CASE_BLOCK_M(ctype, gltype, arraytype)				\
     case gltype##_MAT2:							\
     UPDATE_VALUE(2, u->matrixstride, u->size, u->arraystride, 2,	\
-		 ctype, arraytype); break;				\
+		 ctype, arraytype, 1); break;				\
     case gltype##_MAT3:							\
     UPDATE_VALUE(3, u->matrixstride, u->size, u->arraystride, 3,	\
-		 ctype, arraytype); break;				\
+		 ctype, arraytype, 1); break;				\
     case gltype##_MAT4:							\
     UPDATE_VALUE(4, u->matrixstride, u->size, u->arraystride, 4,	\
-		 ctype, arraytype); break;				\
+		 ctype, arraytype, 1); break;				\
     									\
     case gltype##_MAT2x3:						\
     UPDATE_VALUE(2, u->matrixstride, u->size, u->arraystride, 3,	\
-		 ctype, arraytype); break;				\
+		 ctype, arraytype, 1); break;				\
     case gltype##_MAT2x4:						\
     UPDATE_VALUE(2, u->matrixstride, u->size, u->arraystride, 4,	\
-		 ctype, arraytype); break;				\
+		 ctype, arraytype, 1); break;				\
     case gltype##_MAT3x2:						\
     UPDATE_VALUE(3, u->matrixstride, u->size, u->arraystride, 2,	\
-		 ctype, arraytype); break;				\
+		 ctype, arraytype, 1); break;				\
     case gltype##_MAT3x4:						\
     UPDATE_VALUE(3, u->matrixstride, u->size, u->arraystride, 4,	\
-		 ctype, arraytype); break;				\
+		 ctype, arraytype, 1); break;				\
 									\
     case gltype##_MAT4x2:						\
     UPDATE_VALUE(4, u->matrixstride, u->size, u->arraystride, 2,	\
-		 ctype, arraytype); break;				\
+		 ctype, arraytype, 1); break;				\
     case gltype##_MAT4x3:						\
     UPDATE_VALUE(4, u->matrixstride, u->size, u->arraystride, 3,	\
-		 ctype, arraytype); break;				\
+		 ctype, arraytype, 1); break;				\
 
 #define UPDATE_UNIFORM(uniform)						\
     {									\

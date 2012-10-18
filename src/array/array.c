@@ -1148,8 +1148,9 @@ static void adjust(array_Array *source, array_Array *sink, void *defaults,
                     level + 1, use_defaults || j >= source->size[level]);
         }
     } else {
-        assert (level <= source->rank);
+        assert(level <= source->rank);
         assert(offset_k + stride_k <= sink->length);
+        assert(stride_k == stride_s);
 
         if (use_defaults) {
             if (!defaults) {
@@ -1180,10 +1181,14 @@ array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, i
     if (!source) {
         return NULL;
     }
+
+    /* If no adjustment is required return the array as-is. */
     
     if (!memcmp(source->size, size, rank * sizeof(int))) {
         return source;
     }
+
+    /* Initialize the adjusted array. */
     
     sink.type = source->type;
     sink.rank = rank;

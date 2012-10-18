@@ -167,7 +167,9 @@ static int adjust (lua_State *L)
         }
         
 	array_adjustv (L, n + 1, defaults ? defaults->values.any : NULL, n, size);
-    }		 
+    }
+
+    lua_pop (L, 1);             /* Pop the defaults array. */
     
     return 1;
 }

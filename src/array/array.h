@@ -80,7 +80,7 @@ typedef struct {
     } free;
     
     int rank, *size;
-    size_t length;
+    size_t length;     /* The length of the values buffer in bytes. */
 } array_Array;
 
 int luaopen_array_core (lua_State *L);
@@ -100,6 +100,9 @@ void array_createarrayv (lua_State *L, array_Type type, void *values,
 			 int rank, int *size);
 void array_createarray (lua_State *L, array_Type type, void *values,
 			int rank, ...);
+void array_initializev (array_Array *array, array_Type type,
+                        void *values, int rank, int *size);
+void array_initialize (array_Array *array, array_Type type, void *values, int rank, ...);
 void array_pusharray (lua_State *L, array_Array *array);
 array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, int *size);
 array_Array *array_adjust (lua_State *L, int index, void *defaults, int rank, ...);

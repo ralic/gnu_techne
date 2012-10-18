@@ -844,29 +844,51 @@ void array_pusharray (lua_State *L, array_Array *array)
     construct (L, array, 0);
 }
 
+void array_initializev (array_Array *array, array_Type type,
+                        void *values, int rank, int *size)
+{
+    int j, l;
+
+    array->type = type;
+    array->rank = rank;
+    array->size = malloc (rank * sizeof(int));
+
+    for (j = 0, l = sizeof_element (type) ; j < rank ; j += 1) {
+	array->size[j] = size[j];
+	l *= array->size[j];
+    }
+
+    array->free = FREE_BOTH;
+    array->length = l;
+    array->values.any = malloc (array->length);
+
+    if (values) {
+	memcpy (array->values.any, values, l);
+    }    
+}
+
+void array_initialize (array_Array *array, array_Type type, void *values, int rank, ...)
+{
+    va_list ap;
+    int j, size[rank];
+    
+    va_start (ap, rank);
+
+    for (j = 0 ; j < rank ; j += 1) {
+	size[j] = va_arg(ap, int);
+    }
+   
+    va_end(ap);
+
+    array_initializev (array, type, values, rank, size);
+}
+
 void array_createarrayv (lua_State *L, array_Type type,
 			 void *values, int rank, int *size)
 {
     array_Array array;
-    int j, l;
 
-    array.type = type;
-    array.rank = rank;
-    array.size = malloc (rank * sizeof(int));
-
-    for (j = 0, l = sizeof_element (type) ; j < rank ; j += 1) {
-	array.size[j] = size[j];
-	l *= array.size[j];
-    }
-
-    array.free = FREE_BOTH;
-    array.length = l;
-    array.values.any = malloc (array.length);
-
-    if (values) {
-	memcpy (array.values.any, values, l);
-    }    
-
+    array_initializev (&array, type, values, rank, size);
     construct (L, &array, 0);
 }
 

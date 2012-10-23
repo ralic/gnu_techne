@@ -10,7 +10,8 @@ datadir=@datadir@
 # and extract the ones that should be handled
 # at this point.
 
-args=""
+args=()
+debug=0
 
 while [ -n "$1" ]; do
     if [ "$1" = "--debug" ]; then
@@ -19,16 +20,16 @@ while [ -n "$1" ]; do
 	debug=1
 	commands="set confirm off\nrun\nbt\n"
     else
-	args="$args $1"
+	args+=("$1")
     fi
     
     shift
 done
 
 if [ "$debug" -eq 1 -a -n "$commands" ]; then
-    echo -e "$commands" | gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne $args
+    echo -e "$commands" | gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne "${args[*]}"
 elif [ "$debug" -eq 1 ]; then
-    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne $args
+    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne "${args[*]}"
 else
-    ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne $args
+    ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne "${args[*]}"
 fi

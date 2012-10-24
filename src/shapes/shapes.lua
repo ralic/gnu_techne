@@ -71,7 +71,7 @@ end
 
 function shapes.box(parameters)
    local node, oldmeta
-   local a, b, c
+   local a, b, c, a_2, b_2, c_2
 
    node = shapes.triangles {}
    oldmeta = getmetatable(node)
@@ -95,36 +95,38 @@ function shapes.box(parameters)
 		  return
 	       end
 
+	       a_2, b_2, c_2 = 0.5 * a, 0.5 * b, 0.5 * c
+
 	       self.positions = array.floats {
 		  -- Near.
 
-		  {-a, -b, c}, {a, -b, c}, {-a, b, c},
-		  {-a, b, c}, {a, -b, c}, {a, b, c},
+		  {-a_2, -b_2, c_2}, {a_2, -b_2, c_2}, {-a_2, b_2, c_2},
+		  {-a_2, b_2, c_2}, {a_2, -b_2, c_2}, {a_2, b_2, c_2},
 
-		  -- Far.
+		  -- Fa_2r.
 
-		  {-a, -b, -c}, {-a, b, -c}, {a, -b, -c}, 
-		  {-a, b, -c}, {a, b, -c}, {a, -b, -c}, 
+		  {-a_2, -b_2, -c_2}, {-a_2, b_2, -c_2}, {a_2, -b_2, -c_2}, 
+		  {-a_2, b_2, -c_2}, {a_2, b_2, -c_2}, {a_2, -b_2, -c_2}, 
 
 		  -- Right.
 
-		  {a, -b, -c}, {a, b, -c}, {a, -b, c},
-		  {a, -b, c}, {a, b, -c}, {a, b, c},
+		  {a_2, -b_2, -c_2}, {a_2, b_2, -c_2}, {a_2, -b_2, c_2},
+		  {a_2, -b_2, c_2}, {a_2, b_2, -c_2}, {a_2, b_2, c_2},
 
 		  -- Left.
 
-		  {-a, -b, -c}, {-a, -b, c}, {-a, b, -c}, 
-		  {-a, -b, c}, {-a, b, c}, {-a, b, -c}, 
+		  {-a_2, -b_2, -c_2}, {-a_2, -b_2, c_2}, {-a_2, b_2, -c_2}, 
+		  {-a_2, -b_2, c_2}, {-a_2, b_2, c_2}, {-a_2, b_2, -c_2}, 
 
 		  -- Top.
 
-		  {-a, b, -c}, {-a, b, c}, {a, b, -c}, 
-		  {a, b, -c}, {-a, b, c}, {a, b, c}, 
+		  {-a_2, b_2, -c_2}, {-a_2, b_2, c_2}, {a_2, b_2, -c_2}, 
+		  {a_2, b_2, -c_2}, {-a_2, b_2, c_2}, {a_2, b_2, c_2}, 
 
-		  -- Bottom.
+		  -- B_2ottom.
 
-		  {-a, -b, -c}, {a, -b, -c}, {-a, -b, c},
-		  {a, -b, -c}, {a, -b, c}, {-a, -b, c},
+		  {-a_2, -b_2, -c_2}, {a_2, -b_2, -c_2}, {-a_2, -b_2, c_2},
+		  {a_2, -b_2, -c_2}, {a_2, -b_2, c_2}, {-a_2, -b_2, c_2},
 	       }
 	    end
    })

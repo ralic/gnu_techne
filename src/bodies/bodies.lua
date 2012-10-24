@@ -29,10 +29,12 @@ return {
 	    point = core.point (parameters)
 
 	    point.volume = shading.flat {
-	       color = {1, 0, 0, 1},
+	       color = {1, 1, 0, 1},
 
 	       shape = shapes.points {
-		  vertices = {{0, 0, 0}}
+		  positions = {{0, 0, 0}},
+
+		  -- traverse = function (self) print (self.vertices) end,
 	       },
 	    }
 

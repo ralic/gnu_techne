@@ -31,7 +31,7 @@ typedef struct shape_Buffer {
     unsigned int name, index;
 
     array_Type type;
-    int size, length;
+    int size, length, flag;
 } shape_Buffer;
 
 @interface Shape: Transform {

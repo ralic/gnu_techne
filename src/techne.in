@@ -13,23 +13,21 @@ datadir=@datadir@
 args=()
 debug=0
 
-while [ -n "$1" ]; do
-    if [ "$1" = "--debug" ]; then
+for arg in "$@"; do
+    if [ "$arg" = "--debug" ]; then
 	debug=1
-    elif [ "$1" = "--trace" ]; then
+    elif [ "$arg" = "--trace" ]; then
 	debug=1
 	commands="set confirm off\nrun\nbt\n"
     else
-	args+=("$1")
+	args+=("$arg")
     fi
-    
-    shift
 done
 
 if [ "$debug" -eq 1 -a -n "$commands" ]; then
-    echo -e "$commands" | gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne "${args[*]}"
+    echo -e "$commands" | gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne ${args[*]}
 elif [ "$debug" -eq 1 ]; then
-    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne "${args[*]}"
+    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne ${args[*]}
 else
-    ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne "${args[*]}"
+    ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne "${args[@]}"
 fi

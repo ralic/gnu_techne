@@ -71,7 +71,7 @@ end
 
 function shapes.box(parameters)
    local node, oldmeta
-   local a, b, c
+   local a, b, c, a_2, b_2, c_2
 
    node = shapes.triangles {}
    oldmeta = getmetatable(node)
@@ -95,36 +95,38 @@ function shapes.box(parameters)
 		  return
 	       end
 
+	       a_2, b_2, c_2 = 0.5 * a, 0.5 * b, 0.5 * c
+
 	       self.positions = array.floats {
 		  -- Near.
 
-		  {-a, -b, c}, {a, -b, c}, {-a, b, c},
-		  {-a, b, c}, {a, -b, c}, {a, b, c},
+		  {-a_2, -b_2, c_2}, {a_2, -b_2, c_2}, {-a_2, b_2, c_2},
+		  {-a_2, b_2, c_2}, {a_2, -b_2, c_2}, {a_2, b_2, c_2},
 
-		  -- Far.
+		  -- Fa_2r.
 
-		  {-a, -b, -c}, {-a, b, -c}, {a, -b, -c}, 
-		  {-a, b, -c}, {a, b, -c}, {a, -b, -c}, 
+		  {-a_2, -b_2, -c_2}, {-a_2, b_2, -c_2}, {a_2, -b_2, -c_2}, 
+		  {-a_2, b_2, -c_2}, {a_2, b_2, -c_2}, {a_2, -b_2, -c_2}, 
 
 		  -- Right.
 
-		  {a, -b, -c}, {a, b, -c}, {a, -b, c},
-		  {a, -b, c}, {a, b, -c}, {a, b, c},
+		  {a_2, -b_2, -c_2}, {a_2, b_2, -c_2}, {a_2, -b_2, c_2},
+		  {a_2, -b_2, c_2}, {a_2, b_2, -c_2}, {a_2, b_2, c_2},
 
 		  -- Left.
 
-		  {-a, -b, -c}, {-a, -b, c}, {-a, b, -c}, 
-		  {-a, -b, c}, {-a, b, c}, {-a, b, -c}, 
+		  {-a_2, -b_2, -c_2}, {-a_2, -b_2, c_2}, {-a_2, b_2, -c_2}, 
+		  {-a_2, -b_2, c_2}, {-a_2, b_2, c_2}, {-a_2, b_2, -c_2}, 
 
 		  -- Top.
 
-		  {-a, b, -c}, {-a, b, c}, {a, b, -c}, 
-		  {a, b, -c}, {-a, b, c}, {a, b, c}, 
+		  {-a_2, b_2, -c_2}, {-a_2, b_2, c_2}, {a_2, b_2, -c_2}, 
+		  {a_2, b_2, -c_2}, {-a_2, b_2, c_2}, {a_2, b_2, c_2}, 
 
-		  -- Bottom.
+		  -- B_2ottom.
 
-		  {-a, -b, -c}, {a, -b, -c}, {-a, -b, c},
-		  {a, -b, -c}, {a, -b, c}, {-a, -b, c},
+		  {-a_2, -b_2, -c_2}, {a_2, -b_2, -c_2}, {-a_2, -b_2, c_2},
+		  {a_2, -b_2, -c_2}, {a_2, -b_2, c_2}, {-a_2, -b_2, c_2},
 	       }
 	    end
    })
@@ -222,6 +224,77 @@ function shapes.cylinder(parameters)
 
 		      self.positions = positions
 		      self.indices = indices		      
+		   end
+   })
+   
+   for key, value in pairs (parameters) do
+      node[key] = value
+   end
+
+   return node
+end
+
+function shapes.torus(parameters)
+   local node, oldmeta
+   local r, R, n, N = 1, 0.1, 16, 8
+   local dtheta, dphi = {0, 2 * math.pi}, {0, 2 * math.pi}
+
+   node = shapes.strip {}
+   oldmeta = getmetatable(node)
+
+   replacemetatable (node, {
+      __index = function (self, key)
+		   if key == "radii" then
+		      return {R, r}
+		   elseif key == "segments" then
+		      return {N, n}
+		   elseif key == "ranges" then
+		      return {dtheta, dphi}
+		   else
+		      return oldmeta.__index(self, key)
+		   end
+		end,
+
+      __newindex = function (self, key, value)
+		      local v
+		      
+		      if key == "radii" then
+			 R, r = table.unpack(value)
+		      elseif key == "segments" then
+			 N, n = table.unpack(value)
+		      elseif key == "ranges" then
+			 dtheta, dphi = table.unpack(value)
+		      else
+			 oldmeta.__newindex(self, key, value)
+			 return
+		      end
+
+		      local positions = array.floats(2 * n * N, 3)
+
+		      for i = 0, N - 1 do
+			 for j = 0, n - 1 do
+			    local k, phi, theta, rho
+
+			    k = 2 * (i * n + j)
+
+			    phi = dphi[1] + (dphi[2] - dphi[1]) * j / (n - 1)
+			    theta = dtheta[1] +
+			       (dtheta[2] - dtheta[1]) * i / (N - 1) + phi / N
+			    rho = R + r * math.cos(phi)
+
+			    positions[k + 1][1] = rho * math.sin(theta)
+			    positions[k + 1][2] = r * math.sin(phi)
+			    positions[k + 1][3] = rho * math.cos(theta)
+
+			    theta = theta + 2 * math.pi / N
+
+			    positions[k + 2][1] = rho * math.sin(theta)
+			    positions[k + 2][2] = r * math.sin(phi)
+			    positions[k + 2][3] = rho * math.cos(theta)
+			 end
+		      end
+
+		      self.positions = positions
 		   end
    })
    

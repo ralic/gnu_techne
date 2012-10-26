@@ -456,9 +456,11 @@ static void match_attribute_to_buffer (unsigned int program,
 	 * attribute's binding. */
 	
 	if (self->up) {
+	    Shader *shader;
 	    int n, l, j, program;
 
-	    program = ((Shader *)self->up)->name;
+	    shader = (Shader *)self->up;
+	    program = shader->name;
 	    
 	    glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &n);
 	    glGetProgramiv(program, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &l);
@@ -468,7 +470,7 @@ static void match_attribute_to_buffer (unsigned int program,
 	    /* Look for the vertex attribute's index and match it to
 	     * the specified buffer. */
 	    
-	    for (j = 0 ; j < n ; j += 1) {
+	    for (j = 0 ; j < n; j += 1) {
 		char attribute[l];
 		GLenum type;
 		int size;
@@ -476,12 +478,20 @@ static void match_attribute_to_buffer (unsigned int program,
 		glGetActiveAttrib (program, j, l, NULL, &size, &type,
 				   attribute);
 
-		if (strcmp(attribute, b->key)) {
-		    continue;
+		if (!strcmp(attribute, b->key)) {
+		    break;
 		}
-
-		match_attribute_to_buffer(program, j, b);
 	    }				  
+	
+	    if (!b) {
+		t_print_error("%s node does not define vertex attribute "
+			      "'%s'.\n",
+			      [shader name], b->key);
+
+		abort();
+	    }
+
+	    match_attribute_to_buffer(program, j, b);
 	}
 	
 	return 1;
@@ -492,6 +502,7 @@ static void match_attribute_to_buffer (unsigned int program,
 
 -(void) meetParent: (Shader *)parent
 {
+    shape_Buffer *b;
     int j, l, n;
 
     if (![parent isKindOf: [Shader class]]) {
@@ -513,11 +524,16 @@ static void match_attribute_to_buffer (unsigned int program,
     
     glGetProgramiv(parent->name, GL_ACTIVE_ATTRIBUTES, &n);
     glGetProgramiv(parent->name, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &l);
+
+    /* Lower all the flags. */
+    
+    for (b = self->buffers;
+	 b;
+	 b->flag = 0, b = b->next);
     
     glBindVertexArray(self->name);
     
     for (j = 0 ; j < n ; j += 1) {
-	shape_Buffer *b;
 	char attribute[l];
 	GLenum type;
 	int size;
@@ -529,16 +545,29 @@ static void match_attribute_to_buffer (unsigned int program,
 	     b && strcmp(b->key, attribute);
 	     b = b->next);
 	
-	/* if (!b) { */
-	/*     t_print_error("%s node does not speicify vertex attribute " */
-	/* 		  "'%s'.\n", */
-	/* 		  [self name], attribute); */
+	if (!b) {
+	    t_print_error("%s node does not specify vertex attribute "
+			  "'%s'.\n",
+			  [self name], attribute);
 
-	/*     abort(); */
-	/* } */
+	    abort();
+	}
 
 	if (b) {
 	    match_attribute_to_buffer (parent->name, j, b);
+	    b->flag = 1;
+	}
+    }
+
+    for (b = self->buffers;
+	 b;
+	 b->flag = 0, b = b->next) {
+	if (!b->flag) {
+	    t_print_error("%s node does not define vertex attribute "
+			  "'%s'.\n",
+			  [parent name], b->key);
+	    
+	    abort();
 	}
     }
 
@@ -549,7 +578,8 @@ static void match_attribute_to_buffer (unsigned int program,
 {
     /* Set the transform. */
 
-    /* _TRACEM(4, 4, "f", self->matrix); */
+    /* if (self->mode == GL_POINTS) */
+    /* 	_TRACEM(4, 4, "f", self->matrix); */
     t_push_modelview (self->matrix, T_MULTIPLY);
 
     /* Bind the vertex array and draw the supplied indices or the
@@ -558,8 +588,6 @@ static void match_attribute_to_buffer (unsigned int program,
     if (self->wireframe) {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
-
-    glEnable (GL_CULL_FACE);
     
     glBindVertexArray(self->name);
 
@@ -583,8 +611,6 @@ static void match_attribute_to_buffer (unsigned int program,
     } else {
 	glDrawArrays (self->mode, 0, self->buffers->length);
     }
-
-    glDisable (GL_CULL_FACE);
 
     if (self->wireframe) {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

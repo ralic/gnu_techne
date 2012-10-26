@@ -51,4 +51,13 @@ static int reference;
     return self;
 }
 
+-(void) traverse
+{
+    glEnable (GL_CULL_FACE);
+    
+    [super traverse];
+
+    glDisable (GL_CULL_FACE);
+}
+
 @end

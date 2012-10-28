@@ -47,6 +47,8 @@ static int __len (lua_State *L);
 static int __ipairs (lua_State *L);
 static int __tostring (lua_State *L);
 
+static array_Array *testarray (lua_State *L, int index);
+
 static size_t sizeof_element (array_Type type)
 {
     switch (abs(type)) {
@@ -207,58 +209,58 @@ static void *reference_element (array_Array *array, int i)
     return NULL;
 }
 
-static void copy_elements (array_Array *from, array_Array *to, int i, int rank)
+static void copy_elements (array_Array *from, array_Array *to, int i, int n)
 {
     switch (abs(from->type)) {
     case ARRAY_TDOUBLE:
 	memcpy(&to->values.doubles[i],
 	       from->values.doubles,
-	       rank * sizeof(to->values.doubles[0]));
+	       n * sizeof(to->values.doubles[0]));
 	break;
     case ARRAY_TFLOAT:
 	memcpy(&to->values.floats[i],
 	       from->values.floats,
-	       rank * sizeof(to->values.floats[0]));
+	       n * sizeof(to->values.floats[0]));
 	break;
     case ARRAY_TULONG:
 	memcpy(&to->values.ulongs[i],
 	       from->values.ulongs,
-	       rank * sizeof(to->values.ulongs[0]));
+	       n * sizeof(to->values.ulongs[0]));
 	break;
     case ARRAY_TLONG:
 	memcpy(&to->values.longs[i],
 	       from->values.longs,
-	       rank * sizeof(to->values.longs[0]));
+	       n * sizeof(to->values.longs[0]));
 	break;
     case ARRAY_TUINT:
 	memcpy(&to->values.uints[i],
 	       from->values.uints,
-	       rank * sizeof(to->values.uints[0]));
+	       n * sizeof(to->values.uints[0]));
 	break;
     case ARRAY_TINT:
 	memcpy(&to->values.ints[i],
 	       from->values.ints,
-	       rank * sizeof(to->values.ints[0]));
+	       n * sizeof(to->values.ints[0]));
 	break;
     case ARRAY_TUSHORT:
 	memcpy(&to->values.ushorts[i],
 	       from->values.ushorts,
-	       rank * sizeof(to->values.ushorts[0]));
+	       n * sizeof(to->values.ushorts[0]));
 	break;
     case ARRAY_TSHORT:
 	memcpy(&to->values.shorts[i],
 	       from->values.shorts,
-	       rank * sizeof(to->values.shorts[0]));
+	       n * sizeof(to->values.shorts[0]));
 	break;
     case ARRAY_TUCHAR:
 	memcpy(&to->values.uchars[i],
 	       from->values.uchars,
-	       rank * sizeof(to->values.uchars[0]));
+	       n * sizeof(to->values.uchars[0]));
 	break;
     case ARRAY_TCHAR:
 	memcpy(&to->values.chars[i],
 	       from->values.chars,
-	       rank * sizeof(to->values.chars[0]));
+	       n * sizeof(to->values.chars[0]));
 	break;
     }
 }
@@ -266,33 +268,66 @@ static void copy_elements (array_Array *from, array_Array *to, int i, int rank)
 static void dump (lua_State *L, int index, array_Array *array,
 		  int l, int b)
 {
+    array_Array *subarray;
     int i, d;
 
     index = absolute (L, index);
+    subarray = testarray(L, index);
 
-    if (lua_rawlen (L, index) != array->size[l]) {
-	lua_pushfstring (L,
-			 "Inconsistent array structure (subarray "
-			 "at depth %d should have %d elements but "
-			 "has %d).",
-			 l, array->size[l], lua_rawlen (L, -1));
-	lua_error (L);
-    }	
-	
-    for (i = l + 1, d = 1;
-	 i < array->rank;
-	 d *= array->size[i], i += 1);
-
-    for (i = 0 ; i < array->size[l] ; i += 1) {
-	lua_rawgeti (L, index, i + 1);
-	
-	if (lua_type (L, -1) == LUA_TNUMBER) {
-	    write_element(array, b + i, lua_tonumber (L, -1));
-	} else {
-	    dump (L, -1, array, l + 1, b + i * d);
+    if (subarray) {
+	if (subarray->type != array->type) {
+	    lua_pushfstring (L,
+			     "Inconsistent array structure (subarray "
+			     "at depth %d has unsuitable type).", l);
+	    lua_error (L);
 	}
+
+	if (subarray->rank != array->rank - l) {
+	    lua_pushfstring (L,
+			     "Inconsistent array structure (subarray "
+			     "at depth %d should have rank %d but "
+			     "has %d).",
+			     l, array->rank - l, subarray->rank);
+	    lua_error (L);
+	}
+
+	for (i = 0, d = 1 ; i < array->rank - l ; d *= subarray->size[i], i += 1) {
+	    if (subarray->size[i] != array->size[l + i]) {
+		lua_pushfstring (L,
+				 "Inconsistent array structure (subarray "
+				 "at depth %d should have size %d along "
+				 "dimension %d but has %d).",
+				 l, array->size[l + i], i + 1, subarray->size[i]);
+		lua_error (L);
+	    }
+	}
+
+	copy_elements(subarray, array, b, d);
+    } else {
+	if (lua_rawlen (L, index) != array->size[l]) {
+	    lua_pushfstring (L,
+			     "Inconsistent array structure (subarray "
+			     "at depth %d should have %d elements but "
+			     "has %d).",
+			     l, array->size[l], lua_rawlen (L, -1));
+	    lua_error (L);
+	}	
 	
-	lua_pop (L, 1);
+	for (i = l + 1, d = 1;
+	     i < array->rank;
+	     d *= array->size[i], i += 1);
+
+	for (i = 0 ; i < array->size[l] ; i += 1) {
+	    lua_rawgeti (L, index, i + 1);
+	
+	    if (lua_type (L, -1) == LUA_TNUMBER) {
+		write_element(array, b + i, lua_tonumber (L, -1));
+	    } else {
+		dump (L, -1, array, l + 1, b + i * d);
+	    }
+	
+	    lua_pop (L, 1);
+	}
     }
 }
 
@@ -583,6 +618,7 @@ static int __newindex (lua_State *L)
 
 static int fromtable (lua_State *L, int index, array_Array *array)
 {
+    array_Array *subarray;
     int i, l, r, h;
 
     luaL_checktype (L, index, LUA_TTABLE);
@@ -591,9 +627,20 @@ static int fromtable (lua_State *L, int index, array_Array *array)
 
     lua_pushvalue (L, index);
     
-    for (r = 0;
-	 lua_type (L, -1) == LUA_TTABLE;
-	 r += 1, lua_rawgeti (L, -1, 1));
+    for (r = 0, subarray = NULL;
+	 lua_type (L, -1) == LUA_TTABLE || (subarray = testarray(L, -1));
+	 lua_rawgeti (L, -1, 1)) {
+	if (subarray) {
+	    /* If we've hit a subarray we can happily skip parsing the
+	     * rest of the table structure. */
+	    
+	    r += subarray->rank;
+	    printf ("%d\n", r);
+	    break;
+	} else {
+	    r += 1;
+	}
+    }
 
     lua_settop (L, h);
 
@@ -601,28 +648,48 @@ static int fromtable (lua_State *L, int index, array_Array *array)
 	array->rank = r;
 	array->size = calloc (r, sizeof(int));
     } else if (r != array->rank) {
-	lua_pushstring (L, "Initialization from incompatible table (dimensions don't match).");
+	lua_pushstring (L, "Initialization from table of incompatible rank.");
 	lua_error (L);
     }
     
     lua_pushvalue (L, index);
 	
     for (i = 0, l = 1 ; i < r ; i += 1) {
-	int l_0;
-	
-	l_0 = lua_rawlen (L, -1);
-	l *= l_0;
+	int j, l_0;
 
-	if (array->size[i] == 0) {
-	    array->size[i] = l_0;
-	} else if (l_0 != array->size[i]) {
-	    lua_pushstring (L, "Initialization from incompatible table (sizes don't match).");
-	    lua_error (L);
+	subarray = testarray(L, -1);
+
+	if (subarray) {
+	    /* If we've hit a subarray we can happily skip parsing the
+	     * rest of the table structure. */
+	    
+	    l *= subarray->length / sizeof_element (subarray->type);
+
+	    for (j = i ; j < r ; j += 1) {
+		if (array->size[j] == 0) {
+		    array->size[j] = subarray->size[j - i];
+		} else if (subarray->size[j - i] != array->size[j]) {
+		    lua_pushstring (L, "Initialization from table of incompatible size.");
+		    lua_error (L);
+		}
+	    }
+	    
+	    break;
+	} else {
+	    l_0 = lua_rawlen (L, -1);
+	    l *= l_0;
+
+	    if (array->size[i] == 0) {
+		array->size[i] = l_0;
+	    } else if (l_0 != array->size[i]) {
+		lua_pushstring (L, "Initialization from table of incompatible size.");
+		lua_error (L);
+	    }
+	
+	    lua_rawgeti (L, -1, 1);
 	}
-	
-	lua_rawgeti (L, -1, 1);
     }
-
+    
     lua_settop (L, h);
 
     array->free = FREE_BOTH;
@@ -684,14 +751,9 @@ static int typeerror (lua_State *L, int narg, const char *tname) {
   return luaL_argerror(L, narg, msg);
 }
 
-array_Array *array_testarray (lua_State *L, int index)
+static array_Array *testarray (lua_State *L, int index)
 {
     index = absolute (L, index);
-
-    if (lua_type (L, index) == LUA_TTABLE) {
-	array_toarray (L, index, ARRAY_TDOUBLE, 0);
-	lua_replace (L, index);
-    }
 
     if (!lua_type (L, index) == LUA_TUSERDATA || !lua_getmetatable (L, index)) {
 	return NULL;
@@ -708,6 +770,18 @@ array_Array *array_testarray (lua_State *L, int index)
 	    return NULL;
 	}
     }
+}
+
+array_Array *array_testarray (lua_State *L, int index)
+{
+    index = absolute (L, index);
+
+    if (lua_type (L, index) == LUA_TTABLE) {
+	array_toarray (L, index, ARRAY_TDOUBLE, 0);
+	lua_replace (L, index);
+    }
+
+    return testarray (L, index);
 }
 
 array_Array *array_checkarray (lua_State *L, int index)

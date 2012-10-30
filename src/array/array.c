@@ -209,60 +209,26 @@ static void *reference_element (array_Array *array, int i)
     return NULL;
 }
 
-static void copy_elements (array_Array *from, array_Array *to, int i, int n)
+static void copy_values (array_Array *array, void *values, int i, int j, int n)
 {
-    switch (abs(from->type)) {
-    case ARRAY_TDOUBLE:
-	memcpy(&to->values.doubles[i],
-	       from->values.doubles,
-	       n * sizeof(to->values.doubles[0]));
-	break;
-    case ARRAY_TFLOAT:
-	memcpy(&to->values.floats[i],
-	       from->values.floats,
-	       n * sizeof(to->values.floats[0]));
-	break;
-    case ARRAY_TULONG:
-	memcpy(&to->values.ulongs[i],
-	       from->values.ulongs,
-	       n * sizeof(to->values.ulongs[0]));
-	break;
-    case ARRAY_TLONG:
-	memcpy(&to->values.longs[i],
-	       from->values.longs,
-	       n * sizeof(to->values.longs[0]));
-	break;
-    case ARRAY_TUINT:
-	memcpy(&to->values.uints[i],
-	       from->values.uints,
-	       n * sizeof(to->values.uints[0]));
-	break;
-    case ARRAY_TINT:
-	memcpy(&to->values.ints[i],
-	       from->values.ints,
-	       n * sizeof(to->values.ints[0]));
-	break;
-    case ARRAY_TUSHORT:
-	memcpy(&to->values.ushorts[i],
-	       from->values.ushorts,
-	       n * sizeof(to->values.ushorts[0]));
-	break;
-    case ARRAY_TSHORT:
-	memcpy(&to->values.shorts[i],
-	       from->values.shorts,
-	       n * sizeof(to->values.shorts[0]));
-	break;
-    case ARRAY_TUCHAR:
-	memcpy(&to->values.uchars[i],
-	       from->values.uchars,
-	       n * sizeof(to->values.uchars[0]));
-	break;
-    case ARRAY_TCHAR:
-	memcpy(&to->values.chars[i],
-	       from->values.chars,
-	       n * sizeof(to->values.chars[0]));
-	break;
-    }
+    int w;
+
+    w = sizeof_element(array->type);
+    memcpy(((char *)array->values.any) + i * w, ((char *)values) + j * w, n * w);
+}
+
+static void copy_elements (array_Array *to, array_Array *from, int i, int j, int n)
+{
+    assert(from->type == to->type);
+    copy_values (to, from->values.any, i, j, n);
+}
+
+static void zero_elements (array_Array *array, int i, int n)
+{
+    int w;
+
+    w = sizeof_element(array->type);
+    memset(((char *)array->values.any) + i * w, 0, n * w);
 }
 
 static void dump (lua_State *L, int index, array_Array *array,
@@ -302,7 +268,7 @@ static void dump (lua_State *L, int index, array_Array *array,
 	    }
 	}
 
-	copy_elements(subarray, array, b, d);
+	copy_elements(array, subarray, b, 0, d);
     } else {
 	if (lua_rawlen (L, index) != array->size[l]) {
 	    lua_pushfstring (L,
@@ -606,7 +572,7 @@ static int __newindex (lua_State *L)
 		}
 	    }
 	    
-	    copy_elements(subarray, array, (i - 1) * d, d);
+	    copy_elements(array, subarray, (i - 1) * d, 0, d);
 	}
     } else {
 	lua_pushstring (L, "Index out of array bounds.");
@@ -740,8 +706,7 @@ static void fromzeros (lua_State *L, array_Array *array)
     array->length = l * sizeof_element (array->type);
     array->values.any = malloc (array->length);
 
-    memset (array->values.any, 0, l);
-
+    zero_elements (array, 0, l);
     construct (L, array, 0);
 }
 
@@ -927,21 +892,22 @@ void array_initializev (array_Array *array, array_Type type,
     array->rank = rank;
     array->size = malloc (rank * sizeof(int));
 
-    for (j = 0, l = sizeof_element (type) ; j < rank ; j += 1) {
+    for (j = 0, l = 1 ; j < rank ; j += 1) {
 	array->size[j] = size[j];
 	l *= array->size[j];
     }
 
     array->free = FREE_BOTH;
-    array->length = l;
+    array->length = l * sizeof_element (type);
     array->values.any = malloc (array->length);
 
     if (values) {
-	memcpy (array->values.any, values, l);
+	copy_values (array, values, 0, 0, l);
     }    
 }
 
-void array_initialize (array_Array *array, array_Type type, void *values, int rank, ...)
+void array_initialize (array_Array *array, array_Type type, void *values,
+                       int rank, ...)
 {
     va_list ap;
     int j, size[rank];
@@ -1121,8 +1087,7 @@ void array_copy (lua_State *L, int index)
 	 d *= array->size[i], i += 1);
 
     copy.values.any = malloc (copy.length);
-    memcpy(copy.values.any, array->values.any,
-	   d * sizeof_element (array->type));
+    copy_elements(&copy, array, 0, 0, d);
 
     construct (L, &copy, 0);
 }
@@ -1143,12 +1108,11 @@ void array_set (lua_State *L, int index, lua_Number c)
     }
 }
 
-static void cut (array_Array *source, array_Array *sink, void *from, void *to, int l, int m, int d, int *range)
+static void cut (array_Array *source, array_Array *sink, int from, int to,
+                 int l, int m, int d, int *range)
 {
-    int i, w;
+    int i;
 	
-    w = sizeof_element (source->type);
-    
     if (d < source->rank - 1) {
 	int s, t;
 
@@ -1157,13 +1121,13 @@ static void cut (array_Array *source, array_Array *sink, void *from, void *to, i
 	
 	for (i = 0 ; i < range[1] - range[0] + 1 ; i += 1) {
 	    cut (source, sink,
-		 (char *)from + (range[0] - 1 + i) * s * w,
-		 (char *)to + i * t * w,
+		 from + (range[0] - 1 + i) * s,
+		 to + i * t,
 		 s, t, d + 1, range + 2);
 	}
     } else {
-	memcpy (to, (char *)from + (range[0] - 1) * w,
-		(range[1] - range[0] + 1) * w);
+	copy_elements (sink, source, to, from + (range[0] - 1),
+                       (range[1] - range[0] + 1));
     }
 }
 
@@ -1216,9 +1180,7 @@ void array_slicev (lua_State *L, int index, int *slices)
     slice.length = m * sizeof_element (array->type);
     slice.values.any = malloc (slice.length);
 
-    cut (array, &slice,
-    	 array->values.any, slice.values.any,
-    	 l, m, 0, slices);
+    cut (array, &slice, 0, 0, l, m, 0, slices);
     
     slice.type = array->type;
     slice.rank = array->rank;
@@ -1250,18 +1212,12 @@ static void adjust(array_Array *source, array_Array *sink, void *defaults,
 
         if (use_defaults) {
             if (!defaults) {
-                memset (((char *)sink->values.any) + offset_k,
-                        0,
-                        stride_k);
+                zero_elements (sink, offset_k, stride_k);
             } else {
-                memcpy(((char *)sink->values.any) + offset_k,
-                       ((char *)defaults) + offset_k,
-                       stride_k);
+                copy_values(sink, defaults, offset_k, offset_k, stride_k);
             }
         } else {
-            memcpy(((char *)sink->values.any) + offset_k,
-                   ((char *)source->values.any) + offset_s,
-                   stride_k);
+            copy_elements(sink, source, offset_k, offset_s, stride_k);
         }
     }
 }
@@ -1299,7 +1255,7 @@ array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, i
     sink.length = l;
     sink.values.any = malloc (sink.length);
 
-    for (j = 0, m = sizeof_element(source->type);
+    for (j = 0, m = 1;
          j < source->rank;
          m *= source->size[j], j += 1);
 

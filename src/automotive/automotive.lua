@@ -35,9 +35,9 @@ return {
 	       shape = shapes.torus {
 		  wireframe = true,
 		  radii = wheel.radii,
-		  segments = {16, 4},
+		  segments = {16, 7},
 		  ranges = {{0, 2 * math.pi},
-			    {-0.3 * math.pi, 0.3 * math.pi}},
+			    {-math.pi / 2, math.pi / 2}},
 		  -- traverse = function (self) print (self) end,
 	       },
 	    }

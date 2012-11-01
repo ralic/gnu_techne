@@ -19,37 +19,67 @@ if not options.drawjoints then
    return core
 end
 
+local math = require 'math'
+local table = require 'table'
 local shading = require 'shading'
 local shapes = require 'shapes'
+local transform = require 'transform'
+local array = require 'array'
 
 return {
    hinge = function (parameters)
-	    local hinge, oldmeta
+	    local hinge, oldmeta, a, b
 
 	    hinge = core.hinge (parameters)
 
-	    hinge.schematic = shading.flat {
-	       color = {0, 0, 1, 1},
+	    hinge.shaft = shading.flat {
+	       color = {0.45, 0.66, 0.86, 1},
 
-	       shaft = shapes.line {
-                  positions = {{0, 0, 0}},
+	       shape = shapes.line {
+		  prepare = function (self)
+		     self.positions = array.doubles {
+		     	hinge.anchor,
+		     	hinge.anchor + hinge.axis
+		     				   }
+		  end,
+				   },
+				       }
 
-		  -- traverse = function (self) print (self) end,
+	    hinge.arms = shading.flat {
+	       color = {0.3, 0.47, 0.62, 1},
+
+	       shape = shapes.line {
+	       	  prepare = function (self) 
+	       	     local a, b, pair
+
+	       	     pair = hinge.pair
+		     
+	       	     if pair then
+	       		local positions = {}
+
+	       		a, b = pair[1], pair[2]
+
+	       		if a and b then
+			   self.positions = array.doubles{
+			      a.position,
+			      hinge.anchor,
+			      b.position
+							 }
+			elseif a then
+			   self.positions = array.doubles{
+			      hinge.anchor,
+			      a.position
+							 }
+			elseif b then
+			   self.positions = array.doubles{
+			      hinge.anchor,
+			      b.position
+							 }
+	       		end
+	       	     end
+	       	  end,
 	       },
 	    }
-
-	    oldmeta = getmetatable(hinge)
-	    replacemetatable(hinge, {
-				__newindex = function (self, key, value)
-						if key == "axis" then
-						   self.schematic.shaft.positions =
-                                                      {{0, 0, 0},
-                                                       value}
-						end
-						
-						oldmeta.__newindex (self, key, value)
-					     end
-			     })
 
 	    return hinge
 	 end,

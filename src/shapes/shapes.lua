@@ -22,7 +22,7 @@ function shapes.circle(parameters)
    local node, oldmeta
    local r, n = 1, 16
 
-   node = shapes.line {}
+   node = shapes.loop {}
    oldmeta = getmetatable(node)
 
    replacemetatable (node, {
@@ -51,7 +51,7 @@ function shapes.circle(parameters)
 		      local positions = array.floats(n, 3)
 
 		      for i = 1, n do
-			 theta = 2 * math.pi * (i - 1) / (n - 1)
+			 theta = 2 * math.pi * (i - 1) / n
 
 			 positions[i][1] = r * math.cos (theta)
 			 positions[i][2] = r * math.sin(theta)
@@ -60,6 +60,48 @@ function shapes.circle(parameters)
 
 		      self.positions = positions
 		   end
+   })
+   
+   for key, value in pairs (parameters) do
+      node[key] = value
+   end
+
+   return node
+end
+
+function shapes.rectangle(parameters)
+   local node, oldmeta
+   local a, b, a_2, b_2
+
+   node = shapes.triangles {}
+   oldmeta = getmetatable(node)
+
+   replacemetatable (node, {
+      __index = function (self, key)
+	       if key == "size" then
+		  return {a, b}
+	       else
+		  return oldmeta.__index(self, key)
+	       end
+	    end,
+
+      __newindex = function (self, key, value)
+	       local v
+	       
+	       if key == "size" then
+		  a, b = table.unpack(value)
+	       else
+		  oldmeta.__newindex(self, key, value)
+		  return
+	       end
+
+	       a_2, b_2 = 0.5 * a, 0.5 * b
+
+	       self.positions = array.floats {
+		  {-a_2, -b_2, 0}, {a_2, -b_2, 0}, {-a_2, b_2, 0},
+		  {-a_2, b_2, 0}, {a_2, -b_2, 0}, {a_2, b_2, 0},
+	       }
+	    end
    })
    
    for key, value in pairs (parameters) do
@@ -103,7 +145,7 @@ function shapes.box(parameters)
 		  {-a_2, -b_2, c_2}, {a_2, -b_2, c_2}, {-a_2, b_2, c_2},
 		  {-a_2, b_2, c_2}, {a_2, -b_2, c_2}, {a_2, b_2, c_2},
 
-		  -- Fa_2r.
+		  -- Far.
 
 		  {-a_2, -b_2, -c_2}, {-a_2, b_2, -c_2}, {a_2, -b_2, -c_2}, 
 		  {-a_2, b_2, -c_2}, {a_2, b_2, -c_2}, {a_2, -b_2, -c_2}, 
@@ -123,7 +165,7 @@ function shapes.box(parameters)
 		  {-a_2, b_2, -c_2}, {-a_2, b_2, c_2}, {a_2, b_2, -c_2}, 
 		  {a_2, b_2, -c_2}, {-a_2, b_2, c_2}, {a_2, b_2, c_2}, 
 
-		  -- B_2ottom.
+		  -- Bottom.
 
 		  {-a_2, -b_2, -c_2}, {a_2, -b_2, -c_2}, {-a_2, -b_2, c_2},
 		  {a_2, -b_2, -c_2}, {a_2, -b_2, c_2}, {-a_2, -b_2, c_2},

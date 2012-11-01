@@ -356,22 +356,6 @@ static void match_attribute_to_buffer (unsigned int program,
 	     b && strcmp (b->key, k);
 	     b = b->next);
     }
-    
-    /* If it does free the buffer in question. */
-    
-    if (b) {
-	if (isindices) {
-	    self->indices = NULL;
-	} else {
-            t_single_unlink_from(b, &self->buffers);
-	}
-    
-	glDeleteBuffers(1, &b->name);
-	free(b->key);
-	free(b);	
-    }
-
-    assert (!isindices || self->indices == NULL);
 
     /* If index data is provided as a normal Lua table attempt to
      * promote it to and unsigned integer array.  For vertex attribute
@@ -385,25 +369,13 @@ static void match_attribute_to_buffer (unsigned int program,
 	array = array_testarray (_L, 3);
     }
 
-    /* Now if an array has beens supplied assume it defines a new
+    /* Now if an array has been supplied assume it defines a new
      * buffer for the shape, otherwise treat it like a normal key. */
 
     if (array) {
 	GLenum target;
+        int streaming;
 	
-	if (array->rank > 2) {
-	    t_print_error("Array used for vertex attribute data is of "
-			  "unsuitable rank.\n");
-	    abort();
-	} else if (array->rank == 2 && array->size[1] < 2) {
-	    t_print_error("Scalar vertex attributes should be specified "
-			  "as arrays of rank 1.\n");
-	    abort();
-	}	    
-	
-	b = malloc (sizeof (shape_Buffer));
-	b->key = strdup(k);
-
 	/* Check if supplied data is sane. */
 	
 	if (isindices) {
@@ -420,42 +392,72 @@ static void match_attribute_to_buffer (unsigned int program,
 		abort();	    
 		break;
 	    }
-	} else {
-	    /* Check length consistency for vertex data. */
-	    
-	    if (self->buffers &&
-		self->buffers->length != array->size[0]) {
-		t_print_error ("Shape vertex buffers have inconsistent "
-			       "lengths.\n");
-		abort();
-	    }
 	}
 
+	if (array->rank > 2) {
+	    t_print_error("Array used for vertex attribute data is of "
+			  "unsuitable rank.\n");
+	    abort();
+	} else if (array->rank == 2 && array->size[1] < 2) {
+	    t_print_error("Scalar vertex attributes should be specified "
+			  "as arrays of rank 1.\n");
+	    abort();
+	}	    
+
+        /* If no buffer exists create a new one, otherwise check
+         * streaming requirements. */
+        
+        if (!b) {
+            b = malloc (sizeof (shape_Buffer));
+            b->key = strdup(k);
+
+            glGenBuffers(1, &b->name);
+
+            b->type = array->type;
+            b->size = array->rank == 1 ? 1 : array->size[1];
+            b->length = array->size[0];
+
+            /* Link in the buffer. */
+	
+            if (isindices) {
+                self->indices = b;
+            } else {
+                t_single_link_at_head(b, &self->buffers);
+            }
+
+            streaming = 0;
+        } else {
+            if (array->type != b->type) {
+                t_print_error("Streamed vertex attributes data has different "
+                              "type.\n");
+                abort();
+            }
+
+            if ((array->rank == 1 && b->size != 1) ||
+                (array->rank == 2 && b->size != array->size[1])) {
+                t_print_error("Streamed vertex attributes data has different "
+                              "size.\n");
+                abort();
+            }
+
+            b->length = array->size[0];
+
+            streaming = 1;
+        }
+        
 	/* Create the buffer object and initialize it. */
 
 	target = isindices ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
 
-	glGenBuffers(1, &b->name);
 	glBindBuffer(target, b->name);
 	glBufferData(target, array->length, array->values.any,
 		     GL_STATIC_DRAW);
 
-	b->type = array->type;
-	b->length = array->size[0];
-	b->size = array->rank == 1 ? 1 : array->size[1];
-
-	/* Link in the buffer. */
-	
-	if (isindices) {
-	    self->indices = b;
-	} else {
-            t_single_link_at_head(b, &self->buffers);
-	}
-
 	/* If the shape is already linked to a shader update the
-	 * attribute's binding. */
+	 * attribute's binding unless we're just streaming in new
+	 * data.. */
 	
-	if (self->up) {
+	if (self->up && !streaming) {
 	    Shader *shader;
 	    int n, l, j, program;
 
@@ -496,6 +498,21 @@ static void match_attribute_to_buffer (unsigned int program,
 	
 	return 1;
     } else {
+        /* If there was a buffer with this key but the currently
+         * supplied value is not an array, free the buffer. */
+    
+        if (b) {
+            if (isindices) {
+                self->indices = NULL;
+            } else {
+                t_single_unlink_from(b, &self->buffers);
+            }
+    
+            glDeleteBuffers(1, &b->name);
+            free(b->key);
+            free(b);	
+        }
+        
 	return [super _set_];
     }
 }

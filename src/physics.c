@@ -164,6 +164,7 @@ static int addjointtorque (lua_State *L)
 
 static void pushmass (lua_State *L, dMass *mass)
 {
+    array_Array *array;
     double *I, *c;
     int i, j;
     
@@ -176,9 +177,9 @@ static void pushmass (lua_State *L, dMass *mass)
     
     /* Center of mass. */
 	
-    array_createarray (L, ARRAY_TDOUBLE, NULL, 1, 3);
-    c = ((array_Array *)lua_touserdata (L, -1))->values.doubles;
-
+    array = array_createarray (L, ARRAY_TDOUBLE, NULL, 1, 3);
+    c = array->values.doubles;
+    
     for(i = 0 ; i < 3 ; i += 1) {
 	c[i] = mass->c[i];
     }
@@ -187,8 +188,8 @@ static void pushmass (lua_State *L, dMass *mass)
 
     /* Inertia. */
 
-    array_createarray (L, ARRAY_TDOUBLE, NULL, 2, 3, 3);
-    I = ((array_Array *)lua_touserdata (L, -1))->values.doubles;
+    array = array_createarray (L, ARRAY_TDOUBLE, NULL, 2, 3, 3);
+    I = array->values.doubles;
 
     for(i = 0 ; i < 3 ; i += 1) {
 	for(j = 0 ; j < 3 ; j += 1) {

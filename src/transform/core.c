@@ -150,8 +150,7 @@ static int apply (lua_State *L)
                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                   ARRAY_TDOUBLE, 1, 3);
 
-    array_createarrayv (L, data->type, NULL, data->rank, data->size);
-    result = lua_touserdata (L, -1);
+    result = array_createarrayv (L, data->type, NULL, data->rank, data->size);
 
     if (data->type == ARRAY_TDOUBLE) {
 	apply_doubles (transform->values.doubles,
@@ -327,6 +326,7 @@ static int projection (lua_State *L)
 
 static int rotation (lua_State *L)
 {
+    array_Array *array;
     double *M;
 
     M = malloc (9 * sizeof (double));
@@ -367,13 +367,13 @@ static int rotation (lua_State *L)
 	    lua_error (L);
 	}
     } else if (lua_type (L, 1) == LUA_TNUMBER &&
-	       array_testcompatible (L, 2,
-                                     ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-                                     ARRAY_TDOUBLE, 1, 3)) {
+	       (array = array_testcompatible (L, 2,
+                                              ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                              ARRAY_TDOUBLE, 1, 3))) {
 	double theta, c, c_1, s, *u;
 
 	theta = lua_tonumber (L, 1);
-	u = ((array_Array *)lua_touserdata (L, 2))->values.doubles;
+	u = array->values.doubles;
 
 	c = cos(theta);
 	c_1 = 1.0 - c;
@@ -452,8 +452,7 @@ static int basis (lua_State *L)
     n = luaL_checknumber (L, 1);
     i = luaL_checknumber (L, 2);
 
-    array_createarray (L, ARRAY_TDOUBLE, NULL, 1, n);
-    array = lua_touserdata (L, -1);
+    array = array_createarray (L, ARRAY_TDOUBLE, NULL, 1, n);
 
     M = array->values.doubles;
 
@@ -474,8 +473,7 @@ static int diagonal (lua_State *L)
 	n = luaL_checknumber (L, 1);
 	d = luaL_checknumber (L, 2);
 
-	array_createarray (L, ARRAY_TDOUBLE, NULL, 2, n, n);
-	array = lua_touserdata (L, -1);
+	array = array_createarray (L, ARRAY_TDOUBLE, NULL, 2, n, n);
 
 	M = array->values.doubles;
 
@@ -490,9 +488,7 @@ static int diagonal (lua_State *L)
                                           ARRAY_TDOUBLE, 1, 0);
 	n = diagonal->size[0];
 	
-	array_createarray (L, ARRAY_TDOUBLE, NULL, 2, n, n);
-
-	array = lua_touserdata (L, -1);
+	array = array_createarray (L, ARRAY_TDOUBLE, NULL, 2, n, n);
 	M = array->values.doubles;
     
 	for (j = 0 ; j < n ; j += 1) {
@@ -603,9 +599,7 @@ static int normalize (lua_State *L)
     int i;
 
     A = checkproper (L, 1, 1);
-
-    array_createarray (L, A->type, NULL, 1, A->size[0]);
-    B = lua_touserdata (L, -1);
+    B = array_createarray (L, A->type, NULL, 1, A->size[0]);
     
     if (A->type == ARRAY_TDOUBLE) {
 	double *u, *v;
@@ -707,9 +701,8 @@ static int transpose (lua_State *L)
 
     A = checkproper (L, 1, 2);
 
-    array_createarray (L, A->type, NULL,
-		       A->rank, A->size[1], A->size[0]);
-    B = (array_Array *)lua_touserdata (L, -1);
+    B = array_createarray (L, A->type, NULL,
+                           A->rank, A->size[1], A->size[0]);
 
     if (A->type == ARRAY_TDOUBLE) {
 	transpose_doubles (A->values.doubles,
@@ -774,8 +767,7 @@ static int multiply (lua_State *L)
     }
 
     if (B->rank == 1) {
-	array_createarray (L, A->type, NULL, 1, A->size[0]);
-	C = (array_Array *)lua_touserdata (L, -1);
+	C = array_createarray (L, A->type, NULL, 1, A->size[0]);
 
 	if (A->type == ARRAY_TDOUBLE) {
 	    matrix_vector_doubles (A->values.doubles,
@@ -789,8 +781,7 @@ static int multiply (lua_State *L)
 				  A->size[0], A->size[1]);
 	}
     } else {
-	array_createarray (L, A->type, NULL, 2, A->size[0], B->size[1]);
-	C = (array_Array *)lua_touserdata (L, -1);
+	C = array_createarray (L, A->type, NULL, 2, A->size[0], B->size[1]);
 
 	if (A->type == ARRAY_TDOUBLE) {
 	    matrix_matrix_doubles (A->values.doubles,
@@ -830,8 +821,7 @@ static int cross (lua_State *L)
     
     checksimilar (L, A, B, 3);
 
-    array_createarray (L, A->type, NULL, 1, 3);
-    C = (array_Array *)lua_touserdata (L, -1);
+    C = array_createarray (L, A->type, NULL, 1, 3);
     
     if (A->type == ARRAY_TDOUBLE) {
 	cross_doubles (A->values.doubles,
@@ -870,8 +860,7 @@ static int interpolate (lua_State *L)
     
     checksimilar (L, A, B, 3);
 
-    array_createarray (L, A->type, NULL, 1, A->size[0]);
-    C = (array_Array *)lua_touserdata (L, -1);
+    C = array_createarray (L, A->type, NULL, 1, A->size[0]);
     
     if (A->type == ARRAY_TDOUBLE) {
 	interpolate_doubles (A->values.doubles,

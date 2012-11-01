@@ -296,6 +296,7 @@ static void call_poststep_hook (dBodyID body)
 
 -(int) _get_mass
 {
+    array_Array *array;
     double *I, *c;
     int i, j;
 
@@ -310,8 +311,8 @@ static void call_poststep_hook (dBodyID body)
     
     /* Center of mass. */
 	
-    array_createarray (_L, ARRAY_TDOUBLE, NULL, 1, 3);
-    c = ((array_Array *)lua_touserdata (_L, -1))->values.doubles;
+    array = array_createarray (_L, ARRAY_TDOUBLE, NULL, 1, 3);
+    c = array->values.doubles;
 
     for(i = 0 ; i < 3 ; i += 1) {
 	c[i] = self->mass.c[i];
@@ -321,8 +322,8 @@ static void call_poststep_hook (dBodyID body)
 
     /* Inertia. */
 
-    array_createarray (_L, ARRAY_TDOUBLE, NULL, 2, 3, 3);
-    I = ((array_Array *)lua_touserdata (_L, -1))->values.doubles;
+    array = array_createarray (_L, ARRAY_TDOUBLE, NULL, 2, 3, 3);
+    I = array->values.doubles;
 
     for(i = 0 ; i < 3 ; i += 1) {
 	for(j = 0 ; j < 3 ; j += 1) {

@@ -120,8 +120,7 @@
 	    l *= A->size[j];						\
 	}								\
 									\
-	array_createarrayv (L, A->type, NULL, A->rank, A->size);	\
-	C = (array_Array *)lua_touserdata (L, -1);			\
+	C = array_createarrayv (L, A->type, NULL, A->rank, A->size);	\
 									\
 	switch (A->type) {						\
 	case ARRAY_TDOUBLE:						\
@@ -238,8 +237,7 @@ int array_scale (lua_State *L)
 
     for (j = 0 ,l = 1; j < A->rank ; l *= A->size[j], j += 1);
 
-    array_createarrayv (L, A->type, NULL, A->rank, A->size);
-    B = (array_Array *)lua_touserdata (L, -1);
+    B = array_createarrayv (L, A->type, NULL, A->rank, A->size);
 
     switch (abs(A->type)) {
     case ARRAY_TDOUBLE:
@@ -329,8 +327,7 @@ int array_raise (lua_State *L)
 
     for (j = 0, l = 1; j < A->rank ; l *= A->size[j], j += 1);
 
-    array_createarrayv (L, A->type, NULL, A->rank, A->size);
-    B = (array_Array *)lua_touserdata (L, -1);
+    B = array_createarrayv (L, A->type, NULL, A->rank, A->size);
 
     switch (A->type) {
     case ARRAY_TDOUBLE:

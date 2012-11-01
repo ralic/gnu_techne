@@ -272,8 +272,7 @@ static int globals_n;
 	    } else {							\
                 /* A vector. */                                         \
                                                                         \
-		array_createarray (_L, arraytype, NULL, 1, elements);   \
-                array = lua_touserdata(_L, -1);                         \
+		array = array_createarray (_L, arraytype, NULL, 1, elements); \
 									\
 		READ_SINGLE (array->values.any,                         \
                              elements * sizeof(ctype));                 \
@@ -284,24 +283,21 @@ static int globals_n;
 	    if (elements == 1) {					\
                 /* A scalar array. */                                   \
                                                                         \
-		array_createarray (_L, arraytype, NULL, 1, size_0);     \
+		array = array_createarray (_L, arraytype, NULL, 1, size_0); \
 	    } else {							\
                 /* Either a vector array or a matrix. */                \
                                                                         \
-		array_createarray (_L, arraytype, NULL, 2,              \
+		array = array_createarray (_L, arraytype, NULL, 2,      \
                                    size_0, elements);                   \
 	    }								\
 									\
-            array = lua_touserdata(_L, -1);                             \
-                                                                        \
             READ_ARRAY (size_0, stride_0, array->values.any,            \
                         elements * sizeof(ctype));			\
 	} else {							\
             /* A matrix array. */                                       \
                                                                         \
-	    array_createarray(_L, arraytype, NULL, 3, size_1, size_0,   \
-                              elements);                                \
-            array = lua_touserdata(_L, -1);                             \
+	    array = array_createarray(_L, arraytype, NULL, 3, size_1, size_0, \
+                                      elements);                        \
 									\
 	    READ_MATRIX_ARRAY (size_0, stride_0, size_1, stride_1, 	\
                                array->values.any,			\

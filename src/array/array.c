@@ -320,7 +320,7 @@ static int negate(lua_State *L)
     return 1;
 }
 
-static void construct (lua_State *L, array_Array *array, int reference)
+static array_Array *construct (lua_State *L, array_Array *array, int reference)
 {
     array_Array *new;
 
@@ -384,6 +384,8 @@ static void construct (lua_State *L, array_Array *array, int reference)
 
     lua_rawgeti (L, LUA_REGISTRYINDEX, metatable);
     lua_setmetatable(L, -2);
+
+    return new;
 }
 
 static int __gc (lua_State *L)
@@ -925,17 +927,17 @@ void array_initialize (array_Array *array, array_Type type, void *values,
     array_initializev (array, type, values, rank, size);
 }
 
-void array_createarrayv (lua_State *L, array_Type type,
-			 void *values, int rank, int *size)
+array_Array *array_createarrayv (lua_State *L, array_Type type,
+                                  void *values, int rank, int *size)
 {
     array_Array array;
 
     array_initializev (&array, type, values, rank, size);
-    construct (L, &array, 0);
+    return construct (L, &array, 0);
 }
 
-void array_createarray (lua_State *L, array_Type type,
-			void *values, int rank, ...)
+array_Array *array_createarray (lua_State *L, array_Type type,
+                                void *values, int rank, ...)
 {
     va_list ap;
     int j, size[rank];
@@ -948,7 +950,7 @@ void array_createarray (lua_State *L, array_Type type,
    
     va_end(ap);
 
-    array_createarrayv (L, type, values, rank, size);
+    return array_createarrayv (L, type, values, rank, size);
 }
 
 void array_toarrayv (lua_State *L, int index, array_Type type,
@@ -1226,7 +1228,7 @@ static void adjust(array_Array *source, array_Array *sink, void *defaults,
 
 array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, int *size)
 {
-    array_Array sink, *source;
+    array_Array sink, *source, *array;
     int j, l, m;
 
     index = absolute (L, index);
@@ -1263,10 +1265,10 @@ array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, i
 
     adjust (source, &sink, defaults, 0, m, 0, l, 0, 0);
 
-    construct (L, &sink, 0);
+    array = construct (L, &sink, 0);
     lua_replace (L, index);
     
-    return lua_touserdata(L, index);
+    return array;
 }
 
 array_Array *array_adjust (lua_State *L, int index, void *defaults, int rank, ...)

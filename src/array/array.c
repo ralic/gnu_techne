@@ -751,13 +751,15 @@ array_Array *array_testarray (lua_State *L, int index)
 
 array_Array *array_checkarray (lua_State *L, int index)
 {
+    array_Array *array;
+    
     index = absolute (L, index);
 
-    if (!array_testarray (L, index)) {
+    if (!(array = array_testarray (L, index))) {
 	typeerror(L, index, "array");
     }
 
-    return lua_touserdata (L, index);
+    return array;
 }
 
 array_Array *array_checkcompatible (lua_State *L, int index, int what, ...)
@@ -816,7 +818,7 @@ array_Array *array_checkcompatible (lua_State *L, int index, int what, ...)
 
     va_end (ap);
 
-    return lua_touserdata (L, index);
+    return array;
 }
 
 array_Array *array_testcompatible (lua_State *L, int index, int what, ...)
@@ -875,7 +877,7 @@ array_Array *array_testcompatible (lua_State *L, int index, int what, ...)
     
     va_end (ap);
 
-    return lua_touserdata (L, index);
+    return array;
 }
 
 void array_pusharray (lua_State *L, array_Array *array)
@@ -1025,7 +1027,7 @@ void array_castv (lua_State *L, int index, int rank, int *size)
     array_Array cast, *array;
     int j, l, m;
 
-    array = lua_touserdata (L, index);
+    array = array_testarray (L, index);
     cast.size = malloc (rank * sizeof (int));
     
     for (j = 0, l = 1 ; j < rank ; j += 1) {
@@ -1072,7 +1074,7 @@ void array_copy (lua_State *L, int index)
     array_Array *array, copy;
     int i, d;
     
-    array = lua_touserdata(L, index);
+    array = array_testarray(L, index);
 
     copy.type = array->type;
     copy.length = array->length;
@@ -1097,7 +1099,7 @@ void array_set (lua_State *L, int index, lua_Number c)
     array_Array *array;
     int i, d;
     
-    array = lua_touserdata(L, index);
+    array = array_testarray(L, index);
     
     for (i = 0, d = 1;
 	 i < array->rank;
@@ -1136,7 +1138,7 @@ void array_slicev (lua_State *L, int index, int *slices)
     array_Array slice, *array;
     int i, j, l, m;
 
-    array = lua_touserdata (L, index);
+    array = array_testarray (L, index);
     
     slice.size = malloc (array->rank * sizeof (int));
     memcpy (slice.size, array->size, array->rank * sizeof (int));
@@ -1264,7 +1266,7 @@ array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, i
     construct (L, &sink, 0);
     lua_replace (L, index);
     
-    return lua_touserdata(L, -1);
+    return lua_touserdata(L, index);
 }
 
 array_Array *array_adjust (lua_State *L, int index, void *defaults, int rank, ...)

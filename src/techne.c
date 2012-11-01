@@ -795,12 +795,12 @@ void t_print_error (const char *format, ...)
     }
 
     t_print_message("Ran a total of %d iterations in %.1f seconds at "
-                    "%.1f iterations per second.\n"
+                    "%.1f ms per iteration.\n"
                     "Spent %.1f (%.1f%%) in the core and %.1f (%.1f%%) in "
 		    "the application.\n"
                     "Spent %.2f seconds (%.1f%%) processing collected"
 		    " nodes or in unprofiled code.\n",
-		    iterations, runtime * 1e-9, iterations * 1e9 / runtime, 
+		    iterations, runtime * 1e-9, runtime / (iterations * 1e6), 
                     totals[0] * 1e-9, c * totals[0], totals[1] * 1e-9,
                     c * totals[1],  (runtime - totals[0] - totals[1]) * 1e-9,
 		    (double)(runtime - totals[0] - totals[1]) /

@@ -144,7 +144,7 @@ static void update_projection()
 
 	planes[4] = frustum[1];
 	planes[5] = frustum[2];
-	planes[3] = frustum[1] * tan(frustum[0]);
+	planes[3] = frustum[1] * tan(0.5 * frustum[0]);
 	planes[2] = -planes[3];
 
 	planes[0] = planes[2] * a;

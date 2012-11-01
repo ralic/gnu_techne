@@ -27,9 +27,6 @@ TODO (ASAP):
 * Need debug meshes for the following items (remeber to delete traverse methods):
   - Plane
   - Racetrack
-  - Wheel
 
 * Need debug diagrams for joints.
-* Create:
-   array_adjust (lua_State *L, void *defaults, int rank, ...)
-   array_adjustv (lua_State *L, void *defaults, int rank, int *size)
+  - Remove Joint->debug once this is done.

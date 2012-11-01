@@ -486,11 +486,9 @@ static void match_attribute_to_buffer (unsigned int program,
 	    }				  
 	
 	    if (!b) {
-		t_print_error("%s node does not define vertex attribute "
-			      "'%s'.\n",
-			      [shader name], b->key);
-
-		abort();
+		t_print_warning("%s node does not define vertex attribute "
+				"'%s'.\n",
+				[shader name], b->key);
 	    }
 
 	    match_attribute_to_buffer(program, j, b);
@@ -563,11 +561,9 @@ static void match_attribute_to_buffer (unsigned int program,
 	     b = b->next);
 	
 	if (!b) {
-	    t_print_error("%s node does not specify vertex attribute "
-			  "'%s'.\n",
-			  [self name], attribute);
-
-	    abort();
+	    t_print_warning("%s node does not specify vertex attribute "
+			    "'%s'.\n",
+			    [self name], attribute);
 	}
 
 	if (b) {
@@ -580,11 +576,9 @@ static void match_attribute_to_buffer (unsigned int program,
 	 b;
 	 b->flag = 0, b = b->next) {
 	if (!b->flag) {
-	    t_print_error("%s node does not define vertex attribute "
-			  "'%s'.\n",
-			  [parent name], b->key);
-	    
-	    abort();
+	    t_print_warning("%s node does not define vertex attribute "
+			    "'%s'.\n",
+			    [parent name], b->key);
 	}
     }
 

@@ -603,7 +603,6 @@ static int fromtable (lua_State *L, int index, array_Array *array)
 	     * rest of the table structure. */
 	    
 	    r += subarray->rank;
-	    printf ("%d\n", r);
 	    break;
 	} else {
 	    r += 1;

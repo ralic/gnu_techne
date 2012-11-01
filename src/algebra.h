@@ -19,6 +19,11 @@
 
 #include <math.h>
 
+#define t_copy_3(u, v)					\
+    {							\
+	memcpy(u, v, 3 * sizeof(u[0]));			\
+    }
+
 #define t_dot_3(u, v) ((u)[0] * (v)[0] + (u)[1] * (v)[1] + (u)[2] * (v)[2])
 #define t_normalize_3(v)			\
     {						\

@@ -18,9 +18,9 @@
 #define _JOINT_H_
 
 #include <ode/ode.h>
-#include "node.h"
+#include "transform.h"
 
-@interface Joint: Node {
+@interface Joint: Transform {
 @public
     dJointID joint;
     dBodyID bodies[2];
@@ -36,12 +36,14 @@
 -(int) _get_inverted;
 -(int) _get_bodies;
 -(int) _get_attach;
+-(int) _get_pair;
 
 -(void) _set_forces;
 -(void) _set_torques;
 -(void) _set_inverted;
 -(void) _set_bodies;
 -(void) _set_attach;
+-(void) _set_pair;
 
 @end
 

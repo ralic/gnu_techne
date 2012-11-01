@@ -111,15 +111,19 @@ static int drawjoints = -1;
 		dJointAttach (self->joint,
 			      self->bodies[1], self->bodies[0]);
 		t_pushuserdata (_L, 3, self,
-				 self->bodies[1],
-				 self->bodies[0]);
+				self->bodies[1] ? 
+				dBodyGetData(self->bodies[1]) : NULL,
+				self->bodies[0] ? 
+				dBodyGetData(self->bodies[0]) : NULL);
 		t_callhook (_L, self->attach, 3, 0);
 	    } else {
 		dJointAttach (self->joint,
 			      self->bodies[0], self->bodies[1]);
 		t_pushuserdata (_L, 3, self,
-				 self->bodies[0],
-				 self->bodies[1]);
+				self->bodies[0] ? 
+				dBodyGetData(self->bodies[0]) : NULL,
+				self->bodies[1] ? 
+				dBodyGetData(self->bodies[1]) : NULL);
 		t_callhook (_L, self->attach, 3, 0);
 	    }
 	}
@@ -161,6 +165,11 @@ static int drawjoints = -1;
     if ([child isKindOf: [Body class]]) {
 	[self update];
     }
+}
+
+-(void) transform
+{
+    [super transformAsRoot];
 }
 
 -(int) _get_forces
@@ -229,6 +238,34 @@ static int drawjoints = -1;
 {
     lua_pushboolean (_L, self->inverted);
 
+    return 1;
+}
+
+-(int) _get_pair
+{
+    if (self->bodies[0] ||  self->bodies[1]) {
+	lua_newtable (_L);
+
+	if (self->inverted) {
+	    t_pushuserdata (_L, 2,
+			    self->bodies[1] ? 
+			    dBodyGetData(self->bodies[1]) : NULL,
+			    self->bodies[0] ? 
+			    dBodyGetData(self->bodies[0]) : NULL);
+	} else {
+	    t_pushuserdata (_L, 2,
+			    self->bodies[0] ? 
+			    dBodyGetData(self->bodies[0]) : NULL,
+			    self->bodies[1] ? 
+			    dBodyGetData(self->bodies[1]) : NULL);
+	}
+
+	lua_rawseti (_L, 3, 2);
+	lua_rawseti (_L, 3, 1);
+    } else {
+	lua_pushnil(_L);
+    }
+    
     return 1;
 }
 
@@ -302,6 +339,11 @@ static int drawjoints = -1;
 }
 
 -(void) _set_torques
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_pair
 {
     T_WARN_READONLY;
 }

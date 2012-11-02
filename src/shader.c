@@ -746,7 +746,7 @@ static int uniforms_iterator(lua_State *L)
 	free(self->uniforms);
 	glDeleteProgram (self->name);
 	
-	_TRACE ("Deleting %s program and associated shaders.\n", [self name]);
+	/* _TRACE ("Deleting %s program and associated shaders.\n", [self name]); */
     }
 
     [super free];

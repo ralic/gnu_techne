@@ -141,6 +141,7 @@ void t_begin_interval (Node *, tprof_Phase reading);
 void t_end_interval (Node *, tprof_Phase reading);
 
 int t_isnode(lua_State *L, int index);
+id t_tonode (lua_State *L, int index);
 id t_testnode (lua_State *L, int index, Class class);
 id t_checknode(lua_State *L, int index, Class class);
 void t_configurenode (lua_State *L, int index);

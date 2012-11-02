@@ -684,16 +684,24 @@ void t_print_error (const char *format, ...)
     t_print_timing_resolution();
     
     input = [[Input alloc] init];
+    lua_pushstring (_L, "input");
+    lua_setfield (_L, -2, "tag");
     lua_setglobal (_L, "input");
     
     network = [[Network alloc] init];
+    lua_pushstring (_L, "network");
+    lua_setfield (_L, -2, "tag");
     lua_setglobal (_L, "network");
     
     dynamics = [[Dynamics alloc] init];
+    lua_pushstring (_L, "dynamics");
+    lua_setfield (_L, -2, "tag");
     lua_setglobal (_L, "dynamics");
 
     if (!engineering) {
 	graphics = [[Graphics alloc] initWithName: name andClass: class];
+        lua_pushstring (_L, "graphics");
+        lua_setfield (_L, -2, "tag");
 	lua_setglobal (_L, "graphics");
     } else {
 	t_print_message ("Visual output has been disabled.\n");
@@ -701,17 +709,23 @@ void t_print_error (const char *format, ...)
 
     if (!mute && !engineering) {
 	accoustics = [[Accoustics alloc] init];
+        lua_pushstring (_L, "accoustics");
+        lua_setfield (_L, -2, "tag");
 	lua_setglobal (_L, "accoustics");
     } else {
 	t_print_message ("Audio output has been disabled.\n");
     }
 
     self = [super init];
+    lua_pushstring (_L, "techne");
+    lua_setfield (_L, -2, "tag");
     lua_setglobal (_L, "techne");
     
     /* Create the root. */
 
     root = [[Transform alloc] init];
+    lua_pushstring (_L, "root");
+    lua_setfield (_L, -2, "tag");
     lua_setglobal (_L, "root");
 
     [dynamics toggle];
@@ -744,12 +758,12 @@ void t_print_error (const char *format, ...)
 -(void) iterate
 {
     Node *node;
-    long long int runtime, totals[2], intervals[T_PHASE_COUNT][2];;
+    long long int runtime, totals[4], intervals[T_PHASE_COUNT][2];;
     char *phases[T_PHASE_COUNT] = {"begin", "input", "step",
 				   "transform", "prepare", "traverse",
 				   "finish"};
     double c;
-    int j;
+    int h, j;
 
     beginning = t_get_cpu_time();
     
@@ -780,48 +794,107 @@ void t_print_error (const char *format, ...)
     [techne toggle];
     [root toggle];
 
-    c = 100.0 / runtime;
-    memset (intervals, 0, sizeof(intervals));
-    memset (totals, 0, sizeof(totals));
-
-    accumulate (root, intervals);
-    for (node = root->right ; node != root ; node = node->right) {
-	accumulate(node, intervals);
-    }
-	
-    for (j = 0 ; j < T_PHASE_COUNT ; j += 1) {
-	totals[0] += intervals[j][0] - intervals[j][1];
-	totals[1] += intervals[j][1];
-    }
-
-    t_print_message("Ran a total of %d iterations in %.1f seconds at "
-                    "%.1f ms per iteration.\n"
-                    "Spent %.1f (%.1f%%) in the core and %.1f (%.1f%%) in "
-		    "the application.\n"
-                    "Spent %.2f seconds (%.1f%%) processing collected"
-		    " nodes or in unprofiled code.\n",
-		    iterations, runtime * 1e-9, runtime / (iterations * 1e6), 
-                    totals[0] * 1e-9, c * totals[0], totals[1] * 1e-9,
-                    c * totals[1],  (runtime - totals[0] - totals[1]) * 1e-9,
-		    (double)(runtime - totals[0] - totals[1]) /
-		    runtime * 100, COLOR(0,));
+    /* Output statistics for profiled nodes. */
     
-    t_print_message("Phase profile:\n"
-		    "+-----------------------+\n"
-		    "|phase       core   user|\n"
-		    "+-----------------------+\n");
-	
-    for (j = 0 ; j < T_PHASE_COUNT ; j += 1) {
-	t_print_message("|%-10s %4.1f%%  %4.1f%%|\n",
-			phases[j],
-			c * (intervals[j][0] - intervals[j][1]),
-			c * intervals[j][1]);
+    t_print_message("Ran a total of %d iterations in %.1f seconds at "
+                    "%.1f ms per iteration.\n",
+		    iterations, runtime * 1e-9, runtime / (iterations * 1e6));
+    
+    c = 100.0 / runtime;
+    h = lua_gettop(_L);
+
+    /* Gather all profiled nodes. */
+    
+    lua_getglobal (_L, "options");
+    lua_getfield (_L, -1, "profile");
+    lua_replace (_L, -2);
+
+    if (lua_type(_L, -1) == LUA_TSTRING) {
+        lua_newtable(_L);
+        lua_insert(_L, -2);
+        lua_rawseti(_L, -2, 1);
     }
 
-    t_print_message("+-----------------------+\n"
-		    "|%-10s %4.1f%%  %4.1f%%|\n"
-		    "+-----------------------+\n",
-		    "total", c * totals[0], c * totals[1]);
+    if (lua_type(_L, h + 1) == LUA_TTABLE) {
+        int n;
+
+        n = lua_rawlen(_L, h + 1);
+
+        for (j = 0 ; j < n ; j += 1) {
+            lua_pushstring (_L, "return ");
+            lua_rawgeti(_L, h + 1, j + 1);
+            lua_concat(_L, 2);
+
+            if (luaL_loadstring(_L, lua_tostring(_L, -1)) ||
+                lua_pcall(_L, 0, 1, 0)) {
+                lua_rawgeti(_L, h + 1, j + 1);
+                
+                t_print_warning ("Could not resolve node at '%s'\n",
+                                 lua_tostring(_L, -1));
+                lua_pop(_L, 3);
+            } else if (!t_isnode(_L, -1)) {
+                lua_rawgeti(_L, h + 1, j + 1);
+                
+                t_print_warning ("Value at '%s' is not a node (it is a %s value).\n",
+                                 lua_tostring(_L, -1),
+                                 lua_typename(_L, lua_type(_L, -2)));
+                lua_pop(_L, 3);
+            } else {
+                lua_replace(_L, -2);
+            }
+        }
+    }
+
+    lua_remove(_L, h + 1);
+
+    while (lua_gettop(_L) > h) {
+        memset (intervals, 0, sizeof(intervals));
+        memset (totals, 0, sizeof(totals));
+
+        assert (t_isnode(_L, -1));
+        node = t_tonode(_L, -1);
+        
+        accumulate (node, intervals);
+	
+        for (j = 0 ; j < T_PHASE_COUNT ; j += 1) {
+            totals[0] += intervals[j][0];
+            totals[1] += intervals[j][1];
+            totals[2] += node->profile.intervals[j][0];
+            totals[3] += node->profile.intervals[j][1];
+        }
+
+        luaL_callmeta (_L, -1, "__tostring");
+        
+        t_print_message(
+            "\nPhase profile for %s:\n"
+            "+----------------------------------+------------------------+\n"
+            "|             cummulative          |   self                 |\n"
+            "|phase        core    user   total |   core    user   total |\n"
+            "+----------------------------------+------------------------+\n",
+            lua_tostring (_L, -1));
+	
+        for (j = 0 ; j < T_PHASE_COUNT ; j += 1) {
+            t_print_message(
+                "|%-10s %5.1f%%  %5.1f%%  %5.1f%% | %5.1f%%  %5.1f%%  %5.1f%% |\n",
+                phases[j],
+                c * (intervals[j][0] - intervals[j][1]),
+                c * intervals[j][1], c * intervals[j][0],
+                c * (node->profile.intervals[j][0] -
+                     node->profile.intervals[j][1]),
+                c * node->profile.intervals[j][1],
+                c * node->profile.intervals[j][0]);
+        }
+
+        t_print_message(
+            "+----------------------------------+------------------------+\n"
+            "|%-10s %5.1f%%  %5.1f%%  %5.1f%% | %5.1f%%  %5.1f%%  %5.1f%% |\n"
+            "+----------------------------------+------------------------+\n",
+            "total",
+            c * (totals[0] - totals[1]), c * totals[1], c * totals[0],
+            c * (totals[2] - totals[3]), c * totals[3], c * totals[2]);
+
+        lua_pop (_L, 2);
+    }
     
     /* Close the state to collect all values and call the respective
      * finalizers. */

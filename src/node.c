@@ -50,6 +50,11 @@ int t_isnode (lua_State *L, int index)
     }
 }
 
+id t_tonode (lua_State *L, int index)
+{
+    return *(id *)lua_touserdata (L, index);
+}
+
 id t_testnode (lua_State *L, int index, Class class)
 {
     id object;
@@ -58,7 +63,7 @@ id t_testnode (lua_State *L, int index, Class class)
 	return NULL;
     }
 
-    object = *(id *)lua_touserdata (L, index);
+    object = t_tonode(_L, index);
 
     if (![object isKindOf: class]) {
 	return NULL;

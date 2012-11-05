@@ -35,50 +35,55 @@ return {
 	    hinge.shaft = shading.flat {
 	       color = {0.45, 0.66, 0.86, 1},
 
-	       shape = shapes.line {
-		  prepare = function (self)
-		     self.positions = array.doubles {
-		     	hinge.anchor,
-		     	hinge.anchor + hinge.axis
-		     				   }
-		  end,
-				   },
+	       prepare = function (self)
+		  local a, d, c, e
+
+		  d = self.bias or 0.1
+		  c = self.gain or 1 / 628
+
+		  a = hinge.anchor
+		  e = a + (d + c * hinge.state[2]) * hinge.axis
+
+		  self.lines.positions = array.doubles {a, e}
+		  self.points.positions = array.doubles {a, e}
+	       end,
+
+	       lines = shapes.line {},
+	       points = shapes.points {},
 				       }
 
 	    hinge.arms = shading.flat {
 	       color = {0.3, 0.47, 0.62, 1},
 
-	       shape = shapes.line {
-	       	  prepare = function (self) 
-	       	     local a, b, pair
+	       prepare = function (self) 
+		  local a, b, pair
 
-	       	     pair = hinge.pair
-		     
-	       	     if pair then
-	       		local positions = {}
+		  pair = hinge.pair
+		  
+		  if pair then
+		     local positions = {}
 
-	       		a, b = pair[1], pair[2]
+		     a = pair[1] and pair[1].position
+		     b = pair[2] and pair[2].position
 
-	       		if a and b then
-			   self.positions = array.doubles{
-			      a.position,
-			      hinge.anchor,
-			      b.position
-							 }
-			elseif a then
-			   self.positions = array.doubles{
-			      hinge.anchor,
-			      a.position
-							 }
-			elseif b then
-			   self.positions = array.doubles{
-			      hinge.anchor,
-			      b.position
-							 }
-	       		end
-	       	     end
-	       	  end,
-	       },
+		     if a and b then
+			self.lines.positions = array.doubles{a,
+							     hinge.anchor,
+							     b}
+
+			self.points.positions = array.doubles{a, b}
+		     elseif a then
+			self.lines.positions = array.doubles{hinge.anchor, a}
+			self.points.positions = array.doubles{a}
+		     elseif b then
+			self.lines.positions = array.doubles{hinge.anchor, b}
+			self.points.positions = array.doubles{b}
+		     end
+		  end
+	       end,
+
+	       lines = shapes.line {},
+	       points = shapes.line {},
 	    }
 
 	    return hinge

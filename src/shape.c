@@ -591,43 +591,50 @@ static void match_attribute_to_buffer (unsigned int program,
 
     /* if (self->mode == GL_POINTS) */
     /* 	_TRACEM(4, 4, "f", self->matrix); */
-    t_push_modelview (self->matrix, T_MULTIPLY);
 
-    /* Bind the vertex array and draw the supplied indices or the
-     * arrays if no indices we're supplied. */
+    if (self->buffers) {
+	t_push_modelview (self->matrix, T_MULTIPLY);
 
-    if (self->wireframe) {
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    }
-    
-    glBindVertexArray(self->name);
+	/* Bind the vertex array and draw the supplied indices or the
+	 * arrays if no indices we're supplied. */
 
-    if (self->indices) {
-	shape_Buffer *i;
-	GLenum type;
-
-	i = self->indices;
-	
-	switch(i->type) {
-	case ARRAY_TUINT: type = GL_UNSIGNED_INT; break;
-	case ARRAY_TUSHORT: type = GL_UNSIGNED_SHORT; break;
-	case ARRAY_TUCHAR: type = GL_UNSIGNED_BYTE; break;
-	default: assert(0);
+	if (self->wireframe) {
+	    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
+
+	if (self->mode == GL_POINTS) {
+	    glPointSize(3);
+	}
+    
+	glBindVertexArray(self->name);
+
+	if (self->indices) {
+	    shape_Buffer *i;
+	    GLenum type;
+
+	    i = self->indices;
 	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, i->name);
-	glDrawRangeElements (self->mode, 0, self->buffers->length - 1,
-			     i->size * i->length,
-			     type, (void *)0);
-    } else {
-	glDrawArrays (self->mode, 0, self->buffers->length);
-    }
+	    switch(i->type) {
+	    case ARRAY_TUINT: type = GL_UNSIGNED_INT; break;
+	    case ARRAY_TUSHORT: type = GL_UNSIGNED_SHORT; break;
+	    case ARRAY_TUCHAR: type = GL_UNSIGNED_BYTE; break;
+	    default: assert(0);
+	    }
+	
+	    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, i->name);
+	    glDrawRangeElements (self->mode, 0, self->buffers->length - 1,
+				 i->size * i->length,
+				 type, (void *)0);
+	} else {
+	    glDrawArrays (self->mode, 0, self->buffers->length);
+	}
 
-    if (self->wireframe) {
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
+	if (self->wireframe) {
+	    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
 
-    t_pop_modelview ();
+	t_pop_modelview ();
+    }
     
     [super traverse];
 }

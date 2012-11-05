@@ -34,10 +34,22 @@ static int clamp(lua_State *L)
     return 1;
 }
 
+static int sign(lua_State *L)
+{
+    lua_Number a;
+    
+    a = luaL_checknumber (L, 1);
+
+    lua_pushnumber (L, a > 0 ? 1 : -1);
+    
+    return 1;
+}
+
 int luaopen_moremath (lua_State *L)
 {
     luaL_Reg api[] = {
 	{"clamp", clamp},
+	{"sign", sign},
 	{NULL, NULL}
     };
 

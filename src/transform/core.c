@@ -56,9 +56,9 @@ APPLY(apply_doubles, double)
 APPLY(apply_floats, float)
 
 static int multiply (lua_State *L);
-static void pusharray (lua_State *L, double *M)
+static array_Array *pusharray (lua_State *L, double *M)
 {
-    array_Array array;
+    array_Array array, *result;
 
     array.rank = 2;
     array.size = size;
@@ -67,55 +67,14 @@ static void pusharray (lua_State *L, double *M)
     array.values.doubles = M;
     array.free = FREE_VALUES;
 
-    array_pusharray (L, &array);
+    result = array_pusharray (L, &array);
 
     lua_getmetatable (L, -1);
     lua_pushcfunction (L, multiply);
     lua_setfield (L, -2, "__concat");
     lua_pop(L, 1);
-}
 
-static int concatenate (lua_State *L)
-{
-    array_Array *array;
-    double alpha[9], beta[9], *A, *B, *C;
-    int i;
-
-    array = array_checkcompatible (L, 1,
-                                   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-                                   ARRAY_TDOUBLE, 2, 3, 3);
-    A = array->values.doubles;
-    C = alpha;
-    
-    for (i = 2 ; i <= lua_gettop (L) ; i += 1) {
-	array = array_checkcompatible (L, i,
-                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-                                       ARRAY_TDOUBLE, 2, 3, 3);
-	B = array->values.doubles;
-
-	C[0] = A[0] * B[0] + A[1] * B[3] + A[2] * B[6];
-	C[1] = A[0] * B[1] + A[1] * B[4] + A[2] * B[7];
-	C[2] = A[0] * B[2] + A[1] * B[5] + A[2] * B[8];
-
-	C[3] = A[3] * B[0] + A[4] * B[3] + A[5] * B[6];
-	C[4] = A[3] * B[1] + A[4] * B[4] + A[5] * B[7];
-	C[5] = A[3] * B[2] + A[4] * B[5] + A[5] * B[8];
-
-	C[6] = A[6] * B[0] + A[7] * B[3] + A[8] * B[6];
-	C[7] = A[6] * B[1] + A[7] * B[4] + A[8] * B[7];
-	C[8] = A[6] * B[2] + A[7] * B[5] + A[8] * B[8];
-
-	if (i != lua_gettop(L)) {
-	    A = C;
-	    C = (C == alpha) ? beta : alpha;
-	}
-    }
-
-    B = malloc (9 * sizeof (double));
-    memcpy (B, C, 9 * sizeof (double));
-    pusharray (L, B);
-
-    return 1;
+    return result;
 }
 
 static int apply (lua_State *L)
@@ -501,6 +460,65 @@ static int diagonal (lua_State *L)
     return 1;
 }
 
+/* Operations on matrices and vectors. */
+
+array_Array *transform_concatenate (lua_State *L, int n)
+{
+    array_Array *array;
+    double alpha[9], beta[9], *A, *B, *C;
+    int i;
+
+    array = lua_touserdata (L, -n);
+    A = array->values.doubles;
+    C = alpha;
+    
+    for (i = -n + 1 ; i <= -1 ; i += 1) {
+	array = lua_touserdata (L, i);
+	B = array->values.doubles;
+
+	C[0] = A[0] * B[0] + A[1] * B[3] + A[2] * B[6];
+	C[1] = A[0] * B[1] + A[1] * B[4] + A[2] * B[7];
+	C[2] = A[0] * B[2] + A[1] * B[5] + A[2] * B[8];
+
+	C[3] = A[3] * B[0] + A[4] * B[3] + A[5] * B[6];
+	C[4] = A[3] * B[1] + A[4] * B[4] + A[5] * B[7];
+	C[5] = A[3] * B[2] + A[4] * B[5] + A[5] * B[8];
+
+	C[6] = A[6] * B[0] + A[7] * B[3] + A[8] * B[6];
+	C[7] = A[6] * B[1] + A[7] * B[4] + A[8] * B[7];
+	C[8] = A[6] * B[2] + A[7] * B[5] + A[8] * B[8];
+
+	if (i != -1) {
+	    A = C;
+	    C = (C == alpha) ? beta : alpha;
+	}
+    }
+
+    lua_pop(L, n);
+    
+    B = malloc (9 * sizeof (double));
+    memcpy (B, C, 9 * sizeof (double));
+
+    return pusharray (L, B);
+}
+
+static int concatenate (lua_State *L)
+{
+    int i, n;
+
+    n = lua_gettop(L);
+
+    for (i = 1 ; i <= n ; i += 1) {
+	array_checkcompatible (L, i,
+			       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+			       ARRAY_TDOUBLE, 2, 3, 3);
+    }
+
+    transform_concatenate(L, n);
+    
+    return 1;
+}
+
 #define DOT(FUNC, TYPE)						\
     static double FUNC (TYPE *A, TYPE *B, int n)		\
     {								\
@@ -531,13 +549,13 @@ DOT(dot_floats, float)
 DISTANCE(distance_doubles, double)
 DISTANCE(distance_floats, float)
 
-static int dot (lua_State *L)
+static double transform_dot (lua_State *L)
 {
     array_Array *A, *B;
     double d;
 
-    A = checkproper (L, 1, 1);
-    B = checkproper (L, 2, 1);
+    A = lua_touserdata(L, -2);
+    B = lua_touserdata(L, -1);
     
     checksimilar (L, A, B, 0);
     
@@ -547,17 +565,15 @@ static int dot (lua_State *L)
 	d = dot_floats (A->values.floats, B->values.floats, A->size[0]);
     }
 
-    lua_pushnumber (L, d);
-    
-    return 1;
+    return d;
 }
 
-static int lengthsquared (lua_State *L)
+static double transform_lengthsquared (lua_State *L)
 {
     array_Array *A;
     double d;
 
-    A = checkproper (L, 1, 1);
+    A = lua_touserdata(L, -1);
     
     if (A->type == ARRAY_TDOUBLE) {
 	d = dot_doubles (A->values.doubles, A->values.doubles, A->size[0]);
@@ -565,42 +581,49 @@ static int lengthsquared (lua_State *L)
 	d = dot_floats (A->values.floats, A->values.floats, A->size[0]);
     }
 
-    lua_pushnumber (L, d);
+    return d;
+}
+
+static double transform_length (lua_State *L)
+{
+    return sqrt(transform_lengthsquared(L));
+}
+
+static int dot (lua_State *L)
+{
+    checkproper (L, 1, 1);
+    checkproper (L, 2, 1);
+    
+    lua_pushnumber (L, transform_dot(L));
+    
+    return 1;
+}
+
+static int lengthsquared (lua_State *L)
+{
+    checkproper (L, 1, 1);
+    lua_pushnumber (L, transform_lengthsquared(L));
     
     return 1;
 }
 
 static int length (lua_State *L)
 {
-    array_Array *A;
-    double d;
-
-    A = checkproper (L, 1, 1);
-    
-    if (A->type == ARRAY_TDOUBLE) {
-	d = sqrt(dot_doubles (A->values.doubles,
-			      A->values.doubles,
-			      A->size[0]));
-    } else {
-	d = sqrt(dot_floats (A->values.floats,
-			     A->values.floats,
-			     A->size[0]));
-    }
-
-    lua_pushnumber (L, d);
+    checkproper (L, 1, 1);
+    lua_pushnumber (L, transform_length(L));
     
     return 1;
 }
 
-static int normalize (lua_State *L)
+static array_Array *transform_normalize (lua_State *L)
 {
     array_Array *A, *B;
     double d;
     int i;
 
-    A = checkproper (L, 1, 1);
+    A = lua_touserdata(L, -1);
     B = array_createarray (L, A->type, NULL, 1, A->size[0]);
-    
+
     if (A->type == ARRAY_TDOUBLE) {
 	double *u, *v;
 	
@@ -629,7 +652,15 @@ static int normalize (lua_State *L)
 	}
     }
 
-    lua_pushnumber (L, d);
+    lua_remove (L, -2);
+    
+    return B;
+}
+
+static int normalize (lua_State *L)
+{
+    checkproper (L, 1, 1);
+    transform_normalize(L);
     
     return 1;
 }

@@ -881,9 +881,9 @@ array_Array *array_testcompatible (lua_State *L, int index, int what, ...)
     return array;
 }
 
-void array_pusharray (lua_State *L, array_Array *array)
+array_Array *array_pusharray (lua_State *L, array_Array *array)
 {
-    construct (L, array, 0);
+    return construct (L, array, 0);
 }
 
 void array_initializev (array_Array *array, array_Type type,

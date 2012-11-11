@@ -176,20 +176,13 @@ static int adjust (lua_State *L)
 
 int luaopen_array_core (lua_State *L)
 {
-    const luaL_Reg api[] = {
-	{"add", array_add},
-	{"multiply", array_multiply},
-	{"subtract", array_subtract},
-	{"divide", array_divide},
-	{"scale", array_scale},
-	{"raise", array_raise},
-    
+    const luaL_Reg api[] = {    
 	{"copy", copy},
 	{"set", set},
 	{"cast", cast},
 	{"slice", slice},
-	{"adjust", adjust},
-        
+	{"adjust", adjust},        
+	    
 	{NULL, NULL}
     };
 

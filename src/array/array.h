@@ -113,5 +113,16 @@ int array_multiply (lua_State *L);
 int array_divide (lua_State *L);
 int array_scale (lua_State *L);
 int array_raise (lua_State *L);
+void array_interpolate (lua_State *L);
+
+double array_vector_dot (lua_State *L);
+void array_vector_cross (lua_State *L);
+double array_vector_squaredlength (lua_State *L);
+double array_vector_length (lua_State *L);
+double array_vector_squareddistance (lua_State *L);
+double array_vector_distance (lua_State *L);
+array_Array *array_vector_normalize (lua_State *L);
+void array_matrix_transpose (lua_State *L);
+void array_matrix_multiply (lua_State *L);
 
 #endif

@@ -10,24 +10,35 @@ LDFLAGS=-shared -fpic
 
 INSTALL=/usr/bin/install
 
+all: core operations algebra
 core:
-	$(CC) -o core.so ${CFLAGS} ${LDFLAGS} core.c array.c operations.c ${LUA_CFLAGS} ${LUA_LDFLAGS}
+	$(CC) -o core.so ${CFLAGS} ${LDFLAGS} core.c array.c ${LUA_CFLAGS} ${LUA_LDFLAGS}
 
-install: core
+operations:
+	$(CC) -o operations.so ${CFLAGS} ${LDFLAGS} operations.c array.c ${LUA_CFLAGS} ${LUA_LDFLAGS}
+
+algebra:
+	$(CC) -o algebra.so ${CFLAGS} ${LDFLAGS} algebra.c array.c ${LUA_CFLAGS} ${LUA_LDFLAGS}
+
+install: core operations algebra
 	mkdir -p $(LIBDIR)/
 	$(INSTALL) core.so $(LIBDIR)/
+	$(INSTALL) operations.so $(LIBDIR)/
+	$(INSTALL) algebra.so $(LIBDIR)/
 	mkdir -p $(SHAREDIR)/
 	$(INSTALL) array.lua $(SHAREDIR)
 
 uninstall:
 	rm -f $(LIBDIR)/core.so
+	rm -f $(LIBDIR)/operations.so
+	rm -f $(LIBDIR)/algebra.so
 	rm -f $(SHAREDIR)/array.lua
 
-dist: core
+dist: core operations algebra
 	if [ -e /tmp/array ]; then rm -rf /tmp/array; fi
 	mkdir /tmp/array
-	cp array.c array.h array.lua core.c Makefile README /tmp/array
+	cp array.c array.h array.lua core.c algebra.c operations.c Makefile README /tmp/array
 	cd /tmp; tar zcf luaarray.tar.gz array/
 
 clean:
-	rm -f core.so *~
+	rm -f core.so algebra.so operations.so *~

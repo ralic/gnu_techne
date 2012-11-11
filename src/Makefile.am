@@ -37,14 +37,14 @@ nobase_mybin_PROGRAMS = techne.bin browser.bin
 techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     node.c node.h opengl.c gl.h glx.h graphics.c	\
 		     graphics.h accoustics.c accoustics.h dynamics.c	\
-		     dynamics.h transform.c transform.h body.c body.h	\
-		     joint.c joint.h event.c event.h space.c space.h	\
-		     shape.c shape.h shader.c shader.h array/array.c	\
-		     array/operations.c array/array.h prompt/prompt.c	\
-		     prompt/prompt.h joints/contact.c profiling.c	\
-		     moremath.c timing.c memory.c network.c network.h	\
-		     proxy.c proxy.h input.c input.h structures.h	\
-		     math.h
+		     dynamics.h transform.c transform.h body.c		\
+		     body.h joint.c joint.h event.c event.h space.c	\
+		     space.h shape.c shape.h shader.c shader.h		\
+		     array/array.c array/operations.c array/algebra.c	\
+		     array/array.h prompt/prompt.c prompt/prompt.h	\
+		     joints/contact.c profiling.c moremath.c timing.c	\
+		     memory.c network.c network.h proxy.c proxy.h	\
+		     input.c input.h structures.h math.h
 
 EXTRA_techne_bin_SOURCES = compat/asprintf.h
 

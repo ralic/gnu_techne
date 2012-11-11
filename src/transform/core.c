@@ -27,6 +27,27 @@
 
 static int size[2] = {3, 3};
 
+static array_Array *pusharray (lua_State *L, double *M)
+{
+    array_Array array, *result;
+
+    array.rank = 2;
+    array.size = size;
+    array.length = 3 * 3 * sizeof(double);
+    array.type = ARRAY_TDOUBLE;
+    array.values.doubles = M;
+    array.free = FREE_VALUES;
+
+    result = array_pusharray (L, &array);
+
+    /* lua_getmetatable (L, -1); */
+    /* lua_pushcfunction (L, multiply); */
+    /* lua_setfield (L, -2, "__concat"); */
+    /* lua_pop(L, 1); */
+
+    return result;
+}
+
 #define APPLY(FUNC, TYPE)						\
     static void FUNC (double *T, double *f, TYPE *v, TYPE *r,		\
 		      int rank, int *size)				\
@@ -55,59 +76,18 @@ static int size[2] = {3, 3};
 APPLY(apply_doubles, double)
 APPLY(apply_floats, float)
 
-static int multiply (lua_State *L);
-static array_Array *pusharray (lua_State *L, double *M)
-{
-    array_Array array, *result;
-
-    array.rank = 2;
-    array.size = size;
-    array.length = 3 * 3 * sizeof(double);
-    array.type = ARRAY_TDOUBLE;
-    array.values.doubles = M;
-    array.free = FREE_VALUES;
-
-    result = array_pusharray (L, &array);
-
-    lua_getmetatable (L, -1);
-    lua_pushcfunction (L, multiply);
-    lua_setfield (L, -2, "__concat");
-    lua_pop(L, 1);
-
-    return result;
-}
-
-static int apply (lua_State *L)
+static array_Array *transform_apply (lua_State *L, int i)
 {
     array_Array *transform, *data, *result, *fixed;
     
-    transform = array_checkcompatible (L, 1,
-                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-                                       ARRAY_TDOUBLE, 2, 3, 3);
+    transform = lua_touserdata (L, -2);
+    data = lua_touserdata (L, -1);
 
-    if (lua_type (L, 2) == LUA_TTABLE) {
-	data = array_checkcompatible (L, 2,
-                                      ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-                                      ARRAY_TYPE, ARRAY_TDOUBLE);
+    if (i > 0) {
+	fixed = lua_touserdata (L, i);
     } else {
-	data = array_checkarray (L, 2);
-    
-	if (data->type != ARRAY_TDOUBLE &&
-	    data->type != ARRAY_TFLOAT) {
-	    luaL_argerror (L, 2, "Specified array has integer type.");
-	}
+	fixed = NULL;
     }
-
-    if (data->size[data->rank - 1] != 3) {
-	lua_pushstring (L,
-			"Array to be transformed must be "
-			"ultimately three-dimensional.");
-	lua_error (L);
-    }
-
-    fixed = array_testcompatible (L, 3,
-                                  ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-                                  ARRAY_TDOUBLE, 1, 3);
 
     result = array_createarrayv (L, data->type, NULL, data->rank, data->size);
 
@@ -123,6 +103,104 @@ static int apply (lua_State *L)
 		      data->values.floats,
 		      result->values.floats, result->rank, result->size);
     }
+    
+    return result;
+}
+
+array_Array *transform_concatenate (lua_State *L, int n)
+{
+    array_Array *array;
+    double alpha[9], beta[9], *A, *B, *C;
+    int i;
+
+    array = lua_touserdata (L, -n);
+    A = array->values.doubles;
+    C = alpha;
+    
+    for (i = -n + 1 ; i <= -1 ; i += 1) {
+	array = lua_touserdata (L, i);
+	B = array->values.doubles;
+
+	C[0] = A[0] * B[0] + A[1] * B[3] + A[2] * B[6];
+	C[1] = A[0] * B[1] + A[1] * B[4] + A[2] * B[7];
+	C[2] = A[0] * B[2] + A[1] * B[5] + A[2] * B[8];
+
+	C[3] = A[3] * B[0] + A[4] * B[3] + A[5] * B[6];
+	C[4] = A[3] * B[1] + A[4] * B[4] + A[5] * B[7];
+	C[5] = A[3] * B[2] + A[4] * B[5] + A[5] * B[8];
+
+	C[6] = A[6] * B[0] + A[7] * B[3] + A[8] * B[6];
+	C[7] = A[6] * B[1] + A[7] * B[4] + A[8] * B[7];
+	C[8] = A[6] * B[2] + A[7] * B[5] + A[8] * B[8];
+
+	if (i != -1) {
+	    A = C;
+	    C = (C == alpha) ? beta : alpha;
+	}
+    }
+
+    lua_pop(L, n);
+    
+    B = malloc (9 * sizeof (double));
+    memcpy (B, C, 9 * sizeof (double));
+
+    return pusharray (L, B);
+}
+
+/* Lua API. */
+
+static int apply (lua_State *L)
+{
+    array_Array *data;
+    
+    array_checkcompatible (L, 1,
+			   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+			   ARRAY_TDOUBLE, 2, 3, 3);
+
+    if (lua_type (L, 2) == LUA_TTABLE) {
+	data = array_checkcompatible (L, 2, ARRAY_TYPE, ARRAY_TDOUBLE);
+    } else {
+	data = array_checkarray (L, 2);
+    }
+    
+    if (data->type != ARRAY_TDOUBLE &&
+	data->type != ARRAY_TFLOAT) {
+	luaL_argerror (L, 2, "Specified array has integer type.");
+    }
+
+    if (data->size[data->rank - 1] != 3) {
+	lua_pushstring (L,
+			"Array to be transformed must be "
+			"ultimately three-dimensional.");
+	lua_error (L);
+    }
+
+    if (lua_gettop (L) > 2) {
+	array_checkcompatible (L, 3,
+			       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+			       ARRAY_TDOUBLE, 1, 3);
+
+	transform_apply (L, 3);
+    } else {
+	transform_apply (L, 0);
+    }	
+    
+    return 1;
+}
+
+static int concatenate (lua_State *L)
+{
+    int i, n;
+
+    n = lua_gettop(L);
+
+    for (i = 1 ; i <= n ; i += 1) {
+	array_checkcompatible (L, i,
+			       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+			       ARRAY_TDOUBLE, 2, 3, 3);
+    }
+
+    transform_concatenate(L, n);
     
     return 1;
 }
@@ -361,47 +439,6 @@ static int rotation (lua_State *L)
     return 1;
 }
 
-static array_Array *checkproper (lua_State *L, int index, int rank)
-{
-    array_Array *array;
-    
-    array = array_checkarray (L, index);
-    
-    if (array->type != ARRAY_TDOUBLE &&
-	array->type != ARRAY_TFLOAT) {
-	luaL_argerror (L, index, "Specified array has integer type.");
-    }
-    
-    if ((rank == 0 && array->rank != 1 && array->rank != 2) ||
-	(rank > 0 && array->rank != rank)) {
-	luaL_argerror (L, index,
-		       "Specified array has incompatible "
-		       "dimensionality.");
-    }
-
-    return array;
-}
-
-static void checksimilar (lua_State *L,
-			     array_Array *A, array_Array *B,
-			     int rank)
-{
-    if (A->type != B->type) {
-	lua_pushstring (L, "Array types don't match.");
-	lua_error (L);
-    }
-
-    if (A->size[0] != B->size[0]) {
-	lua_pushstring (L, "Array sizes don't match.");
-	lua_error (L);
-    }
-
-    if (rank != 0 && A->size[0] != rank) {
-	lua_pushstring (L, "Arrays have improper dimension.");
-	lua_error (L);
-    }
-}
-
 static int basis (lua_State *L)
 {
     array_Array *array;
@@ -460,456 +497,6 @@ static int diagonal (lua_State *L)
     return 1;
 }
 
-/* Operations on matrices and vectors. */
-
-array_Array *transform_concatenate (lua_State *L, int n)
-{
-    array_Array *array;
-    double alpha[9], beta[9], *A, *B, *C;
-    int i;
-
-    array = lua_touserdata (L, -n);
-    A = array->values.doubles;
-    C = alpha;
-    
-    for (i = -n + 1 ; i <= -1 ; i += 1) {
-	array = lua_touserdata (L, i);
-	B = array->values.doubles;
-
-	C[0] = A[0] * B[0] + A[1] * B[3] + A[2] * B[6];
-	C[1] = A[0] * B[1] + A[1] * B[4] + A[2] * B[7];
-	C[2] = A[0] * B[2] + A[1] * B[5] + A[2] * B[8];
-
-	C[3] = A[3] * B[0] + A[4] * B[3] + A[5] * B[6];
-	C[4] = A[3] * B[1] + A[4] * B[4] + A[5] * B[7];
-	C[5] = A[3] * B[2] + A[4] * B[5] + A[5] * B[8];
-
-	C[6] = A[6] * B[0] + A[7] * B[3] + A[8] * B[6];
-	C[7] = A[6] * B[1] + A[7] * B[4] + A[8] * B[7];
-	C[8] = A[6] * B[2] + A[7] * B[5] + A[8] * B[8];
-
-	if (i != -1) {
-	    A = C;
-	    C = (C == alpha) ? beta : alpha;
-	}
-    }
-
-    lua_pop(L, n);
-    
-    B = malloc (9 * sizeof (double));
-    memcpy (B, C, 9 * sizeof (double));
-
-    return pusharray (L, B);
-}
-
-static int concatenate (lua_State *L)
-{
-    int i, n;
-
-    n = lua_gettop(L);
-
-    for (i = 1 ; i <= n ; i += 1) {
-	array_checkcompatible (L, i,
-			       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-			       ARRAY_TDOUBLE, 2, 3, 3);
-    }
-
-    transform_concatenate(L, n);
-    
-    return 1;
-}
-
-#define DOT(FUNC, TYPE)						\
-    static double FUNC (TYPE *A, TYPE *B, int n)		\
-    {								\
-	double d;						\
-	int i;							\
-								\
-	for (i = 0, d = 0 ; i < n ; d += A[i] * B[i], i += 1);	\
-								\
-	return d;						\
-    }
-
-DOT(dot_doubles, double)
-DOT(dot_floats, float)
-
-#define DISTANCE(FUNC, TYPE)						\
-    static double FUNC (TYPE *A, TYPE *B, int n)			\
-    {									\
-	double d, r;							\
-	int i;								\
-									\
-	for (i = 0, d = 0;						\
-	     i < n;							\
-	     r = A[i] - B[i], d += r * r, i += 1);			\
-									\
-	return d;							\
-    }
-
-DISTANCE(distance_doubles, double)
-DISTANCE(distance_floats, float)
-
-static double transform_dot (lua_State *L)
-{
-    array_Array *A, *B;
-    double d;
-
-    A = lua_touserdata(L, -2);
-    B = lua_touserdata(L, -1);
-    
-    checksimilar (L, A, B, 0);
-    
-    if (A->type == ARRAY_TDOUBLE) {
-	d = dot_doubles (A->values.doubles, B->values.doubles, A->size[0]);
-    } else {
-	d = dot_floats (A->values.floats, B->values.floats, A->size[0]);
-    }
-
-    return d;
-}
-
-static double transform_lengthsquared (lua_State *L)
-{
-    array_Array *A;
-    double d;
-
-    A = lua_touserdata(L, -1);
-    
-    if (A->type == ARRAY_TDOUBLE) {
-	d = dot_doubles (A->values.doubles, A->values.doubles, A->size[0]);
-    } else {
-	d = dot_floats (A->values.floats, A->values.floats, A->size[0]);
-    }
-
-    return d;
-}
-
-static double transform_length (lua_State *L)
-{
-    return sqrt(transform_lengthsquared(L));
-}
-
-static int dot (lua_State *L)
-{
-    checkproper (L, 1, 1);
-    checkproper (L, 2, 1);
-    
-    lua_pushnumber (L, transform_dot(L));
-    
-    return 1;
-}
-
-static int lengthsquared (lua_State *L)
-{
-    checkproper (L, 1, 1);
-    lua_pushnumber (L, transform_lengthsquared(L));
-    
-    return 1;
-}
-
-static int length (lua_State *L)
-{
-    checkproper (L, 1, 1);
-    lua_pushnumber (L, transform_length(L));
-    
-    return 1;
-}
-
-static array_Array *transform_normalize (lua_State *L)
-{
-    array_Array *A, *B;
-    double d;
-    int i;
-
-    A = lua_touserdata(L, -1);
-    B = array_createarray (L, A->type, NULL, 1, A->size[0]);
-
-    if (A->type == ARRAY_TDOUBLE) {
-	double *u, *v;
-	
-	d = sqrt(dot_doubles (A->values.doubles,
-			      A->values.doubles,
-			      A->size[0]));
-
-	u = B->values.doubles;
-	v = A->values.doubles;
-	
-	for (i = 0 ; i < A->size[0] ; i += 1) {
-	    u[i] = v[i] / d;
-	}
-    } else {
-	float *u, *v;
-	
-	d = sqrt(dot_floats (A->values.floats,
-			     A->values.floats,
-			     A->size[0]));
-
-	u = B->values.floats;
-	v = A->values.floats;
-	
-	for (i = 0 ; i < A->size[0] ; i += 1) {
-	    u[i] = v[i] / d;
-	}
-    }
-
-    lua_remove (L, -2);
-    
-    return B;
-}
-
-static int normalize (lua_State *L)
-{
-    checkproper (L, 1, 1);
-    transform_normalize(L);
-    
-    return 1;
-}
-
-static int distancesquared (lua_State *L)
-{
-    array_Array *A, *B;
-    double d;
-
-    A = checkproper (L, 1, 1);
-    B = checkproper (L, 2, 1);
-    
-    checksimilar (L, A, B, 0);
-    
-    if (A->type == ARRAY_TDOUBLE) {
-	d = distance_doubles (A->values.doubles, B->values.doubles, A->size[0]);
-    } else {
-	d = distance_floats (A->values.floats, B->values.floats, A->size[0]);
-    }
-
-    lua_pushnumber (L, d);
-    
-    return 1;
-}
-
-static int distance (lua_State *L)
-{
-    array_Array *A, *B;
-    double d;
-
-    A = checkproper (L, 1, 1);
-    B = checkproper (L, 2, 1);
-    
-    checksimilar (L, A, B, 0);
-    
-    if (A->type == ARRAY_TDOUBLE) {
-	d = sqrt(distance_doubles (A->values.doubles,
-				   B->values.doubles,
-				   A->size[0]));
-    } else {
-	d = sqrt(distance_floats (A->values.floats,
-				  B->values.floats,
-				  A->size[0]));
-    }
-
-    lua_pushnumber (L, d);
-    
-    return 1;
-}
-
-#define TRANSPOSE(FUNC, TYPE)						\
-    static void FUNC (TYPE *A, TYPE *B, int n, int m)			\
-    {									\
-	int i, j;							\
-									\
-	for (i = 0 ; i < n ; i += 1) {					\
-	    for (j = 0 ; j < m ; j += 1) {				\
-		B[j * n + i] = A[i * m + j];				\
-	    }								\
-	}								\
-    }
-
-TRANSPOSE(transpose_doubles, double)
-TRANSPOSE(transpose_floats, float)
-
-static int transpose (lua_State *L)
-{
-    array_Array *A, *B;
-
-    A = checkproper (L, 1, 2);
-
-    B = array_createarray (L, A->type, NULL,
-                           A->rank, A->size[1], A->size[0]);
-
-    if (A->type == ARRAY_TDOUBLE) {
-	transpose_doubles (A->values.doubles,
-			   B->values.doubles,
-			   A->size[0], A->size[1]);
-    } else {
-	transpose_floats (A->values.floats,
-			  B->values.floats,
-			  A->size[0], A->size[1]);
-    }
-    
-    return 1;
-}
-
-#define MATRIX_VECTOR(FUNC, TYPE)					\
-    static void FUNC (TYPE *A, TYPE *B, TYPE *C, int n, int m)		\
-    {									\
-	int i, j;							\
-									\
-	for (i = 0 ; i < n ; i += 1) {					\
-	    C[i] = 0;							\
-									\
-	    for (j = 0 ; j < m ; j += 1) {				\
-		C[i] += A[i * m + j] * B[j];				\
-	    }								\
-	}								\
-    }
-
-MATRIX_VECTOR(matrix_vector_doubles, double)
-MATRIX_VECTOR(matrix_vector_floats, float)
-
-#define MATRIX_MATRIX(FUNC, TYPE)					\
-    static void FUNC (TYPE *A, TYPE *B, TYPE *C,			\
-		      int n, int m, int s, int t)			\
-    {									\
-	int i, j, k;							\
-									\
-	for (i = 0 ; i < n ; i += 1) {					\
-	    for (k = 0 ; k < t ; k += 1) {				\
-		C[i * t + k] = 0;					\
-									\
-		for (j = 0 ; j < m ; j += 1) {				\
-		    C[i * t + k] += A[i * m + j] * B[j * t + k];	\
-		}							\
-	    }								\
-	}								\
-    }
-
-MATRIX_MATRIX(matrix_matrix_doubles, double)
-MATRIX_MATRIX(matrix_matrix_floats, float)
-
-static int multiply (lua_State *L)
-{
-    array_Array *A, *B, *C;
-
-    A = checkproper (L, 1, 2);
-    B = checkproper (L, 2, 0);
-
-    if (A->size[1] != B->size[0]) {
-	lua_pushstring (L, "Arrays are incompatible.");
-	lua_error (L);
-    }
-
-    if (B->rank == 1) {
-	C = array_createarray (L, A->type, NULL, 1, A->size[0]);
-
-	if (A->type == ARRAY_TDOUBLE) {
-	    matrix_vector_doubles (A->values.doubles,
-				   B->values.doubles,
-				   C->values.doubles,
-				   A->size[0], A->size[1]);
-	} else {
-	    matrix_vector_floats (A->values.floats,
-				  B->values.floats,
-				  C->values.floats,
-				  A->size[0], A->size[1]);
-	}
-    } else {
-	C = array_createarray (L, A->type, NULL, 2, A->size[0], B->size[1]);
-
-	if (A->type == ARRAY_TDOUBLE) {
-	    matrix_matrix_doubles (A->values.doubles,
-				   B->values.doubles,
-				   C->values.doubles,
-				   A->size[0], A->size[1],
-				   B->size[0], B->size[1]);
-	} else {
-	    matrix_matrix_floats (A->values.floats,
-				  B->values.floats,
-				  C->values.floats,
-				  A->size[0], A->size[1],
-				  B->size[0], B->size[1]);
-	}
-    }
-    
-    return 1;
-}
-
-#define CROSS(FUNC, TYPE)						\
-    static void FUNC (TYPE *A, TYPE *B, TYPE *C)			\
-    {									\
-	C[0] = A[1] * B[2] - A[2] * B[1];				\
-	C[1] = A[2] * B[0] - A[0] * B[2];				\
-	C[2] = A[0] * B[1] - A[1] * B[0];				\
-    }
-
-CROSS(cross_doubles, double)
-CROSS(cross_floats, float)
-
-static int cross (lua_State *L)
-{
-    array_Array *A, *B, *C;
-
-    A = checkproper (L, 1, 1);
-    B = checkproper (L, 2, 1);
-    
-    checksimilar (L, A, B, 3);
-
-    C = array_createarray (L, A->type, NULL, 1, 3);
-    
-    if (A->type == ARRAY_TDOUBLE) {
-	cross_doubles (A->values.doubles,
-		       B->values.doubles,
-		       C->values.doubles);
-    } else {
-	cross_floats (A->values.floats,
-		      B->values.floats,
-		      C->values.floats);
-    }
-    
-    return 1;
-}
-
-#define INTERPOLATE(FUNC, TYPE)						\
-    static void FUNC (TYPE *A, TYPE *B, double c, TYPE *C, int n)	\
-    {									\
-        int i;								\
-									\
-        for (i = 0 ; i < n ; i += 1) {					\
-	    C[i] = A[i] + c * (B[i] - A[i]);				\
-	}								\
-    }
-
-INTERPOLATE(interpolate_doubles, double)
-INTERPOLATE(interpolate_floats, float)
-
-static int interpolate (lua_State *L)
-{
-    array_Array *A, *B, *C;
-    double c;
-
-    A = checkproper (L, 1, 1);
-    B = checkproper (L, 2, 1);
-    c = luaL_checknumber (L, 3);
-    
-    checksimilar (L, A, B, 3);
-
-    C = array_createarray (L, A->type, NULL, 1, A->size[0]);
-    
-    if (A->type == ARRAY_TDOUBLE) {
-	interpolate_doubles (A->values.doubles,
-			     B->values.doubles,
-			     c,
-			     C->values.doubles,
-			     A->size[0]);
-    } else {
-	interpolate_floats (A->values.floats,
-			    B->values.floats,
-			    c,
-			    C->values.floats,
-			    A->size[0]);
-    }
-    
-    return 1;
-}
-
 int luaopen_transform_core (lua_State *L)
 {
     const luaL_Reg api[] = {
@@ -924,16 +511,6 @@ int luaopen_transform_core (lua_State *L)
 
 	{"basis", basis},
 	{"diagonal", diagonal},
-	{"dot", dot},
-	{"cross", cross},
-	{"interpolate", interpolate},
-	{"lengthsquared", lengthsquared},
-	{"length", length},
-	{"normalize", normalize},
-	{"distancesquared", distancesquared},
-	{"distance", distance},
-	{"transpose", transpose},
-	{"multiply", multiply},
 	
 	{NULL, NULL}
     };

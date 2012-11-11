@@ -98,29 +98,12 @@
 	array_Array *A, *B, *C;						\
 	int j, l;							\
 									\
-	A = array_checkarray (L, -2);					\
-	B = array_checkarray (L, -1);					\
-									\
-	if (A->rank != B->rank) {					\
-	    lua_pushstring (L, "Array dimensions don't match.");	\
-	    lua_error (L);						\
-	}								\
-									\
-	if (A->type != B->type) {					\
-	    lua_pushstring (L, "Array types don't match.");		\
-	    lua_error (L);						\
-	}								\
-									\
-	for (j = 0 ,l = 1; j < A->rank ; j += 1) {			\
-	    if (A->size[j] != B->size[j]) {				\
-		lua_pushstring (L, "Array sizes don't match.");		\
-		lua_error (L);						\
-	    }								\
-									\
-	    l *= A->size[j];						\
-	}								\
+	A = lua_touserdata (L, -2);					\
+	B = lua_touserdata (L, -1);					\
 									\
 	C = array_createarrayv (L, A->type, NULL, A->rank, A->size);	\
+									\
+	for (j = 0, l = 1; j < A->rank ; l *= A->size[j], j += 1);	\
 									\
 	switch (A->type) {						\
 	case ARRAY_TDOUBLE:						\
@@ -232,8 +215,8 @@ int array_scale (lua_State *L)
     double c;
     int j, l;
 
-    A = array_checkarray (L, -2);
-    c = luaL_checknumber (L, -1);
+    A = lua_touserdata (L, -2);
+    c = lua_tonumber (L, -1);
 
     for (j = 0 ,l = 1; j < A->rank ; l *= A->size[j], j += 1);
 
@@ -322,8 +305,8 @@ int array_raise (lua_State *L)
     double c;
     int j, l;
 
-    A = array_checkarray (L, -2);
-    c = luaL_checknumber (L, -1);
+    A = lua_touserdata (L, -2);
+    c = lua_tonumber (L, -1);
 
     for (j = 0, l = 1; j < A->rank ; l *= A->size[j], j += 1);
 
@@ -386,5 +369,159 @@ int array_raise (lua_State *L)
 	break;
     }
 
+    return 1;
+}
+
+#define INTERPOLATE(FUNC, TYPE)						\
+    static void FUNC (TYPE *A, TYPE *B, double c, TYPE *C, int n)	\
+    {									\
+        int i;								\
+									\
+        for (i = 0 ; i < n ; i += 1) {					\
+	    C[i] = A[i] + c * (B[i] - A[i]);				\
+	}								\
+    }
+
+INTERPOLATE(interpolate_doubles, double)
+INTERPOLATE(interpolate_floats, float)
+
+void array_interpolate (lua_State *L)
+{
+    array_Array *A, *B, *C;
+    double c;
+
+    A = lua_touserdata (L, -3);
+    B = lua_touserdata (L, -2);
+    c = lua_tonumber (L, -1);
+
+    C = array_createarray (L, A->type, NULL, 1, A->size[0]);
+    
+    if (A->type == ARRAY_TDOUBLE) {
+	interpolate_doubles (A->values.doubles,
+			     B->values.doubles,
+			     c,
+			     C->values.doubles,
+			     A->size[0]);
+    } else {
+	interpolate_floats (A->values.floats,
+			    B->values.floats,
+			    c,
+			    C->values.floats,
+			    A->size[0]);
+    }
+}
+
+/* Lua API wrappers. */
+
+static array_Array *checkreal (lua_State *L, int index)
+{
+    array_Array *array;
+    
+    array = array_checkarray (L, index);
+    
+    if (array->type != ARRAY_TDOUBLE &&
+	array->type != ARRAY_TFLOAT) {
+	luaL_argerror (L, index, "Specified array has integral type.");
+    }
+
+    return array;
+}
+
+static void checksimilar (lua_State *L, int i, int j)
+{
+    array_Array *A, *B;
+
+    A = lua_touserdata(L, i);
+    B = lua_touserdata(L, j);
+    
+    if (A->type != B->type) {
+	lua_pushstring (L, "Array types don't match.");
+	lua_error (L);
+    }
+    
+    if (A->rank != B->rank) {
+	lua_pushstring (L, "Array ranks don't match.");
+	lua_error (L);
+    }
+
+    if (memcmp(A->size, B->size, A->rank * sizeof(int))) {
+	lua_pushstring (L, "Array sizes don't match.");
+	lua_error (L);
+    }
+}
+
+#define DEFINE_OPERATION_WRAPPER(OP)		\
+    static int OP (lua_State *L)		\
+    {						\
+	checkreal (L, 1);			\
+	checkreal (L, 2);			\
+						\
+	checksimilar(L, 1, 2);			\
+						\
+	array_##OP(L);				\
+						\
+	return 1;				\
+    }
+
+DEFINE_OPERATION_WRAPPER(add)
+DEFINE_OPERATION_WRAPPER(multiply)
+DEFINE_OPERATION_WRAPPER(subtract)
+DEFINE_OPERATION_WRAPPER(divide)
+
+static int interpolate (lua_State *L)
+{
+    checkreal (L, 1);
+    checkreal (L, 2);
+    luaL_checknumber (L, 3);
+
+    checksimilar(L, 1, 2);
+    
+    array_interpolate(L);
+    
+    return 1;
+}
+
+static int raise (lua_State *L)
+{
+    array_checkarray (L, 1);
+    luaL_checknumber (L, 2);
+
+    array_raise(L);
+    
+    return 1;
+}
+
+static int scale (lua_State *L)
+{
+    array_checkarray (L, 1);
+    luaL_checknumber (L, 2);
+
+    array_scale(L);
+    
+    return 1;
+}
+
+int luaopen_array_operations (lua_State *L)
+{
+    const luaL_Reg api[] = {
+	{"add", add},
+	{"multiply", multiply},
+	{"subtract", subtract},
+	{"divide", divide},
+	{"scale", scale},
+	{"raise", raise},
+	{"interpolate", interpolate},
+	    
+	{NULL, NULL}
+    };
+
+
+#if LUA_VERSION_NUM == 501
+    lua_newtable(L);
+    luaL_register (L, NULL, api);
+#else
+    luaL_newlib (L, api);
+#endif
+    
     return 1;
 }

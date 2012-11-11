@@ -297,29 +297,6 @@ static void dump (lua_State *L, int index, array_Array *array,
     }
 }
 
-static int multiply_or_scale(lua_State *L)
-{
-    if (lua_type(L, 1) == LUA_TNUMBER) {
-        lua_insert (L, 1);
-        array_scale(L);
-    } else if (lua_type(L, 2) == LUA_TNUMBER) {
-        array_scale(L);        
-    } else {
-        array_multiply(L);
-    }
-
-    return 1;
-}
-
-static int negate(lua_State *L)
-{
-    lua_pop (L, 1);
-    lua_pushnumber (L, -1);
-    array_scale(L);
-
-    return 1;
-}
-
 static array_Array *construct (lua_State *L, array_Array *array, int reference)
 {
     array_Array *new;
@@ -340,24 +317,6 @@ static array_Array *construct (lua_State *L, array_Array *array, int reference)
 	lua_settable(L, -3);
 	lua_pushstring(L, "__pairs");
 	lua_pushcfunction(L, (lua_CFunction)__ipairs);
-	lua_settable(L, -3);
-	lua_pushstring(L, "__add");
-	lua_pushcfunction(L, (lua_CFunction)array_add);
-	lua_settable(L, -3);
-	lua_pushstring(L, "__sub");
-	lua_pushcfunction(L, (lua_CFunction)array_subtract);
-	lua_settable(L, -3);
-	lua_pushstring(L, "__mul");
-	lua_pushcfunction(L, (lua_CFunction)multiply_or_scale);
-	lua_settable(L, -3);
-	lua_pushstring(L, "__div");
-	lua_pushcfunction(L, (lua_CFunction)array_divide);
-	lua_settable(L, -3);
-	lua_pushstring(L, "__pow");
-	lua_pushcfunction(L, (lua_CFunction)array_raise);
-	lua_settable(L, -3);
-	lua_pushstring(L, "__unm");
-	lua_pushcfunction(L, (lua_CFunction)negate);
 	lua_settable(L, -3);
 	lua_pushstring(L, "__len");
 	lua_pushcfunction(L, (lua_CFunction)__len);

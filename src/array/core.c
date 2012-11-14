@@ -234,8 +234,6 @@ int luaopen_array_core (lua_State *L)
     lua_pushinteger (L, ARRAY_TCHAR);
     lua_pushcclosure (L, create, 1);
     lua_setfield (L, -2, "chars");    
-
-    /* Create arrays from other arrays. */
     
     return 1;
 }

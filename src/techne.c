@@ -102,8 +102,10 @@ static void accumulate(Node *root, long long int (*intervals)[2]) {
     
     while (iterate || interactive) {
 	if (interactive) {
-	    luap_enter(_L);
+	    t_print_message ("Dropping to a shell.  "
+			     "Press ctrl-d to continue.\n");
 
+	    luap_enter(_L);
 	    interactive = 0;
 	}
 

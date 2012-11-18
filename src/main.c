@@ -664,11 +664,13 @@ int main(int argc, char **argv)
     /* t_print_message ("Spent %f CPU seconds initializing.\n", */
     /* 		     (double)t_get_cpu_time() / 1e9); */
 
-    t_print_message ("Entering the main loop.\n");
-
     if (interactive) {
+	t_print_message ("Dropping to a shell.  Press ctrl-d to continue.\n");
+
 	luap_enter(_L);
     }
+
+    t_print_message ("Entering the main loop.\n");
 
     [techne iterate];
 

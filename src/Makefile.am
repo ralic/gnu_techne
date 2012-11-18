@@ -3,7 +3,8 @@ modulesdir = ${pkgdatadir}/modules
 
 AM_CPPFLAGS = -x objective-c \
 	      -D_GNU_SOURCE -DGL_GLEXT_PROTOTYPES \
-	      -DPKGDATADIR='"$(pkgdatadir)"' -DPKGLIBDIR='"$(pkglibdir)"'
+	      -DPKGDATADIR='"$(pkgdatadir)"' -DPKGLIBDIR='"$(pkglibdir)"' \
+	      -include common.h
 AM_CFLAGS = -Wall -Wno-div-by-zero -I$(top_srcdir) -I$(srcdir) ${LUA_CFLAGS}
 AM_LDADD = -lobjc -lm
 
@@ -40,7 +41,7 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     dynamics.h transform.c transform.h body.c		\
 		     body.h joint.c joint.h event.c event.h space.c	\
 		     space.h shape.c shape.h shader.c shader.h		\
-		     array/array.c array/operations.c array/algebra.c	\
+		     array/array.c arraymath/operations.c		\
 		     array/array.h prompt/prompt.c prompt/prompt.h	\
 		     joints/contact.c profiling.c moremath.c timing.c	\
 		     memory.c network.c network.h proxy.c proxy.h	\
@@ -60,7 +61,7 @@ browser_bin_LDADD = ${WEBKIT_LIBS} ${GTK_LIBS} ${AM_LDADD}
 
 # The modules
 
-nobase_pkglib_LTLIBRARIES = array/core.la transform/core.la	\
+nobase_pkglib_LTLIBRARIES = array/core.la arraymath/core.la	\
 			    joints/core.la bodies/core.la	\
 			    primitives/core.la physics.la	\
 			    shapes/core.la widgets/core.la	\
@@ -68,7 +69,7 @@ nobase_pkglib_LTLIBRARIES = array/core.la transform/core.la	\
 			    shading/core.la
 
 dist_modules_DATA = joints/joints.lua array/array.lua			\
-		    transform/transform.lua bodies/bodies.lua		\
+		    arraymath/arraymath.lua bodies/bodies.lua		\
 		    primitives/primitives.lua shapes/shapes.lua		\
 		    misc/bindings.lua misc/units.lua			\
 		    misc/resources.lua automotive/automotive.lua	\
@@ -85,10 +86,11 @@ array_core_la_CFLAGS = ${AM_CFLAGS}
 array_core_la_LDFLAGS = -module -avoid-version -no-undefined
 array_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
 
-transform_core_la_SOURCES = transform/core.c
-transform_core_la_CFLAGS = ${AM_CFLAGS}
-transform_core_la_LDFLAGS = -module -avoid-version -no-undefined
-transform_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
+arraymath_core_la_SOURCES = arraymath/core.c arraymath/operations.c	\
+			    array/arraymath.h
+arraymath_core_la_CFLAGS = ${AM_CFLAGS}
+arraymath_core_la_LDFLAGS = -module -avoid-version -no-undefined
+arraymath_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
 
 bodies_core_la_SOURCES = bodies/core.c bodies/point.c bodies/point.h	\
 			 bodies/box.c bodies/box.h			\

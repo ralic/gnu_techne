@@ -234,7 +234,7 @@ void t_load_modelview (float *matrix, t_Enumerated mode)
     if (mode == T_MULTIPLY) {
 	float M[16];
 	
-	t_concatenate_4_4(M, modelviews[modelviews_n], matrix);
+	t_concatenate_4(M, modelviews[modelviews_n], matrix);
 	memcpy(modelviews[modelviews_n], M, 16 * sizeof(float));
     } else {
 	memcpy(modelviews[modelviews_n], matrix, 16 * sizeof(float));
@@ -248,7 +248,7 @@ void t_push_modelview (float *matrix, t_Enumerated mode)
     assert (modelviews_n < MODELVIEW_STACK_DEPTH);
 
     if (mode == T_MULTIPLY) {
-	t_concatenate_4_4(modelviews[modelviews_n + 1],
+	t_concatenate_4(modelviews[modelviews_n + 1],
 			  modelviews[modelviews_n], matrix);
     } else {
 	memcpy(modelviews[modelviews_n + 1], matrix, 16 * sizeof(float));

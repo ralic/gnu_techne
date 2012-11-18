@@ -14,30 +14,30 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local array = require 'array'
-local transform = require 'transform.core'
+local arraymath = require 'arraymath.core'
 
-function transform.tensor(u, v)
-   return transform.multiply(array.cast(#u, 1, u), array.cast (1, #v, v))
+function arraymath.tensor(u, v)
+   return arraymath.multiply(array.cast(#u, 1, u), array.cast (1, #v, v))
 end
 
-function transform.euler(theta, phi, psi)
-   return transform.concatenate(transform.rotation(theta, 1),
-				transform.rotation(phi, 2),
-				transform.rotation(psi, 3))
+function arraymath.euler(theta, phi, psi)
+   return arraymath.concatenate(arraymath.rotation(theta, 1),
+				arraymath.rotation(phi, 2),
+				arraymath.rotation(psi, 3))
 end
 
-function transform.relue(theta, phi, psi)
-   return transform.concatenate(transform.rotation(theta, 3),
-				transform.rotation(phi, 2),
-				transform.rotation(psi, 1))
+function arraymath.relue(theta, phi, psi)
+   return arraymath.concatenate(arraymath.rotation(theta, 3),
+				arraymath.rotation(phi, 2),
+				arraymath.rotation(psi, 1))
 end
 
-function transform.fromnode(node, vector)
-   return transform.apply (node.orientation, vector)
+function arraymath.fromnode(node, vector)
+   return arraymath.apply (node.orientation, vector)
 end
 
-function transform.tonode(node, vector)
-   return transform.apply (transform.transpose(node.orientation), vector)
+function arraymath.tonode(node, vector)
+   return arraymath.apply (arraymath.transpose(node.orientation), vector)
 end
 
-return transform
+return arraymath

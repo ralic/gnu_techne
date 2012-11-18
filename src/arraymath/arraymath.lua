@@ -40,4 +40,17 @@ function arraymath.tonode(node, vector)
    return arraymath.apply (arraymath.transpose(node.orientation), vector)
 end
 
+function arraymath.concatenate(...)
+   local matrices = {...}
+   local M
+
+   M = arraymath.multiply(matrices[1], matrices[2])
+
+   for i = 3, #matrices do
+      M = arraymath.multiply(M, matrices[i])
+   end
+   
+   return M
+end
+
 return arraymath

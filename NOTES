@@ -35,3 +35,5 @@ TODO (ASAP):
   the nodes into the profiling framework.
 * Turn the various builtins into modules.
 * Add support for column-major layout to array/arraymath.
+* Add a native concatenate method to arraymath?
+* Resolve naming conflicts in arraymath.

@@ -13,7 +13,7 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local transform = require 'transform'
+local arraymath = require 'arraymath'
 local primitives = require 'primitives.core'
 
 function primitives.switch (parameters)
@@ -68,7 +68,7 @@ function primitives.gimbal (parameters)
 
    node = primitives.transform {
       transform = function (self)
-		     self.orientation = transform.transpose(self.parent.orientation)
+		     self.orientation = arraymath.transpose(self.parent.orientation)
 		  end,
    }
    

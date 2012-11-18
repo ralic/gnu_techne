@@ -199,12 +199,14 @@ static int globals_n;
                     memset (defaults, 0, sizeof (defaults));            \
                                                                         \
                     if(ismatrix) {                                      \
-                        /* If this is a matrix initialize the defaults  \
-                         * to the unit matrix. */                       \
+			if (size_0 == elements) {			\
+			    /* If this is a matrix initialize the	\
+			     *  defaults to the unit matrix. */		\
                                                                         \
-                        for(i = 0 ; i < size_0 ; i += 1) {              \
-                            defaults[i][i] = 1;                         \
-                        }                                               \
+			    for(i = 0 ; i < size_0 ; i += 1) {		\
+				defaults[i][i] = 1;			\
+			    }						\
+			}						\
                     } else {                                            \
                         /* If this is a vector array adjust each        \
                          * element to {0, 0, 0, 1}. */                  \
@@ -508,6 +510,8 @@ static int uniforms_iterator(lua_State *L)
 	shader = glCreateShader(GL_GEOMETRY_SHADER);break;
     case FRAGMENT_STAGE:
 	shader = glCreateShader(GL_FRAGMENT_SHADER);break;
+    default:
+	assert(0);
     }
     
     if (declarations[stage]) {

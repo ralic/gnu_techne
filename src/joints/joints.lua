@@ -23,9 +23,8 @@ local math = require 'math'
 local table = require 'table'
 local shading = require 'shading'
 local shapes = require 'shapes'
-local transform = require 'transform'
+local arraymath = require 'arraymath'
 local array = require 'array'
-local operations = require 'array.operations'
 local primitives = require 'primitives'
 
 local red = {1, 0, 0, 1}
@@ -53,7 +52,7 @@ return {
 		     c = self.gain or 1 / 628
 
 		     a = hinge.anchor
-		     e = operations.add(a, operations.scale (hinge.axis, d + c * hinge.state[2]))
+		     e = arraymath.add(a, arraymath.scale (hinge.axis, d + c * hinge.state[2]))
 
 		     self.lines.positions = array.doubles {a, e}
 		     self.points.positions = array.doubles {a, e}
@@ -139,16 +138,16 @@ return {
 
 	    		d = d - l
 		     else
-			d = -0.5 * transform.dot (operations.subtract(b, a), x)
+			d = -0.5 * arraymath.dot (arraymath.subtract(b, a), x)
 	    	     end
 	    	  end
 		  
 		  self.tube.lines.positions = array.doubles {
-		     a, operations.add(b, operations.scale(x, d))
+		     a, arraymath.add(b, arraymath.scale(x, d))
 							    }
 		  
 		  self.rod.lines.positions = array.doubles {
-		     b, operations.add(b, operations.scale(x, d))
+		     b, arraymath.add(b, arraymath.scale(x, d))
 							   }
 	       end,
 

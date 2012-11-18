@@ -144,6 +144,8 @@ static void match_attribute_to_buffer (unsigned int program,
 
 	precision = 3;
 	break;
+    default:
+	assert(0);
     }
 
     /* Try to map the supplied array type to a GL type. */
@@ -195,6 +197,8 @@ static void match_attribute_to_buffer (unsigned int program,
 	integral = buffer->type > 0;
 	normalized = !integral ? GL_TRUE : GL_FALSE;
 	break;
+    default:
+	assert(0);
     }
 
     /* Bind the data into the vertex array object's state. */

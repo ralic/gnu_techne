@@ -1208,13 +1208,13 @@ array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, i
     sink.rank = rank;
     sink.size = malloc (rank * sizeof(int));
 
-    for (j = 0, l = sizeof_element(sink.type) ; j < rank ; j += 1) {
+    for (j = 0, l = 1 ; j < rank ; j += 1) {
 	sink.size[j] = size[j];
 	l *= sink.size[j];
     }
 
     sink.free = FREE_BOTH;
-    sink.length = l;
+    sink.length = l * sizeof_element(sink.type);
     sink.values.any = malloc (sink.length);
 
     for (j = 0, m = 1;

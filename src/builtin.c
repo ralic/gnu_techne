@@ -14,15 +14,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _INPUT_H_
-#define _INPUT_H_
+#include <lua.h>
+#include <lauxlib.h>
 
-#include "transform.h"
 #include "builtin.h"
+#include "techne.h"
 
-@interface Input: Builtin {
+@implementation Builtin
+
+static Node *builtins;
+
++(Builtin *)nodes
+{
+    return (Builtin *)builtins;
+}
+
+-(id) init
+{
+    [self setOrphansList: &builtins];
+    
+    return [super init];
+}
+
+-(void) iterate
+{
 }
 
 @end
-
-#endif

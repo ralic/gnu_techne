@@ -34,6 +34,7 @@
 #include "graphics.h"
 #include "shader.h"
 #include "transform.h"
+#include "root.h"
 
 static GdkWindow *window;
 static GdkDisplay *display;
@@ -266,7 +267,7 @@ void t_pop_modelview ()
 
 @implementation Graphics
 
--(id) initWithName: (char *)name andClass: (char *)class
+-(id) init
 {
     GdkWindowAttr window_attributes;
     GdkVisual *visual;
@@ -300,12 +301,35 @@ void t_pop_modelview ()
 
     int argc = 0;
     char **argv = NULL;
+    const char *name, *class;
 
     int i, j, r, g, b, a, z, s;
 
     /* Get the configuration. */
     
     lua_getglobal (_L, "options");
+
+    /* The window manager class. */
+    
+    lua_getfield (_L, -1, "wmclass");
+
+    if (lua_istable (_L, -1)) {
+	lua_rawgeti (_L, -1, 1);
+	name = lua_tostring (_L, -1);
+	
+	lua_rawgeti (_L, -1, 2);
+	class = lua_tostring (_L, -1);
+
+	lua_pop (_L, 2);
+    } else {
+	name = "techne";
+	class = "Techne";
+    }
+    
+    lua_pop (_L, 1);
+
+    /* The graphics context options. */
+    
     lua_getfield (_L, -1, "context");
     
     arbcontext = lua_toboolean (_L, -1);
@@ -367,6 +391,10 @@ void t_pop_modelview ()
     lua_pop (_L, 2);
 
     self = [super init];
+    self->index = 4;
+
+    lua_pushstring (_L, "graphics");
+    lua_setfield (_L, -2, "tag");
     
     /* Create the rendering context and associated visual. */
 
@@ -430,8 +458,8 @@ void t_pop_modelview ()
 
     window_attributes.window_type = GDK_WINDOW_TOPLEVEL;
     window_attributes.wclass = GDK_INPUT_OUTPUT;
-    window_attributes.wmclass_name = name;
-    window_attributes.wmclass_class = class;
+    window_attributes.wmclass_name = (char *)name;
+    window_attributes.wmclass_class = (char *)class;
     window_attributes.colormap = gdk_colormap_new(visual, FALSE);
     window_attributes.visual = visual;
     window_attributes.width = 640;
@@ -549,11 +577,10 @@ void t_pop_modelview ()
     return self;
 }
 
--(void) iterate: (Transform *)root
+-(void) iterate
 {
+    Node *root;
     GdkEvent *event;
-    
-    t_begin_interval (root, T_INPUT_PHASE);    
 
     while ((event = gdk_event_get()) != NULL) {
 	int quit = 0;
@@ -611,29 +638,32 @@ void t_pop_modelview ()
 	}
     }
 
-    t_end_interval (root, T_INPUT_PHASE);
-
     /* Traverse the scene. */
 
-    t_begin_interval (root, T_PREPARE_PHASE);    
-    [root prepare];
-    t_end_interval (root, T_PREPARE_PHASE);
+    for (root = [Root nodes] ; root ; root = (Root *)root->right) {
+	t_begin_interval (root, T_PREPARE_PHASE);    
+	[root prepare];
+	t_end_interval (root, T_PREPARE_PHASE);
+    }
 
-    t_begin_interval (root, T_TRAVERSE_PHASE);    
     glClear(GL_DEPTH_BUFFER_BIT |
 	    GL_COLOR_BUFFER_BIT |
 	    GL_STENCIL_BUFFER_BIT);
     
-    [root traverse];
+    for (root = [Root nodes] ; root ; root = (Root *)root->right) {
+	t_begin_interval (root, T_TRAVERSE_PHASE);    
+	[root traverse];    
+	t_end_interval (root, T_TRAVERSE_PHASE);
+    }
 
     glXSwapBuffers (GDK_DISPLAY_XDISPLAY(display),
                     GDK_WINDOW_XWINDOW(window));
-    
-    t_end_interval (root, T_TRAVERSE_PHASE);
 
-    t_begin_interval (root, T_FINISH_PHASE);    
-    [root finish];
-    t_end_interval (root, T_FINISH_PHASE);
+    for (root = [Root nodes] ; root ; root = (Root *)root->right) {
+	t_begin_interval (root, T_FINISH_PHASE);    
+	[root finish];
+	t_end_interval (root, T_FINISH_PHASE);
+    }
 }
 
 -(int) _get_window

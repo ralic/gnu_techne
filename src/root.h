@@ -14,14 +14,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _INPUT_H_
-#define _INPUT_H_
+#ifndef _ROOT_H_
+#define _ROOT_H_
 
-#include "transform.h"
-#include "builtin.h"
+#include "node.h"
 
-@interface Input: Builtin {
+@interface Root: Node {
 }
+
++(Root *) nodes;
 
 @end
 

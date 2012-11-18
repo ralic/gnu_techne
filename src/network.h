@@ -17,13 +17,11 @@
 #ifndef _NETWORK_H_
 #define _NETWORK_H_
 
-#include "node.h"
+#include "builtin.h"
 
-@interface Network: Node {
+@interface Network: Builtin {
 }
 
-
--(void) iterate;
 -(int) _get_http;
 -(int) _get_block;
 -(int) _get_pages;

@@ -868,6 +868,55 @@ static int __newindex(lua_State *L)
     return 0;
 }
 
+static void link_node(Node *node)
+{
+    Node *l, *r, **head;
+
+    if (node->up) {
+	head = &(node->up->down);
+    } else {
+	head = node->orphans;
+    }
+
+    if (!(*head)) {
+	/* Create a new list. */
+	
+	*head = node;
+    } else {
+    
+	/* Find where to insert the node.  Nodes are ordered according to
+	 * index in ascending order.  Nodes with no index are unordered
+	 * and come last in the list. */
+	
+	if (isnan(node->index)) {
+	    for (l = (*head)->left, r = *head;
+		 r != (*head)->left && !isnan(r->index);
+		 l = r, r = r->right);
+	} else {
+	    for (l = (*head)->left, r = *head;
+		 r != (*head)->left && r->index > node->index;
+		 l = r, r = r->right);
+	}
+    
+	assert (r || l);
+
+	if (l) {
+	    t_link_between (node, l, r, head);
+	} else {
+	    t_link_at_head (node, head);
+	}
+    }
+}
+
+static void unlink_node (Node *node)
+{
+    if (node->up) {
+	t_unlink_from(node, &(node->up->down));
+    } else {
+	t_unlink_from(node, node->orphans);
+    }
+}
+
 @implementation Node
 
 +(const struct protocol *) introspect
@@ -1109,26 +1158,26 @@ static int __newindex(lua_State *L)
     }
 }
 
+-(void) setOrphansList: (Node **)list
+{
+    self->orphans = list;
+}
+
 -(id) init
 {
-    self = [super init];
-				  
     self->protocol = [[self class] introspect];
-
-    /* Put newly created nodes in the orphans list. */
-
-    if (list) {
-        t_circular_link_after(self, list);
-    } else {
-        list = t_make_circular(self);
-    }
-
+    
     self->tag.reference = LUA_REFNIL;
     self->tag.string = NULL;
+
+    if (!self->orphans) {
+	self->orphans = &list;
+    }
 
     self->up = NULL;
     self->down = NULL;
 
+    self->index = NAN;
     self->rawaccess = 0;
     self->linked = 0;
     self->key.reference = LUA_REFNIL;
@@ -1149,6 +1198,10 @@ static int __newindex(lua_State *L)
     self->get = LUA_REFNIL;
     self->set = LUA_REFNIL;
 
+    /* Put newly created nodes in the orphans list. */
+
+    link_node(self);
+    
     /* Create the children table. */
 
     lua_newtable (_L);
@@ -1215,62 +1268,20 @@ static int __newindex(lua_State *L)
 
 -(void) adopt: (Node *)child
 {
-    Node *l, *r, *sibling;
+    Node *sibling;
 
     /* Before the child can get adopted by a parent we need to remove
      * it from the orphans list. */
 
-    assert (child->left);
-    assert (child->right);
+    assert (*(child->orphans) == child || child->left || child->right);
+    assert (!child->up);
 
-    t_circular_unlink(child);
+    unlink_node(child);
 
     child->up = self;
 
     /* t_trace ("%s(%p) => %s(%p)\n", [self name], self, [child name], child); */
-    if (self->down) {
-	/* Find where to insert the new child.  Children are ordered
-	 * according to key with numbers first and then strings in
-	 * ascending order.  Nodes with other types of keys are
-	 * unordered and come last in the list. */
-	
-	for (l = NULL, r = self->down ; r ; l = r, r = r->right) {
-	    if (!isnan(child->key.number)) {
-		if (!isnan(r->key.number) &&
-		    r->key.number > child->key.number) {
-		    break;
-		} else {
-		    continue;
-		}
-	    } else if (child->key.string != NULL) {
-		if (!isnan(r->key.number)) {
-		    continue;
-		} else if (r->key.string != NULL &&
-		    strcmp(r->key.string, child->key.string) > 0) {
-		    break;
-		} else {
-		    continue;
-		}
-	    } else {
-		if (!isnan(r->key.number) ||
-		    r->key.string != NULL) {
-		    continue;
-		} else {
-		    break;
-		}
-	    }
-	}
-	assert (r || l);
-
-        t_link_between(child, l, r);
-
-	if (!l) {
-	    assert (self->down == r);
-	    self->down = child;
-	}
-    } else {
-	self->down = child;
-    }
+    link_node (child);
 
     /* Introduce the newcomer to the family. */
 
@@ -1287,6 +1298,8 @@ static int __newindex(lua_State *L)
 -(void) renounce: (Node *)child
 {
     Node *sibling;
+
+    assert (child->up == self);
     
     /* Say bye-bye to your family. */
 
@@ -1301,16 +1314,12 @@ static int __newindex(lua_State *L)
 
     /* Remove the child. */
 
-    t_unlink_from(child, &self->down);
-
+    unlink_node(child);
     child->up = NULL;
 
-    /* Link it into the orphans list.  Since the child is removed from
-     * its parent it follows that at least the parent's root is an
-     * orphan so the list is already initialized. */
+    /* Link it into the orphans list. */
 
-    assert (list);
-    t_circular_link_after (child, list);
+    link_node (child);
 }
 
 -(void) toggle
@@ -1705,6 +1714,29 @@ static int __newindex(lua_State *L)
     /* Not supported for now. */
 }
 
+-(int) _get_index
+{
+    if (!isnan(self->index)) {
+	lua_pushnumber(_L, self->index);
+    } else {
+	lua_pushnil (_L);
+    }
+
+    return 1;
+}
+
+-(void) _set_index
+{
+    if (lua_type(_L, 3) == LUA_TNUMBER) {
+	self->index = lua_tonumber(_L, 3);
+    } else {
+	self->index = NAN;
+    }
+
+    unlink_node(self);
+    link_node(self);
+}
+
 -(int) _get_
 {
     lua_rawgeti (_L, LUA_REGISTRYINDEX, self->children);
@@ -1753,7 +1785,7 @@ static int __newindex(lua_State *L)
 	lua_rawset (_L, -3);
     } else {
 	/* Pop the nil value but leave the children table on the stack
-	 * as we'regoing to need it when adding the new child
+	 * as we're going to need it when adding the new child
 	 * below. */
 	
 	lua_pop (_L, 1);

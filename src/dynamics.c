@@ -21,11 +21,12 @@
 
 #include <ode/ode.h>
 
-#include "body.h"
 #include "joints/contact.h"
 #include "array/array.h"
 #include "dynamics.h"
 #include "techne.h"
+#include "body.h"
+#include "root.h"
 
 static double timescale = 1, stepsize = 0.01, ceiling = 1.0 / 0.0;
 static double interval = -1;
@@ -293,11 +294,33 @@ static void callback (void *data, dGeomID a, dGeomID b)
     }
 }
 
+static void transform (Node *root)
+{
+    Node *child, *next;
+
+    t_begin_interval (root, T_TRANSFORM_PHASE);
+
+    if ([root isKindOf: [Transform class]]) {
+	[(id)root transform];
+    } else {
+	for (child = root->down ; child ; child = next) {
+	    next = child->right;	    
+	    transform (child);
+	}
+    }
+    
+    t_end_interval (root, T_TRANSFORM_PHASE);
+}
+
 @implementation Dynamics
 -(id) init
 {
     self = [super init];
+    self->index = 3;
 
+    lua_pushstring (_L, "dynamics");
+    lua_setfield (_L, -2, "tag");
+    
     /* Initialize the ODE. */
 
     dInitODE();
@@ -324,13 +347,12 @@ static void callback (void *data, dGeomID a, dGeomID b)
     return self;
 }
 
--(void) iterate: (Transform *)root
+-(void) iterate
 {
+    Root *root;
     double delta;
     long int time;
-	
-    t_begin_interval (root, T_STEP_PHASE);
-    
+
     time = t_get_real_time();
 
     if (interval < 0) {
@@ -372,7 +394,11 @@ static void callback (void *data, dGeomID a, dGeomID b)
 	    }
 	}
     
-	[root stepBy: stepsize at: then];
+	for (root = [Root nodes] ; root ; root = (Root *)root->right) {
+	    t_begin_interval (root, T_STEP_PHASE);
+	    [root stepBy: stepsize at: then];
+	    t_end_interval (root, T_STEP_PHASE);
+	}
 
 	if (iterations > 0) {
 	    dWorldQuickStep (_WORLD, stepsize);
@@ -381,14 +407,12 @@ static void callback (void *data, dGeomID a, dGeomID b)
 	}
     }    
 
-    t_end_interval (root, T_STEP_PHASE);
-
     /* Transform the tree to update absolute positions and
        orientations. */
     
-    t_begin_interval (root, T_TRANSFORM_PHASE);
-    [root transform];
-    t_end_interval (root, T_TRANSFORM_PHASE);
+    for (root = [Root nodes] ; root ; root = (Root *)root->right) {
+	transform (root);
+    }
 	
     /* Advance the real-world time. */
 

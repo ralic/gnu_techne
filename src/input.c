@@ -21,8 +21,9 @@
 #include <gdk/gdk.h>
 
 #include "techne.h"
-#include "event.h"
 #include "input.h"
+#include "event.h"
+#include "root.h"
 
 static unsigned int *keys;
 static int keys_n;
@@ -31,25 +32,37 @@ static void recurse (Node *root, GdkEvent *event)
 {
     Node *child;
     
+    t_begin_interval (root, T_INPUT_PHASE);
+
     if ([root respondsTo: @selector(inputWithEvent:)]) {
 	[(id)root inputWithEvent: event];
     }
     
     for (child = root->down ; child ; child = child->right) {
-	t_begin_interval (child, T_INPUT_PHASE);
 	recurse (child, event);
-	t_end_interval (child, T_INPUT_PHASE);
     }
+
+    t_end_interval (root, T_INPUT_PHASE);
 }
 
 @implementation Input
 
--(void) iterate: (Transform *)root
+-(id) init
 {
+    self = [super init];
+    self->index = 1;
+    
+    lua_pushstring (_L, "input");
+    lua_setfield (_L, -2, "tag");
+
+    return self;
+}
+
+-(void) iterate
+{
+    Root *root;
     GdkEvent *event;
     
-    t_begin_interval (root, T_INPUT_PHASE);    
-
     while ((event = gdk_event_get()) != NULL) {
 	int quit = 0;
 	
@@ -108,7 +121,10 @@ static void recurse (Node *root, GdkEvent *event)
 	case GDK_KEY_PRESS: case GDK_KEY_RELEASE:
 	case GDK_BUTTON_PRESS: case GDK_BUTTON_RELEASE:
 	case GDK_SCROLL: case GDK_MOTION_NOTIFY:
-	    recurse(root, event);
+	    for (root = [Root nodes] ; root ; root = (Root *)root->right) {
+		recurse(root, event);
+	    }
+	    
 	    break;
 	default:
 	    gdk_event_put(event);
@@ -121,8 +137,6 @@ static void recurse (Node *root, GdkEvent *event)
 	    break;
 	}
     }
-
-    t_end_interval (root, T_INPUT_PHASE);    
 }
 
 @end

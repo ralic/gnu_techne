@@ -33,6 +33,8 @@
     ALenum error;
     
     self = [super init];
+    lua_pushstring (_L, "accoustics");
+    lua_setfield (_L, -2, "tag");
 
     /* Create an openal context. */
 

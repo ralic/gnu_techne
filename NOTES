@@ -30,3 +30,8 @@ TODO (ASAP):
 
 * Need debug diagrams for joints.
   - Remove Joint->debug once this is done.
+
+* Figure out hot to fit global intervals for the parts not covered by
+  the nodes into the profiling framework.
+* Turn the various builtins into modules.
+* Add support for column-major layout to array/arraymath.

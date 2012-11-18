@@ -14,14 +14,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _INPUT_H_
-#define _INPUT_H_
+#ifndef _BUILTIN_H_
+#define _BUILTIN_H_
 
-#include "transform.h"
-#include "builtin.h"
+#include "node.h"
 
-@interface Input: Builtin {
+@interface Builtin: Node {
 }
+
++(Builtin *)nodes;
+-(void) iterate;
 
 @end
 

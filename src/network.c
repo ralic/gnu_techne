@@ -689,12 +689,18 @@ static void run()
 
 -(id) init
 {
+    self = [super init];
+    self->index = 2;
+
+    lua_pushstring (_L, "network");
+    lua_setfield (_L, -2, "tag");
+    
     /* Create the page table. */
     
     lua_newtable (_L);
     pages = luaL_ref (_L, LUA_REGISTRYINDEX);
     
-    return [super init];
+    return self;
 }
 
 -(void) iterate

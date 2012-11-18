@@ -18,13 +18,11 @@
 #define _GRAPHICS_H_
 
 #include <lua.h>
+#include "builtin.h"
 #include "transform.h"
 
-@interface Graphics: Node {
+@interface Graphics: Builtin {
 }
-
--(id) initWithName: (char *)name andClass: (char *)class;
--(void) iterate: (Transform *)root;
 
 -(int) _get_window;
 -(int) _get_hide;

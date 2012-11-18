@@ -147,8 +147,12 @@ static int globals_n;
                 /* A vector. */                                         \
                                                                         \
 		array = array_testcompatible (_L, 3,                    \
-                                      ARRAY_TYPE | ARRAY_RANK,          \
-                                      arraytype, 1);                    \
+					      ARRAY_TYPE | ARRAY_RANK,	\
+					      arraytype, 1);		\
+                                                                        \
+		if(!array) {						\
+		    TYPE_ERROR();					\
+		}							\
                                                                         \
                 /* Adjust the array to the uniform's size if            \
                  * needed. */                                           \
@@ -162,10 +166,6 @@ static int globals_n;
                         array = array_adjust(_L, 3, NULL, 1, elements); \
                     }                                                   \
                 }                                                       \
-                                                                        \
-		if(!array) {						\
-		    TYPE_ERROR();					\
-		}							\
 									\
 		UPDATE_SINGLE (array->values.any,			\
 			       elements * sizeof(ctype));		\

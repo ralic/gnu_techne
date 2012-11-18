@@ -20,16 +20,15 @@
 #include <lua.h>
 #include <ode/ode.h>
 
+#include "builtin.h"
 #include "transform.h"
 
 dWorldID _WORLD;
 dJointGroupID _GROUP;
 dSpaceID _SPACE;
 
-@interface Dynamics: Node {
+@interface Dynamics: Builtin {
 }
-
--(void) iterate: (Transform *)root;
 
 -(int) _get_stepsize;
 -(int) _get_ceiling;

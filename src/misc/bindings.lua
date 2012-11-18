@@ -68,86 +68,90 @@ local function fire (suffix, ...)
    return true
 end
 
-root[bindings] = primitives.event {
-   keypress = function (self, key, ...)
-		 local suffix
+local root = primitives.root {
+   event = primitives.event {
+      keypress = function (self, key, ...)
+	 local suffix
 
-		 if string.find (key, "control") then
-		    modifiers[1] = true
-		 elseif string.find (key, "alt") then
-		    modifiers[2] = true
-		 elseif string.find (key, "super") then
-		    modifiers[3] = true
-		 elseif string.find (key, "hyper") then
-		    modifiers[4] = true
-		 elseif string.find (key, "meta") then
-		    modifiers[5] = true
-		 elseif string.find (key, "shift") then
-		    -- Ignore shifts.
-		 else
-		    down = key
-		    locked = {table.unpack (modifiers)}
+	 if string.find (key, "control") then
+	    modifiers[1] = true
+	 elseif string.find (key, "alt") then
+	    modifiers[2] = true
+	 elseif string.find (key, "super") then
+	    modifiers[3] = true
+	 elseif string.find (key, "hyper") then
+	    modifiers[4] = true
+	 elseif string.find (key, "meta") then
+	    modifiers[5] = true
+	 elseif string.find (key, "shift") then
+	    -- Ignore shifts.
+	 else
+	    down = key
+	    locked = {table.unpack (modifiers)}
 
-		    fire (state() .. "down-" .. key, ...)
-		 end
+	    fire (state() .. "down-" .. key, ...)
+	 end
 
-	      end,
+      end,
 
-   keyrelease = function (self, key, ...)
-		   local suffix
+      keyrelease = function (self, key, ...)
+	 local suffix
 
-		   if string.find (key, "control") then
-		      modifiers[1] = false
-		   elseif string.find (key, "alt") then
-		      modifiers[2] = false
-		   elseif string.find (key, "super") then
-		      modifiers[3] = false
-		   elseif string.find (key, "hyper") then
-		      modifiers[4] = false
-		   elseif string.find (key, "meta") then
-		      modifiers[5] = false
-		   elseif string.find (key, "shift") then
-		      -- Ignore shifts.
-		   else
-		      local p, q
+	 if string.find (key, "control") then
+	    modifiers[1] = false
+	 elseif string.find (key, "alt") then
+	    modifiers[2] = false
+	 elseif string.find (key, "super") then
+	    modifiers[3] = false
+	 elseif string.find (key, "hyper") then
+	    modifiers[4] = false
+	 elseif string.find (key, "meta") then
+	    modifiers[5] = false
+	 elseif string.find (key, "shift") then
+	    -- Ignore shifts.
+	 else
+	    local p, q
 
-		      p = fire (state() .. "up-" .. key, ...)
-		      
-		      if down == key then
-			 q = fire(state(locked) .. key, ...)
-		      end
+	    p = fire (state() .. "up-" .. key, ...)
+	    
+	    if down == key then
+	       q = fire(state(locked) .. key, ...)
+	    end
 
-		      if down ~= key or (p and q) then
-			 terminate()
-		      end
+	    if down ~= key or (p and q) then
+	       terminate()
+	    end
 
-		      down = nil
-		      locked = nil
-		   end		   
-	      end,
+	    down = nil
+	    locked = nil
+	 end		   
+      end,
 
-   buttonpress = function (self, button, x, y)
-		    self.keypress (self, "button-" ..  tostring(button),
-				   button, x, y)
-		 end,
-
-   motion = function (self, button, x, y)
-	       if button then
-		  fire (state() .. "drag-button-" ..  tostring(button),
+      buttonpress = function (self, button, x, y)
+	 self.keypress (self, "button-" ..  tostring(button),
 			button, x, y)
-	       else
-		  fire (state() .. "motion", x, y)
-	       end
-	    end,
+      end,
 
-   buttonrelease = function (self, button, x, y)
-		    self.keyrelease (self, "button-" ..  tostring(button),
-				     button, x, y)
-		   end,
+      motion = function (self, button, x, y)
+	 if button then
+	    fire (state() .. "drag-button-" ..  tostring(button),
+		  button, x, y)
+	 else
+	    fire (state() .. "motion", x, y)
+	 end
+      end,
 
-   scroll = function (self, direction)
-	       fire(state() .. "scroll-" .. direction)
-	    end,
-}
+      buttonrelease = function (self, button, x, y)
+	 self.keyrelease (self, "button-" ..  tostring(button),
+			  button, x, y)
+      end,
+
+      scroll = function (self, direction)
+	 fire(state() .. "scroll-" .. direction)
+      end,
+			    }
+				 }
+
+bindings[root] = root
 
 return bindings

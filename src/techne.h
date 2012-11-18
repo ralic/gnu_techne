@@ -73,7 +73,7 @@
 #include <lua.h>
 #include <assert.h>
 
-#include "node.h"
+#include "builtin.h"
 
 typedef enum {
     T_LOAD,
@@ -106,12 +106,10 @@ void t_pop_modelview ();
 
 int luaopen_moremath (lua_State *L);
 
-@interface Techne: Node {
+@interface Techne: Builtin {
 }
 
 -(id) initWithArgc: (int)argc andArgv: (char **)argv;
-
--(void) iterate;
 
 -(int) _get_iterate;
 -(int) _get_iterations;	

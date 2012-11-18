@@ -62,7 +62,7 @@ typedef enum {
     
 @interface Node: Object {
 @public
-    Node *left, *right, *up, *down;
+    Node *left, *right, *up, *down, **orphans;
     const struct protocol *protocol;
 
     struct {
@@ -80,12 +80,15 @@ typedef enum {
 	int reference;
     } tag;
 
+    double index;
     int length, linked, rawaccess;
     int children, link, unlink, step, get, set;
     int traverse, prepare, finish, begin;
 }
 
 +(const struct protocol *) introspect;
+
+-(void) setOrphansList: (Node **)list;
 
 -(void) meetSibling: (Node *)sibling;
 -(void) missSibling: (Node *)sibling;
@@ -122,6 +125,7 @@ typedef enum {
 -(int) _get_set;
 -(int) _get_parent;
 -(int) _get_ancestors;
+-(int) _get_index;
 
 -(void) _set_parent;
 -(void) _set_ancestors;
@@ -134,6 +138,7 @@ typedef enum {
 -(void) _set_begin;
 -(void) _set_get;
 -(void) _set_set;
+-(void) _set_index;
 
 @end
 

@@ -18,9 +18,9 @@
 #define _ACCOUSTICS_H_
 
 #include <lua.h>
-#include "node.h"
+#include "builtin.h"
 
-@interface Accoustics: Node {
+@interface Accoustics: Builtin {
 }
 
 @end

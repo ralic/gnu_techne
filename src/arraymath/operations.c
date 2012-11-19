@@ -30,6 +30,8 @@
 
 #include "array/array.h"
 
+#define COLUMN_MAJOR
+
 #define OP(FUNC, OPERATOR, TYPE)                                        \
     static void FUNC (TYPE *A, TYPE *B, TYPE *C, int n)                 \
     {                                                                   \
@@ -599,6 +601,21 @@ array_Array *arraymath_transpose (lua_State *L)
     return B;
 }
 
+#ifdef COLUMN_MAJOR
+#define MATRIX_VECTOR(FUNC, TYPE)					\
+    static void FUNC (TYPE *A, TYPE *B, TYPE *C, int n, int m)		\
+    {									\
+	int i, j;							\
+									\
+	for (i = 0 ; i < m ; i += 1) {					\
+	    C[i] = 0;							\
+									\
+	    for (j = 0 ; j < n ; j += 1) {				\
+		C[i] += A[j * m + i] * B[j];				\
+	    }								\
+	}								\
+    }
+#else
 #define MATRIX_VECTOR(FUNC, TYPE)					\
     static void FUNC (TYPE *A, TYPE *B, TYPE *C, int n, int m)		\
     {									\
@@ -612,10 +629,29 @@ array_Array *arraymath_transpose (lua_State *L)
 	    }								\
 	}								\
     }
+#endif
 
 MATRIX_VECTOR(matrix_vector_doubles, double)
 MATRIX_VECTOR(matrix_vector_floats, float)
 
+#ifdef COLUMN_MAJOR
+#define MATRIX_MATRIX(FUNC, TYPE)					\
+    static void FUNC (TYPE *A, TYPE *B, TYPE *C,			\
+		      int n, int m, int s, int t)			\
+    {									\
+	int i, j, k;							\
+									\
+	for (i = 0 ; i < m ; i += 1) {					\
+	    for (k = 0 ; k < s ; k += 1) {				\
+		C[k * t + i] = 0;					\
+									\
+		for (j = 0 ; j < m ; j += 1) {				\
+		    C[k * t + i] += A[j * n + i] * B[k * t + j];	\
+		}							\
+	    }								\
+	}								\
+    }
+#else
 #define MATRIX_MATRIX(FUNC, TYPE)					\
     static void FUNC (TYPE *A, TYPE *B, TYPE *C,			\
 		      int n, int m, int s, int t)			\
@@ -632,6 +668,7 @@ MATRIX_VECTOR(matrix_vector_floats, float)
 	    }								\
 	}								\
     }
+#endif
 
 MATRIX_MATRIX(matrix_matrix_doubles, double)
 MATRIX_MATRIX(matrix_matrix_floats, float)
@@ -644,8 +681,12 @@ array_Array *arraymath_matrix_multiply (lua_State *L)
     B = lua_touserdata (L, -1);
 
     if (B->rank == 2) {
+#ifdef COLUMN_MAJOR
+        C = array_createarray (L, A->type, NULL, 2, B->size[0], A->size[1]);
+#else
         C = array_createarray (L, A->type, NULL, 2, A->size[0], B->size[1]);
-
+#endif
+        
         if (A->type == ARRAY_TDOUBLE) {
             matrix_matrix_doubles (A->values.doubles,
                                    B->values.doubles,
@@ -660,7 +701,11 @@ array_Array *arraymath_matrix_multiply (lua_State *L)
                                   B->size[0], B->size[1]);
         }
     } else {
+#ifdef COLUMN_MAJOR
+        C = array_createarray (L, A->type, NULL, 1, A->size[1]);
+#else
         C = array_createarray (L, A->type, NULL, 1, A->size[0]);
+#endif
 
         if (A->type == ARRAY_TDOUBLE) {
             matrix_vector_doubles (A->values.doubles,
@@ -703,20 +748,42 @@ array_Array *arraymath_matrix_multiplyadd (lua_State *L)
     return A;
 }
 
+#ifdef COLUMN_MAJOR
+#define APPLY_REAL(FUNC, TYPE)						\
+    static void FUNC##_real (double *T, double *f, TYPE *v, TYPE *r)    \
+    {                                                                   \
+        r[0] = T[0] * v[0] + T[3] * v[1] + T[6] * v[2];                 \
+        r[1] = T[1] * v[0] + T[4] * v[1] + T[7] * v[2];                 \
+        r[2] = T[2] * v[0] + T[5] * v[1] + T[8] * v[2];                 \
+                                                                        \
+        if (f) {							\
+            r[0] += f[0] - (T[0] * f[0] + T[3] * f[1] + T[6] * f[2]);   \
+            r[1] += f[1] - (T[1] * f[0] + T[4] * f[1] + T[7] * f[2]);   \
+            r[2] += f[2] - (T[2] * f[0] + T[5] * f[1] + T[8] * f[2]);   \
+        }								\
+    }
+#else
+#define APPLY_REAL(FUNC, TYPE)						\
+    static void FUNC##_real (double *T, double *f, TYPE *v, TYPE *r)    \
+    {                                                                   \
+        r[0] = T[0] * v[0] + T[1] * v[1] + T[2] * v[2];                 \
+        r[1] = T[3] * v[0] + T[4] * v[1] + T[5] * v[2];                 \
+        r[2] = T[6] * v[0] + T[7] * v[1] + T[8] * v[2];                 \
+                                                                        \
+        if (f) {							\
+            r[0] += f[0] - (T[0] * f[0] + T[1] * f[1] + T[2] * f[2]);   \
+            r[1] += f[1] - (T[3] * f[0] + T[4] * f[1] + T[5] * f[2]);   \
+            r[2] += f[2] - (T[6] * f[0] + T[7] * f[1] + T[8] * f[2]);   \
+        }								\
+    }
+#endif
+
 #define APPLY(FUNC, TYPE)						\
     static void FUNC (double *T, double *f, TYPE *v, TYPE *r,		\
 		      int rank, int *size)				\
     {									\
 	if (rank == 1) {						\
-	    r[0] = T[0] * v[0] + T[1] * v[1] + T[2] * v[2];		\
-	    r[1] = T[3] * v[0] + T[4] * v[1] + T[5] * v[2];		\
-	    r[2] = T[6] * v[0] + T[7] * v[1] + T[8] * v[2];		\
-									\
-	    if (f) {							\
-		r[0] += f[0] - (T[0] * f[0] + T[1] * f[1] + T[2] * f[2]); \
-		r[1] += f[1] - (T[3] * f[0] + T[4] * f[1] + T[5] * f[2]); \
-		r[2] += f[2] - (T[6] * f[0] + T[7] * f[1] + T[8] * f[2]); \
-	    }								\
+            FUNC##_real(T, f, v, r);                                    \
 	} else {							\
 	    int j, d;							\
 									\
@@ -727,6 +794,9 @@ array_Array *arraymath_matrix_multiplyadd (lua_State *L)
 	    }								\
 	}								\
     }									\
+
+APPLY_REAL(apply_doubles, double)
+APPLY_REAL(apply_floats, float)
 
 APPLY(apply_doubles, double)
 APPLY(apply_floats, float)

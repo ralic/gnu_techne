@@ -30,7 +30,7 @@
 
 #include "array/array.h"
 
-#define COLUMN_MAJOR
+/* #define ARRAYMATH_COLUMN_MAJOR */
 
 #define OP(FUNC, OPERATOR, TYPE)                                        \
     static void FUNC (TYPE *A, TYPE *B, TYPE *C, int n)                 \
@@ -601,7 +601,7 @@ array_Array *arraymath_transpose (lua_State *L)
     return B;
 }
 
-#ifdef COLUMN_MAJOR
+#ifdef ARRAYMATH_COLUMN_MAJOR
 #define MATRIX_VECTOR(FUNC, TYPE)					\
     static void FUNC (TYPE *A, TYPE *B, TYPE *C, int n, int m)		\
     {									\
@@ -634,19 +634,19 @@ array_Array *arraymath_transpose (lua_State *L)
 MATRIX_VECTOR(matrix_vector_doubles, double)
 MATRIX_VECTOR(matrix_vector_floats, float)
 
-#ifdef COLUMN_MAJOR
+#ifdef ARRAYMATH_COLUMN_MAJOR
 #define MATRIX_MATRIX(FUNC, TYPE)					\
     static void FUNC (TYPE *A, TYPE *B, TYPE *C,			\
 		      int n, int m, int s, int t)			\
     {									\
 	int i, j, k;							\
 									\
-	for (i = 0 ; i < m ; i += 1) {					\
-	    for (k = 0 ; k < s ; k += 1) {				\
-		C[k * t + i] = 0;					\
+	for (k = 0 ; k < s ; k += 1) {					\
+	    for (i = 0 ; i < m ; i += 1) {				\
+		C[k * m + i] = 0;					\
 									\
-		for (j = 0 ; j < m ; j += 1) {				\
-		    C[k * t + i] += A[j * n + i] * B[k * t + j];	\
+		for (j = 0 ; j < n ; j += 1) {				\
+		    C[k * m + i] += A[j * m + i] * B[k * t + j];	\
 		}							\
 	    }								\
 	}								\
@@ -680,8 +680,12 @@ array_Array *arraymath_matrix_multiply (lua_State *L)
     A = lua_touserdata (L, -2);
     B = lua_touserdata (L, -1);
 
+#ifdef ARRAYMATH_COLUMN_MAJOR
+    _TRACE ("amop colmajor\n");
+#endif
+
     if (B->rank == 2) {
-#ifdef COLUMN_MAJOR
+#ifdef ARRAYMATH_COLUMN_MAJOR
         C = array_createarray (L, A->type, NULL, 2, B->size[0], A->size[1]);
 #else
         C = array_createarray (L, A->type, NULL, 2, A->size[0], B->size[1]);
@@ -701,7 +705,7 @@ array_Array *arraymath_matrix_multiply (lua_State *L)
                                   B->size[0], B->size[1]);
         }
     } else {
-#ifdef COLUMN_MAJOR
+#ifdef ARRAYMATH_COLUMN_MAJOR
         C = array_createarray (L, A->type, NULL, 1, A->size[1]);
 #else
         C = array_createarray (L, A->type, NULL, 1, A->size[0]);
@@ -748,7 +752,7 @@ array_Array *arraymath_matrix_multiplyadd (lua_State *L)
     return A;
 }
 
-#ifdef COLUMN_MAJOR
+#ifdef ARRAYMATH_COLUMN_MAJOR
 #define APPLY_REAL(FUNC, TYPE)						\
     static void FUNC##_real (double *T, double *f, TYPE *v, TYPE *r)    \
     {                                                                   \

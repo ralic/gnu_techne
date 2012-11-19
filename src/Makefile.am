@@ -2,7 +2,7 @@ mybindir = $(pkglibdir)
 modulesdir = ${pkgdatadir}/modules
 
 AM_CPPFLAGS = -x objective-c \
-	      -D_GNU_SOURCE -DGL_GLEXT_PROTOTYPES \
+	      -D_GNU_SOURCE -DGL_GLEXT_PROTOTYPES -DARRAYMATH_COLUMN_MAJOR\
 	      -DPKGDATADIR='"$(pkgdatadir)"' -DPKGLIBDIR='"$(pkglibdir)"' \
 	      -include common.h
 AM_CFLAGS = -Wall -Wno-div-by-zero -I$(top_srcdir) -I$(srcdir) ${LUA_CFLAGS}
@@ -86,8 +86,7 @@ array_core_la_CFLAGS = ${AM_CFLAGS}
 array_core_la_LDFLAGS = -module -avoid-version -no-undefined
 array_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
 
-arraymath_core_la_SOURCES = arraymath/core.c arraymath/operations.c	\
-			    array/arraymath.h
+arraymath_core_la_SOURCES = arraymath/core.c array/arraymath.h
 arraymath_core_la_CFLAGS = ${AM_CFLAGS}
 arraymath_core_la_LDFLAGS = -module -avoid-version -no-undefined
 arraymath_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}

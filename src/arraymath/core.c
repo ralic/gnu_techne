@@ -32,6 +32,14 @@
 #include "array/array.h"
 #include "arraymath.h"
 
+/* #define ARRAYMATH_COLUMN_MAJOR */
+
+#ifdef ARRAYMATH_COLUMN_MAJOR
+#define I(i, j) (i * 3 + j)
+#else
+#define I(i, j) (j * 3 + i)
+#endif
+
 static int size[2] = {3, 3};
 
 static array_Array *pushtransform (lua_State *L, double *M)
@@ -238,9 +246,21 @@ static int matrix_multiply (lua_State *L)
     A = checkrank (L, 1, 2);
     B = checkreal (L, 2);
 
-    if ((A->type != B->type) || 
+#ifdef ARRAYMATH_COLUMN_MAJOR
+    _TRACE ("amcore colmajor\n");
+#endif
+    _TRACE ("%d x %d, %d x %d\n",
+	    A->size[0], A->size[1],
+	    B->size[0], B->size[1]);
+    
+    if ((A->type != B->type) ||
+#ifdef ARRAYMATH_COLUMN_MAJOR
         (B->rank == 2 && A->size[0] != B->size[1]) ||
         (B->rank == 1 && A->size[0] != B->size[0])) {
+#else
+        (B->rank == 2 && A->size[1] != B->size[0]) ||
+        (B->rank == 1 && A->size[1] != B->size[0])) {
+#endif
         luaL_argerror (L, 2, "operands are incompatible");
     }
     
@@ -321,7 +341,7 @@ static int scaling (lua_State *L)
     if (lua_isnumber (L, 1)) {
 	M = malloc (9 * sizeof (double));
 
-	M[0] = M[4] = M[8] = lua_tonumber (L, 1);
+	M[I(0, 0)] = M[I(1, 1)] = M[I(2, 2)] = lua_tonumber (L, 1);
     } else {
 	A = array_checkcompatible (L, 1,
                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
@@ -330,12 +350,12 @@ static int scaling (lua_State *L)
 
 	M = malloc (9 * sizeof (double));
 
-	M[0] = u[0];
-	M[4] = u[1];
-	M[8] = u[2];
+	M[I(0, 0)] = u[0];
+	M[I(1, 1)] = u[1];
+	M[I(2, 2)] = u[2];
     }
     
-    M[1] = M[2] = M[3] = M[5] = M[6] = M[7] = 0;
+    M[I(0, 1)] = M[I(0, 2)] = M[I(1, 0)] = M[I(1, 2)] = M[I(2, 0)] = M[I(2, 1)] = 0;
 	
     pushtransform (L, M);
     
@@ -361,17 +381,17 @@ static int shear (lua_State *L)
 
     M = malloc (9 * sizeof (double));
 
-    M[0] = 1 + f * u[0] * n[0];
-    M[1] = f * u[0] * n[1];
-    M[2] = f * u[0] * n[2];
+    M[I(0, 0)] = 1 + f * u[0] * n[0];
+    M[I(0, 1)] = f * u[0] * n[1];
+    M[I(0, 2)] = f * u[0] * n[2];
 
-    M[3] = f * u[1] * n[0];
-    M[4] = 1 + f * u[1] * n[1];
-    M[5] = f * u[1] * n[2];
+    M[I(1, 0)] = f * u[1] * n[0];
+    M[I(1, 1)] = 1 + f * u[1] * n[1];
+    M[I(1, 2)] = f * u[1] * n[2];
 
-    M[6] = f * u[2] * n[0];
-    M[7] = f * u[2] * n[1];
-    M[8] = 1 + f * u[2] * n[2];
+    M[I(2, 0)] = f * u[2] * n[0];
+    M[I(2, 1)] = f * u[2] * n[1];
+    M[I(2, 2)] = 1 + f * u[2] * n[2];
    
     pushtransform (L, M);
     
@@ -390,15 +410,15 @@ static int reflection (lua_State *L)
 
     M = malloc (9 * sizeof (double));
 
-    M[0] = 1 - 2 * u[0] * u[0];
-    M[1] = 2 * u[0] * u[1];
-    M[2] = 2 * u[0] * u[2];
+    M[I(0, 0)] = 1 - 2 * u[0] * u[0];
+    M[I(0, 1)] = 2 * u[0] * u[1];
+    M[I(0, 2)] = 2 * u[0] * u[2];
 
-    M[3] = M[1];
-    M[4] = 1 - 2 * u[1] * u[1];
-    M[5] = 2 * u[1] * u[2];
+    M[I(1, 0)] = M[I(0, 1)];
+    M[I(1, 1)] = 1 - 2 * u[1] * u[1];
+    M[I(1, 2)] = 2 * u[1] * u[2];
 
-    M[6] = M[2]; M[7] = M[5]; M[8] = 1 - 2 * u[2] * u[2];
+    M[I(2, 0)] = M[I(0, 2)]; M[I(2, 1)] = M[I(1, 2)]; M[I(2, 2)] = 1 - 2 * u[2] * u[2];
    
     pushtransform (L, M);
     
@@ -418,9 +438,9 @@ static int projection (lua_State *L)
 
 	M = malloc (9 * sizeof (double));
 
-	M[0] = u[0] * u[0]; M[1] = u[0] * u[1]; M[2] = u[0] * u[2];
-	M[3] = M[1]; M[4] = u[1] * u[1]; M[5] = u[1] * u[2];
-	M[6] = M[2]; M[7] = M[5]; M[8] = u[2] * u[2];
+	M[I(0, 0)] = u[0] * u[0]; M[I(0, 1)] = u[0] * u[1]; M[I(0, 2)] = u[0] * u[2];
+	M[I(1, 0)] = M[I(0, 1)]; M[I(1, 1)] = u[1] * u[1]; M[I(1, 2)] = u[1] * u[2];
+	M[I(2, 0)] = M[I(0, 2)]; M[I(2, 1)] = M[I(1, 2)]; M[I(2, 2)] = u[2] * u[2];
     } else {
 	A = array_checkcompatible (L, 1,
                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
@@ -434,17 +454,17 @@ static int projection (lua_State *L)
 
 	M = malloc (9 * sizeof (double));
 
-        M[0] = v[0] * v[0] + u[0] * u[0];
-	M[1] = v[0] * v[1] + u[0] * u[1];
-	M[2] = v[0] * v[2] + u[0] * u[2];
+        M[I(0, 0)] = v[0] * v[0] + u[0] * u[0];
+	M[I(0, 1)] = v[0] * v[1] + u[0] * u[1];
+	M[I(0, 2)] = v[0] * v[2] + u[0] * u[2];
 	
-	M[3] = M[1];
-	M[4] = v[1] * v[1] + u[1] * u[1];
-	M[5] = v[1] * v[2] + u[1] * u[2];
+	M[I(1, 0)] = M[I(0, 1)];
+	M[I(1, 1)] = v[1] * v[1] + u[1] * u[1];
+	M[I(1, 2)] = v[1] * v[2] + u[1] * u[2];
 
-	M[6] = M[2];
-	M[7] = M[5];
-	M[8] = v[2] * v[2] + u[2] * u[2];
+	M[I(2, 0)] = M[I(0, 2)];
+	M[I(2, 1)] = M[I(1, 2)];
+	M[I(2, 2)] = v[2] * v[2] + u[2] * u[2];
     }
    
     pushtransform (L, M);
@@ -473,21 +493,21 @@ static int rotation (lua_State *L)
 	if (n == 1) {
 	    /* Rotate around x. */
 	    
-	    M[0] = 1; M[1] = 0; M[2] = 0; 
-	    M[3] = 0; M[4] = c; M[5] = -s; 
-	    M[6] = 0; M[7] = s; M[8] = c;
+	    M[I(0, 0)] = 1; M[I(0, 1)] = 0; M[I(0, 2)] = 0; 
+	    M[I(1, 0)] = 0; M[I(1, 1)] = c; M[I(1, 2)] = -s; 
+	    M[I(2, 0)] = 0; M[I(2, 1)] = s; M[I(2, 2)] = c;
 	} else if (n == 2) {
 	    /* Rotate around y. */
 	    
-	    M[0] = c; M[1] = 0; M[2] = s; 
-	    M[3] = 0; M[4] = 1; M[5] = 0; 
-	    M[6] = -s; M[7] = 0; M[8] = c;
+	    M[I(0, 0)] = c; M[I(0, 1)] = 0; M[I(0, 2)] = s; 
+	    M[I(1, 0)] = 0; M[I(1, 1)] = 1; M[I(1, 2)] = 0; 
+	    M[I(2, 0)] = -s; M[I(2, 1)] = 0; M[I(2, 2)] = c;
 	} else if (n == 3) {
 	    /* Rotate around z. */
 	    
-	    M[0] = c; M[1] = -s; M[2] = 0; 
-	    M[3] = s; M[4] = c; M[5] = 0; 
-	    M[6] = 0; M[7] = 0; M[8] = 1;
+	    M[I(0, 0)] = c; M[I(0, 1)] = -s; M[I(0, 2)] = 0; 
+	    M[I(1, 0)] = s; M[I(1, 1)] = c; M[I(1, 2)] = 0; 
+	    M[I(2, 0)] = 0; M[I(2, 1)] = 0; M[I(2, 2)] = 1;
 	} else {
 	    free(M);
 
@@ -507,17 +527,17 @@ static int rotation (lua_State *L)
 	c_1 = 1.0 - c;
 	s = sin(theta);
 
-	M[0] = c + u[0] * u[0] * c_1;
-	M[1] = u[0] * u[1] * c_1 - u[2] * s;
-	M[2] = u[0] * u[2] * c_1 + u[1] * s;
+	M[I(0, 0)] = c + u[0] * u[0] * c_1;
+	M[I(0, 1)] = u[0] * u[1] * c_1 - u[2] * s;
+	M[I(0, 2)] = u[0] * u[2] * c_1 + u[1] * s;
 
-	M[3] = u[1] * u[0] * c_1 + u[2] * s;
-	M[4] = c + u[1] * u[1] * c_1;
-	M[5] = u[1] * u[2] * c_1 - u[0] * s;
+	M[I(1, 0)] = u[1] * u[0] * c_1 + u[2] * s;
+	M[I(1, 1)] = c + u[1] * u[1] * c_1;
+	M[I(1, 2)] = u[1] * u[2] * c_1 - u[0] * s;
 
-	M[6] = u[2] * u[0] * c_1 - u[1] * s;
-	M[7] = u[2] * u[1] * c_1 + u[0] * s;
-	M[8] = c + u[2] * u[2] * c_1;
+	M[I(2, 0)] = u[2] * u[0] * c_1 - u[1] * s;
+	M[I(2, 1)] = u[2] * u[1] * c_1 + u[0] * s;
+	M[I(2, 2)] = c + u[2] * u[2] * c_1;
     } else {
 	free(M);
 

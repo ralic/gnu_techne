@@ -31,7 +31,9 @@ typedef struct shape_Buffer {
     unsigned int name, index;
 
     array_Type type;
-    int size, length, flag;
+    int size;                   /* The number of elements per vertex. */
+    int length;                 /* The number of vertices. */
+    int flag;
 } shape_Buffer;
 
 @interface Shape: Transform {

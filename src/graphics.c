@@ -152,20 +152,20 @@ static void update_projection()
 	planes[1] = planes[3] * a;
     case PERSPECTIVE:
 	matrix[0] = 2 * planes[4] / (planes[1] - planes[0]);
-	matrix[2] = (planes[1] + planes[0]) / (planes[1] - planes[0]);
+	matrix[8] = (planes[1] + planes[0]) / (planes[1] - planes[0]);
 	matrix[5] = 2 * planes[4] / (planes[3] - planes[2]);
-	matrix[6] = (planes[3] + planes[2]) / (planes[3] - planes[2]);
+	matrix[9] = (planes[3] + planes[2]) / (planes[3] - planes[2]);
 	matrix[10] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
-	matrix[11] = -2 * planes[5] * planes[4] / (planes[5] - planes[4]);
-	matrix[14] = -1;
+	matrix[14] = -2 * planes[5] * planes[4] / (planes[5] - planes[4]);
+	matrix[11] = -1;
 	break;
     case ORTHOGRAPHIC:
 	matrix[0] = 2 / (planes[1] - planes[0]);
-	matrix[3] = -(planes[1] + planes[0]) / (planes[1] - planes[0]);
+	matrix[12] = -(planes[1] + planes[0]) / (planes[1] - planes[0]);
 	matrix[5] = 2 / (planes[3] - planes[2]);
-	matrix[7] = -(planes[3] + planes[2]) / (planes[3] - planes[2]);
+	matrix[13] = -(planes[3] + planes[2]) / (planes[3] - planes[2]);
 	matrix[10] = -2 / (planes[5] - planes[4]);
-	matrix[11] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
+	matrix[14] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
 	matrix[15] = 1;	
 	break;
     }
@@ -221,7 +221,7 @@ void t_pop_projection ()
 		float M[16];						\
 									\
 		glGetBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET, \
-				   MODELVIEW_SIZE, &M);		\
+				   MODELVIEW_SIZE, &M);                 \
 									\
 		_TRACEM(4, 4, ".5f", M);				\
 	}								\
@@ -234,7 +234,7 @@ void t_load_modelview (float *matrix, t_Enumerated mode)
     if (mode == T_MULTIPLY) {
 	float M[16];
 	
-	t_concatenate_4(M, modelviews[modelviews_n], matrix);
+	t_concatenate_4T(M, modelviews[modelviews_n], matrix);
 	memcpy(modelviews[modelviews_n], M, 16 * sizeof(float));
     } else {
 	memcpy(modelviews[modelviews_n], matrix, 16 * sizeof(float));
@@ -248,7 +248,7 @@ void t_push_modelview (float *matrix, t_Enumerated mode)
     assert (modelviews_n < MODELVIEW_STACK_DEPTH);
 
     if (mode == T_MULTIPLY) {
-	t_concatenate_4(modelviews[modelviews_n + 1],
+	t_concatenate_4T(modelviews[modelviews_n + 1],
 			  modelviews[modelviews_n], matrix);
     } else {
 	memcpy(modelviews[modelviews_n + 1], matrix, 16 * sizeof(float));

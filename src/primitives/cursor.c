@@ -85,11 +85,11 @@ static int uptodate;
 	memset (M, 0, sizeof (float[16]));
 
 	M[0] = 2 / (float)v[2];
-	M[3] = -(1 + 2 * (float)v[0] / v[2]);
+	M[12] = -(1 + 2 * (float)v[0] / v[2]);
 	M[5] = -2 / (float)v[3];
-	M[7] = 1 + 2 * (float)v[1] / v[3];
+	M[13] = 1 + 2 * (float)v[1] / v[3];
 	M[10] = -1;
-	M[11] = 0;
+	M[14] = 0;
 	M[15] = 1;
 
 	/* _TRACEM(4, 4, ".5f", M); */

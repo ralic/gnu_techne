@@ -90,23 +90,23 @@ static void recurse (Node *root)
     /* Calculate the homogenous transform matrix. */
     
     self->matrix[0] = self->rotation[0];
-    self->matrix[1] = self->rotation[1];
-    self->matrix[2] = self->rotation[2];
-    self->matrix[3] = self->translation[0];
+    self->matrix[4] = self->rotation[1];
+    self->matrix[8] = self->rotation[2];
+    self->matrix[12] = self->translation[0];
     
-    self->matrix[4] = self->rotation[3];
+    self->matrix[1] = self->rotation[3];
     self->matrix[5] = self->rotation[4];
-    self->matrix[6] = self->rotation[5];
-    self->matrix[7] = self->translation[1];
+    self->matrix[9] = self->rotation[5];
+    self->matrix[13] = self->translation[1];
     
-    self->matrix[8] = self->rotation[6];
-    self->matrix[9] = self->rotation[7];
+    self->matrix[2] = self->rotation[6];
+    self->matrix[6] = self->rotation[7];
     self->matrix[10] = self->rotation[8];
-    self->matrix[11] = self->translation[2];
+    self->matrix[14] = self->translation[2];
 
-    self->matrix[12] = 0;
-    self->matrix[13] = 0;
-    self->matrix[14] = 0;
+    self->matrix[3] = 0;
+    self->matrix[7] = 0;
+    self->matrix[11] = 0;
     self->matrix[15] = 1;	    
 
     t_pushuserdata (_L, 1, self);

@@ -680,10 +680,6 @@ array_Array *arraymath_matrix_multiply (lua_State *L)
     A = lua_touserdata (L, -2);
     B = lua_touserdata (L, -1);
 
-#ifdef ARRAYMATH_COLUMN_MAJOR
-    _TRACE ("amop colmajor\n");
-#endif
-
     if (B->rank == 2) {
 #ifdef ARRAYMATH_COLUMN_MAJOR
         C = array_createarray (L, A->type, NULL, 2, B->size[0], A->size[1]);

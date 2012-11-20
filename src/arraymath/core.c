@@ -246,13 +246,6 @@ static int matrix_multiply (lua_State *L)
     A = checkrank (L, 1, 2);
     B = checkreal (L, 2);
 
-#ifdef ARRAYMATH_COLUMN_MAJOR
-    _TRACE ("amcore colmajor\n");
-#endif
-    _TRACE ("%d x %d, %d x %d\n",
-	    A->size[0], A->size[1],
-	    B->size[0], B->size[1]);
-    
     if ((A->type != B->type) ||
 #ifdef ARRAYMATH_COLUMN_MAJOR
         (B->rank == 2 && A->size[0] != B->size[1]) ||

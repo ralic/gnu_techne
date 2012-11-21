@@ -44,14 +44,12 @@ static void insert (Node *root, dSpaceID space)
 
 @implementation System
 
--(System *) init
+-(void) init
 {
     [super init];
 
     self->space = dSimpleSpaceCreate (NULL);
     dSpaceSetCleanup (self->space, 0);
-    
-    return self;
 }
 
 -(void) toggle

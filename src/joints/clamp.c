@@ -25,13 +25,11 @@
 
 @implementation Clamp
 
--(Clamp *) init
+-(void) init
 {
     self->joint = dJointCreateFixed (_WORLD, NULL);
 
     [super init];
-
-    return self;
 }
 
 -(void) update

@@ -25,13 +25,11 @@
 
 @implementation Planar
 
--(Planar *) init
+-(void) init
 {
     self->joint = dJointCreatePlane2D (_WORLD, NULL);
 
     [super init];
-
-    return self;
 }
 
 @end

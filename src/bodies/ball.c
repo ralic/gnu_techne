@@ -24,7 +24,7 @@
 
 @implementation Ball
 
--(Ball *) init
+-(void) init
 {
     self->quadric = gluNewQuadric();
     gluQuadricDrawStyle(self->quadric, GLU_LINE);
@@ -35,9 +35,7 @@
 
     dGeomSetData (self->geom, self);
       
-    self = [super init];
-
-    return self;
+    [super init];
 }
 
 -(int) _get_radius

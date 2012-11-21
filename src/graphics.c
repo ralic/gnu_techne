@@ -267,7 +267,7 @@ void t_pop_modelview ()
 
 @implementation Graphics
 
--(id) init
+-(void) init
 {
     GdkWindowAttr window_attributes;
     GdkVisual *visual;
@@ -390,7 +390,7 @@ void t_pop_modelview ()
 	
     lua_pop (_L, 2);
 
-    self = [super init];
+    [super init];
     self->index = 4;
 
     lua_pushstring (_L, "graphics");
@@ -573,8 +573,21 @@ void t_pop_modelview ()
 	t_push_projection (I);
 	t_push_modelview (I, T_LOAD);
     }
+}
+
+-(void) free
+{
+    GLXContext context;
     
-    return self;
+    context = glXGetCurrentContext ();
+
+    glXMakeCurrent(GDK_DISPLAY_XDISPLAY(display),
+                   None, NULL);
+    glXDestroyContext(GDK_DISPLAY_XDISPLAY(display),
+                      context);
+    gdk_window_destroy(window);
+    
+    [super free];
 }
 
 -(void) iterate

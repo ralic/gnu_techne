@@ -29,7 +29,7 @@ static Shader *mold;
 static int reference;
 
 @implementation Flat
--(Flat *)init
+-(void)init
 {
 #include "glsl/flat_vertex.h"	
 #include "glsl/flat_fragment.h"	
@@ -37,7 +37,9 @@ static int reference;
     /* If this is the first instance create the program. */
 
     if (!mold) {
-	mold = [[Shader alloc] init];
+	mold = [Shader alloc];
+        
+        [mold init];
 
 	[mold addSource: glsl_flat_vertex for: VERTEX_STAGE];
 	[mold addSource: glsl_flat_fragment for: FRAGMENT_STAGE];
@@ -47,8 +49,6 @@ static int reference;
     }
     
     [self initFrom: mold];
-    
-    return self;
 }
 
 -(void) traverse

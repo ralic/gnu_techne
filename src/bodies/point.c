@@ -26,11 +26,11 @@
 
 @implementation Point
 
--(Point *) init
+-(void) init
 {
     self->geom = NULL;
     
-    return [super init];
+    [super init];
 }
 
 @end

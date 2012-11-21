@@ -30,7 +30,7 @@
 
 @implementation Doubleball
 
--(Joint *) init
+-(void) init
 {
     self->joint = dJointCreateDBall (_WORLD, NULL);
     
@@ -42,9 +42,7 @@
     self->anchors[1][1] = 0;
     self->anchors[1][2] = 0;
 
-    self = [super init];
-
-    return self;
+    [super init];
 }
 
 -(void) update

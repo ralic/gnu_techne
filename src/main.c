@@ -644,7 +644,8 @@ int main(int argc, char **argv)
     lua_pushcfunction (_L, replacemetatable);
     lua_setglobal (_L, "replacemetatable");
 
-    techne = [[Techne alloc] initWithArgc: argc andArgv: argv];
+    techne = [Techne alloc];
+    [techne initWithArgc: argc andArgv: argv];
     
     /* Proceed to execute specified input. */
 

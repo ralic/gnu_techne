@@ -22,14 +22,12 @@
 
 @implementation Timer
 
--(Timer *) init
+-(void) init
 {
-    self = [super init];
+    [super init];
 
     self->tick = LUA_REFNIL;    
     self->period = 1;
-    
-    return self;
 }
 
 -(void) toggle

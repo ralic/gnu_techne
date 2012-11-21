@@ -313,9 +313,9 @@ static void transform (Node *root)
 }
 
 @implementation Dynamics
--(id) init
+-(void) init
 {
-    self = [super init];
+    [super init];
     self->index = 3;
 
     lua_pushstring (_L, "dynamics");
@@ -343,8 +343,6 @@ static void transform (Node *root)
     
     lua_pushcfunction (_L, joints_iterator);
     lua_setglobal (_L, "constraints");
-
-    return self;
 }
 
 -(void) iterate

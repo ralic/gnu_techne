@@ -490,13 +490,11 @@ static int uniforms_iterator(lua_State *L)
     return i;
 }
 
--(id) init
+-(void) init
 {
-    self = [super init];
+    [super init];
     self->name = glCreateProgram();
     self->ismold = 1;
-    
-    return self;
 }
 
 -(void) addSource: (const char *) source for: (shader_Stage)stage
@@ -655,13 +653,13 @@ static int uniforms_iterator(lua_State *L)
     }
 }
 
--(id)initFrom: (Shader *) mold
+-(void)initFrom: (Shader *) mold
 {
     int i;
 
     assert (mold->ismold);
 
-    self = [super init];
+    [super init];
     self->name = mold->name;
     self->uniforms = mold->uniforms;
     self->ismold = 0;
@@ -717,11 +715,9 @@ static int uniforms_iterator(lua_State *L)
     } else {
 	self->blocks = NULL;
     }
-    
-    return self;
 }
 
--(id) free
+-(void) free
 {
     int i, j;
     
@@ -754,8 +750,6 @@ static int uniforms_iterator(lua_State *L)
     }
 
     [super free];
-    
-    return self;
 }
 
 -(int) _get_

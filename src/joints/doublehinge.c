@@ -30,7 +30,7 @@
 
 @implementation Doublehinge
 
--(Joint *) init
+-(void) init
 {
     self->joint = dJointCreateDHinge (_WORLD, NULL);
     
@@ -46,9 +46,7 @@
     self->axis[1] = 0;
     self->axis[2] = 1;
 
-    self = [super init];
-
-    return self;
+    [super init];
 }
 
 -(void) update

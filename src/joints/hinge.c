@@ -30,7 +30,7 @@
 
 @implementation Hinge
 
--(Joint *) init
+-(void) init
 {
     self->joint = dJointCreateHinge (_WORLD, NULL);
     
@@ -46,8 +46,6 @@
     self->axis[2] = 1;
 
     [super init];
-
-    return self;
 }
 
 -(void) update

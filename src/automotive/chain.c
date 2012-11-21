@@ -29,7 +29,7 @@
 
 @implementation Chain
 
--(Chain *) init
+-(void) init
 {
     dMass m;
 
@@ -59,8 +59,6 @@
     self->contacts[1].surface.mu = dInfinity;
         
     [super init];
-
-    return self;
 }
 
 -(void) update

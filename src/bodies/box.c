@@ -25,7 +25,7 @@
 
 @implementation Box
 
--(Box *) init
+-(void) init
 {
     self->geom = dCreateBox (NULL, 1, 1, 1);
     dGeomSetData (self->geom, self);
@@ -34,9 +34,7 @@
     self->size[1] = 1;
     self->size[2] = 1;
 
-    self = [super init];
-
-    return self;
+    [super init];
 }
 
 -(int) _get_size

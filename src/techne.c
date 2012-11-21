@@ -27,20 +27,14 @@
 #include "network.h"
 #include "input.h"
 #include "graphics.h"
-#include "shader.h"
 #include "accoustics.h"
+#include "shader.h"
 
 static int interactive = 0;   /* Accept input on the tty. */
 static int iterate = 0;       /* Keep the main loop running. */
 static int iterations = 0;
 
 static long long int beginning;
-
-static Input *input;
-static Network *network;
-static Dynamics *dynamics;
-static Graphics *graphics;
-static Accoustics *accoustics;
 
 static void accumulate(Node *root, long long int (*intervals)[2]) {
     Node *child;
@@ -57,9 +51,9 @@ static void accumulate(Node *root, long long int (*intervals)[2]) {
 }
 
 @implementation Techne
--(id) initWithArgc: (int)argc andArgv: (char **)argv
+-(void) initWithArgc: (int)argc andArgv: (char **)argv
 {
-    self = [super init];
+    [super init];
     lua_pushstring (_L, "techne");
     lua_setfield (_L, -2, "tag");
     lua_setglobal (_L, "techne");
@@ -69,22 +63,20 @@ static void accumulate(Node *root, long long int (*intervals)[2]) {
     t_print_message ("This is Techne, version %s.\n", VERSION);
     t_print_timing_resolution();
     
-    input = [[Input alloc] init];
+    [[Input alloc] init];
     lua_setglobal (_L, "input");
     
-    network = [[Network alloc] init];
+    [[Network alloc] init];
     lua_setglobal (_L, "network");
     
-    dynamics = [[Dynamics alloc] init];
+    [[Dynamics alloc] init];
     lua_setglobal (_L, "dynamics");
 
-    graphics = [[Graphics alloc] init];
+    [[Graphics alloc] init];
     lua_setglobal (_L, "graphics");
 
-    accoustics = [[Accoustics alloc] init];
+    [[Accoustics alloc] init];
     lua_setglobal (_L, "accoustics");
-    
-    return self;
 }
 
 -(void) iterate

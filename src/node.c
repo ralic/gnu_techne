@@ -1163,7 +1163,7 @@ static void unlink_node (Node *node)
     self->orphans = list;
 }
 
--(id) init
+-(void) init
 {
     self->protocol = [[self class] introspect];
     
@@ -1226,11 +1226,9 @@ static void unlink_node (Node *node)
     lua_pushvalue (_L, -3);
     lua_settable (_L, -3);
     lua_pop(_L, 1);
-
-    return self;
 }
 
--(id) free
+-(void) free
 {
     luaL_unref (_L, LUA_REGISTRYINDEX, self->children);
 
@@ -1241,8 +1239,6 @@ static void unlink_node (Node *node)
     luaL_unref (_L, LUA_REGISTRYINDEX, self->prepare);
     luaL_unref (_L, LUA_REGISTRYINDEX, self->finish);
     luaL_unref (_L, LUA_REGISTRYINDEX, self->begin);
-    
-    return self;
 }
 
 -(int) call

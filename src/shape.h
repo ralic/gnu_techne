@@ -45,7 +45,7 @@ typedef struct shape_Buffer {
     GLenum mode;
 }
 
--(Shape *)initWithMode: (GLenum) mode;
+-(void)initWithMode: (GLenum) mode;
 -(int) _get_wireframe;
 -(void) _set_wireframe;
 

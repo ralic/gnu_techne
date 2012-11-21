@@ -23,13 +23,11 @@
 
 @implementation Space
 
--(Space *) init
+-(void) init
 {
     [super init];
 
     self->space = NULL;
-    
-    return self;
 }
 
 -(void) free

@@ -28,11 +28,11 @@ static int drawjoints = -1;
 
 @implementation Joint
 
--(Joint *) init
+-(void) init
 {
     /* Initialize the object. */
     
-    self = [super init];
+    [super init];
     
     if (drawjoints < 0) {
 	/* Get the configuration. */
@@ -54,8 +54,6 @@ static int drawjoints = -1;
 	dJointSetFeedback (self->joint, &self->feedback);
 	dJointSetData (self->joint, self);
     }
-
-    return self;
 }
 
 -(void) free

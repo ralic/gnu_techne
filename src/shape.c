@@ -232,9 +232,9 @@ static void match_attribute_to_buffer (unsigned int program,
     }
 }
 
--(Shape *)initWithMode: (GLenum) m
+-(void)initWithMode: (GLenum) m
 {
-    self = [super init];
+    [super init];
 
     self->mode = m;
     self->buffers = NULL;
@@ -244,8 +244,6 @@ static void match_attribute_to_buffer (unsigned int program,
     /* Create the vertex array object. */
     
     glGenVertexArrays (1, &self->name);
-
-    return self;
 }
 
 -(void) free

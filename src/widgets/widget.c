@@ -23,9 +23,9 @@ static int drawlayout = -1;
 
 @implementation Widget
 
--(Widget *)init
+-(void)init
 {
-    self = [super init];
+    [super init];
 
     if (drawlayout < 0) {
 	/* Get the configuration. */
@@ -49,8 +49,6 @@ static int drawlayout = -1;
     self->padding[3] = 0;
 
     self->debug = drawlayout;
-
-    return self;
 }
 
 -(void) measure

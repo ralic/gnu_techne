@@ -40,7 +40,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
 @implementation Ground
 
--(Ground *) init
+-(void) init
 {
     [super init];
 
@@ -96,11 +96,9 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 			  self->position[1],
 			  self->position[2]);
     }
-
-    return self;
 }
 
-/* -(Ground *) initFromElevation: (Elevation *)object */
+/* -(void) initFromElevation: (Elevation *)object */
 /* { */
 /*     self = [super init]; */
 
@@ -115,8 +113,6 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 /*     self->resolution[1] = [object resolution][1]; */
 
 /*     self->sampler = [object sampler]; */
-				       
-/*     return self; */
 /* } */
 
 -(void) freeObject

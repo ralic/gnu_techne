@@ -28,7 +28,7 @@
 
 @implementation Angular
 
--(Joint *) init
+-(void) init
 {
     self->joint = dJointCreateAMotor (_WORLD, NULL);
     
@@ -60,8 +60,6 @@
     self->relative[2] = 0;
 
     [super init];
-
-    return self;
 }
 
 -(void) setup

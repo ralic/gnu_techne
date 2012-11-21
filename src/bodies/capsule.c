@@ -27,7 +27,7 @@
 
 @implementation Capsule
 
--(Capsule *) init
+-(void) init
 {
     self->quadric = gluNewQuadric();
     gluQuadricDrawStyle(self->quadric, GLU_LINE);
@@ -39,9 +39,7 @@
     self->radius = 1;
     self->height = 1;
     
-    self = [super init];
-
-    return self;
+    [super init];
 }
 
 -(int) _get_radius

@@ -47,15 +47,13 @@ static void recurse (Node *root, GdkEvent *event)
 
 @implementation Input
 
--(id) init
+-(void) init
 {
-    self = [super init];
+    [super init];
     self->index = 1;
     
     lua_pushstring (_L, "input");
     lua_setfield (_L, -2, "tag");
-
-    return self;
 }
 
 -(void) iterate

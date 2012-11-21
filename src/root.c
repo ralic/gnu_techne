@@ -29,13 +29,11 @@ static Node *roots;
     return (Root *)roots;
 }
 
--(id) init
+-(void) init
 {
     [self setOrphansList: &roots];
     [super init];
     [self toggle];
-    
-    return self;
 }
 
 @end

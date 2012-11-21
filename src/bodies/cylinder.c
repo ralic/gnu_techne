@@ -27,7 +27,7 @@
 
 @implementation Cylinder
 
--(Cylinder *) init
+-(void) init
 {
     self->geom = dCreateCylinder (NULL, 1, 1);
     dGeomSetData (self->geom, self);
@@ -35,9 +35,7 @@
     self->radius = 1;
     self->height = 1;
     
-    self = [super init];
-
-    return self;
+    [super init];
 }
 
 -(int) _get_radius

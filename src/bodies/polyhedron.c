@@ -26,7 +26,7 @@
 
 @implementation Polyhedron
 
--(Polyhedron *) init
+-(void) init
 {
     self->references[0] = LUA_REFNIL;
     self->references[1] = LUA_REFNIL;
@@ -36,8 +36,6 @@
     dGeomSetData (self->geom, self);
     
     [super init];
-
-    return self;
 }
 
 -(void) update

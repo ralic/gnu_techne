@@ -770,7 +770,7 @@ static int sampler_index(lua_State *L)
 
 @implementation Racetrack
 
--(Racetrack *)init
+-(void)init
 {
     struct trackdata *data;
     
@@ -803,7 +803,7 @@ static int sampler_index(lua_State *L)
 
     data = dGeomGetClassData (self->geom);
 
-    self = [super init];
+    [super init];
 
     data->segments = NULL;
     data->size = 0;
@@ -814,8 +814,6 @@ static int sampler_index(lua_State *L)
     data->depth = 0;
     data->resolution = NULL;
     data->sampler = NULL;
-
-    return self;
 }
 
 -(void) meetSibling: (id)sibling

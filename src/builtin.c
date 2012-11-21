@@ -29,11 +29,10 @@ static Node *builtins;
     return (Builtin *)builtins;
 }
 
--(id) init
+-(void) init
 {
     [self setOrphansList: &builtins];
-    
-    return [super init];
+    [super init];
 }
 
 -(void) iterate

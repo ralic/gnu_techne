@@ -36,7 +36,7 @@ static PangoContext *context;
     context = pango_font_map_create_context(fontmap);
 }
 
--(Layout *)init
+-(void)init
 {
     /* Get the configuration. */
     
@@ -48,7 +48,7 @@ static PangoContext *context;
 
     /* Initialize the node. */
     
-    self = [super init];
+    [super init];
 
     self->layout = pango_layout_new (context);
 
@@ -68,8 +68,6 @@ static PangoContext *context;
     self->scale = -1;
     
     glGenTextures(1, &self->texture);
-
-    return self;
 }
 
 -(void) free

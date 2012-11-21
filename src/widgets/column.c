@@ -25,12 +25,10 @@
 
 @implementation Column
 
--(Column *) init
+-(void) init
 {
-    self = [super init];
+    [super init];
     self->rows = 0;
-
-    return self;
 }
 
 -(void) measure

@@ -687,9 +687,9 @@ static void run()
 
 @implementation Network
 
--(id) init
+-(void) init
 {
-    self = [super init];
+    [super init];
     self->index = 2;
 
     lua_pushstring (_L, "network");
@@ -699,8 +699,6 @@ static void run()
     
     lua_newtable (_L);
     pages = luaL_ref (_L, LUA_REGISTRYINDEX);
-    
-    return self;
 }
 
 -(void) iterate

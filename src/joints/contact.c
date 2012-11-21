@@ -27,7 +27,7 @@
 
 @implementation Contact
 
--(Joint *) init
+-(void) init
 {
     self->joint = dJointCreateContact (_WORLD, NULL, &self->contact);
 
@@ -61,14 +61,12 @@
     self->contact.geom.g1 = 0;
     self->contact.geom.g2 = 0;
 
-    self = [super init];
-
-    return self;
+    [super init];
 }
 
--(Contact *) initWithJoint: (dJointID) j
-		andContact: (dContact) c
-	       andFeedback: (dJointFeedback) f
+-(void) initWithJoint: (dJointID) j
+           andContact: (dContact) c
+          andFeedback: (dJointFeedback) f
 {
     self->joint = j;
     self->contact = c;
@@ -76,9 +74,7 @@
 
     self->internal = 1;
 
-    self = [super init];
-
-    return self;
+    [super init];
 }
 
 -(void) free

@@ -25,14 +25,18 @@
     return self;
 }
 
--(id) init
+-(void) init
 {
-    return self;
 }
 
 +(id) new
 {
-    return [[self alloc] init];
+    id object;
+
+    object = [self alloc];
+    [object init];
+    
+    return object;    
 }
 
 +(id) alloc
@@ -40,9 +44,9 @@
     return class_createInstance(self, 0);
 }
 
--(id) free
+-(void) free
 {
-    return object_dispose (self);
+    object_dispose (self);
 }
 
 -(id) copy

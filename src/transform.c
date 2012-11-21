@@ -44,7 +44,7 @@ static void recurse (Node *root)
 
 @implementation Transform
 
--(Transform *) init
+-(void) init
 {
     int i, j;
     
@@ -61,8 +61,6 @@ static void recurse (Node *root)
 	self->position[i] = 0;
 	self->translation[i] = 0;
     }
-
-    return self;
 }
 
 -(void) free

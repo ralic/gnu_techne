@@ -26,13 +26,6 @@
 
 @implementation Assembly
 
--(Assembly *) init
-{
-    self = [super init];
-
-    return self;
-}
-
 -(void) measure
 {
     Widget *child;

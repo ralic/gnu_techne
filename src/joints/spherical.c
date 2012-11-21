@@ -28,7 +28,7 @@
 
 @implementation Spherical
 
--(Joint *) init
+-(void) init
 {
     self->joint = dJointCreateBall (_WORLD, NULL);
 
@@ -37,8 +37,6 @@
     self->anchor[2] = 0;
 
     [super init];
-
-    return self;
 }
 
 -(void) update

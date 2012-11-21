@@ -26,9 +26,9 @@
     int internal, dirty;
 }
 
--(Contact *) initWithJoint: (dJointID) j
-                andContact: (dContact) c
-               andFeedback: (dJointFeedback) f;
+-(void) initWithJoint: (dJointID) j
+           andContact: (dContact) c
+          andFeedback: (dJointFeedback) f;
 
 @end
 

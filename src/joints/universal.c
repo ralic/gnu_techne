@@ -28,7 +28,7 @@
 
 @implementation Universal
 
--(Joint *) init
+-(void) init
 {
     self->joint = dJointCreateUniversal (_WORLD, NULL);
 
@@ -51,8 +51,6 @@
     self->stops[1][1] = dInfinity;
 
     [super init];
-
-    return self;
 }
 
 -(void) update

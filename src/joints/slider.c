@@ -28,7 +28,7 @@
 
 @implementation Slider
 
--(Joint *) init
+-(void) init
 {
     self->joint = dJointCreateSlider (_WORLD, NULL);
     dJointSetSliderAxis (self->joint, 0, 0, 1);
@@ -41,8 +41,6 @@
     self->axis[2] = 1;
     
     [super init];
-
-    return self;
 }
 
 -(void) update

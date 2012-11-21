@@ -29,7 +29,7 @@
 
 @implementation Fourstroke
 
--(Fourstroke *) init
+-(void) init
 {
     self->joint = dJointCreateHinge (_WORLD, NULL);
     
@@ -50,8 +50,6 @@
     self->bypass = 0.01;
     self->idle = 1;
     self->spark = 1;
-    
-    return self;
 }
 
 -(void) update

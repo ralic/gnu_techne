@@ -35,7 +35,7 @@ static dColliderFn * getCollider (int num)
 
 @implementation Wheel
 
--(Wheel *) init
+-(void) init
 {
     struct wheeldata *data;
     int i;
@@ -138,8 +138,6 @@ static dColliderFn * getCollider (int num)
     }
     
     [super init];
-
-    return self;
 }
 
 -(void) release

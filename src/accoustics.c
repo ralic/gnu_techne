@@ -26,13 +26,13 @@
 #include "techne.h"
 
 @implementation Accoustics
--(id) init
+-(void) init
 {
     ALCdevice *device;
     ALCcontext *audio = NULL;
     ALenum error;
     
-    self = [super init];
+    [super init];
     lua_pushstring (_L, "accoustics");
     lua_setfield (_L, -2, "tag");
 
@@ -63,8 +63,6 @@
 
     t_print_message ("The audio renderer is: '%s %s'.\n",
 		     alGetString(AL_RENDERER), alGetString(AL_VERSION));
-
-    return self;
 }
 
 -(int) _get_gain

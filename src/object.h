@@ -22,11 +22,11 @@
 @interface Object (Base)
 
 +(id) initialize;
--(id) init;
+-(void) init;
 
 +(id) new;
 +(id) alloc;
--(id) free;
+-(void) free;
 -(id) copy;
 
 -(const char *) name;

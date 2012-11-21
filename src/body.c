@@ -38,7 +38,7 @@ static void call_poststep_hook (dBodyID body)
 
 @implementation Body
 
--(Body *) init
+-(void) init
 {
     /* Initialize the object. */
     
@@ -83,8 +83,6 @@ static void call_poststep_hook (dBodyID body)
     /* Create and attach the body. */
     
     [self release];
-    
-    return self;
 }
 
 -(void) free

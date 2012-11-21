@@ -26,14 +26,12 @@
 
 @implementation Plane
 
--(Plane *) init
+-(void) init
 {
     self->geom = dCreatePlane (NULL, 0, 0, 1, 0);
     dGeomSetData (self->geom, self);
     
-    self = [super init];
-
-    return self;
+    [super init];
 }
 
 -(void) fasten

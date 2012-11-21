@@ -29,16 +29,14 @@
 
 @implementation Gearing
 
--(Joint *) init
+-(void) init
 {
-    self = [super init];
+    [super init];
     	
     self->contact.surface.mode = 0;
     self->contact.geom.depth = 0;
     self->contact.geom.g1 = 0;
     self->contact.geom.g2 = 0;
-
-    return self;
 }
 
 -(void) update

@@ -24,7 +24,7 @@
  
 @implementation Event
 
--(Event *) init
+-(void) init
 {
     [super init];
 
@@ -34,8 +34,6 @@
     self->keyrelease = LUA_REFNIL;
     self->motion = LUA_REFNIL;
     self->scroll = LUA_REFNIL;
-
-    return self;
 }
 
 -(void) inputWithEvent: (GdkEvent *) event

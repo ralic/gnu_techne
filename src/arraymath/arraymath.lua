@@ -32,6 +32,11 @@ function arraymath.relue(theta, phi, psi)
 				arraymath.rotation(psi, 1))
 end
 
+function arraymath.mapaxis(u, v)
+   return arraymath.rotation (math.acos(arraymath.dot (u, v)),
+			      arraymath.cross (u, v))
+end
+
 function arraymath.fromnode(node, vector)
    return arraymath.apply (node.orientation, vector)
 end

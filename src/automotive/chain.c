@@ -92,23 +92,6 @@
 	w = (dDOT(self->feedbacks[0].f1, self->contacts[1].fdir1) >=
 	     dDOT(self->feedbacks[1].f1, self->contacts[1].fdir1)) ? -1 : 1;
 
-	/* If the active chain branch has changed we need
-	   to flip the chain velocity. */
-    
-	if (w * self->direction < 1) {
-	    const dReal *v;
-	    dVector3 l, u;
-	    dReal V_l;
-	
-	    v = dBodyGetLinearVel(self->run);
-	    dOP (l, -, p, q);
-	    V_l = -2 * dDOT(v, l) / dDOT (l, l);
-	    dOPC (u, *, l, V_l);
-	    dOPE (u, +=, v);
-
-	    dBodySetLinearVel (self->run, u[0], u[1], u[2]);
-	}
-
 	self->direction = w;
     
 	/* Calculate q - p in the frame of the front sprocket. */
@@ -187,6 +170,23 @@
 	dJointSetFeedback (j, &self->feedbacks[1]);
 	dJointAttach (j, self->run, self->sprockets[1]);
 	
+	/* If the active chain branch has changed we need
+	   to flip the chain velocity. */
+    
+	if (w * self->direction < 1) {
+	    const dReal *v;
+	    dVector3 l, u;
+	    dReal V_l;
+	
+	    v = dBodyGetLinearVel(self->run);
+	    dOP (l, -, p, q);
+	    V_l = -2 * dDOT(v, l) / dDOT (l, l);
+	    dOPC (u, *, l, V_l);
+	    dOPE (u, +=, v);
+
+	    dBodySetLinearVel (self->run, u[0], u[1], u[2]);
+	}
+
 	/* Constrain the motion of the chain run properly. */
 		    
 	{
@@ -232,12 +232,12 @@
     return 1;
 }
 
--(int) _get_speed
+-(int) _get_velocity
 {
     const dReal *v;
 	
     v = dBodyGetLinearVel(self->run);
-    lua_pushnumber (_L, dLENGTH (v));
+    array_createarray (_L, ARRAY_TDOUBLE, (double *)v, 1, 3);
 
     return 1;
 }
@@ -284,6 +284,24 @@
     return 1;
 }
 
+-(int) _get_contacts
+{
+    int j;
+
+    if (self->sprockets[0] && self->sprockets[1]) {
+	lua_newtable (_L);
+        
+	for(j = 0 ; j < 2 ; j += 1) {
+	    array_createarray (_L, ARRAY_TDOUBLE,
+			       self->contacts[j].geom.pos, 1, 3);
+
+	    lua_rawseti (_L, -2, j + 1);
+	}
+    }
+    
+    return 1;
+}
+
 -(void) _set_radii
 {
     int i;
@@ -299,7 +317,12 @@
     }
 }
 
--(void) _set_speed
+-(void) _set_velocity
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_contacts
 {
     T_WARN_READONLY;
 }

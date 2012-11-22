@@ -19,9 +19,16 @@ if not options.drawbodies then
    return core
 end
 
+local primitives = require 'primitives'
 local shading = require 'shading'
 local shapes = require 'shapes'
+local table = require 'table'
+local array = require 'array'
+local arraymath = require 'arraymath'
 local math = require 'math'
+ 
+local lightblue2 = {0.4064, 0.7526, 0.8644}
+local lightblue3 = {0.2805, 0.5343, 0.6179}
 
 return {
    wheel = function (parameters)
@@ -56,7 +63,73 @@ return {
 	    return wheel
    end,
 
-   fourstroke = core.fourstroke,
+   fourstroke = function (parameters)
+	    local fourstroke, oldmeta
+
+	    fourstroke = core.fourstroke (parameters)
+
+	    fourstroke.schematic = shading.flat {
+	       color = lightblue2,
+
+	       prepare = function (self)
+		  local a, d, c, e
+
+		  d = self.bias or 0.1
+		  c = self.gain or 0.3 / 628
+
+		  a = fourstroke.anchor
+		  e = arraymath.add(a, arraymath.scale (fourstroke.axis, d + c * fourstroke.state[2]))
+
+		  self.lines.positions = array.doubles {a, e}
+		  self.points.positions = array.doubles {a, e}
+	       end,
+
+	       lines = shapes.line {},
+	       points = shapes.points {},
+	    }
+
+	    return fourstroke
+   end,
+
+   chain = function (parameters)
+	    local chain, oldmeta
+
+	    chain = core.chain (parameters)
+
+	    chain.schematic = primitives.node {
+	       prepare = function (self)
+		  local a, b, c, e
+
+		  c = self.gain or 0.01
+
+		  contacts = chain.contacts
+		  
+		  if contacts then
+		     a, b = table.unpack(contacts)
+
+		     self.run.lines.positions = array.doubles {a, b}
+		     self.run.points.positions = array.doubles {a, b}
+
+		     e = arraymath.add(a, arraymath.scale(chain.velocity, c))
+
+		     self.vector.lines.positions = array.doubles {a, e}
+		  end
+	       end,
+
+	       run = shading.flat {
+		  color = {1, 1, 0, 1},
+		  lines = shapes.line {},
+		  points = shapes.points {},
+				  },
+
+	       vector = shading.flat {
+		  color = {0, 1, 0, 1},
+		  lines = shapes.line {},
+			    }
+					      }
+
+	    return chain
+   end,
+
    racetrack = core.racetrack,
-   chain = core.chain
        }

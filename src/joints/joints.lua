@@ -32,8 +32,10 @@ local white = {1, 1, 1, 1}
 local gold = {1, 0.69, 0, 1}
 local lightslategray = {0.1445, 0.2281, 0.3036}
 local steelblue = {0.0374, 0.2031, 0.4535}
-local lightsteelblue = {0.5812, 0.6223, 0.4535}
+local ivory3 = {0.5812, 0.6223, 0.4535}
 local lightgoldenrod = {0.8441, 0.8667, 0.6463}
+local yellowgreen = {0.2805, 0.6223, 0.0164}
+local darkseagreen = {0.2319, 0.5084, 0.2559}
 
 return {
    hinge = function (parameters)
@@ -63,7 +65,7 @@ return {
 				    },
 
 	       arms = shading.flat {
-		  color = lightsteelblue,
+		  color = ivory3,
 
 		  prepare = function (self) 
 		     local a, b, pair
@@ -93,7 +95,7 @@ return {
 		  end,
 
 		  lines = shapes.line {},
-		  points = shapes.line {},
+		  points = shapes.points {},
 					 }
 					      }
 	    return hinge
@@ -169,6 +171,74 @@ return {
 	    return slider
 	 end,
 
+   universal = function (parameters)
+      local universal, oldmeta, a, b
+
+      universal = core.universal (parameters)
+
+      universal.schematic = primitives.node {
+	 shafts = shading.flat {
+	    color = yellowgreen,
+
+	    prepare = function (self)
+	       local a, d, c, e, x, y
+
+	       d = self.bias or 0.1
+	       c = self.gain or 1 / 628
+
+	       a = universal.anchor
+	       x, y = table.unpack(universal.axes)
+	       e = arraymath.add(a, arraymath.scale
+				 (x, d + c * universal.state[3]))
+
+	       f = arraymath.add(a, arraymath.scale
+				 (y, d + c * universal.state[4]))
+
+	       self.lines.positions = array.doubles {f, a, e}
+	       self.points.positions = array.doubles {f, a, e}
+	    end,
+
+	    lines = shapes.line {},
+	    points = shapes.points {},
+			      },
+
+	 arms = shading.flat {
+	    color = darkseagreen,
+
+	    prepare = function (self) 
+	       local a, b, pair
+
+	       pair = universal.pair
+	       
+	       if pair then
+		  local positions = {}
+
+		  a = pair[1] and pair[1].position
+		  b = pair[2] and pair[2].position
+
+		  if a and b then
+		     self.lines.positions = array.doubles{a,
+							  universal.anchor,
+							  b}
+
+		     self.points.positions = array.doubles{a, b}
+		  elseif a then
+		     self.lines.positions = array.doubles{universal.anchor, a}
+		     self.points.positions = array.doubles{a}
+		  elseif b then
+		     self.lines.positions = array.doubles{universal.anchor, b}
+		     self.points.positions = array.doubles{b}
+		  end
+	       end
+	    end,
+
+	    lines = shapes.line {},
+	    points = shapes.points {},
+			     }
+					    }
+      return universal
+   end,
+
   spherical = core.spherical,
   angular = core.angular,
   planar = core.planar,
@@ -176,7 +246,6 @@ return {
   contact = core.contact,
   euler = core.euler,
   gearing = core.gearing,
-  universal = core.universal,
   doublehinge = core.doublehinge,
   doubleball = core.doubleball,
   linear = core.linear,

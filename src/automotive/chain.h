@@ -30,9 +30,11 @@
 }
 
 -(int) _get_radii;
--(int) _get_speed;
+-(int) _get_velocity;
 -(void) _set_radii;
--(void) _set_speed;
+-(void) _set_velocity;
+-(void) _set_contacts;
+-(int) _get_contacts;
 
 @end
 

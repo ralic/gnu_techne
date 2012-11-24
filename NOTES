@@ -13,9 +13,7 @@ LUA_CFLAGS='-I/usr/local/mingw/include' LUA_LIBS='-L/usr/local/mingw/lib -llua -
 TODO (eventually):
 ==================
 
-* Properly implement uniform _get_ in shader.c at some point.
 * Make network page functions return {mime, page} instead of page.
-* Consider making [Object init/free] return void.
 * Consider moving luaarray, luaprompt to github.
 
 TODO (ASAP):

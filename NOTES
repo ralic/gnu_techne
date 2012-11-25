@@ -29,9 +29,12 @@ TODO (ASAP):
 * Need debug diagrams for joints.
   - Remove Joint->debug once this is done.
 
-* Figure out hot to fit global intervals for the parts not covered by
-  the nodes into the profiling framework.
 * Turn the various builtins into modules.
 * Add a switch to load all known modules at boot time.
 * Resolve naming conflicts in arraymath.
 * Fix the chain node to properly reflect the velocity when the run changes.
+* Figure out how to fit global intervals for the parts not covered by
+  the nodes into the profiling framework.
+* Properly add profiled nodes at exit taking into account nesting.
+* Consider getting rid of Cursor node in favor of a generic 2d overlay node + Event.
+* Consider whether to decide which nodes to iterate at each phase based on Class hierarchy or selectors/protocol.

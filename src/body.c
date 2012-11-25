@@ -24,8 +24,6 @@
 #include "dynamics.h"
 #include "body.h"
 
-static int drawbodies = -1;
-
 static void call_poststep_hook (dBodyID body)
 {
     Body *object;
@@ -43,16 +41,6 @@ static void call_poststep_hook (dBodyID body)
     /* Initialize the object. */
     
     [super init];
-
-    if (drawbodies < 0) {
-	/* Get the configuration. */
-    
-	lua_getglobal (_L, "options");
-
-	lua_getfield (_L, -1, "drawbodies");
-	drawbodies = lua_toboolean (_L, -1);
-	lua_pop (_L, 2);
-    }
 
     dMassSetZero(&self->mass);
     
@@ -73,8 +61,6 @@ static void call_poststep_hook (dBodyID body)
     self->mass.I[10] = 1;
     self->mass.I[11] = 0;
 
-    self->debug = drawbodies;
-    
     self->body = NULL;
     self->space = NULL;
 

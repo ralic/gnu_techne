@@ -22,6 +22,7 @@
 
 #include "gl.h"
 
+#include "algebra.h"
 #include "techne.h"
 #include "cursor.h"
 
@@ -60,13 +61,9 @@ static int uptodate;
     /* _TRACE ("%f, %f\n", self->position[0], self->position[1]); */
 }
 
--(void) traverse
+-(void) draw
 {
     if (uptodate) {
-	float I[16] = {1, 0, 0, 0,
-		       0, 1, 0, 0,
-		       0, 0, 1, 0,
-		       0, 0, 0, 1};
 	float M[16];
 	int v[4];
 
@@ -82,22 +79,16 @@ static int uptodate;
 
 	/* Set an orthographic projection matrix. */
 	
-	memset (M, 0, sizeof (float[16]));
-
-	M[0] = 2 / (float)v[2];
-	M[12] = -(1 + 2 * (float)v[0] / v[2]);
-	M[5] = -2 / (float)v[3];
-	M[13] = 1 + 2 * (float)v[1] / v[3];
-	M[10] = -1;
-	M[14] = 0;
-	M[15] = 1;
+	t_load_orthographic(M, v[0], v[2], v[3], v[1], 0, 1);
 
 	/* _TRACEM(4, 4, ".5f", M); */
 
 	t_push_projection(M);
-	t_push_modelview (I, T_LOAD);
+
+	t_load_identity_4 (M);
+	t_push_modelview (M, T_LOAD);
 	
-	[super traverse];
+	[super draw];
 	
 	t_pop_modelview();
 	t_pop_projection();

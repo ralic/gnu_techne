@@ -34,7 +34,7 @@ return {
 	       shape = shapes.points {
 		  positions = {{0, 0, 0}},
 
-		  -- traverse = function (self) print (self.vertices) end,
+		  -- draw = function (self) print (self.vertices) end,
 	       },
 	    }
 
@@ -53,7 +53,7 @@ return {
 		  wireframe = true,
 		  size = box.size,
 
-		  -- traverse = function (self) print (self) end,
+		  -- draw = function (self) print (self) end,
 	       },
 	    }
 

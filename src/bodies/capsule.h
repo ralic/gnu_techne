@@ -24,7 +24,6 @@
 #include "body.h"
 
 @interface Capsule: Body {
-    GLUquadric *quadric;
     dReal radius, height;
 }
 

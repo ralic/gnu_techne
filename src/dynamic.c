@@ -14,50 +14,74 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-
-#include <lua.h>
+#include <lualib.h>
 #include <lauxlib.h>
 
-#include "gl.h"
-
+#include "dynamic.h"
 #include "techne.h"
-#include "flat.h"
-#include "shader.h"
 
-static Shader *mold;
-static int reference;
-
-@implementation Flat
--(void)init
+static void recurse (Node *root, double h, double t)
 {
-#include "glsl/flat_vertex.h"	
-#include "glsl/flat_fragment.h"	
-    
-    /* If this is the first instance create the program. */
+    Node *child, *next;
 
-    if (!mold) {
-	mold = [Shader alloc];
-        
-        [mold init];
+    t_begin_interval (root);
 
-	[mold addSource: glsl_flat_vertex for: VERTEX_STAGE];
-	[mold addSource: glsl_flat_fragment for: FRAGMENT_STAGE];
-	[mold link];
-
-	reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+    if ([root isKindOf: [Dynamic class]]) {
+	[(id)root stepBy: h at: t];
+    } else {
+	for (child = root->down ; child ; child = next) {
+	    next = child->right;	    
+	    recurse (child, h, t);
+	}
     }
     
-    [self initFrom: mold];
+    t_end_interval (root);
 }
 
--(void) draw
-{
-    glEnable (GL_CULL_FACE);
-    
-    [super draw];
+@implementation Dynamic
 
-    glDisable (GL_CULL_FACE);
+-(void) init
+{
+    [super init];
+
+    self->step = LUA_REFNIL;
+}
+
+-(void) free
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->step);
+    
+    [super free];
+}
+
+
+-(void) stepBy: (double) h at: (double) t
+{
+    Node *child, *sister;
+
+    t_pushuserdata (_L, 1, self);
+    lua_pushnumber (_L, h);
+    lua_pushnumber (_L, t);
+    t_callhook (_L, self->step, 3, 0);
+    
+    for (child = self->down ; child ; child = sister) {
+	sister = child->right;
+	recurse (child, h, t);
+    }
+}
+
+-(int) _get_step
+{
+    lua_rawgeti (_L, LUA_REGISTRYINDEX, self->step);
+
+    return 1;
+}
+
+-(void) _set_step
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->step);
+    self->step = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 
 @end
+

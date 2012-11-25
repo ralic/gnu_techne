@@ -26,10 +26,6 @@
 
 -(void) init
 {
-    self->quadric = gluNewQuadric();
-    gluQuadricDrawStyle(self->quadric, GLU_LINE);
-    gluQuadricNormals(self->quadric, GLU_NONE);
-
     self->geom = dCreateSphere (NULL, 1);
     self->radius = 1;
 
@@ -50,29 +46,6 @@
     self->radius = lua_tonumber (_L, 3);
 
     dGeomSphereSetRadius (self->geom, self->radius);
-}
-
--(void) traverse
-{
-    if (self->debug) {
-	glUseProgramObjectARB(0);
-
-	glMatrixMode (GL_MODELVIEW);
-	glPushMatrix();
-	glMultMatrixf (self->matrix);
-
-	glLineWidth (1);
-	glColor3f (0, 1, 0);
-	glEnable (GL_DEPTH_TEST);
-	
-	gluSphere (self->quadric, self->radius, 16, 16);
-
-	glDisable (GL_DEPTH_TEST);
-
-	glPopMatrix();
-    }
-    
-    [super traverse];
 }
 
 @end

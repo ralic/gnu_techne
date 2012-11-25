@@ -21,6 +21,20 @@
 
 static int drawlayout = -1;
 
+static void recurse (Node *root)
+{
+    Node *child, *next;
+
+    if ([root isKindOf: [Widget class]]) {
+	[(Widget *)root arrange];
+    } else {
+	for (child = root->down ; child ; child = next) {
+	    next = child->right;	    
+	    recurse (child);
+	}
+    }
+}
+
 @implementation Widget
 
 -(void)init
@@ -70,6 +84,16 @@ static int drawlayout = -1;
 		 d[1] + p[2] - 0.5 * (a[1] - m[1]) +
 		 0.5 * (A[1] + 1) * (a[1] - m[1] - p[2] - p[3]),
 		 0);
+}
+
+-(void) arrange
+{
+    Node *child, *sister;    
+    
+    for (child = self->down ; child ; child = sister) {
+	sister = child->right;
+	recurse (child);
+    }
 }
 
 -(int) _get_align
@@ -178,7 +202,7 @@ static int drawlayout = -1;
     T_WARN_READONLY;
 }
 
--(void) traverse
+-(void) draw
 {
     double *m, *p;
 
@@ -212,7 +236,7 @@ static int drawlayout = -1;
 	glDisable (GL_LINE_STIPPLE);	
     }
     
-    [super traverse];
+    [super draw];
 }
 
 @end

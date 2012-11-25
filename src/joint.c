@@ -24,8 +24,6 @@
 #include "array/array.h"
 #include "techne.h"
 
-static int drawjoints = -1;
-
 @implementation Joint
 
 -(void) init
@@ -33,18 +31,6 @@ static int drawjoints = -1;
     /* Initialize the object. */
     
     [super init];
-    
-    if (drawjoints < 0) {
-	/* Get the configuration. */
-    
-	lua_getglobal (_L, "options");
-
-	lua_getfield (_L, -1, "drawjoints");
-	drawjoints = lua_toboolean (_L, -1);
-	lua_pop (_L, 2);
-    }
-
-    self->debug = drawjoints;
 
     self->explicit = 0;
     self->inverted = 0;

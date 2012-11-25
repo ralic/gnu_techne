@@ -18,15 +18,15 @@
 #define _JOINT_H_
 
 #include <ode/ode.h>
-#include "transform.h"
+#include "dynamic.h"
 
-@interface Joint: Transform {
+@interface Joint: Dynamic {
 @public
     dJointID joint;
     dBodyID bodies[2];
     dJointFeedback feedback;    
 
-    int inverted, attach, debug, explicit;
+    int inverted, attach, explicit;
 }
 
 -(void) update;

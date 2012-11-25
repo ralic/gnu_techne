@@ -28,10 +28,10 @@ static void recurse (Node *root)
 {
     Node *child, *next;
 
-    t_begin_interval (root, T_TRANSFORM_PHASE);
+    t_begin_interval (root);
 
     if ([root isKindOf: [Transform class]]) {
-	[(id)root transform];
+	[(Transform *)root transform];
     } else {
 	for (child = root->down ; child ; child = next) {
 	    next = child->right;	    
@@ -39,7 +39,7 @@ static void recurse (Node *root)
 	}
     }
     
-    t_end_interval (root, T_TRANSFORM_PHASE);
+    t_end_interval (root);
 }
 
 @implementation Transform

@@ -587,8 +587,10 @@ static void match_attribute_to_buffer (unsigned int program,
     glBindVertexArray(0);
 }
 
--(void) traverse
+-(void) draw
 {
+    [super draw];
+    
     /* Set the transform. */
 
     /* if (self->mode == GL_POINTS) */
@@ -637,8 +639,6 @@ static void match_attribute_to_buffer (unsigned int program,
 
 	t_pop_modelview ();
     }
-    
-    [super traverse];
 }
 
 @end

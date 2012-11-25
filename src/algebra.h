@@ -17,6 +17,7 @@
 #ifndef _ALGEBRA_H_
 #define _ALGEBRA_H_
 
+#include <string.h>
 #include <math.h>
 
 #define t_copy_3(u, v)					\
@@ -106,6 +107,33 @@
         T[4] = A[1]; T[5] = A[5]; T[6] = A[9]; T[7] = A[13];            \
         T[8] = A[2]; T[9] = A[6]; T[10] = A[10]; T[11] = A[14];         \
         T[12] = A[3]; T[13] = A[7]; T[14] = A[11]; T[15] = A[15];       \
+    }
+
+#define t_load_orthographic(M, l, r, b, t, n, f)	\
+    {							\
+	typeof(M[0]) dx, dy, dz;			\
+							\
+	dx = r - l;					\
+	dy = t - b;					\
+	dz = f - n;					\
+							\
+	memset (M, 0, 16 * sizeof(M[0]));		\
+	M[0] = 2.0 / dx;				\
+	M[12] = -(r + l) / dx;				\
+	M[5] = 2.0 / dy;				\
+	M[13] = -(t + b) / dy;				\
+	M[10] = -2.0 / dz;				\
+	M[14] = -(f + n) / dz;				\
+	M[15] = 1;					\
+    }
+
+#define t_load_identity_4(M)				\
+    {							\
+	memset (M, 0, 16 * sizeof(M[0]));		\
+	M[0] = 1;					\
+	M[5] = 1;					\
+	M[10] = 1;					\
+	M[15] = 1;					\
     }
 
 #endif

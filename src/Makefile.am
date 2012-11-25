@@ -46,7 +46,8 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     joints/contact.c profiling.c moremath.c timing.c	\
 		     memory.c network.c network.h proxy.c proxy.h	\
 		     input.c input.h structures.h math.h root.c root.h	\
-		     builtin.c builtin.h
+		     builtin.c builtin.h dynamic.c dynamic.h graphic.c  \
+		     graphic.h
 
 EXTRA_techne_bin_SOURCES = compat/asprintf.h
 

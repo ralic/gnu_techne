@@ -1165,6 +1165,8 @@ static void unlink_node (Node *node)
 
 -(void) init
 {
+    [super init];
+    
     self->protocol = [[self class] introspect];
     
     self->tag.reference = LUA_REFNIL;
@@ -1190,11 +1192,6 @@ static void unlink_node (Node *node)
 
     self->link = LUA_REFNIL;
     self->unlink = LUA_REFNIL;
-    self->step = LUA_REFNIL;
-    self->traverse = LUA_REFNIL;
-    self->prepare = LUA_REFNIL;
-    self->finish = LUA_REFNIL;
-    self->begin = LUA_REFNIL;
     self->get = LUA_REFNIL;
     self->set = LUA_REFNIL;
 
@@ -1234,11 +1231,8 @@ static void unlink_node (Node *node)
 
     luaL_unref (_L, LUA_REGISTRYINDEX, self->unlink);
     luaL_unref (_L, LUA_REGISTRYINDEX, self->link);
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->step);
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->traverse);
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->prepare);
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->finish);
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->begin);
+    
+    [super free];
 }
 
 -(int) call
@@ -1352,88 +1346,6 @@ static void unlink_node (Node *node)
     }
 }
 
--(void) begin
-{
-    Node *child, *next;
-
-    t_pushuserdata (_L, 1, self);
-    t_callhook (_L, self->begin, 1, 0);
-    
-    for(child = self->down ; child ; child = next) {
-	next = child->right;
-
-	t_begin_interval (child, T_BEGIN_PHASE);
-	[child begin];
-	t_end_interval (child, T_BEGIN_PHASE);
-    }
-}
-
--(void) stepBy: (double) h at: (double) t
-{
-    Node *child, *next;
-
-    t_pushuserdata (_L, 1, self);
-    lua_pushnumber (_L, h);
-    lua_pushnumber (_L, t);
-    t_callhook (_L, self->step, 3, 0);
-    
-    for(child = self->down ; child ; child = next) {
-	next = child->right;
-	
-	t_begin_interval (child, T_STEP_PHASE);
-	[child stepBy: h at: t];
-	t_end_interval (child, T_STEP_PHASE);
-    }
-}
-
--(void) prepare
-{
-    Node *child, *next;
-
-    t_pushuserdata (_L, 1, self);
-    t_callhook (_L, self->prepare, 1, 0);
-    
-    for(child = self->down ; child ; child = next) {
-	next = child->right;
-
-	t_begin_interval (child, T_PREPARE_PHASE);
-	[child prepare];
-	t_end_interval (child, T_PREPARE_PHASE);
-    }
-}
-
--(void) traverse
-{
-    Node *child, *next;
-
-    t_pushuserdata (_L, 1, self);
-    t_callhook (_L, self->traverse, 1, 0);
-    
-    for(child = self->down ; child ; child = next) {
-	next = child->right;
-
-	t_begin_interval (child, T_TRAVERSE_PHASE);
-	[child traverse];
-	t_end_interval (child, T_TRAVERSE_PHASE);
-    }
-}
-
--(void) finish
-{
-    Node *child, *next;
-
-    t_pushuserdata (_L, 1, self);
-    t_callhook (_L, self->finish, 1, 0);
-    
-    for(child = self->down ; child ; child = next) {
-	next = child->right;
-
-	t_begin_interval (child, T_FINISH_PHASE);
-	[child finish];
-	t_end_interval (child, T_FINISH_PHASE);
-    }
-}
-
 -(int) _get_tag
 {
     lua_rawgeti(_L, LUA_REGISTRYINDEX, self->tag.reference);
@@ -1498,21 +1410,13 @@ static void unlink_node (Node *node)
  
 -(int) _get_profile
 {
-    int i;
-
     lua_newtable(_L);
 
-    for (i = 0 ; i < T_PHASE_COUNT ; i += 1) {
-	lua_newtable(_L);
+    lua_pushnumber(_L, self->profile.intervals[0] * 1e-9);
+    lua_rawseti(_L, -2, 1);
 
-	lua_pushnumber(_L, self->profile.intervals[i][0] * 1e-9);
-	lua_rawseti(_L, -2, 1);
-
-	lua_pushnumber(_L, self->profile.intervals[i][1] * 1e-9);
-	lua_rawseti(_L, -2, 2);
-
-	lua_rawseti(_L, -2, i + 1);
-    }
+    lua_pushnumber(_L, self->profile.intervals[1] * 1e-9);
+    lua_rawseti(_L, -2, 2);
     
     return 1;
 }
@@ -1548,41 +1452,6 @@ static void unlink_node (Node *node)
     return 1;
 }
 
--(int) _get_step
-{
-    lua_rawgeti (_L, LUA_REGISTRYINDEX, self->step);
-
-    return 1;
-}
-
--(int) _get_traverse
-{
-    lua_rawgeti (_L, LUA_REGISTRYINDEX, self->traverse);
-
-    return 1;
-}
-
--(int) _get_prepare
-{
-    lua_rawgeti (_L, LUA_REGISTRYINDEX, self->prepare);
-
-    return 1;
-}
-
--(int) _get_finish
-{
-    lua_rawgeti (_L, LUA_REGISTRYINDEX, self->finish);
-
-    return 1;
-}
-
--(int) _get_begin
-{
-    lua_rawgeti (_L, LUA_REGISTRYINDEX, self->begin);
-
-    return 1;
-}
-
 -(int) _get_get
 {
     lua_rawgeti (_L, LUA_REGISTRYINDEX, self->get);
@@ -1607,36 +1476,6 @@ static void unlink_node (Node *node)
 {
     luaL_unref (_L, LUA_REGISTRYINDEX, self->unlink);
     self->unlink = luaL_ref (_L, LUA_REGISTRYINDEX);
-}
-
--(void) _set_step
-{
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->step);
-    self->step = luaL_ref (_L, LUA_REGISTRYINDEX);
-}
-
--(void) _set_traverse
-{
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->traverse);
-    self->traverse = luaL_ref (_L, LUA_REGISTRYINDEX);
-}
-
--(void) _set_prepare
-{
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->prepare);
-    self->prepare = luaL_ref (_L, LUA_REGISTRYINDEX);
-}
-
--(void) _set_finish
-{
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->finish);
-    self->finish = luaL_ref (_L, LUA_REGISTRYINDEX);
-}
-
--(void) _set_begin
-{
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->begin);
-    self->begin = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 
 -(void) _set_get

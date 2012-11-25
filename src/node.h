@@ -47,18 +47,6 @@ struct protocol {
 	SEL selector;
     } *properties[2];
 };
- 
-typedef enum {
-    T_BEGIN_PHASE,
-    T_INPUT_PHASE,
-    T_STEP_PHASE,
-    T_TRANSFORM_PHASE,
-    T_PREPARE_PHASE,
-    T_TRAVERSE_PHASE,
-    T_FINISH_PHASE,
-
-    T_PHASE_COUNT
-} tprof_Phase;
     
 @interface Node: Object {
 @public
@@ -66,7 +54,7 @@ typedef enum {
     const struct protocol *protocol;
 
     struct {
-	long long int beginning[2], intervals[T_PHASE_COUNT][2];
+	long long int beginning[2], intervals[2];
     } profile;
     
     struct {
@@ -82,8 +70,7 @@ typedef enum {
 
     double index;
     int length, linked, rawaccess;
-    int children, link, unlink, step, get, set;
-    int traverse, prepare, finish, begin;
+    int children, link, unlink, get, set;
 }
 
 +(const struct protocol *) introspect;
@@ -98,12 +85,6 @@ typedef enum {
 -(void) renounce: (Node *)child;
 -(void) toggle;
 
--(void) begin;
--(void) prepare;
--(void) stepBy: (double) h at: (double) t;
--(void) traverse;
--(void) finish;
-
 -(int) call;
 
 -(int) _get_tag;
@@ -116,11 +97,6 @@ typedef enum {
 
 -(int) _get_link;
 -(int) _get_unlink;
--(int) _get_step;
--(int) _get_traverse;
--(int) _get_prepare;
--(int) _get_finish;
--(int) _get_begin;
 -(int) _get_get;
 -(int) _get_set;
 -(int) _get_parent;
@@ -131,19 +107,14 @@ typedef enum {
 -(void) _set_ancestors;
 -(void) _set_link;
 -(void) _set_unlink;
--(void) _set_step;
--(void) _set_traverse;
--(void) _set_prepare;
--(void) _set_finish;
--(void) _set_begin;
 -(void) _set_get;
 -(void) _set_set;
 -(void) _set_index;
 
 @end
 
-void t_begin_interval (Node *, tprof_Phase reading);
-void t_end_interval (Node *, tprof_Phase reading);
+void t_begin_interval (Node *);
+void t_end_interval (Node *);
 
 int t_isnode(lua_State *L, int index);
 id t_tonode (lua_State *L, int index);

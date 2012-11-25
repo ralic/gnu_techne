@@ -17,13 +17,14 @@
 #ifndef _WIDGET_H_
 #define _WIDGET_H_
 
-#include "node.h"
+#include "graphic.h"
 
-@interface Widget: Node {
+@interface Widget: Graphic {
     double padding[4], allocation[2], content[2], align[2], offset[2];
     int debug;
 }
 
+-(void) arrange;
 -(void) measure;
 -(void) place;
 

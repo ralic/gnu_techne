@@ -136,48 +136,4 @@
     self->references[1] = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 
--(void) traverse
-{
-    int i;
-    
-    if (self->debug && self->vertices && self->indices) {
-	glUseProgramObjectARB(0);
-
-	glMatrixMode (GL_MODELVIEW);
-	glPushMatrix();
-	glMultMatrixf (self->matrix);
-
-	glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-	glEnable (GL_DEPTH_TEST);
-
-	glColor3f (1, 0, 0);
-	glLineWidth (1);
-    
-	glBegin (GL_TRIANGLES);
-	
-	for (i = 0;
-	     i < self->indices->size[0] * self->indices->size[1];
-	     i += 1) {
-	    int d;
-
-	    d = 3 * self->indices->values.ints[i];
-	    
-	    if (self->vertices->type == ARRAY_TFLOAT) {
-		glVertex3fv (self->vertices->values.floats + d);
-	    } else {
-		glVertex3dv (self->vertices->values.doubles + d);
-	    }
-	}
-
-	glEnd();
-
-	glDisable (GL_DEPTH_TEST);
-	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-
-	glPopMatrix();
-    }
-
-    [super traverse];
-}
-
 @end

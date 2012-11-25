@@ -76,13 +76,13 @@
     self->content[1] = 2 * h_2;
 }
 
--(void) traverse
+-(void) draw
 {
     glMatrixMode (GL_MODELVIEW);
     glPushMatrix();
 	
     [self place];    
-    [super traverse];
+    [super draw];
 
     glPopMatrix();
 }

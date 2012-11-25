@@ -45,7 +45,7 @@ return {
 		  segments = {16, 7},
 		  ranges = {{0, 2 * math.pi},
 			    {-math.pi / 2, math.pi / 2}},
-		  -- traverse = function (self) print (self) end,
+		  -- draw = function (self) print (self) end,
 	       },
 	    }
 
@@ -71,7 +71,7 @@ return {
 	    fourstroke.schematic = shading.flat {
 	       color = lightblue2,
 
-	       prepare = function (self)
+	       draw = function (self)
 		  local a, d, c, e
 
 		  d = self.bias or 0.1
@@ -96,8 +96,8 @@ return {
 
 	    chain = core.chain (parameters)
 
-	    chain.schematic = primitives.node {
-	       prepare = function (self)
+	    chain.schematic = primitives.graphic {
+	       draw = function (self)
 		  local a, b, c, e
 
 		  c = self.gain or 0.01

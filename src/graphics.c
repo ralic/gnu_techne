@@ -265,6 +265,24 @@ void t_pop_modelview ()
     SET_MODELVIEW(modelviews[modelviews_n]);
 }
 
+static void draw (Node *root)
+{
+    Node *child, *next;
+
+    t_begin_interval (root);
+
+    if ([root isKindOf: [Graphic class]]) {
+	[(Graphic *)root draw];
+    } else {
+	for (child = root->down ; child ; child = next) {
+	    next = child->right;	    
+	    draw (child);
+	}
+    }
+    
+    t_end_interval (root);
+}
+
 @implementation Graphics
 
 -(void) init
@@ -551,10 +569,7 @@ void t_pop_modelview ()
     {
 #include "glsl/transform_block.h"
 
-	float I[16] = {1, 0, 0, 0,
-		       0, 1, 0, 0,
-		       0, 0, 1, 0,
-		       0, 0, 0, 1};
+	float I[16];
 
 	/* Register the transform uniform block. */
 	
@@ -569,7 +584,8 @@ void t_pop_modelview ()
 		     GL_DYNAMIC_DRAW);
 
 	/* Initialize the values. */
-    
+
+	t_load_identity_4 (I);
 	t_push_projection (I);
 	t_push_modelview (I, T_LOAD);
     }
@@ -651,32 +667,18 @@ void t_pop_modelview ()
 	}
     }
 
-    /* Traverse the scene. */
-
-    for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-	t_begin_interval (root, T_PREPARE_PHASE);    
-	[root prepare];
-	t_end_interval (root, T_PREPARE_PHASE);
-    }
+    /* Draw the scene. */
 
     glClear(GL_DEPTH_BUFFER_BIT |
 	    GL_COLOR_BUFFER_BIT |
 	    GL_STENCIL_BUFFER_BIT);
     
     for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-	t_begin_interval (root, T_TRAVERSE_PHASE);    
-	[root traverse];    
-	t_end_interval (root, T_TRAVERSE_PHASE);
+	draw (root);    
     }
 
     glXSwapBuffers (GDK_DISPLAY_XDISPLAY(display),
                     GDK_WINDOW_XWINDOW(window));
-
-    for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-	t_begin_interval (root, T_FINISH_PHASE);    
-	[root finish];
-	t_end_interval (root, T_FINISH_PHASE);
-    }
 }
 
 -(int) _get_window

@@ -19,12 +19,13 @@
 
 #include "gl.h"
 
+#include "algebra.h"
 #include "techne.h"
 #include "display.h"
 
 @implementation Display
 
--(void) prepare
+-(void) arrange
 {
     Widget *child;
     int v[4];
@@ -56,37 +57,33 @@
 	}
     }
 
-    [super prepare];
+    [super arrange];
 }
 
--(void) traverse
+-(void) draw
 {
     int v[4];
-	
-    glMatrixMode (GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
+    float M[16];
 
+    [self arrange];
+    
     glGetIntegerv (GL_VIEWPORT, v);
-    glOrtho(-(double)v[2] / v[3] * 0.5,
-	    (double)v[2] / v[3] * 0.5,
-	    -0.5, 0.5,
-	    0, 1);
+    t_load_orthographic(M,
+			-(double)v[2] / v[3] * 0.5,
+			(double)v[2] / v[3] * 0.5,
+			-0.5, 0.5,
+			0, 1);
 
-    glMatrixMode (GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-	
-    glUseProgramObjectARB(0);
+    t_push_projection(M);
+
+    t_load_identity_4 (M);
+    t_push_modelview(M, T_LOAD);
 
     [self place];
-    [super traverse];
+    [super draw];
     
-    glMatrixMode (GL_MODELVIEW);
-    glPopMatrix();
-    
-    glMatrixMode (GL_PROJECTION);
-    glPopMatrix();
+    t_pop_modelview();
+    t_pop_projection();
 }
 
 @end

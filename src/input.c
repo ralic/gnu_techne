@@ -32,7 +32,7 @@ static void recurse (Node *root, GdkEvent *event)
 {
     Node *child;
     
-    t_begin_interval (root, T_INPUT_PHASE);
+    t_begin_interval (root);
 
     if ([root respondsTo: @selector(inputWithEvent:)]) {
 	[(id)root inputWithEvent: event];
@@ -42,7 +42,7 @@ static void recurse (Node *root, GdkEvent *event)
 	recurse (child, event);
     }
 
-    t_end_interval (root, T_INPUT_PHASE);
+    t_end_interval (root);
 }
 
 @implementation Input

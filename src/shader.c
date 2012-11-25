@@ -811,7 +811,7 @@ static int uniforms_iterator(lua_State *L)
     }
 }
 
--(void) traverse
+-(void) draw
 {
     int i;
 
@@ -832,7 +832,7 @@ static int uniforms_iterator(lua_State *L)
 	}
     }
     
-    [super traverse];
+    [super draw];
 }
 
 @end

@@ -14,50 +14,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
+#ifndef _DYNAMIC_H_
+#define _DYNAMIC_H_
 
-#include <lua.h>
-#include <lauxlib.h>
-
-#include "gl.h"
-
-#include "techne.h"
-#include "flat.h"
-#include "shader.h"
-
-static Shader *mold;
-static int reference;
-
-@implementation Flat
--(void)init
-{
-#include "glsl/flat_vertex.h"	
-#include "glsl/flat_fragment.h"	
+#include "transform.h"
     
-    /* If this is the first instance create the program. */
-
-    if (!mold) {
-	mold = [Shader alloc];
-        
-        [mold init];
-
-	[mold addSource: glsl_flat_vertex for: VERTEX_STAGE];
-	[mold addSource: glsl_flat_fragment for: FRAGMENT_STAGE];
-	[mold link];
-
-	reference = luaL_ref (_L, LUA_REGISTRYINDEX);
-    }
-    
-    [self initFrom: mold];
+@interface Dynamic: Transform {
+@public
+    int step;
 }
 
--(void) draw
-{
-    glEnable (GL_CULL_FACE);
-    
-    [super draw];
-
-    glDisable (GL_CULL_FACE);
-}
+-(void) stepBy: (double) h at: (double) t;
+-(int) _get_step;
+-(void) _set_step;
 
 @end
+
+#endif

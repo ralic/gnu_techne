@@ -18,7 +18,7 @@
 #define _SHADER_H_
 
 #include <lua.h>
-#include "node.h"
+#include "graphic.h"
 
 typedef struct {
     unsigned int block;
@@ -31,7 +31,7 @@ typedef enum {
     FRAGMENT_STAGE
 }  shader_Stage;
 
-@interface Shader: Node {
+@interface Shader: Graphic {
 @public
     unsigned int *blocks, name;
     shader_Uniform *uniforms;

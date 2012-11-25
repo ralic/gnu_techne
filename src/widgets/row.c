@@ -211,7 +211,7 @@
     }
 }
 
--(void) prepare
+-(void) arrange
 {
     Widget *child;
     double delta;
@@ -234,16 +234,16 @@
 	delta += 0.5 * child->allocation[0];
     }
     
-    [super prepare];
+    [super arrange];
 }
 
--(void) traverse
+-(void) draw
 {
     glMatrixMode (GL_MODELVIEW);
     glPushMatrix();
 	
     [self place];    
-    [super traverse];
+    [super draw];
 
     glPopMatrix();
 }

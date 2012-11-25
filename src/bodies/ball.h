@@ -24,7 +24,6 @@
 #include "body.h"
 
 @interface Ball: Body {
-    GLUquadric *quadric;
     dReal radius;
 }
 

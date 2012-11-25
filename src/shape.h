@@ -22,7 +22,7 @@
 #include "gl.h"
 
 #include "array/array.h"
-#include "transform.h"
+#include "graphic.h"
 
 typedef struct shape_Buffer {
     struct shape_Buffer *next;
@@ -36,7 +36,7 @@ typedef struct shape_Buffer {
     int flag;
 } shape_Buffer;
 
-@interface Shape: Transform {
+@interface Shape: Graphic {
 @public
     shape_Buffer *buffers, *indices;
     unsigned int name;

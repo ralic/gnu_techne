@@ -19,9 +19,9 @@
 
 #include <lua.h>
 #include <time.h>
-#include "node.h"
+#include "dynamic.h"
 
-@interface Timer: Node {
+@interface Timer: Dynamic {
     struct timespec checkpoint;
 
     double period, elapsed, delta, count;

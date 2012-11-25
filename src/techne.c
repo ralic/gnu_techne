@@ -36,14 +36,11 @@ static int iterations = 0;
 
 static long long int beginning;
 
-static void accumulate(Node *root, long long int (*intervals)[2]) {
+static void accumulate(Node *root, long long int intervals[2]) {
     Node *child;
-    int j;
     
-    for (j = 0 ; j < T_PHASE_COUNT ; j += 1) {
-	intervals[j][0] += root->profile.intervals[j][0];
-	intervals[j][1] += root->profile.intervals[j][1];
-    }
+    intervals[0] += root->profile.intervals[0];
+    intervals[1] += root->profile.intervals[1];
     
     for (child = root->down ; child ; child = child->right) {
 	accumulate (child, intervals);
@@ -82,11 +79,7 @@ static void accumulate(Node *root, long long int (*intervals)[2]) {
 -(void) iterate
 {
     Builtin *builtin;
-    Root *root;
-    long long int runtime, totals[4], intervals[T_PHASE_COUNT][2];
-    char *phases[T_PHASE_COUNT] = {"begin", "input", "step",
-				   "transform", "prepare", "traverse",
-				   "finish"};
+    long long int runtime, totals[4], intervals[2];
     double c;
     int h, j;
 
@@ -99,12 +92,6 @@ static void accumulate(Node *root, long long int (*intervals)[2]) {
 
 	    luap_enter(_L);
 	    interactive = 0;
-	}
-
-	for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-	    t_begin_interval (root, T_BEGIN_PHASE);    
-	    [root begin];
-	    t_end_interval (root, T_BEGIN_PHASE);
 	}
 
 	for (builtin = [Builtin nodes];
@@ -173,56 +160,51 @@ static void accumulate(Node *root, long long int (*intervals)[2]) {
 
     lua_remove(_L, h + 1);
 
+    memset (totals, 0, sizeof(totals));
+
+    t_print_message(
+	"+------------------------------------------------------+------------------------+\n"
+	"|                                 cummulative          |   self                 |\n"
+	"|node                             core    user   total |   core    user   total |\n"
+	"+------------------------------------------------------+------------------------+\n"
+	);
+	
     while (lua_gettop(_L) > h) {
 	Node *node;
 	
         memset (intervals, 0, sizeof(intervals));
-        memset (totals, 0, sizeof(totals));
 
         assert (t_isnode(_L, -1));
         node = t_tonode(_L, -1);
         
         accumulate (node, intervals);
 	
-        for (j = 0 ; j < T_PHASE_COUNT ; j += 1) {
-            totals[0] += intervals[j][0];
-            totals[1] += intervals[j][1];
-            totals[2] += node->profile.intervals[j][0];
-            totals[3] += node->profile.intervals[j][1];
-        }
+	totals[0] += intervals[0];
+	totals[1] += intervals[1];
+	totals[2] += node->profile.intervals[0];
+	totals[3] += node->profile.intervals[1];
 
         luaL_callmeta (_L, -1, "__tostring");
         
-        t_print_message(
-            "\nPhase profile for %s:\n"
-            "+----------------------------------+------------------------+\n"
-            "|             cummulative          |   self                 |\n"
-            "|phase        core    user   total |   core    user   total |\n"
-            "+----------------------------------+------------------------+\n",
-            lua_tostring (_L, -1));
-	
-        for (j = 0 ; j < T_PHASE_COUNT ; j += 1) {
-            t_print_message(
-                "|%-10s %5.1f%%  %5.1f%%  %5.1f%% | %5.1f%%  %5.1f%%  %5.1f%% |\n",
-                phases[j],
-                c * (intervals[j][0] - intervals[j][1]),
-                c * intervals[j][1], c * intervals[j][0],
-                c * (node->profile.intervals[j][0] -
-                     node->profile.intervals[j][1]),
-                c * node->profile.intervals[j][1],
-                c * node->profile.intervals[j][0]);
-        }
-
-        t_print_message(
-            "+----------------------------------+------------------------+\n"
-            "|%-10s %5.1f%%  %5.1f%%  %5.1f%% | %5.1f%%  %5.1f%%  %5.1f%% |\n"
-            "+----------------------------------+------------------------+\n",
-            "total",
-            c * (totals[0] - totals[1]), c * totals[1], c * totals[0],
-            c * (totals[2] - totals[3]), c * totals[3], c * totals[2]);
+	t_print_message(
+	    "|%-30s %5.1f%%  %5.1f%%  %5.1f%% | %5.1f%%  %5.1f%%  %5.1f%% |\n",
+	    lua_tostring (_L, -1),
+	    c * (intervals[0] - intervals[1]),
+	    c * intervals[1], c * intervals[0],
+	    c * (node->profile.intervals[0] -
+		 node->profile.intervals[1]),
+	    c * node->profile.intervals[1],
+	    c * node->profile.intervals[0]);
 
         lua_pop (_L, 2);
     }
+
+    t_print_message(
+	"+------------------------------------------------------+------------------------+\n"
+	"|total                          %5.1f%%  %5.1f%%  %5.1f%% | %5.1f%%  %5.1f%%  %5.1f%% |\n"
+	"+------------------------------------------------------+------------------------+\n",
+	c * (totals[0] - totals[1]), c * totals[1], c * totals[0],
+	c * (totals[2] - totals[3]), c * totals[3], c * totals[2]);
 }
 
 -(int) _get_interactive

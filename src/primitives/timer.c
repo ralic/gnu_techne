@@ -72,34 +72,16 @@
     }
 }
 
--(void) begin
-{
-    [self tick];
-    [super begin];
-}
-
 -(void) stepBy: (double) h at: (double) t
 {
     [self tick];
     [super stepBy: h at: t];
 }
 
--(void) prepare
+-(void) transform
 {
     [self tick];
-    [super prepare];
-}
-
--(void) traverse
-{
-    [self tick];
-    [super traverse];
-}
-
--(void) finish
-{
-    [self tick];
-    [super finish];
+    [super transform];
 }
 
 -(int) _get_period

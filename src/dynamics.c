@@ -298,10 +298,10 @@ static void transform (Node *root)
 {
     Node *child, *next;
 
-    t_begin_interval (root, T_TRANSFORM_PHASE);
+    t_begin_interval (root);
 
     if ([root isKindOf: [Transform class]]) {
-	[(id)root transform];
+	[(Transform *)root transform];
     } else {
 	for (child = root->down ; child ; child = next) {
 	    next = child->right;	    
@@ -309,7 +309,25 @@ static void transform (Node *root)
 	}
     }
     
-    t_end_interval (root, T_TRANSFORM_PHASE);
+    t_end_interval (root);
+}
+
+static void step (Node *root, double h, double t)
+{
+    Node *child, *next;
+
+    t_begin_interval (root);
+
+    if ([root isKindOf: [Dynamic class]]) {
+	[(Dynamic *)root stepBy: h at: t];
+    } else {
+	for (child = root->down ; child ; child = next) {
+	    next = child->right;	    
+	    step (child, h, t);
+	}
+    }
+    
+    t_end_interval (root);
 }
 
 @implementation Dynamics
@@ -391,11 +409,11 @@ static void transform (Node *root)
 		dSpaceCollide ((dSpaceID)geom, NULL, callback);
 	    }
 	}
+
+	/* Step the tree. */
     
 	for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-	    t_begin_interval (root, T_STEP_PHASE);
-	    [root stepBy: stepsize at: then];
-	    t_end_interval (root, T_STEP_PHASE);
+	    step (root, stepsize, then);
 	}
 
 	if (iterations > 0) {

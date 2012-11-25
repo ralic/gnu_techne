@@ -17,9 +17,9 @@
 #ifndef _CURSOR_H_
 #define _CURSOR_H_
 
-#include "transform.h"
+#include "graphic.h"
 
-@interface Cursor: Transform {
+@interface Cursor: Graphic {
 }
 
 -(void) inputWithEvent: (GdkEvent *) event;

@@ -47,7 +47,7 @@ return {
 	       shaft = shading.flat {
 		  color = lightgoldenrod,
 
-		  prepare = function (self)
+		  draw = function (self)
 		     local a, d, c, e
 
 		     d = self.bias or 0.1
@@ -67,7 +67,7 @@ return {
 	       arms = shading.flat {
 		  color = ivory3,
 
-		  prepare = function (self) 
+		  draw = function (self) 
 		     local a, b, pair
 
 		     pair = hinge.pair
@@ -106,8 +106,8 @@ return {
 
 	    slider = core.slider (parameters)
 
-	    slider.schematic = primitives.node {
-	       prepare = function (self)
+	    slider.schematic = primitives.graphic {
+	       draw = function (self)
 	    	  local a, b, L, l, h, x, d, stops, pair
 
 	    	  stops = slider.stops
@@ -180,7 +180,7 @@ return {
 	 shafts = shading.flat {
 	    color = yellowgreen,
 
-	    prepare = function (self)
+	    draw = function (self)
 	       local a, d, c, e, x, y
 
 	       d = self.bias or 0.1
@@ -205,7 +205,7 @@ return {
 	 arms = shading.flat {
 	    color = darkseagreen,
 
-	    prepare = function (self) 
+	    draw = function (self) 
 	       local a, b, pair
 
 	       pair = universal.pair

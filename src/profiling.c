@@ -40,11 +40,9 @@ static void profilinghook (lua_State *L, lua_Debug *ar)
     }
 }
 
-void t_begin_interval (Node *node, tprof_Phase i)
+void t_begin_interval (Node *node)
 {
     long long int t;
-    
-    assert (i < T_PHASE_COUNT);
     
     t = t_get_cpu_time();
 
@@ -52,28 +50,27 @@ void t_begin_interval (Node *node, tprof_Phase i)
 	lua_sethook (_L, profilinghook, LUA_MASKCALL | LUA_MASKRET, 0);
     } else {
 	assert (node->up->profile.beginning == beginning);
-	assert (node->up->profile.intervals[i] == interval);
+	assert (node->up->profile.intervals == interval);
 	interval[0] += t - beginning[0];
     }
 
-    interval = node->profile.intervals[i];
+    interval = node->profile.intervals;
     beginning = node->profile.beginning;
     beginning[0] = t;
 }
 
-void t_end_interval (Node *node, tprof_Phase i)
+void t_end_interval (Node *node)
 {
     long long int t;
     
-    assert (i < T_PHASE_COUNT);
-    assert (interval == node->profile.intervals[i]);
+    assert (interval == node->profile.intervals);
     assert (beginning == node->profile.beginning);
 
     t = t_get_cpu_time();
     interval[0] += t - beginning[0];
 
     if (node->up) {
-	interval = node->up->profile.intervals[i];
+	interval = node->up->profile.intervals;
 	beginning = node->up->profile.beginning;
 	beginning[0] = t;
     } else {

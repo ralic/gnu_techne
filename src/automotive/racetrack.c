@@ -1203,9 +1203,9 @@ static int sampler_index(lua_State *L)
     self->dirty = 0;
 }
 
--(void) begin
+-(void) transform
 {
-    [super begin];
+    [super transform];
 
     if (self->dirty) {
 	[self update];
@@ -1388,57 +1388,5 @@ static int sampler_index(lua_State *L)
 
     [super free];
 }
-
-/* -(void) traverse */
-/* { */
-/*     if (self->debug) { */
-/* 	glUseProgramObjectARB(0); */
-
-/* 	glMatrixMode (GL_MODELVIEW); */
-/* 	glPushMatrix(); */
-/* 	glMultMatrixf (self->matrix); */
-
-/* 	glEnable (GL_DEPTH_TEST); */
-/* 	glEnable (GL_CULL_FACE); */
-   
-/* 	glPolygonMode (GL_FRONT_AND_BACK, GL_LINE); */
-/* 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); */
-/* 	glEnable(GL_LINE_SMOOTH); */
-/* 	glEnable(GL_POINT_SMOOTH); */
-/* 	glEnable(GL_BLEND); */
-/* 	glEnable (GL_DEPTH_TEST); */
-/* 	glDepthMask (GL_FALSE); */
- 
-/* 	glColor3f (1, 0, 0); */
-/* 	glLineWidth (1); */
-
-/* 	glEnableClientState(GL_VERTEX_ARRAY); */
-/* 	glEnableClientState(GL_NORMAL_ARRAY); */
-/* 	glEnableClientState(GL_TEXTURE_COORD_ARRAY); */
-	    
-/* 	glVertexPointer(3, GL_DOUBLE, 0, self->vertices); */
-/* 	glNormalPointer(GL_DOUBLE, 0, self->normals); */
-/* 	glTexCoordPointer(2, GL_DOUBLE, 0, self->uv); */
-
-/* 	glDrawArrays(GL_TRIANGLE_STRIP, 0, self->size); */
-
-/* 	glDisableClientState(GL_TEXTURE_COORD_ARRAY); */
-/* 	glDisableClientState(GL_NORMAL_ARRAY); */
-/* 	glDisableClientState(GL_VERTEX_ARRAY); */
-
-/* 	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL); */
-/* 	glDepthMask (GL_TRUE); */
-	
-/* 	glDisable (GL_DEPTH_TEST); */
-/* 	glDisable (GL_CULL_FACE); */
-/* 	glDisable(GL_BLEND); */
-/* 	glDisable(GL_LINE_SMOOTH); */
-/* 	glDisable(GL_POINT_SMOOTH); */
-    
-/* 	glPopMatrix(); */
-/*     } */
-    
-/*     [super traverse]; */
-/* } */
 
 @end

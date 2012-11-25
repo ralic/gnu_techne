@@ -19,9 +19,9 @@
 
 #include <lua.h>
 #include <ode/ode.h>
-#include "transform.h"
+#include "dynamic.h"
 
-@interface Body: Transform {
+@interface Body: Dynamic {
 @public    
     dBodyID body;
     dGeomID geom;
@@ -30,7 +30,7 @@
     dReal velocity[3], spin[3];
     dMass mass;
 
-    int clamped, encapsulated, debug;
+    int clamped, encapsulated;
     int poststep;
 }
 

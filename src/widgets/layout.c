@@ -186,7 +186,7 @@ static PangoContext *context;
     free (pixels);
 }
 
--(void) traverse
+-(void) draw
 {
     glMatrixMode (GL_MODELVIEW);
     glPushMatrix();
@@ -221,7 +221,7 @@ static PangoContext *context;
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
 
-    [super traverse];
+    [super draw];
     
     glMatrixMode (GL_MODELVIEW);
     glPopMatrix();

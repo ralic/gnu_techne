@@ -703,9 +703,13 @@ static void run()
 
 -(void) iterate
 {
+    t_begin_interval(self);
+
     do {
 	run();
     } while (block);
+
+    t_end_interval(self);
 }
     
 -(int) _get_http

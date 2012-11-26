@@ -54,7 +54,7 @@ struct protocol {
     const struct protocol *protocol;
 
     struct {
-	long long int beginning[2], intervals[2];
+	long long int beginnings[2], intervals[2];
     } profile;
     
     struct {

@@ -61,6 +61,8 @@ static void recurse (Node *root, GdkEvent *event)
     Root *root;
     GdkEvent *event;
     
+    t_begin_interval(self);
+
     while ((event = gdk_event_get()) != NULL) {
 	int quit = 0;
 	
@@ -119,10 +121,13 @@ static void recurse (Node *root, GdkEvent *event)
 	case GDK_KEY_PRESS: case GDK_KEY_RELEASE:
 	case GDK_BUTTON_PRESS: case GDK_BUTTON_RELEASE:
 	case GDK_SCROLL: case GDK_MOTION_NOTIFY:
+            t_end_interval(self);
+    
 	    for (root = [Root nodes] ; root ; root = (Root *)root->right) {
 		recurse(root, event);
 	    }
 	    
+            t_begin_interval(self);
 	    break;
 	default:
 	    gdk_event_put(event);
@@ -135,6 +140,8 @@ static void recurse (Node *root, GdkEvent *event)
 	    break;
 	}
     }
+    
+    t_end_interval(self);
 }
 
 @end

@@ -611,6 +611,8 @@ static void draw (Node *root)
     Node *root;
     GdkEvent *event;
 
+    t_begin_interval(self);
+
     while ((event = gdk_event_get()) != NULL) {
 	int quit = 0;
 	
@@ -672,13 +674,19 @@ static void draw (Node *root)
     glClear(GL_DEPTH_BUFFER_BIT |
 	    GL_COLOR_BUFFER_BIT |
 	    GL_STENCIL_BUFFER_BIT);
+
+    t_end_interval(self);
     
     for (root = [Root nodes] ; root ; root = (Root *)root->right) {
 	draw (root);    
     }
 
+    t_begin_interval(self);
+
     glXSwapBuffers (GDK_DISPLAY_XDISPLAY(display),
                     GDK_WINDOW_XWINDOW(window));
+
+    t_end_interval(self);
 }
 
 -(int) _get_window

@@ -368,6 +368,8 @@ static void step (Node *root, double h, double t)
     Root *root;
     double delta;
     long int time;
+    
+    t_begin_interval(self);
 
     time = t_get_real_time();
 
@@ -409,12 +411,16 @@ static void step (Node *root, double h, double t)
 		dSpaceCollide ((dSpaceID)geom, NULL, callback);
 	    }
 	}
+    
+        t_end_interval(self);
 
 	/* Step the tree. */
     
 	for (root = [Root nodes] ; root ; root = (Root *)root->right) {
 	    step (root, stepsize, then);
 	}
+    
+        t_begin_interval(self);
 
 	if (iterations > 0) {
 	    dWorldQuickStep (_WORLD, stepsize);
@@ -422,6 +428,11 @@ static void step (Node *root, double h, double t)
 	    dWorldStep (_WORLD, stepsize);
 	}
     }    
+	
+    /* Advance the real-world time. */
+
+    once = time;    
+    t_end_interval(self);
 
     /* Transform the tree to update absolute positions and
        orientations. */
@@ -429,10 +440,6 @@ static void step (Node *root, double h, double t)
     for (root = [Root nodes] ; root ; root = (Root *)root->right) {
 	transform (root);
     }
-	
-    /* Advance the real-world time. */
-
-    once = time;
 }
 
 -(int) _get_stepsize

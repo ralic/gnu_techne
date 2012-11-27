@@ -22,6 +22,23 @@
 #include "techne.h"
 #include "event.h"
  
+static void recurse (Node *root, GdkEvent *event)
+{
+    Node *child;
+    
+    t_begin_interval (root);
+
+    if ([root isKindOf: [Event class]]) {
+	[(id)root inputWithEvent: event];
+    } else {
+        for (child = root->down ; child ; child = child->right) {
+            recurse (child, event);
+        }
+    }
+    
+    t_end_interval (root);
+}
+
 @implementation Event
 
 -(void) init
@@ -38,6 +55,8 @@
 
 -(void) inputWithEvent: (GdkEvent *) event
 {
+    Node *child, *sister;
+    
     assert (event);
     
     /* Prepare the bindings based on the event type. */
@@ -49,7 +68,7 @@
 	lua_pushnumber (_L, ((GdkEventButton *)event)->button);
 	lua_pushnumber (_L, ((GdkEventButton *)event)->x);
 	lua_pushnumber (_L, ((GdkEventButton *)event)->y);
-	
+        
 	if (event->type == GDK_BUTTON_PRESS) {
 	    t_callhook (_L, self->buttonpress, 4, 0);
 	} else {
@@ -124,6 +143,11 @@
 	} else {
 	    t_callhook (_L, self->keyrelease, 2, 0);
 	}	
+    }
+    
+    for (child = self->down ; child ; child = sister) {
+	sister = child->right;
+	recurse (child, event);
     }
 }
 

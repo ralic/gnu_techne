@@ -34,14 +34,14 @@ static void recurse (Node *root, GdkEvent *event)
     
     t_begin_interval (root);
 
-    if ([root respondsTo: @selector(inputWithEvent:)]) {
+    if ([root isKindOf: [Event class]]) {
 	[(id)root inputWithEvent: event];
+    } else {
+        for (child = root->down ; child ; child = child->right) {
+            recurse (child, event);
+        }
     }
     
-    for (child = root->down ; child ; child = child->right) {
-	recurse (child, event);
-    }
-
     t_end_interval (root);
 }
 
@@ -69,6 +69,14 @@ static void recurse (Node *root, GdkEvent *event)
 	/* _TRACE ("%d\n", event->type); */
 
 	assert(event);
+
+        /* Ignore double/triple-click events for now.  Individual
+         * press/release event sets are generated as expected. */
+        
+        if (event->type == GDK_2BUTTON_PRESS ||
+            event->type == GDK_3BUTTON_PRESS) {
+            continue;
+        }
 
 	/* Ignore consecutive keypresses for the same key.  These are
 	 * always a result of key autorepeat. */

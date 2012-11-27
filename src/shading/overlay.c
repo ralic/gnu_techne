@@ -14,20 +14,68 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include <lua.h>
 #include <lauxlib.h>
 
+#include "gl.h"
+
+#include "algebra.h"
 #include "techne.h"
-#include "shape.h"
 #include "overlay.h"
-#include "program.h"
-#include "flat.h"
 
-int luaopen_shading_core (lua_State *L)
+@implementation Overlay
+
+-(void) init
 {
-    Class classes[] = {[Program class], [Overlay class], [Flat class], NULL};
+    [super init];
 
-    t_exportnodes (L, classes);
-    
+    self->normalized = 0;
+}
+
+-(void) draw
+{
+    float M[16];
+    int v[4];
+
+    glGetIntegerv (GL_VIEWPORT, v);
+    /* _TRACEV(4, "d", v); */
+	
+    /* Set an orthographic projection matrix. */
+
+    if (self->normalized) {
+        t_load_orthographic(M,
+                            -(double)v[2] / v[3] * 0.5,
+                            (double)v[2] / v[3] * 0.5,
+                            -0.5, 0.5,
+                            0, 1);
+    } else {
+        t_load_orthographic(M, v[0], v[2], v[3], v[1], 0, 1);
+    }
+        
+    /* _TRACEM(4, 4, ".5f", M); */
+
+    t_push_projection(M);
+
+    t_load_identity_4 (M);
+    t_push_modelview (M, T_LOAD);
+	
+    [super draw];
+	
+    t_pop_modelview();
+    t_pop_projection();
+}
+
+-(int) _get_normalized
+{
+    lua_pushboolean(_L, self->normalized);
+
     return 1;
 }
+
+-(void) _set_normalized
+{
+    self->normalized = lua_toboolean(_L, 3);
+}
+
+@end

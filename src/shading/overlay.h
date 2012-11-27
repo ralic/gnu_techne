@@ -14,15 +14,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CURSOR_H_
-#define _CURSOR_H_
+#ifndef _OVERLAY_H_
+#define _OVERLAY_H_
 
 #include "graphic.h"
 
-@interface Cursor: Graphic {
+@interface Overlay: Graphic {
+    int normalized;
 }
 
--(void) inputWithEvent: (GdkEvent *) event;
+-(int) _get_normalized;
+-(void) _set_normalized;
 
 @end
 

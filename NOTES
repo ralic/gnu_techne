@@ -33,5 +33,3 @@ TODO (ASAP):
 * Add a switch to load all known modules at boot time.
 * Resolve naming conflicts in arraymath.
 * Fix the chain node to properly reflect the velocity when the run changes.
-* Consider getting rid of Cursor node in favor of a generic 2d overlay node + Event.
-* Consider whether to decide which nodes to iterate at each phase based on Class hierarchy or selectors/protocol.

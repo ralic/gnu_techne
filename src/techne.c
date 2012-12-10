@@ -130,6 +130,7 @@ void t_end_interval (Node *node)
 -(void) iterate
 {
     Builtin *builtin;
+    Root *root;
     long long int runtime, totals[4], intervals[2];
     double c;
     int h, j;
@@ -218,6 +219,23 @@ void t_end_interval (Node *node)
     }
 
     lua_remove(_L, h + 1);
+
+    /* If no profiled nodes have been specified just rerturn the
+     * profile of all builtins and roots. */
+    
+    if (lua_gettop(_L) == h) {
+	for (builtin = [Builtin nodes];
+	     builtin;
+	     builtin = (Builtin *)builtin->right) {
+            t_pushuserdata(_L, 1, builtin);
+        }
+        
+	for (root = [Root nodes];
+	     root;
+	     root = (Root *)root->right) {
+            t_pushuserdata(_L, 1, root);
+        }
+    }
 
     memset (totals, 0, sizeof(totals));
 

@@ -671,8 +671,6 @@ int main(int argc, char **argv)
 	luap_enter(_L);
     }
 
-    t_print_message ("Entering the main loop.\n");
-
     [techne iterate];
 
     /* Unlink all root nodes. */

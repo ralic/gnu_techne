@@ -25,4 +25,6 @@
 
 @end
 
+int luaopen_accoustics (lua_State *L);
+
 #endif

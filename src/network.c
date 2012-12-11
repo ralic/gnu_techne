@@ -40,6 +40,8 @@ struct context {
 static int connections, pages, port, block;
 static struct MHD_Daemon *http;
 
+static Network* instance;
+
 static int calculate_level(const char *s)
 {
     int i, started, level, uselevel = 0;
@@ -699,6 +701,13 @@ static void run()
     
     lua_newtable (_L);
     pages = luaL_ref (_L, LUA_REGISTRYINDEX);
+
+    instance = self;
+}
+
++(Builtin *)instance
+{
+    return instance;
 }
 
 -(void) iterate
@@ -778,3 +787,10 @@ static void run()
 }
 
 @end
+
+int luaopen_network (lua_State *L)
+{
+    [[Network alloc] init];
+
+    return 1;
+}

@@ -38,6 +38,8 @@ static long long int zero;
 static long long int *intervals;
 static long long int *beginnings;
 
+static Techne *instance;
+
 static void accumulate(Node *root, long long int intervals[2]) {
     Node *child;
     
@@ -99,32 +101,24 @@ void t_end_interval (Node *node)
 }
 
 @implementation Techne
--(void) initWithArgc: (int)argc andArgv: (char **)argv
+-(void) init
 {
     [super init];
+    
     lua_pushstring (_L, "techne");
     lua_setfield (_L, -2, "tag");
-    lua_setglobal (_L, "techne");
 
     /* Greet the user. */
 
     t_print_message ("This is Techne, version %s.\n", VERSION);
     t_print_timing_resolution();
-    
-    [[Input alloc] init];
-    lua_setglobal (_L, "input");
-    
-    [[Network alloc] init];
-    lua_setglobal (_L, "network");
-    
-    [[Dynamics alloc] init];
-    lua_setglobal (_L, "dynamics");
 
-    [[Graphics alloc] init];
-    lua_setglobal (_L, "graphics");
+    instance = self;
+}
 
-    [[Accoustics alloc] init];
-    lua_setglobal (_L, "accoustics");
++(Builtin *)instance
+{
+    return instance;
 }
 
 -(void) iterate
@@ -352,3 +346,10 @@ void t_end_interval (Node *node)
 }
 
 @end
+
+int luaopen_techne (lua_State *L)
+{
+    [[Techne alloc] init];
+
+    return 1;
+}

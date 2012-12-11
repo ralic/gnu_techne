@@ -23,6 +23,8 @@
 }
 
 +(Builtin *)nodes;
++(Builtin *)instance;
+
 -(void) iterate;
 
 @end

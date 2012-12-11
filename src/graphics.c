@@ -40,6 +40,8 @@ static GdkWindow *window;
 static GdkDisplay *display;
 static GdkScreen *screen;
 
+static Graphics* instance;
+
 #define PROJECTION_OFFSET (0)
 #define PROJECTION_SIZE (sizeof(float[16]))
 #define MODELVIEW_OFFSET (PROJECTION_OFFSET + PROJECTION_SIZE)
@@ -589,6 +591,13 @@ static void draw (Node *root)
 	t_push_projection (I);
 	t_push_modelview (I, T_LOAD);
     }
+
+    instance = self;
+}
+
++(Builtin *)instance
+{
+    return instance;
 }
 
 -(void) free
@@ -1088,3 +1097,10 @@ static void draw (Node *root)
 }
 
 @end
+
+int luaopen_graphics (lua_State *L)
+{
+    [[Graphics alloc] init];
+
+    return 1;
+}

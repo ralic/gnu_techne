@@ -28,6 +28,8 @@
 static unsigned int *keys;
 static int keys_n;
 
+static Input* instance;
+
 static void recurse (Node *root, GdkEvent *event)
 {
     Node *child;
@@ -54,6 +56,13 @@ static void recurse (Node *root, GdkEvent *event)
     
     lua_pushstring (_L, "input");
     lua_setfield (_L, -2, "tag");
+
+    instance = self;
+}
+
++(Builtin *)instance
+{
+    return instance;
 }
 
 -(void) iterate
@@ -153,3 +162,10 @@ static void recurse (Node *root, GdkEvent *event)
 }
 
 @end
+
+int luaopen_input (lua_State *L)
+{
+    [[Input alloc] init];
+
+    return 1;
+}

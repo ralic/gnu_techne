@@ -31,4 +31,6 @@
 
 @end
 
+int luaopen_network (lua_State *L);
+
 #endif

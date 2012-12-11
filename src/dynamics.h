@@ -54,4 +54,6 @@ dSpaceID _SPACE;
 
 @end
 
+int luaopen_dynamics (lua_State *L);
+
 #endif

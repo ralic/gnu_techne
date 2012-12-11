@@ -62,13 +62,13 @@ int luaopen_moremath (lua_State *L);
 @interface Techne: Builtin {
 }
 
--(void) initWithArgc: (int)argc andArgv: (char **)argv;
-
 -(int) _get_iterate;
 -(int) _get_iterations;	
 -(void) _set_iterate;
 -(void) _set_iterations;
 
 @end
+
+int luaopen_techne (lua_State *L);
 
 #endif

@@ -33,6 +33,11 @@
 
 #include "prompt/prompt.h"
 #include "techne.h"
+#include "graphics.h"
+#include "network.h"
+#include "accoustics.h"
+#include "input.h"
+#include "dynamics.h"
 #include "root.h"
 
 #define COLOR(i, j) (colorize ? "\033\[" #i ";" #j "m" : "")
@@ -392,40 +397,24 @@ void t_print_error (const char *format, ...)
 
 int main(int argc, char **argv)
 {
-    Techne *techne;
     Node *node;
     
     static struct option options[] = {
 	{"option", 1, 0, 'O'},
 	{"execute", 1, 0, 'e'},
+	{"load", 1, 0, 'l'},
+	{"load-all", 1, 0, 'a'},
 	{"interactive", 0, 0, 'i'},
 	{"quiet", 0, 0, 'q'},
 	{"configuration", 1, 0, 'c'},
-	{"name", 1, 0, 'n'},
-	{"class", 1, 0, 'C'},
-	{"color", 1, 0, 'L'},
+	{"colorize", 1, 0, 'L'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
     };
 
-    int i, option;
-    
-    /* Create and initialize the Lua state. */
+    int i, h, option;
     
     _L = luaL_newstate();
-
-    luaL_requiref(_L, "base", luaopen_base, 1);
-    luaL_requiref(_L, "coroutine", luaopen_coroutine, 0);
-    luaL_requiref(_L, "string", luaopen_string, 0);
-    luaL_requiref(_L, "table", luaopen_table, 0);
-    luaL_requiref(_L, "math", luaopen_moremath, 0);
-    luaL_requiref(_L, "bit32", luaopen_bit32, 0);
-    luaL_requiref(_L, "io", luaopen_io, 0);
-    luaL_requiref(_L, "os", luaopen_os, 0);
-    luaL_requiref(_L, "debug", luaopen_debug, 0);
-    
-    lua_settop (_L, 0);
-
 
     /* Only output color text if the output is an interactive
      * terminal. */
@@ -481,6 +470,7 @@ int main(int argc, char **argv)
     lua_getfield (_L, -2, "cpath");
     lua_concat (_L, 2);
     lua_setfield (_L, -2, "cpath");
+    
     lua_pop (_L, 1);
 
     /* Load the console module on startup. */
@@ -500,7 +490,7 @@ int main(int argc, char **argv)
     /* Parse the command line. */
     
     while ((option = getopt_long (argc, argv,
-				  "O:c:d:e:hEimq",
+				  "O:c:e:l:ahiq",
 				  options, 0)) != -1) {
 	if (option == 'O') {
 	    char *equal;
@@ -563,12 +553,45 @@ int main(int argc, char **argv)
 		lua_error (_L);
 	    } else {
 		lua_insert (_L, 1);
-	    }
-	    
+	    }	    
 	} else if (option == 'i') {
 	    interactive = 1;
 	} else if (option == 'q') {
 	    quiet += 1;
+	} else if (option == 'l' || option == 'a') {
+            const char *s;
+            char **list, *all[] = {
+                "serialize", "units", "bindings", 
+                "resources", "array", "arraymath", 
+                "joints", "primitives", "bodies", 
+                "shading", "shapes", "automotive", 
+                "widgets", "console"
+            };
+            int i, n;
+
+            if (optarg) {
+                list = &optarg;
+                n = 1;
+            } else {
+                list = all;
+                n = sizeof(all) / sizeof(all[0]);
+            }
+
+            /* Pretend the -e switch was used with the input:
+               module_name = require 'modulename' */
+
+            for (i = 0 ; i < n ; i += 1) {
+                lua_pushfstring (_L, "%s = require '%s'", list[i], list[i]);
+                s = lua_tostring(_L, -1);
+            
+                if(luaL_loadbuffer (_L, s, strlen(s), "=command line")) {
+                    lua_error (_L);
+                } else {
+                    lua_insert (_L, 1);
+                }
+
+                lua_pop (_L, 1);
+            }
 	} else if (option == 'L') {
 	    if (!strcmp (optarg, "always")) {
 		colorize = 1;
@@ -615,12 +638,18 @@ int main(int argc, char **argv)
 		"Display this help message.\n"
 		"  -c FILE, --configuration=FILE                  "
 		"Specify a configuration script.\n"
+		"  -l MODULE, --load=MODULE                       "
+		"Load the specified module during initialization.\n"
+		"  -a, --load-all                                 "
+		"Load all modules during initialization.\n"
 		"  -O OPTION[=VALUE], --option OPTION[=VALUE]     "
 		"Set the option OPTION with value VALUE.\n"
 		"  -i, --interactive                              "
 		"Drop to an interactive shell after initializing.\n"
 		"  -e STAT, --execute=STAT                        "
 		"Execute the provided statement.\n"
+		"  --colorize=always|never|auto                   "
+		"Specify when to color console output.\n"
 		"  -q, --quiet                                    "
 		"Suppress output messages.\n", argv[0]);
 
@@ -631,7 +660,30 @@ int main(int argc, char **argv)
     }
 
     lua_setglobal (_L, "options");
+    
+    /* Make sure all important modules are loaded. */
+    
+    h = lua_gettop (_L);
 
+    luaL_requiref (_L, "techne", luaopen_techne, 0);
+    luaL_requiref (_L, "graphics", luaopen_graphics, 0);
+    luaL_requiref (_L, "dynamics", luaopen_dynamics, 0);
+    luaL_requiref (_L, "accoustics", luaopen_accoustics, 0);
+    luaL_requiref (_L, "input", luaopen_input, 0);
+    luaL_requiref (_L, "network", luaopen_network, 0);
+
+    luaL_requiref(_L, "base", luaopen_base, 1);
+    luaL_requiref(_L, "coroutine", luaopen_coroutine, 0);
+    luaL_requiref(_L, "string", luaopen_string, 0);
+    luaL_requiref(_L, "table", luaopen_table, 0);
+    luaL_requiref(_L, "math", luaopen_moremath, 0);
+    luaL_requiref(_L, "bit32", luaopen_bit32, 0);
+    luaL_requiref(_L, "io", luaopen_io, 0);
+    luaL_requiref(_L, "os", luaopen_os, 0);
+    luaL_requiref(_L, "debug", luaopen_debug, 0);
+    
+    lua_settop (_L, h);
+    
     /* Initialize the interactive interpreter. */
 
     luap_sethistory (_L, "~/.techne_history");
@@ -643,9 +695,6 @@ int main(int argc, char **argv)
     
     lua_pushcfunction (_L, replacemetatable);
     lua_setglobal (_L, "replacemetatable");
-
-    techne = [Techne alloc];
-    [techne initWithArgc: argc andArgv: argv];
     
     /* Proceed to execute specified input. */
 
@@ -671,7 +720,9 @@ int main(int argc, char **argv)
 	luap_enter(_L);
     }
 
-    [techne iterate];
+    if ([Techne instance]) {
+        [[Techne instance] iterate];
+    }
 
     /* Unlink all root nodes. */
     

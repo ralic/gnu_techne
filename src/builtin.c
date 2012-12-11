@@ -29,6 +29,11 @@ static Node *builtins;
     return (Builtin *)builtins;
 }
 
++(Builtin *)instance
+{
+    return NULL;
+}
+
 -(void) init
 {
     [self setOrphansList: &builtins];

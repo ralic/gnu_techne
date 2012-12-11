@@ -41,6 +41,8 @@ struct context {
     dJointFeedback feedback;
 };
 
+static Dynamics* instance;
+
 static int next_joint(lua_State *L)
 {
     Body *object;
@@ -361,6 +363,13 @@ static void step (Node *root, double h, double t)
     
     lua_pushcfunction (_L, joints_iterator);
     lua_setglobal (_L, "constraints");
+
+    instance = self;
+}
+
++(Builtin *)instance
+{
+    return instance;
 }
 
 -(void) iterate
@@ -609,3 +618,10 @@ static void step (Node *root, double h, double t)
     }
 }
 @end
+
+int luaopen_dynamics (lua_State *L)
+{
+    [[Dynamics alloc] init];
+
+    return 1;
+}

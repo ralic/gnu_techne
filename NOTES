@@ -13,14 +13,12 @@ LUA_CFLAGS='-I/usr/local/mingw/include' LUA_LIBS='-L/usr/local/mingw/lib -llua -
 TODO (eventually):
 ==================
 
+* Fix the manual page.
 * Make network page functions return {mime, page} instead of page.
 * Consider moving luaarray, luaprompt to github.
 
 TODO (ASAP):
 ============
-
-* Also when updating an existing one the VBO needs to be updated.
-  - This is tricky.
 
 * Need debug meshes for the following items (remeber to delete traverse methods):
   - Plane
@@ -29,7 +27,5 @@ TODO (ASAP):
 * Need debug diagrams for joints.
   - Remove Joint->debug once this is done.
 
-* Turn the various builtins into modules.
-* Add a switch to load all known modules at boot time.
 * Resolve naming conflicts in arraymath.
 * Fix the chain node to properly reflect the velocity when the run changes.

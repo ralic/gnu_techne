@@ -356,8 +356,7 @@ static dColliderFn * getCollider (int num)
 	
 	h_0 = lua_gettop (_L);
 		    
-	lua_getglobal(_L, "dynamics");
-	lua_getfield(_L, -1, "collision");
+        [(Dynamics *)[Dynamics instance] _get_collision];
 	lua_replace (_L, -2);
 	
 	if (!lua_isnil(_L, -1)) {

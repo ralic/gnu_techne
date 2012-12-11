@@ -60,4 +60,6 @@
 
 @end
 
+int luaopen_graphics (lua_State *L);
+
 #endif

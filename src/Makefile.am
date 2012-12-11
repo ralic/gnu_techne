@@ -64,7 +64,7 @@ browser_bin_LDADD = ${WEBKIT_LIBS} ${GTK_LIBS} ${AM_LDADD}
 
 nobase_pkglib_LTLIBRARIES = array/core.la arraymath/core.la	\
 			    joints/core.la bodies/core.la	\
-			    primitives/core.la physics.la	\
+			    primitives/core.la misc/physics.la	\
 			    shapes/core.la widgets/core.la	\
 			    automotive/core.la console/core.la	\
 			    shading/core.la
@@ -139,10 +139,10 @@ shading_core_la_LIBADD = ${GL_LIBS} ${AM_LDADD}
 
 EXTRA_shading_core_la_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h
 
-physics_la_SOURCES = physics.c
-physics_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
-physics_la_LDFLAGS = -module -avoid-version -no-undefined
-physics_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
+misc_physics_la_SOURCES = misc/physics.c
+misc_physics_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
+misc_physics_la_LDFLAGS = -module -avoid-version -no-undefined
+misc_physics_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
 
 shapes_core_la_SOURCES = shapes/core.c
 shapes_core_la_CFLAGS = ${AM_CFLAGS} ${GL_CFLAGS}

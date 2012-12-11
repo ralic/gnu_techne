@@ -368,10 +368,9 @@ static int spring (lua_State *L)
     k_s = (dReal)luaL_checknumber (L, 1);
     k_d = (dReal)luaL_checknumber (L, 2);
 
-    lua_getglobal (L, "dynamics");
-    lua_getfield (L, -1, "stepsize");
-    
+    [(Dynamics *)[Dynamics instance] _get_stepsize];
     h = (dReal)lua_tonumber (L, -1);
+    lua_pop(_L, 1);
 
     lua_newtable (L);
     lua_pushnumber (L, 1.0 / (h * k_s + k_d));

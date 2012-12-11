@@ -25,6 +25,8 @@
 #include "accoustics.h"
 #include "techne.h"
 
+static Accoustics* instance;
+
 @implementation Accoustics
 -(void) init
 {
@@ -63,6 +65,13 @@
 
     t_print_message ("The audio renderer is: '%s %s'.\n",
 		     alGetString(AL_RENDERER), alGetString(AL_VERSION));
+
+    instance = self;
+}
+
++(Builtin *)instance
+{
+    return instance;
 }
 
 -(int) _get_gain
@@ -96,3 +105,10 @@
 }
 
 @end
+
+int luaopen_accoustics (lua_State *L)
+{
+    [[Accoustics alloc] init];
+
+    return 1;
+}

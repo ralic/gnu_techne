@@ -43,11 +43,12 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     space.h shape.c shape.h shader.c shader.h		\
 		     array/array.c arraymath/operations.c		\
 		     array/array.h prompt/prompt.c prompt/prompt.h	\
-		     joints/contact.c moremath.c timing.c	\
+		     joints/contact.c moremath.c timing.c		\
 		     memory.c network.c network.h proxy.c proxy.h	\
 		     input.c input.h structures.h math.h root.c root.h	\
 		     builtin.c builtin.h dynamic.c dynamic.h graphic.c  \
-		     graphic.h
+		     graphic.h controller.c controller.h controllers.c 	\
+		     cursor.c cursor.h
 
 EXTRA_techne_bin_SOURCES = compat/asprintf.h
 

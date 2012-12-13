@@ -17,29 +17,12 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
-#include <gdk/gdk.h>
 #include "node.h"
-
+    
 @interface Event: Node {
-    int buttonpress, buttonrelease, motion, scroll;
-    int keypress, keyrelease;
 }
 
--(void) inputWithEvent: (GdkEvent *) event;
-
--(int) _get_buttonpress;
--(int) _get_buttonrelease;
--(int) _get_keypress;
--(int) _get_keyrelease;
--(int) _get_motion;
--(int) _get_scroll;
-
--(void) _set_buttonpress;
--(void) _set_buttonrelease;
--(void) _set_keypress;
--(void) _set_keyrelease;
--(void) _set_motion;
--(void) _set_scroll;
+-(void) input;
 
 @end
 

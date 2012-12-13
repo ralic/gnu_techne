@@ -22,7 +22,7 @@
 #include "dynamic.h"
 #include "graphic.h"
 #include "transform.h"
-#include "event.h"
+#include "cursor.h"
 #include "observer.h"
 #include "timer.h"
 #include "root.h"
@@ -30,7 +30,7 @@
 int luaopen_primitives_core (lua_State *L)
 {
     Class classes[] = {[Node class], [Dynamic class], [Graphic class],
-		       [Transform class], [Event class], [Observer class],
+		       [Transform class], [Cursor class], [Observer class],
 		       [Timer class], [Root class], NULL};
 
     t_exportnodes (L, classes);

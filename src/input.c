@@ -22,7 +22,7 @@
 
 #include "techne.h"
 #include "input.h"
-#include "event.h"
+#include "cursor.h"
 #include "root.h"
 
 static unsigned int *keys;
@@ -36,7 +36,7 @@ static void recurse (Node *root, GdkEvent *event)
     
     t_begin_interval (root);
 
-    if ([root isKindOf: [Event class]]) {
+    if ([root isKindOf: [Cursor class]]) {
 	[(id)root inputWithEvent: event];
     } else {
         for (child = root->down ; child ; child = child->right) {

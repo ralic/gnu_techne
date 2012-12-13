@@ -14,41 +14,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <lualib.h>
-#include <lauxlib.h>
+#ifndef _CURSOR_H_
+#define _CURSOR_H_
 
+#include <gdk/gdk.h>
 #include "event.h"
-#include "techne.h"
 
-static void recurse (Node *root)
-{
-    Node *child, *next;
-
-    t_begin_interval (root);
-
-    if ([root isKindOf: [Event class]]) {
-	[(Event *)root input];
-    } else {
-	for (child = root->down ; child ; child = next) {
-	    next = child->right;	    
-	    recurse (child);
-	}
-    }
-    
-    t_end_interval (root);
+@interface Cursor: Event {
+    int buttonpress, buttonrelease, motion, scroll;
+    int keypress, keyrelease;
 }
 
-@implementation Event
+-(void) inputWithEvent: (GdkEvent *) event;
 
--(void) input
-{
-    Node *child, *sister;
-    
-    for (child = self->down ; child ; child = sister) {
-	sister = child->right;
-	recurse (child);
-    }
-}
+-(int) _get_buttonpress;
+-(int) _get_buttonrelease;
+-(int) _get_keypress;
+-(int) _get_keyrelease;
+-(int) _get_motion;
+-(int) _get_scroll;
+
+-(void) _set_buttonpress;
+-(void) _set_buttonrelease;
+-(void) _set_keypress;
+-(void) _set_keyrelease;
+-(void) _set_motion;
+-(void) _set_scroll;
 
 @end
 
+#endif

@@ -69,7 +69,7 @@ local function fire (suffix, ...)
 end
 
 local root = primitives.root {
-   event = primitives.event {
+   event = primitives.cursor {
       keypress = function (self, key, ...)
 	 local suffix
 

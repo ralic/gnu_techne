@@ -672,6 +672,12 @@ int main(int argc, char **argv)
     luaL_requiref (_L, "input", luaopen_input, 0);
     luaL_requiref (_L, "network", luaopen_network, 0);
 
+    {
+        int luaopen_controllers (lua_State *L);
+        
+        luaL_requiref (_L, "controllers", luaopen_controllers, 0);
+    }
+
     luaL_requiref(_L, "base", luaopen_base, 1);
     luaL_requiref(_L, "coroutine", luaopen_coroutine, 0);
     luaL_requiref(_L, "string", luaopen_string, 0);

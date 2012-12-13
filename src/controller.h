@@ -14,41 +14,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <lualib.h>
-#include <lauxlib.h>
+#ifndef _CONTROLLER_H_
+#define _CONTROLLER_H_
 
+#include <gdk/gdk.h>
 #include "event.h"
-#include "techne.h"
 
-static void recurse (Node *root)
-{
-    Node *child, *next;
-
-    t_begin_interval (root);
-
-    if ([root isKindOf: [Event class]]) {
-	[(Event *)root input];
-    } else {
-	for (child = root->down ; child ; child = next) {
-	    next = child->right;	    
-	    recurse (child);
-	}
-    }
-    
-    t_end_interval (root);
+@interface Controller: Event {
+    int buttonpress, buttonrelease, motion;
+    int device;
 }
 
-@implementation Event
+-(void) initWithDevice: (const char *)name;
 
--(void) input
-{
-    Node *child, *sister;
-    
-    for (child = self->down ; child ; child = sister) {
-	sister = child->right;
-	recurse (child);
-    }
-}
+-(int) _get_buttonpress;
+-(int) _get_buttonrelease;
+-(int) _get_motion;
+
+-(void) _set_buttonpress;
+-(void) _set_buttonrelease;
+-(void) _set_motion;
 
 @end
 
+#endif

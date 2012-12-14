@@ -18,8 +18,6 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include <gdk/gdk.h>
-
 #include "techne.h"
 #include "input.h"
 #include "cursor.h"
@@ -28,19 +26,22 @@
 static unsigned int *keys;
 static int keys_n;
 
+static GdkEvent **events;
+static int events_n;
+
 static Input* instance;
 
-static void recurse (Node *root, GdkEvent *event)
+static void recurse (Node *root)
 {
     Node *child;
     
     t_begin_interval (root);
 
-    if ([root isKindOf: [Cursor class]]) {
-	[(id)root inputWithEvent: event];
+    if ([root isKindOf: [Event class]]) {
+	[(id)root input];
     } else {
         for (child = root->down ; child ; child = child->right) {
-            recurse (child, event);
+            recurse (child);
         }
     }
     
@@ -57,6 +58,10 @@ static void recurse (Node *root, GdkEvent *event)
     lua_pushstring (_L, "input");
     lua_setfield (_L, -2, "tag");
 
+    events_n = 1;
+    events = malloc (events_n * sizeof(GdkEvent *));
+    events[0] = NULL;
+
     instance = self;
 }
 
@@ -65,16 +70,22 @@ static void recurse (Node *root, GdkEvent *event)
     return instance;
 }
 
++(GdkEvent **)events
+{
+    return events;
+}
+
 -(void) iterate
 {
     Root *root;
     GdkEvent *event;
+    int n;
     
     t_begin_interval(self);
 
-    while ((event = gdk_event_get()) != NULL) {
-	int quit = 0;
-	
+    for (n = 0, event = gdk_event_get();
+         event;
+         n += 1, event = gdk_event_get()) {
 	/* _TRACE ("%d\n", event->type); */
 
 	assert(event);
@@ -84,6 +95,7 @@ static void recurse (Node *root, GdkEvent *event)
         
         if (event->type == GDK_2BUTTON_PRESS ||
             event->type == GDK_3BUTTON_PRESS) {
+            gdk_event_free (event);
             continue;
         }
 
@@ -92,21 +104,32 @@ static void recurse (Node *root, GdkEvent *event)
     
 	if (event->type == GDK_KEY_PRESS) {
 	    unsigned int k;
-	    int i, j = -1;
+	    int i, j = -1, skip = 0;
 
 	    k = ((GdkEventKey *)event)->keyval;
 	
 	    for (i = 0 ; i < keys_n ; i += 1) {
+                /* Find an empty spot in case we need to store the
+                 * key. */
+                
 		if (keys[i] == 0) {
 		    j = i;
 		}
-	    
+
+                /* Check if it's been pressed already. */
+                
 		if (keys[i] == k) {
-		    return;
+                    skip = 1;
+                    break;
 		}
 	    }
 
-	    if (j >= 0) {
+            /* Store the key making space if necesarry. */
+
+            if (skip) {
+                gdk_event_free (event);
+                continue;
+            } else if (j >= 0) {
 		keys[j] = k;
 	    } else {
 		if (i == keys_n) {
@@ -121,7 +144,9 @@ static void recurse (Node *root, GdkEvent *event)
 	    int i;
 
 	    k = ((GdkEventKey *)event)->keyval;
-	
+
+            /* Remove the key from the list. */
+            
 	    for (i = 0 ; i < keys_n ; i += 1) {
 		if (keys[i] == k) {
 		    keys[i] = 0;
@@ -138,24 +163,34 @@ static void recurse (Node *root, GdkEvent *event)
 	case GDK_KEY_PRESS: case GDK_KEY_RELEASE:
 	case GDK_BUTTON_PRESS: case GDK_BUTTON_RELEASE:
 	case GDK_SCROLL: case GDK_MOTION_NOTIFY:
-            t_end_interval(self);
-    
-	    for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-		recurse(root, event);
-	    }
-	    
-            t_begin_interval(self);
+            if (n == events_n - 1) {
+                events_n += 1;
+                events = realloc (events, events_n * sizeof(GdkEvent *));
+                events[n + 1] = NULL;
+            }
+
+            assert(events[n] == NULL);
+            events[n] = event;
+            
 	    break;
 	default:
 	    gdk_event_put(event);
-	    quit = 1;
-	}
-		
-	gdk_event_free (event);
-
-	if (quit) {
+            gdk_event_free (event);
 	    break;
 	}
+    }
+    
+    t_end_interval(self);
+
+    for (root = [Root nodes] ; root ; root = (Root *)root->right) {
+        recurse(root);
+    }
+
+    t_begin_interval(self);
+
+    for (n = 0 ; n < events_n && events[n] ; n += 1) {
+        gdk_event_free(events[n]);
+        events[n] = NULL;
     }
     
     t_end_interval(self);

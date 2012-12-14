@@ -25,23 +25,6 @@
 
 #include "techne.h"
 #include "controller.h"
- 
-static void recurse (Node *root)
-{
-    Node *child;
-    
-    t_begin_interval (root);
-
-    if ([root isKindOf: [Controller class]]) {
-	[(id)root input];
-    } else {
-        for (child = root->down ; child ; child = child->right) {
-            recurse (child);
-        }
-    }
-    
-    t_end_interval (root);
-}
 
 @implementation Controller
 
@@ -58,7 +41,6 @@ static void recurse (Node *root)
 
 -(void) input
 {
-    Node *child, *sister;
     struct input_event events[64];
     int i, n;
     
@@ -95,11 +77,8 @@ static void recurse (Node *root)
             }
         }
     }
-    
-    for (child = self->down ; child ; child = sister) {
-        sister = child->right;
-        recurse (child);
-    }
+
+    [super input];
 }
 
 -(void) free

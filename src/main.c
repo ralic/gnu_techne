@@ -561,6 +561,9 @@ int main(int argc, char **argv)
 	} else if (option == 'l' || option == 'a') {
             const char *s;
             char **list, *all[] = {
+                "techne", "graphics", "dynamics",
+                "accoustics", "input", "network",
+                
                 "serialize", "units", "bindings", 
                 "resources", "array", "arraymath", 
                 "joints", "primitives", "bodies", 

@@ -29,3 +29,10 @@ TODO (ASAP):
 
 * Resolve naming conflicts in arraymath.
 * Fix the chain node to properly reflect the velocity when the run changes.
+
+Input
+=====
+
+* Fix Gdk event extraction and dispatch.
+* Move Gdk event extraction to the Graphics node.
+* Figure out event node packaging.

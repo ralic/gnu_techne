@@ -20,24 +20,8 @@
 #include <string.h>
 
 #include "techne.h"
+#include "input.h"
 #include "cursor.h"
- 
-static void recurse (Node *root, GdkEvent *event)
-{
-    Node *child;
-    
-    t_begin_interval (root);
-
-    if ([root isKindOf: [Event class]]) {
-	[(id)root inputWithEvent: event];
-    } else {
-        for (child = root->down ; child ; child = child->right) {
-            recurse (child, event);
-        }
-    }
-    
-    t_end_interval (root);
-}
 
 @implementation Cursor
 
@@ -53,102 +37,101 @@ static void recurse (Node *root, GdkEvent *event)
     self->scroll = LUA_REFNIL;
 }
 
--(void) inputWithEvent: (GdkEvent *) event
+-(void) input
 {
-    Node *child, *sister;
-    
-    assert (event);
-    
-    /* Prepare the bindings based on the event type. */
-	
-    if (event->type == GDK_BUTTON_PRESS ||
-	event->type == GDK_BUTTON_RELEASE) {
+    GdkEvent **events = [Input events];
+    int i;
 
-	t_pushuserdata (_L, 1, self);
-	lua_pushnumber (_L, ((GdkEventButton *)event)->button);
-	lua_pushnumber (_L, ((GdkEventButton *)event)->x);
-	lua_pushnumber (_L, ((GdkEventButton *)event)->y);
+    /* Fire the bindings based on the event type. */
+    
+    for (i = 0 ; events[i] ; i += 1) {    
+        assert (events[i]);
+
+        if (events[i]->type == GDK_BUTTON_PRESS ||
+            events[i]->type == GDK_BUTTON_RELEASE) {
+            t_pushuserdata (_L, 1, self);
+            lua_pushnumber (_L, events[i]->button.button);
+            lua_pushnumber (_L, events[i]->button.x);
+            lua_pushnumber (_L, events[i]->button.y);
         
-	if (event->type == GDK_BUTTON_PRESS) {
-	    t_callhook (_L, self->buttonpress, 4, 0);
-	} else {
-	    t_callhook (_L, self->buttonrelease, 4, 0);
-	}
-    } else if (event->type == GDK_SCROLL) {
-	t_pushuserdata (_L, 1, self);
+            if (events[i]->type == GDK_BUTTON_PRESS) {
+                t_callhook (_L, self->buttonpress, 4, 0);
+            } else {
+                t_callhook (_L, self->buttonrelease, 4, 0);
+            }
+        } else if (events[i]->type == GDK_SCROLL) {
+            t_pushuserdata (_L, 1, self);
 
-	if (((GdkEventScroll *)event)->direction == GDK_SCROLL_UP) {
-	    lua_pushstring (_L, "up");
-	} else if (((GdkEventScroll *)event)->direction == GDK_SCROLL_DOWN) {
-	    lua_pushstring (_L, "down");
-	} else if (((GdkEventScroll *)event)->direction == GDK_SCROLL_LEFT) {
-	    lua_pushstring (_L, "left");
-	} else if (((GdkEventScroll *)event)->direction == GDK_SCROLL_RIGHT) {
-	    lua_pushstring (_L, "right");
-	}
+            if (events[i]->scroll.direction == GDK_SCROLL_UP) {
+                lua_pushstring (_L, "up");
+            } else if (events[i]->scroll.direction == GDK_SCROLL_DOWN) {
+                lua_pushstring (_L, "down");
+            } else if (events[i]->scroll.direction == GDK_SCROLL_LEFT) {
+                lua_pushstring (_L, "left");
+            } else if (events[i]->scroll.direction == GDK_SCROLL_RIGHT) {
+                lua_pushstring (_L, "right");
+            }
 
-	lua_pushnumber (_L, ((GdkEventScroll *)event)->x);
-	lua_pushnumber (_L, ((GdkEventScroll *)event)->y);
+            lua_pushnumber (_L, events[i]->scroll.x);
+            lua_pushnumber (_L, events[i]->scroll.y);
 	
-	t_callhook (_L, self->scroll, 4, 0);
-    } else if (event->type == GDK_MOTION_NOTIFY) {
-	int i;
-	    
-	t_pushuserdata (_L, 1, self);
+            t_callhook (_L, self->scroll, 4, 0);
+        } else if (events[i]->type == GDK_MOTION_NOTIFY) {
+            int i;
 
-	for (i = 0;
-	     (1 << i) - 1 < ((GdkEventMotion *)event)->state >> 8;
-	     i += 1);
+            t_pushuserdata (_L, 1, self);
 
-	if (i > 0) {
-	    lua_pushnumber (_L, i);
-	} else {
-	    lua_pushnil(_L);
-	}
+            for (i = 0;
+                 (1 << i) - 1 < events[i]->motion.state >> 8;
+                 i += 1);
+
+            if (i > 0) {
+                lua_pushnumber (_L, i);
+            } else {
+                lua_pushnil(_L);
+            }
 		
-	lua_pushnumber (_L, ((GdkEventMotion *)event)->x);
-	lua_pushnumber (_L, ((GdkEventMotion *)event)->y);
+            lua_pushnumber (_L, events[i]->motion.x);
+            lua_pushnumber (_L, events[i]->motion.y);
 
-	t_callhook (_L, self->motion, 4, 0);
-    } else if (event->type == GDK_KEY_PRESS ||
-	       event->type == GDK_KEY_RELEASE) {
-	char *name;
-	unsigned int k;
+            t_callhook (_L, self->motion, 4, 0);
+        } else if (events[i]->type == GDK_KEY_PRESS ||
+                   events[i]->type == GDK_KEY_RELEASE) {
+            char *name;
+            unsigned int k;
 
-	t_pushuserdata (_L, 1, self);
+            t_pushuserdata (_L, 1, self);
 
-	k = ((GdkEventKey *)event)->keyval;
-	name = gdk_keyval_name (k);
+            k = events[i]->key.keyval;
+            name = gdk_keyval_name (k);
 
-	if (k > 255 || !isalnum(k)) {
-	    char *new, *c;
+            if (k > 255 || !isalnum(k)) {
+                char *new, *c;
 
-	    /* Make a temporary copy of the name and down-case it. */
+                /* Make a temporary copy of the name and down-case it. */
 	    
-	    new = strcpy(alloca(strlen(name) + 1), name);
+                new = strcpy(alloca(strlen(name) + 1), name);
 
-	    for (c = new ; *c ; c += 1) {
-		if (isupper(*c)) {
-		    *c = tolower(*c);
-		}
-	    }
+                for (c = new ; *c ; c += 1) {
+                    if (isupper(*c)) {
+                        *c = tolower(*c);
+                    }
+                }
 	    
-	    lua_pushstring (_L, new);
-	} else {
-	    lua_pushstring (_L, name);
-	}
+                lua_pushstring (_L, new);
+            } else {
+                lua_pushstring (_L, name);
+            }
 
-	if (event->type == GDK_KEY_PRESS) {
-	    t_callhook (_L, self->keypress, 2, 0);
-	} else {
-	    t_callhook (_L, self->keyrelease, 2, 0);
-	}	
+            if (events[i]->type == GDK_KEY_PRESS) {
+                t_callhook (_L, self->keypress, 2, 0);
+            } else {
+                t_callhook (_L, self->keyrelease, 2, 0);
+            }	
+        }
     }
-    
-    for (child = self->down ; child ; child = sister) {
-	sister = child->right;
-	recurse (child, event);
-    }
+
+    [super input];
 }
 
 -(void) free

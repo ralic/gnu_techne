@@ -25,8 +25,6 @@
     int keypress, keyrelease;
 }
 
--(void) inputWithEvent: (GdkEvent *) event;
-
 -(int) _get_buttonpress;
 -(int) _get_buttonrelease;
 -(int) _get_keypress;

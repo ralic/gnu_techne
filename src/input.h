@@ -17,11 +17,15 @@
 #ifndef _INPUT_H_
 #define _INPUT_H_
 
+#include <gdk/gdk.h>
+
 #include "transform.h"
 #include "builtin.h"
 
 @interface Input: Builtin {
 }
+
++(GdkEvent **)events;
 
 @end
 

@@ -472,7 +472,37 @@ static int rotation (lua_State *L)
 
     M = malloc (9 * sizeof (double));
 
-    if (lua_type (L, 1) == LUA_TNUMBER &&
+    if ((array = array_testcompatible (L, 1,
+                                       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                       ARRAY_TDOUBLE, 1, 4))) {
+        double *q, xx, xy, xz, xt, yy, yz, yt, zz, zt;
+       
+        q = array->values.doubles;
+        
+        /* Convert the quaternion to a rotation matrix. */
+
+        xx = q[0] * q[0];
+        xy = q[0] * q[1];
+        xz = q[0] * q[2];
+        xt = q[0] * q[3];
+        yy = q[1] * q[1];
+        yz = q[1] * q[2];
+        yt = q[1] * q[3];
+        zz = q[2] * q[2];
+        zt = q[2] * q[3];
+
+        M[I(0, 0)] = 1 - 2 * (yy + zz);
+        M[I(0, 1)] = 2 * (xy - zt);
+        M[I(0, 2)] = 2 * (xz + yt);
+        
+        M[I(1, 0)] = 2 * (xy + zt);
+        M[I(1, 1)] = 1 - 2 * (xx + zz);
+        M[I(1, 2)] = 2 * (yz - xt);
+        
+        M[I(2, 0)] = 2 * (xz - yt);
+        M[I(2, 1)] = 2 * (yz + xt);
+        M[I(2, 2)] = 1 - 2 * (xx + yy); 
+    } else if (lua_type (L, 1) == LUA_TNUMBER &&
 	lua_type (L, 2) == LUA_TNUMBER) {
 	double theta, c, s;
 	int n;

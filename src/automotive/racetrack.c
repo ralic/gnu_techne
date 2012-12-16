@@ -311,7 +311,7 @@ static int collideTrackWithWheel (dGeomID track,
 
     /* Get an estimate of the surface normal by
        testing the wheel center location. */
-    
+
     segment = test (trackdata->segments,
 		    trackdata->last,
 		    trackdata->size,
@@ -679,13 +679,17 @@ static int collideWithWheel (dGeomID track,
 			     dContactGeom *contact,
 			     int skip)
 {
-    struct trackdata *trackdata;
-    struct wheeldata *wheeldata;
+    int n;
 
-    trackdata = dGeomGetClassData (track);
-    wheeldata = dGeomGetClassData (wheel);
+    n = collideTrackWithWheel (track, wheel, contact);
     
-    if (collideTrackWithWheel (track, wheel, contact) < 0) {
+    if (n < 0) {
+        struct trackdata *trackdata;
+        struct wheeldata *wheeldata;
+
+        trackdata = dGeomGetClassData (track);
+        wheeldata = dGeomGetClassData (wheel);
+    
 	if (!trackdata->field ||
 	    collideHeightfieldWithWheel (trackdata->field,
 					 wheel, contact,
@@ -1203,9 +1207,9 @@ static int sampler_index(lua_State *L)
     self->dirty = 0;
 }
 
--(void) transform
+-(void) stepBy: (double) h at: (double) t
 {
-    [super transform];
+    [super stepBy: h at: t];
 
     if (self->dirty) {
 	[self update];

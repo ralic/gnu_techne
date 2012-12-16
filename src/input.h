@@ -25,7 +25,9 @@
 @interface Input: Builtin {
 }
 
-+(GdkEvent **)events;
++(GdkEvent *)first;
++(GdkEvent *)next;
++(void)addEvent: (GdkEvent *)event;
 
 @end
 

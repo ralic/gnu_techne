@@ -32,6 +32,7 @@
 #include "techne.h"
 #include "algebra.h"
 #include "graphics.h"
+#include "input.h"
 #include "shader.h"
 #include "transform.h"
 #include "root.h"
@@ -71,6 +72,9 @@ static int modelviews_n, projections_n;
 /* Context flags. */
 
 static int debug, reportonce, interrupt, arbcontext;
+
+static unsigned int *keys;
+static int keys_n;
 
 static void APIENTRY debug_callback (GLenum source,
 				     GLenum type,
@@ -623,11 +627,75 @@ static void draw (Node *root)
     t_begin_interval(self);
 
     while ((event = gdk_event_get()) != NULL) {
-	int quit = 0;
-	
 	assert(event);
 	
 	/* _TRACE ("%d\n", event->type); */
+	assert(event);
+
+        /* Ignore double/triple-click events for now.  Individual
+         * press/release event sets are generated as expected. */
+        
+        if (event->type == GDK_2BUTTON_PRESS ||
+            event->type == GDK_3BUTTON_PRESS) {
+            gdk_event_free (event);
+            continue;
+        }
+
+	/* Ignore consecutive keypresses for the same key.  These are
+	 * always a result of key autorepeat. */
+    
+	if (event->type == GDK_KEY_PRESS) {
+	    unsigned int k;
+	    int i, j = -1, skip = 0;
+
+	    k = ((GdkEventKey *)event)->keyval;
+	
+	    for (i = 0 ; i < keys_n ; i += 1) {
+                /* Find an empty spot in case we need to store the
+                 * key. */
+                
+		if (keys[i] == 0) {
+		    j = i;
+		}
+
+                /* Check if it's been pressed already. */
+                
+		if (keys[i] == k) {
+                    skip = 1;
+                    break;
+		}
+	    }
+
+            /* Store the key making space if necesarry. */
+
+            if (skip) {
+                gdk_event_free (event);
+                continue;
+            } else if (j >= 0) {
+		keys[j] = k;
+	    } else {
+		if (i == keys_n) {
+		    keys_n += 1;
+		    keys = realloc (keys, keys_n * sizeof(unsigned int));
+		}
+
+		keys[i] = k;
+	    }
+	} else if (event->type == GDK_KEY_RELEASE) {
+	    unsigned int k;
+	    int i;
+
+	    k = ((GdkEventKey *)event)->keyval;
+
+            /* Remove the key from the list. */
+            
+	    for (i = 0 ; i < keys_n ; i += 1) {
+		if (keys[i] == k) {
+		    keys[i] = 0;
+		    break;
+		}
+	    }
+	}
 
 	switch(event->type) {
 	case GDK_CONFIGURE:
@@ -666,16 +734,16 @@ static void draw (Node *root)
 	case GDK_WINDOW_STATE:
 	case GDK_VISIBILITY_NOTIFY:
 	    break;
+	case GDK_KEY_PRESS: case GDK_KEY_RELEASE:
+	case GDK_BUTTON_PRESS: case GDK_BUTTON_RELEASE:
+	case GDK_SCROLL: case GDK_MOTION_NOTIFY:
+            [Input addEvent: event];
+            continue;
 	default:
-	    gdk_event_put(event);
-	    quit = 1;
+            assert(0);
 	}
 		
 	gdk_event_free (event);
-
-	if (quit) {
-	    break;
-	}
     }
 
     /* Draw the scene. */

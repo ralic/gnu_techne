@@ -23,6 +23,8 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include <config.h>
+
 #ifndef __WIN32__
 #include <signal.h>
 #endif
@@ -291,10 +293,6 @@ static int panic(lua_State *L)
 #endif
 
     t_print_error("%s%s", COLOR(1, 37), lua_tostring(L, -1));
-
-    push_lua_stack(_L);
-    t_print_error(lua_tostring (_L, -1));
-    lua_pop (_L, 1);
     
     print_c_stack();
 

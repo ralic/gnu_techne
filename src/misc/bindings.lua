@@ -20,7 +20,7 @@ local primitives = require "primitives"
 local bindings = {}
 local sequence = {}
 local modifiers = {false, false, false, false, false}
-
+local buttons= {}
 local index = bindings
 local down = nil
 
@@ -127,12 +127,18 @@ local root = primitives.root {
 	 end		   
       end,
 
-      buttonpress = function (self, button, x, y)
+      buttonpress = function (self, button)
+         buttons[button] = true
+
 	 self.keypress (self, "button-" ..  tostring(button),
-			button, x, y)
+			button)
       end,
 
-      motion = function (self, button, x, y)
+      motion = function (self, x, y)
+         local button
+
+         button = next(buttons)
+
 	 if button then
 	    fire (state() .. "drag-button-" ..  tostring(button),
 		  button, x, y)
@@ -141,9 +147,11 @@ local root = primitives.root {
 	 end
       end,
 
-      buttonrelease = function (self, button, x, y)
+      buttonrelease = function (self, button)
+         buttons[button] = nil
+
 	 self.keyrelease (self, "button-" ..  tostring(button),
-			  button, x, y)
+			  button)
       end,
 
       scroll = function (self, direction)

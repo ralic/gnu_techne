@@ -17,7 +17,6 @@
 #ifndef _CONTROLLER_H_
 #define _CONTROLLER_H_
 
-#include <gdk/gdk.h>
 #include "event.h"
 
 @interface Controller: Event {

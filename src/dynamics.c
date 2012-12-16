@@ -408,6 +408,16 @@ static void step (Node *root, double h, double t)
 
 	dJointGroupEmpty (_GROUP);
 	t_reset_pool (pool);
+    
+        t_end_interval(self);
+
+	/* Step the tree. */
+    
+	for (root = [Root nodes] ; root ; root = (Root *)root->right) {
+	    step (root, stepsize, then);
+	}
+    
+        t_begin_interval(self);
 
 	if (dSpaceGetNumGeoms (_SPACE) > 1) {
 	    dSpaceCollide (_SPACE, NULL, callback);
@@ -420,16 +430,6 @@ static void step (Node *root, double h, double t)
 		dSpaceCollide ((dSpaceID)geom, NULL, callback);
 	    }
 	}
-    
-        t_end_interval(self);
-
-	/* Step the tree. */
-    
-	for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-	    step (root, stepsize, then);
-	}
-    
-        t_begin_interval(self);
 
 	if (iterations > 0) {
 	    dWorldQuickStep (_WORLD, stepsize);

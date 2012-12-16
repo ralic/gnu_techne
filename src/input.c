@@ -15,6 +15,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <lua.h>
 #include <lauxlib.h>
 
@@ -23,11 +24,8 @@
 #include "cursor.h"
 #include "root.h"
 
-static unsigned int *keys;
-static int keys_n;
-
-static GdkEvent **events;
-static int events_n;
+static GdkEvent **events, **cursor;
+static int events_max, events_n;
 
 static Input* instance;
 
@@ -58,8 +56,8 @@ static void recurse (Node *root)
     lua_pushstring (_L, "input");
     lua_setfield (_L, -2, "tag");
 
-    events_n = 1;
-    events = malloc (events_n * sizeof(GdkEvent *));
+    events_max = 1;
+    events = malloc (events_max * sizeof(GdkEvent *));
     events[0] = NULL;
 
     instance = self;
@@ -70,117 +68,43 @@ static void recurse (Node *root)
     return instance;
 }
 
-+(GdkEvent **)events
++(GdkEvent *)first
 {
-    return events;
+    if (events_n > 0) {
+        return *(cursor = events);
+    } else {
+        return NULL;
+    }
+}
+
++(GdkEvent *)next
+{
+    assert (cursor);
+    
+    if (cursor - events < events_n - 1) {
+        return *(cursor += 1);
+    } else {
+        return NULL;
+    }
+}
+
++(void)addEvent: (GdkEvent *)event
+{
+    assert(event);
+    
+    if (events_n == events_max) {
+        events_max += 1;
+        events = realloc (events, events_max * sizeof(GdkEvent *));
+    }
+
+    events[events_n] = event;
+    events_n += 1;
 }
 
 -(void) iterate
 {
     Root *root;
-    GdkEvent *event;
     int n;
-    
-    t_begin_interval(self);
-
-    for (n = 0, event = gdk_event_get();
-         event;
-         n += 1, event = gdk_event_get()) {
-	/* _TRACE ("%d\n", event->type); */
-
-	assert(event);
-
-        /* Ignore double/triple-click events for now.  Individual
-         * press/release event sets are generated as expected. */
-        
-        if (event->type == GDK_2BUTTON_PRESS ||
-            event->type == GDK_3BUTTON_PRESS) {
-            gdk_event_free (event);
-            continue;
-        }
-
-	/* Ignore consecutive keypresses for the same key.  These are
-	 * always a result of key autorepeat. */
-    
-	if (event->type == GDK_KEY_PRESS) {
-	    unsigned int k;
-	    int i, j = -1, skip = 0;
-
-	    k = ((GdkEventKey *)event)->keyval;
-	
-	    for (i = 0 ; i < keys_n ; i += 1) {
-                /* Find an empty spot in case we need to store the
-                 * key. */
-                
-		if (keys[i] == 0) {
-		    j = i;
-		}
-
-                /* Check if it's been pressed already. */
-                
-		if (keys[i] == k) {
-                    skip = 1;
-                    break;
-		}
-	    }
-
-            /* Store the key making space if necesarry. */
-
-            if (skip) {
-                gdk_event_free (event);
-                continue;
-            } else if (j >= 0) {
-		keys[j] = k;
-	    } else {
-		if (i == keys_n) {
-		    keys_n += 1;
-		    keys = realloc (keys, keys_n * sizeof(unsigned int));
-		}
-
-		keys[i] = k;
-	    }
-	} else if (event->type == GDK_KEY_RELEASE) {
-	    unsigned int k;
-	    int i;
-
-	    k = ((GdkEventKey *)event)->keyval;
-
-            /* Remove the key from the list. */
-            
-	    for (i = 0 ; i < keys_n ; i += 1) {
-		if (keys[i] == k) {
-		    keys[i] = 0;
-		    break;
-		}
-	    }
-	}
-	    
-	/* Pass it on to the node tree. */
-
-	switch (event->type) {
-	case GDK_NOTHING:
-	    break;
-	case GDK_KEY_PRESS: case GDK_KEY_RELEASE:
-	case GDK_BUTTON_PRESS: case GDK_BUTTON_RELEASE:
-	case GDK_SCROLL: case GDK_MOTION_NOTIFY:
-            if (n == events_n - 1) {
-                events_n += 1;
-                events = realloc (events, events_n * sizeof(GdkEvent *));
-                events[n + 1] = NULL;
-            }
-
-            assert(events[n] == NULL);
-            events[n] = event;
-            
-	    break;
-	default:
-	    gdk_event_put(event);
-            gdk_event_free (event);
-	    break;
-	}
-    }
-    
-    t_end_interval(self);
 
     for (root = [Root nodes] ; root ; root = (Root *)root->right) {
         recurse(root);
@@ -188,10 +112,12 @@ static void recurse (Node *root)
 
     t_begin_interval(self);
 
-    for (n = 0 ; n < events_n && events[n] ; n += 1) {
+    for (n = 0 ; n < events_n ; n += 1) {
         gdk_event_free(events[n]);
-        events[n] = NULL;
     }
+
+    memset (events, 0, events_n * sizeof (GdkEvent *));
+    events_n = 0;
     
     t_end_interval(self);
 }

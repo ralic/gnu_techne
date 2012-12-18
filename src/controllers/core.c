@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <unistd.h>
 #include <linux/input.h>
 
 #include <lua.h>
@@ -39,7 +40,7 @@ static int constructcontroller(lua_State *L)
     return 1;    
 }
 
-int luaopen_controllers (lua_State *L)
+int luaopen_controllers_core (lua_State *L)
 {
     luaL_Reg api[] = {
 	{NULL, NULL}

@@ -561,12 +561,15 @@ int main(int argc, char **argv)
             char **list, *all[] = {
                 "techne", "graphics", "dynamics",
                 "accoustics", "input", "network",
+
+                "coroutine", "string", "table",
+                "math", "bit32", "io", "os", "debug", 
                 
                 "serialize", "units", "bindings", 
                 "resources", "array", "arraymath", 
                 "joints", "primitives", "bodies", 
                 "shading", "shapes", "automotive", 
-                "widgets", "console"
+                "widgets", "console", "controllers"
             };
             int i, n;
 
@@ -672,12 +675,6 @@ int main(int argc, char **argv)
     luaL_requiref (_L, "accoustics", luaopen_accoustics, 0);
     luaL_requiref (_L, "input", luaopen_input, 0);
     luaL_requiref (_L, "network", luaopen_network, 0);
-
-    {
-        int luaopen_controllers (lua_State *L);
-        
-        luaL_requiref (_L, "controllers", luaopen_controllers, 0);
-    }
 
     luaL_requiref(_L, "base", luaopen_base, 1);
     luaL_requiref(_L, "coroutine", luaopen_coroutine, 0);

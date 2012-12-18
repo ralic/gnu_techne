@@ -20,9 +20,10 @@ local primitives = require "primitives"
 local bindings = {}
 local sequence = {}
 local modifiers = {false, false, false, false, false}
-local buttons= {}
+local buttons = {}
+local axes = {}
 local index = bindings
-local down = nil
+local down, current = 0, nil
 
 local prefixes = {"control-", "alt-", "super-", "hyper-", "meta-"}
 
@@ -38,100 +39,113 @@ local function state (locked)
    return string
 end
 
-local function terminate ()
-   index, sequence = bindings, {}
-end
-
-local function fire (suffix, ...)
-   local binding
+local function push (suffix, terminal, ...)
+   local binding, catchall
 
    -- print (table.concat (sequence, " ") .. " " .. suffix)
 
-   binding = index[suffix]
+   binding, catchall = index[suffix], index["*"]
+   sequence[#sequence + 1] = suffix
 
    if binding then
-      sequence[#sequence + 1] = suffix
-
       if type (binding) == "table" then
 	 index = binding
 
 	 return false
       else
 	 if type (binding) == "function" then
-	    binding(sequence, ...)
+	    binding(table.concat(sequence, ' '), ...)
 	 end
-
-	 return true
       end
+   elseif catchall then
+      if type (catchall) == "function" then
+         catchall(table.concat(sequence, ' '), ...)
+      end
+   end
+
+   if terminal then
+      index, sequence = bindings, {}
    end
 
    return true
 end
 
+local function pop (n)
+   for i = 1, n do
+      sequence[#sequence] = nil
+   end
+end
+
+local function press (self, key, ...)
+   local suffix
+
+   if string.find (key, "control") then
+      modifiers[1] = true
+   elseif string.find (key, "alt") then
+      modifiers[2] = true
+   elseif string.find (key, "super") then
+      modifiers[3] = true
+   elseif string.find (key, "hyper") then
+      modifiers[4] = true
+   elseif string.find (key, "meta") then
+      modifiers[5] = true
+   elseif string.find (key, "shift") then
+      -- Ignore shifts.
+   else
+      down = down + 1
+      current = key
+      locked = {table.unpack (modifiers)}
+
+      push (state() .. "down-" .. key, false, ...)
+   end
+
+end
+
+function release (self, key, ...)
+   local suffix
+
+   if string.find (key, "control") then
+      modifiers[1] = false
+   elseif string.find (key, "alt") then
+      modifiers[2] = false
+   elseif string.find (key, "super") then
+      modifiers[3] = false
+   elseif string.find (key, "hyper") then
+      modifiers[4] = false
+   elseif string.find (key, "meta") then
+      modifiers[5] = false
+   elseif string.find (key, "shift") then
+      -- Ignore shifts.
+   else
+      down = down - 1
+
+      push (state() .. "up-" .. key, down == 0 and current ~= key, ...)
+      
+      if current == key then
+         pop(2)
+         push(state(locked) .. key, down == 0, ...)
+      end
+
+      current = nil
+      locked = nil
+   end		   
+end
+
 local root = primitives.root {
    event = primitives.cursor {
-      keypress = function (self, key, ...)
-	 local suffix
-
-	 if string.find (key, "control") then
-	    modifiers[1] = true
-	 elseif string.find (key, "alt") then
-	    modifiers[2] = true
-	 elseif string.find (key, "super") then
-	    modifiers[3] = true
-	 elseif string.find (key, "hyper") then
-	    modifiers[4] = true
-	 elseif string.find (key, "meta") then
-	    modifiers[5] = true
-	 elseif string.find (key, "shift") then
-	    -- Ignore shifts.
-	 else
-	    down = key
-	    locked = {table.unpack (modifiers)}
-
-	    fire (state() .. "down-" .. key, ...)
-	 end
-
-      end,
-
-      keyrelease = function (self, key, ...)
-	 local suffix
-
-	 if string.find (key, "control") then
-	    modifiers[1] = false
-	 elseif string.find (key, "alt") then
-	    modifiers[2] = false
-	 elseif string.find (key, "super") then
-	    modifiers[3] = false
-	 elseif string.find (key, "hyper") then
-	    modifiers[4] = false
-	 elseif string.find (key, "meta") then
-	    modifiers[5] = false
-	 elseif string.find (key, "shift") then
-	    -- Ignore shifts.
-	 else
-	    local p, q
-
-	    p = fire (state() .. "up-" .. key, ...)
-	    
-	    if down == key then
-	       q = fire(state(locked) .. key, ...)
-	    end
-
-	    if down ~= key or (p and q) then
-	       terminate()
-	    end
-
-	    down = nil
-	    locked = nil
-	 end		   
-      end,
+      keypress = press,
+      keyrelease = release,
 
       buttonpress = function (self, button)
          buttons[button] = true
 
-	 self.keypress (self, "button-" ..  tostring(button),
-			button)
+	 press (self, "button-" ..  tostring(button), button)
+      end,
+
+      buttonrelease = function (self, button)
+         buttons[button] = nil
+
+	 release (self, "button-" ..  tostring(button), button)
       end,
 
       motion = function (self, x, y)
@@ -140,22 +154,30 @@ local root = primitives.root {
          button = next(buttons)
 
 	 if button then
-	    fire (state() .. "drag-button-" ..  tostring(button),
-		  button, x, y)
+            if x ~= axes[1]then
+               push (state() .. "drag-axis-x" ..  tostring(button),
+                     true, button, x)
+            end
+
+            if y ~= axes[2]then
+               push (state() .. "drag-axis-y" ..  tostring(button),
+                     true, button, y)
+            end
 	 else
-	    fire (state() .. "motion", x, y)
+            if x ~= axes[1]then
+               push (state() .. "axis-x", true, x)
+            end
+
+            if y ~= axes[2]then
+               push (state() .. "axis-y", true, y)
+            end
 	 end
-      end,
 
-      buttonrelease = function (self, button)
-         buttons[button] = nil
-
-	 self.keyrelease (self, "button-" ..  tostring(button),
-			  button)
+         axes[1], axes[2] = x, y
       end,
 
       scroll = function (self, direction)
-	 fire(state() .. "scroll-" .. direction)
+	 push(state() .. "scroll-" .. direction, true)
       end,
 			    }
 				 }

@@ -19,33 +19,17 @@ local primitives = require "primitives"
 
 local bindings = {}
 local sequence = {}
-local modifiers = {false, false, false, false, false}
-local buttons = {}
-local axes = {}
 local index = bindings
 local down, current = 0, nil
 
-local prefixes = {"control-", "alt-", "super-", "hyper-", "meta-"}
-
-local function state (locked)
-   local string = ""
-
-   for i = 1, #modifiers do
-      if modifiers[i] or (locked and locked[i]) then
-	 string = string .. prefixes[i]
-      end
-   end
-
-   return string
-end
-
 local function push (suffix, terminal, ...)
-   local binding, catchall
+   local binding, catchall, name
 
    -- print (table.concat (sequence, " ") .. " " .. suffix)
 
-   binding, catchall = index[suffix], index["*"]
    sequence[#sequence + 1] = suffix
+   name = table.concat (sequence, ' ')
+   binding, catchall = index[name], index["*"]
 
    if binding then
       if type (binding) == "table" then
@@ -54,12 +38,12 @@ local function push (suffix, terminal, ...)
 	 return false
       else
 	 if type (binding) == "function" then
-	    binding(table.concat(sequence, ' '), ...)
+	    binding(name, ...)
 	 end
       end
    elseif catchall then
       if type (catchall) == "function" then
-         catchall(table.concat(sequence, ' '), ...)
+         catchall(name, ...)
       end
    end
 
@@ -79,71 +63,43 @@ end
 local function press (self, key, ...)
    local suffix
 
-   if string.find (key, "control") then
-      modifiers[1] = true
-   elseif string.find (key, "alt") then
-      modifiers[2] = true
-   elseif string.find (key, "super") then
-      modifiers[3] = true
-   elseif string.find (key, "hyper") then
-      modifiers[4] = true
-   elseif string.find (key, "meta") then
-      modifiers[5] = true
-   elseif string.find (key, "shift") then
-      -- Ignore shifts.
-   else
-      down = down + 1
-      current = key
-      locked = {table.unpack (modifiers)}
+   down = down + 1
+   current = key
 
-      push (state() .. "down-" .. key, false, ...)
-   end
-
+   push ("down-" .. key, false, ...)
 end
 
 function release (self, key, ...)
    local suffix
 
-   if string.find (key, "control") then
-      modifiers[1] = false
-   elseif string.find (key, "alt") then
-      modifiers[2] = false
-   elseif string.find (key, "super") then
-      modifiers[3] = false
-   elseif string.find (key, "hyper") then
-      modifiers[4] = false
-   elseif string.find (key, "meta") then
-      modifiers[5] = false
-   elseif string.find (key, "shift") then
-      -- Ignore shifts.
-   else
-      down = down - 1
+   down = down - 1
 
-      push (state() .. "up-" .. key, down == 0 and current ~= key, ...)
-      
-      if current == key then
-         pop(2)
-         push(state(locked) .. key, down == 0, ...)
-      end
+   push ("up-" .. key, down == 0 and current ~= key, ...)
+   
+   if current == key then
+      pop(2)
+      push(key, down == 0, ...)
+   end
 
-      current = nil
-      locked = nil
-   end		   
+   current = nil
 end
 
 local root = primitives.root {
    event = primitives.cursor {
+      buttons = {},
+      axes = {},
+
       keypress = press,
       keyrelease = release,
 
       buttonpress = function (self, button)
-         buttons[button] = true
+         self.buttons[button] = true
 
 	 press (self, "button-" ..  tostring(button), button)
       end,
 
       buttonrelease = function (self, button)
-         buttons[button] = nil
+         self.buttons[button] = nil
 
 	 release (self, "button-" ..  tostring(button), button)
       end,
@@ -151,33 +107,33 @@ local root = primitives.root {
       motion = function (self, x, y)
          local button
 
-         button = next(buttons)
+         button = next(self.buttons)
 
 	 if button then
-            if x ~= axes[1]then
-               push (state() .. "drag-axis-x" ..  tostring(button),
+            if x ~= self.axes[1]then
+               push ("drag-axis-x" ..  tostring(button),
                      true, button, x)
             end
 
-            if y ~= axes[2]then
-               push (state() .. "drag-axis-y" ..  tostring(button),
+            if y ~= self.axes[2]then
+               push ("drag-axis-y" ..  tostring(button),
                      true, button, y)
             end
 	 else
-            if x ~= axes[1]then
-               push (state() .. "axis-x", true, x)
+            if x ~= self.axes[1]then
+               push ("axis-x", true, x)
             end
 
-            if y ~= axes[2]then
-               push (state() .. "axis-y", true, y)
+            if y ~= self.axes[2]then
+               push ("axis-y", true, y)
             end
 	 end
 
-         axes[1], axes[2] = x, y
+         self.axes[1], self.axes[2] = x, y
       end,
 
       scroll = function (self, direction)
-	 push(state() .. "scroll-" .. direction, true)
+	 push("scroll-" .. direction, true)
       end,
 			    }
 				 }

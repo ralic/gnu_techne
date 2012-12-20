@@ -16,6 +16,7 @@ TODO (eventually):
 * Fix the manual page.
 * Make network page functions return {mime, page} instead of page.
 * Consider moving luaarray, luaprompt to github.
+* Consider automatically invoking the GDB when something goes wrong.
 
 TODO (ASAP):
 ============
@@ -29,3 +30,4 @@ TODO (ASAP):
 
 * Resolve naming conflicts in arraymath.
 * Fix the chain node to properly reflect the velocity when the run changes.
+* Added the rubberband as a virtual input device.

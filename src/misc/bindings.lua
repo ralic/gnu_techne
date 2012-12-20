@@ -108,12 +108,22 @@ for name, device in pairs(controllers) do
    root[name] = device { 
       buttonpress = function (self, key)
          buttons[key] = true
-         press (self, prefix, "button-" ..  tostring(key))
+
+         if type(key) ~= "string" then
+            key = "button-" ..  tostring(key)
+         end
+
+         press (self, prefix, key)
       end,
 
       buttonrelease = function (self, key)
-         release (self, prefix, "button-" ..  tostring(key))
          buttons[key] = nil
+
+         if type(key) ~= "string" then
+            key = "button-" ..  tostring(key)
+         end
+
+         release (self, prefix, key)
       end,
 
       motion = function (self, axis, value)

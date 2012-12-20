@@ -21,7 +21,7 @@
 
 #include "techne.h"
 #include "input.h"
-#include "cursor.h"
+#include "event.h"
 #include "root.h"
 
 static GdkEvent **events, **cursor;

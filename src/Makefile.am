@@ -47,7 +47,7 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     memory.c network.c network.h proxy.c proxy.h	\
 		     input.c input.h structures.h math.h root.c root.h	\
 		     builtin.c builtin.h dynamic.c dynamic.h graphic.c  \
-		     graphic.h cursor.c cursor.h
+		     graphic.h
 
 EXTRA_techne_bin_SOURCES = compat/asprintf.h
 
@@ -86,10 +86,14 @@ console_core_la_LDFLAGS = -module -avoid-version -no-undefined
 console_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
 
 controllers_core_la_SOURCES = controllers/core.c controllers/controller.c \
-			      controllers/controller.h
-controllers_core_la_CFLAGS = ${AM_CFLAGS}
+			      controllers/controller.h 			  \
+			      controllers/device.c controllers/device.h	  \
+			      controllers/keyboard.c controllers/keyboard.h \
+			      controllers/pointer.c controllers/pointer.h
+
+controllers_core_la_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS}
 controllers_core_la_LDFLAGS = -module -avoid-version -no-undefined
-controllers_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
+controllers_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD} ${GDK_LIBS}
 
 array_core_la_SOURCES = array/core.c array/array.h
 array_core_la_CFLAGS = ${AM_CFLAGS}

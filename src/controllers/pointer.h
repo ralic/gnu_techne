@@ -14,30 +14,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CURSOR_H_
-#define _CURSOR_H_
+#ifndef _POINTER_H_
+#define _POINTER_H_
 
-#include <gdk/gdk.h>
-#include "event.h"
+#include "device.h"
 
-@interface Cursor: Event {
-    int buttonpress, buttonrelease, motion, scroll;
-    int keypress, keyrelease;
+@interface Pointer: Device {
+    int axes[2];
 }
-
--(int) _get_buttonpress;
--(int) _get_buttonrelease;
--(int) _get_keypress;
--(int) _get_keyrelease;
--(int) _get_motion;
--(int) _get_scroll;
-
--(void) _set_buttonpress;
--(void) _set_buttonrelease;
--(void) _set_keypress;
--(void) _set_keyrelease;
--(void) _set_motion;
--(void) _set_scroll;
 
 @end
 

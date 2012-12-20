@@ -27,10 +27,28 @@
 #include <lauxlib.h>
 
 #include "techne.h"
+#include "pointer.h"
+#include "keyboard.h"
 #include "controller.h"
 
 #define MAX_BITS ((EV_CNT / sizeof(unsigned int)) + 1)
 #define test(b, i) (b[i / sizeof(unsigned int)] << (i % sizeof(unsigned int)))
+
+static int constructkeyboard(lua_State *L)
+{
+    [[Keyboard alloc] init];
+    t_configurenode (L, 1);
+
+    return 1;    
+}
+
+static int constructpointer(lua_State *L)
+{
+    [[Pointer alloc] init];
+    t_configurenode (L, 1);
+
+    return 1;    
+}
 
 static int constructcontroller(lua_State *L)
 {
@@ -51,9 +69,18 @@ int luaopen_controllers_core (lua_State *L)
     unsigned int bits[MAX_BITS];
 
     lua_newtable(L);
+
+    lua_pushstring (L, "Core pointer");
+    lua_pushcfunction (L, constructpointer);
+    lua_settable (L, -3);
+
+    lua_pushstring (L, "Core keyboard");
+    lua_pushcfunction (L, constructkeyboard);
+    lua_settable (L, -3);
+    
     h = lua_gettop(L);
         
-    for (i = 0, j = 0 ; i < 32 ; i += 1) {
+    for (i = 0, j = 2 ; i < 32 ; i += 1) {
         lua_pushfstring(L, "/dev/input/event%d", i);
         fd = open(lua_tostring(L, -1), O_NONBLOCK | O_RDONLY);
 

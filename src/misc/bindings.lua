@@ -85,11 +85,7 @@ local function release (self, prefix, key, ...)
    current = nil
 end
 
-local function motion (self, prefix, axis, value, ...)
-   local button
-
-   button = next(self.buttons)
-
+local function motion (self, prefix, button, axis, value, ...)
    if button then
       push (prefix .. "drag-axis-" ..  tostring(axis), true, value, button)
    else
@@ -97,63 +93,31 @@ local function motion (self, prefix, axis, value, ...)
    end
 end
 
-local root = primitives.root {
-   event = primitives.cursor {
-      buttons = {},
-      axes = {},
-
-      keypress = function (self, key)
-         press (self, "", key)
-      end,
-
-      keyrelease = function (self, key)
-         release (self, "", key)
-      end,
-
-      buttonpress = function (self, button)
-         self.buttons[button] = true
-
-	 press (self, "", "button-" ..  tostring(button), button)
-      end,
-
-      buttonrelease = function (self, button)
-         self.buttons[button] = nil
-
-	 release (self, "", "button-" ..  tostring(button), button)
-      end,
-
-      motion = function (self, x, y)
-         if x ~= self.axes[1] then
-            motion(self, "", 1, x)
-         end
-
-         if y ~= self.axes[2] then
-            motion(self, "", 2, y)
-         end
-
-         self.axes[1], self.axes[2] = x, y
-      end,
-
-      scroll = function (self, direction)
-	 push("scroll-" .. direction, true)
-      end,
-			    }
-				 }
+local root = primitives.root {}
 
 for name, device in pairs(controllers) do
-   root[name] = device {
-      buttons = {},
- 
+   local prefix
+   local buttons = {}
+
+   if name == "Core pointer" or name == "Core keyboard" then
+      prefix = ""
+   else
+      prefix = "[" .. name .. "]"
+   end
+
+   root[name] = device { 
       buttonpress = function (self, key)
-         press (self, '[' .. name .. ']', "button-" ..  tostring(key))
+         buttons[key] = true
+         press (self, prefix, "button-" ..  tostring(key))
       end,
 
       buttonrelease = function (self, key)
-         release (self, '[' .. name .. ']', "button-" ..  tostring(key))
+         release (self, prefix, "button-" ..  tostring(key))
+         buttons[key] = nil
       end,
 
       motion = function (self, axis, value)
-         motion(self, '[' .. name .. ']', axis, value)
+         motion(self, prefix, next(buttons), axis, value)
       end,
      
                        }

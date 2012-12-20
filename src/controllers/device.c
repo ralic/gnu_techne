@@ -25,64 +25,65 @@
 #include <linux/input.h>
 
 #include "techne.h"
-#include "controller.h"
+#include "device.h"
 
-@implementation Controller
+@implementation Device
 
--(void) initWithDevice: (const char *)name
+-(void) init
 {
     [super init];
 
-    self->device = open(name, O_NONBLOCK | O_RDONLY);
-}
-
--(void) input
-{
-    struct input_event events[64];
-    int i, n;
-    
-    n = read(self->device, events, 64 * sizeof(struct input_event));
-
-    if (n > 0) {
-        assert (n % sizeof(struct input_event) == 0);
-
-        /* Fire the bindings based on the event type. */
-    
-        for (i = 0 ; i < n / sizeof(struct input_event) ; i += 1) {
-            switch(events[i].type) {
-            case EV_KEY:
-                t_pushuserdata (_L, 1, self);
-                lua_pushnumber (_L, events[i].code);
-        
-                if (events[i].value == 1 || events[i].value == 2) {
-                    t_callhook (_L, self->buttonpress, 2, 0);
-                } else {
-                    t_callhook (_L, self->buttonrelease, 2, 0);
-                }
-
-                break;                  
-            case EV_REL:
-            case EV_ABS:
-                t_pushuserdata (_L, 1, self);
-		
-                lua_pushnumber (_L, events[i].code);
-                lua_pushnumber (_L, events[i].value);
-
-                t_callhook (_L, self->motion, 3, 0);
-
-                break;
-            }
-        }
-    }
-
-    [super input];
+    self->buttonpress = LUA_REFNIL;
+    self->buttonrelease = LUA_REFNIL;
+    self->motion = LUA_REFNIL;
 }
 
 -(void) free
 {
-    close(self->device);
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->buttonpress);
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->buttonrelease);
+    luaL_unref (_L, LUA_REGISTRYINDEX, motion);
 
     [super free];
+}
+
+-(int) _get_buttonpress
+{
+    lua_rawgeti(_L, LUA_REGISTRYINDEX, self->buttonpress);
+
+    return 1;
+}
+
+-(int) _get_buttonrelease
+{
+    lua_rawgeti(_L, LUA_REGISTRYINDEX, self->buttonrelease);
+
+    return 1;
+}
+
+-(int) _get_motion
+{
+    lua_rawgeti(_L, LUA_REGISTRYINDEX, motion);
+
+    return 1;
+}
+
+-(void) _set_buttonpress
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->buttonpress);
+    self->buttonpress = luaL_ref (_L, LUA_REGISTRYINDEX);
+}
+
+-(void) _set_buttonrelease
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->buttonrelease);
+    self->buttonrelease = luaL_ref (_L, LUA_REGISTRYINDEX);
+}
+
+-(void) _set_motion
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, motion);
+    self->motion = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 
 @end

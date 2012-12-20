@@ -14,16 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CONTROLLER_H_
-#define _CONTROLLER_H_
+#ifndef _KEYBOARD_H_
+#define _KEYBOARD_H_
 
 #include "device.h"
 
-@interface Controller: Device {
-    int device;
+@interface Keyboard: Device {
 }
-
--(void) initWithDevice: (const char *)name;
 
 @end
 

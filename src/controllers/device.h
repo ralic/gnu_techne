@@ -14,16 +14,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CONTROLLER_H_
-#define _CONTROLLER_H_
+#ifndef _DEVICE_H_
+#define _DEVICE_H_
 
-#include "device.h"
+#include "event.h"
 
-@interface Controller: Device {
-    int device;
+@interface Device: Event {
+    int buttonpress, buttonrelease, motion;
 }
 
--(void) initWithDevice: (const char *)name;
+-(int) _get_buttonpress;
+-(int) _get_buttonrelease;
+-(int) _get_motion;
+
+-(void) _set_buttonpress;
+-(void) _set_buttonrelease;
+-(void) _set_motion;
 
 @end
 

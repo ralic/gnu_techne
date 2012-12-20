@@ -16,6 +16,7 @@
 local string = require "string"
 local table = require "table"
 local primitives = require "primitives"
+local controllers = require 'controllers'
 
 local bindings = {}
 local sequence = {}
@@ -60,28 +61,40 @@ local function pop (n)
    end
 end
 
-local function press (self, key, ...)
+local function press (self, prefix, key, ...)
    local suffix
 
    down = down + 1
    current = key
 
-   push ("down-" .. key, false, ...)
+   push (prefix .. "down-" .. key, false, ...)
 end
 
-function release (self, key, ...)
+local function release (self, prefix, key, ...)
    local suffix
 
    down = down - 1
 
-   push ("up-" .. key, down == 0 and current ~= key, ...)
+   push (prefix .. "up-" .. tostring(key), down == 0 and current ~= key, ...)
    
    if current == key then
       pop(2)
-      push(key, down == 0, ...)
+      push (prefix .. tostring(key), down == 0, ...)
    end
 
    current = nil
+end
+
+local function motion (self, prefix, axis, value, ...)
+   local button
+
+   button = next(self.buttons)
+
+   if button then
+      push (prefix .. "drag-axis-" ..  tostring(axis), true, value, button)
+   else
+      push (prefix .. "axis-" ..  tostring(axis), true, value)
+   end
 end
 
 local root = primitives.root {
@@ -89,45 +102,34 @@ local root = primitives.root {
       buttons = {},
       axes = {},
 
-      keypress = press,
-      keyrelease = release,
+      keypress = function (self, key)
+         press (self, "", key)
+      end,
+
+      keyrelease = function (self, key)
+         release (self, "", key)
+      end,
 
       buttonpress = function (self, button)
          self.buttons[button] = true
 
-	 press (self, "button-" ..  tostring(button), button)
+	 press (self, "", "button-" ..  tostring(button), button)
       end,
 
       buttonrelease = function (self, button)
          self.buttons[button] = nil
 
-	 release (self, "button-" ..  tostring(button), button)
+	 release (self, "", "button-" ..  tostring(button), button)
       end,
 
       motion = function (self, x, y)
-         local button
+         if x ~= self.axes[1] then
+            motion(self, "", 1, x)
+         end
 
-         button = next(self.buttons)
-
-	 if button then
-            if x ~= self.axes[1]then
-               push ("drag-axis-x" ..  tostring(button),
-                     true, button, x)
-            end
-
-            if y ~= self.axes[2]then
-               push ("drag-axis-y" ..  tostring(button),
-                     true, button, y)
-            end
-	 else
-            if x ~= self.axes[1]then
-               push ("axis-x", true, x)
-            end
-
-            if y ~= self.axes[2]then
-               push ("axis-y", true, y)
-            end
-	 end
+         if y ~= self.axes[2] then
+            motion(self, "", 2, y)
+         end
 
          self.axes[1], self.axes[2] = x, y
       end,
@@ -137,6 +139,25 @@ local root = primitives.root {
       end,
 			    }
 				 }
+
+for name, device in pairs(controllers) do
+   root[name] = device {
+      buttons = {},
+ 
+      buttonpress = function (self, key)
+         press (self, '[' .. name .. ']', "button-" ..  tostring(key))
+      end,
+
+      buttonrelease = function (self, key)
+         release (self, '[' .. name .. ']', "button-" ..  tostring(key))
+      end,
+
+      motion = function (self, axis, value)
+         motion(self, '[' .. name .. ']', axis, value)
+      end,
+     
+                       }
+end
 
 bindings[root] = root
 

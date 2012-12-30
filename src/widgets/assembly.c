@@ -76,16 +76,5 @@
     self->content[1] = 2 * h_2;
 }
 
--(void) draw
-{
-    glMatrixMode (GL_MODELVIEW);
-    glPushMatrix();
-	
-    [self place];    
-    [super draw];
-
-    glPopMatrix();
-}
-
 @end
 

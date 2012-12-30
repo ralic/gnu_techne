@@ -48,14 +48,13 @@ function shapes.circle(parameters)
 			 return
 		      end
 
-		      local positions = array.floats(n, 3)
+		      local positions = array.floats(n, 2)
 
 		      for i = 1, n do
 			 theta = 2 * math.pi * (i - 1) / n
 
 			 positions[i][1] = r * math.cos (theta)
 			 positions[i][2] = r * math.sin(theta)
-			 positions[i][3] = 0
 		      end
 
 		      self.positions = positions

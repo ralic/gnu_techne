@@ -39,7 +39,7 @@ local darkseagreen = {0.2319, 0.5084, 0.2559}
 
 return {
    hinge = function (parameters)
-	    local hinge, oldmeta, a, b
+	    local hinge
 
 	    hinge = core.hinge (parameters)
 
@@ -102,7 +102,7 @@ return {
 	 end,
 
    slider = function (parameters)
-	    local slider, oldmeta, a, b
+	    local slider
 
 	    slider = core.slider (parameters)
 
@@ -172,7 +172,7 @@ return {
 	 end,
 
    universal = function (parameters)
-      local universal, oldmeta, a, b
+      local universal
 
       universal = core.universal (parameters)
 

@@ -25,9 +25,7 @@ TODO (ASAP):
   - Plane
   - Racetrack
 
-* Need debug diagrams for joints.
-  - Remove Joint->debug once this is done.
-
 * Resolve naming conflicts in arraymath.
 * Fix the chain node to properly reflect the velocity when the run changes.
-* Added the rubberband as a virtual input device.
+* Add the rubberband as a virtual input device.
+* Add a Lua texture object wrapper.

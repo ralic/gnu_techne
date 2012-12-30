@@ -18,12 +18,19 @@
 #define _SHADER_H_
 
 #include <lua.h>
+#include "gl.h"
 #include "graphic.h"
 
 typedef struct {
     unsigned int block;
     int type, size, offset, arraystride, matrixstride;
 } shader_Uniform;
+
+typedef struct {
+    unsigned int texture, unit;
+    int location;
+    GLenum target;
+} shader_Sampler;
 
 typedef enum {
     VERTEX_STAGE,
@@ -35,7 +42,8 @@ typedef enum {
 @public
     unsigned int *blocks, name;
     shader_Uniform *uniforms;
-    int blocks_n, ismold;
+    shader_Sampler *samplers;
+    int blocks_n, samplers_n, ismold;
 }
 
 

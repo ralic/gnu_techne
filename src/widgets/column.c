@@ -237,16 +237,5 @@
     [super arrange];
 }
 
--(void) draw
-{
-    glMatrixMode (GL_MODELVIEW);
-    glPushMatrix();
-	
-    [self place];    
-    [super draw];
-
-    glPopMatrix();
-}
-
 @end
 

@@ -349,16 +349,6 @@ static void match_attribute_to_buffer (unsigned int program,
     k = lua_tostring (_L, 2);
     isindices = !strcmp(k, "indices");
 
-    /* Check whether the given key already points to a buffer. */
-
-    if (isindices) {
-	b = self->indices;
-    } else {
-	for (b = self->buffers;
-	     b && strcmp (b->key, k);
-	     b = b->next);
-    }
-
     /* If index data is provided as a normal Lua table attempt to
      * promote it to and unsigned integer array.  For vertex attribute
      * buffers promote to the default (double) type. */
@@ -369,6 +359,16 @@ static void match_attribute_to_buffer (unsigned int program,
                                       ARRAY_TYPE, ARRAY_TUINT);
     } else {
 	array = array_testarray (_L, 3);
+    }
+
+    /* Check whether the given key already points to a buffer. */
+
+    if (isindices) {
+	b = self->indices;
+    } else {
+	for (b = self->buffers;
+	     b && strcmp (b->key, k);
+	     b = b->next);
     }
 
     /* Now if an array has been supplied assume it defines a new
@@ -447,7 +447,7 @@ static void match_attribute_to_buffer (unsigned int program,
             streaming = 1;
         }
         
-	/* Create the buffer object and initialize it. */
+	/* Initialize the buffer object. */
 
 	target = isindices ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
 
@@ -457,7 +457,7 @@ static void match_attribute_to_buffer (unsigned int program,
 
 	/* If the shape is already linked to a shader update the
 	 * attribute's binding unless we're just streaming in new
-	 * data.. */
+	 * data. */
 	
 	if (self->up && !streaming) {
 	    Shader *shader;
@@ -510,10 +510,12 @@ static void match_attribute_to_buffer (unsigned int program,
     
             glDeleteBuffers(1, &b->name);
             free(b->key);
-            free(b);	
+            free(b);
+
+            return 1;
+        } else {
+            return [super _set_];
         }
-        
-	return [super _set_];
     }
 }
 
@@ -549,6 +551,9 @@ static void match_attribute_to_buffer (unsigned int program,
 	 b->flag = 0, b = b->next);
     
     glBindVertexArray(self->name);
+
+    /* Go through active shader vertex attributes and match them to
+     * those of the shape. */
     
     for (j = 0 ; j < n ; j += 1) {
 	char attribute[l];
@@ -561,7 +566,10 @@ static void match_attribute_to_buffer (unsigned int program,
 	for (b = self->buffers;
 	     b && strcmp(b->key, attribute);
 	     b = b->next);
-	
+
+        /* The shader defines a vertex attribute but the shape
+         * doesn't. */
+        
 	if (!b) {
 	    t_print_warning("%s node does not specify vertex attribute "
 			    "'%s'.\n",
@@ -574,6 +582,8 @@ static void match_attribute_to_buffer (unsigned int program,
 	}
     }
 
+    /* The shape defines a vertex attribute but the shader doesn't. */
+        
     for (b = self->buffers;
 	 b;
 	 b->flag = 0, b = b->next) {

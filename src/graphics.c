@@ -255,7 +255,7 @@ void t_push_modelview (float *matrix, t_Enumerated mode)
 
     if (mode == T_MULTIPLY) {
 	t_concatenate_4T(modelviews[modelviews_n + 1],
-			  modelviews[modelviews_n], matrix);
+                         modelviews[modelviews_n], matrix);
     } else {
 	memcpy(modelviews[modelviews_n + 1], matrix, 16 * sizeof(float));
     }

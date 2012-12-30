@@ -26,7 +26,6 @@
 
 -(void) arrange;
 -(void) measure;
--(void) place;
 
 -(int) _get_align;
 -(int) _get_padding;

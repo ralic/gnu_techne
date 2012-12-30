@@ -19,16 +19,30 @@
 
 #include <gdk/gdk.h>
 #include "widget.h"
+#include "shape.h"
+#include "shader.h"
+
+@interface LayoutShader: Shader {
+@public    
+}
+
+-(void)initWithTexture: (unsigned int) texture;
+
+@end
 
 @interface Layout: Widget {
     PangoLayout *layout;
 
     const char *text;
     unsigned int texture;
-    double width, scale, opacity;
+    double width, scale;
     int wrap, justify, gravity, indent, spacing, texels[2];
+
+    Shape *shape;
+    LayoutShader *shader;
 }
 
+-(void) redraw;
 -(void) update;
 
 -(int) _get_text;
@@ -48,9 +62,6 @@
 -(void) _set_spacing;
 -(void) _set_tabs;
 -(void) _set_scale;
-
--(int) _get_opacity;
--(void) _set_opacity;
 
 @end
 

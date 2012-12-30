@@ -76,13 +76,8 @@
 
     t_push_projection(M);
 
-    t_load_identity_4 (M);
-    t_push_modelview(M, T_LOAD);
-
-    [self place];
     [super draw];
     
-    t_pop_modelview();
     t_pop_projection();
 }
 

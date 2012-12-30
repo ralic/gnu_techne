@@ -44,10 +44,40 @@ static void recurse (Node *root)
 {
     Node *child, *sister;
     
+    t_pushuserdata (_L, 1, self);
+    t_callhook (_L, self->input, 1, 0);
+    
     for (child = self->down ; child ; child = sister) {
 	sister = child->right;
 	recurse (child);
     }
+}
+
+-(void) init
+{
+    [super init];
+
+    self->input = LUA_REFNIL;
+}
+
+-(void) free
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->input);
+    
+    [super free];
+}
+
+-(int) _get_input
+{
+    lua_rawgeti (_L, LUA_REGISTRYINDEX, self->input);
+
+    return 1;
+}
+
+-(void) _set_input
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->input);
+    self->input = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 
 @end

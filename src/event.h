@@ -20,9 +20,13 @@
 #include "node.h"
     
 @interface Event: Node {
+@public
+    int input;
 }
 
 -(void) input;
+-(int) _get_input;
+-(void) _set_input;
 
 @end
 

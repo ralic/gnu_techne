@@ -23,8 +23,10 @@
 #include "techne.h"
 #include "layout.h"
 
-static int poweroftwo;
 static PangoContext *context;
+
+static Shader *mold;
+static int reference;
 
 @implementation Layout
 
@@ -38,14 +40,6 @@ static PangoContext *context;
 
 -(void)init
 {
-    /* Get the configuration. */
-    
-    lua_getglobal (_L, "options");
-
-    lua_getfield (_L, -1, "poweroftwo");
-    poweroftwo = lua_toboolean (_L, -1);
-    lua_pop (_L, 2);
-
     /* Initialize the node. */
     
     [super init];
@@ -58,8 +52,6 @@ static PangoContext *context;
     self->allocation[0] = 0;
     self->allocation[1] = 0;
 
-    self->opacity = 1;
-
     self->wrap = 0;
     self->gravity = -1;
     self->justify = 0;
@@ -68,6 +60,29 @@ static PangoContext *context;
     self->scale = -1;
     
     glGenTextures(1, &self->texture);
+
+    /* Create the shader node. */
+
+    lua_pushstring(_L, "shader");
+    self->shader = [LayoutShader alloc];
+    [self->shader initWithTexture: self->texture];
+
+    /* Create the shape node. */
+    
+    lua_pushstring(_L, "shape");
+    self->shape = [Shape alloc];
+    [self->shape initWithMode: GL_TRIANGLE_FAN];
+
+    {
+        float t[4 * 2] = {0, 0,  1, 0,  1, 1,  0, 1};
+
+        lua_pushliteral (_L, "mapping");
+        array_createarray(_L, ARRAY_TFLOAT, t, 2, 4, 2);
+        lua_settable (_L, -3);
+    }
+
+    lua_settable (_L, -3);
+    lua_settable (_L, -3);
 }
 
 -(void) free
@@ -92,6 +107,26 @@ static PangoContext *context;
 	self->content[0] = (double)self->texels[0] / v[3];
 	self->content[1] = (double)self->texels[1] / v[3];
     }
+
+    [self redraw];
+}
+
+-(void) redraw
+{
+    float t[4 * 2] = {
+        -0.5 * self->content[0], -0.5 * self->content[1], 
+        0.5 * self->content[0], -0.5 * self->content[1], 
+        0.5 * self->content[0], 0.5 * self->content[1], 
+        -0.5 * self->content[0], 0.5 * self->content[1]
+    };
+
+    /* Update the shape. */
+
+    t_pushuserdata (_L, 1, self->shape);
+    lua_pushliteral (_L, "positions");
+    array_createarray(_L, ARRAY_TFLOAT, t, 2, 4, 2);
+    lua_settable (_L, -3);
+    lua_pop (_L, 1);
 }
 
 -(void) update
@@ -153,27 +188,20 @@ static PangoContext *context;
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, self->texels[0]);
     
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                    GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    if (poweroftwo /* && _WINDOW */) {
-	gluBuild2DMipmaps (GL_TEXTURE_2D,
-			   GL_RGBA,
-			   self->texels[0],
-			   self->texels[1],
-			   GL_RGBA,
-			   GL_UNSIGNED_BYTE,
-			   pixels);
-    } else {
-	glTexImage2D(GL_TEXTURE_2D, 0,
-		     GL_RGBA,
-		     self->texels[0],
-		     self->texels[1],
-		     0,
-		     GL_RGBA,
-		     GL_UNSIGNED_BYTE,
-		     pixels);
-    }
+    glTexImage2D(GL_TEXTURE_2D, 0,
+                 GL_RGBA,
+                 self->texels[0],
+                 self->texels[1],
+                 0,
+                 GL_RGBA,
+                 GL_UNSIGNED_BYTE,
+                 pixels);
+    
+    glGenerateMipmap(GL_TEXTURE_2D);
 	
     /* Clean up. */
 	
@@ -184,47 +212,6 @@ static PangoContext *context;
     cairo_surface_destroy (surface);
 
     free (pixels);
-}
-
--(void) draw
-{
-    glMatrixMode (GL_MODELVIEW);
-    glPushMatrix();
-	
-    glColor4d (1, 1, 1, self->opacity);
-    glUseProgramObjectARB(0);
-
-    glActiveTexture(GL_TEXTURE0);
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, self->texture);
-
-    glDepthMask (GL_FALSE);
-
-    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_BLEND);
-
-    [self place];
-    
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0);
-    glVertex2f(-0.5 * self->content[0], -0.5 * self->content[1]);
-    glTexCoord2f(1, 0);
-    glVertex2f(0.5 * self->content[0], -0.5 * self->content[1]);
-    glTexCoord2f(1, 1);
-    glVertex2f(0.5 * self->content[0], 0.5 * self->content[1]);
-    glTexCoord2f(0, 1);
-    glVertex2f(-0.5 * self->content[0], 0.5 * self->content[1]);
-    glEnd();
-
-    glDepthMask (GL_TRUE);
-
-    glDisable(GL_BLEND);
-    glDisable(GL_TEXTURE_2D);
-
-    [super draw];
-    
-    glMatrixMode (GL_MODELVIEW);
-    glPopMatrix();
 }
 
 -(int) _get_text
@@ -403,18 +390,45 @@ static PangoContext *context;
     }
 }
 
--(int) _get_opacity
-{
-    lua_pushnumber (_L, self->opacity);
+@end
 
-    return 1;
+@implementation LayoutShader
+
+-(void)initWithTexture: (unsigned int) texture
+{
+#include "glsl/layout_vertex.h"	
+#include "glsl/layout_fragment.h"	
+    
+    /* If this is the first instance create the program. */
+
+    if (!mold) {
+	mold = [Shader alloc];
+        
+        [mold init];
+
+	[mold addSource: glsl_layout_vertex for: VERTEX_STAGE];
+	[mold addSource: glsl_layout_fragment for: FRAGMENT_STAGE];
+	[mold link];
+
+	reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+    }
+    
+    [self initFrom: mold];
+
+    assert (self->samplers_n == 1);
+    self->samplers[0].texture = texture;
 }
 
--(void) _set_opacity
+-(void) draw
 {
-    self->opacity = lua_tonumber (_L, 3);
+    glDepthMask (GL_FALSE);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    
+    [super draw];
+
+    glDisable(GL_BLEND);
+    glDepthMask (GL_TRUE);
 }
 
 @end
-
-

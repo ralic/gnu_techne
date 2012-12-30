@@ -17,6 +17,7 @@
 #include "gl.h"
 
 #include "techne.h"
+#include "algebra.h"
 #include "widget.h"
 
 static int drawlayout = -1;
@@ -67,23 +68,6 @@ static void recurse (Node *root)
 
 -(void) measure
 {
-}
-
--(void) place
-{
-    double *d, *m, *p, *a, *A;
-    
-    d = self->offset;
-    m = self->content;
-    p = self->padding;
-    a = self->allocation;
-    A = self->align;
-
-    glTranslated(d[0] + p[0] - 0.5 * (a[0] - m[0]) +
-		 0.5 * (A[0] + 1) * (a[0] - m[0] - p[0] - p[1]),
-		 d[1] + p[2] - 0.5 * (a[1] - m[1]) +
-		 0.5 * (A[1] + 1) * (a[1] - m[1] - p[2] - p[3]),
-		 0);
 }
 
 -(void) arrange
@@ -204,39 +188,27 @@ static void recurse (Node *root)
 
 -(void) draw
 {
-    double *m, *p;
-
-    if (self->debug) {
-	m = self->content;
-	p = self->padding;
+    double *d, *m, *p, *a, *A;
+    float M[16];
     
-	glLineWidth(1);
-	glColor3f (1, 1, 0);
+    d = self->offset;
+    m = self->content;
+    p = self->padding;
+    a = self->allocation;
+    A = self->align;
 
-	glBegin(GL_LINE_STRIP);
-	glVertex2f(-0.5 * m[0], -0.5 * m[1]);
-	glVertex2f(0.5 * m[0], -0.5 * m[1]);
-	glVertex2f(0.5 * m[0], 0.5 * m[1]);
-	glVertex2f(-0.5 * m[0], 0.5 * m[1]);
-	glVertex2f(-0.5 * m[0], -0.5 * m[1]);
-	glEnd();
-
-	glColor3f (0, 1, 0);
-	glLineStipple (3, 0x5555);
-	glEnable (GL_LINE_STIPPLE);
-
-	glBegin(GL_LINE_STRIP);
-	glVertex2f(-0.5 * m[0] - p[0], -0.5 * m[1] - p[2]);
-	glVertex2f(0.5 * m[0] + p[1], -0.5 * m[1] - p[2]);
-	glVertex2f(0.5 * m[0] + p[1], 0.5 * m[1] + p[3]);
-	glVertex2f(-0.5 * m[0] - p[0], 0.5 * m[1] + p[3]);
-	glVertex2f(-0.5 * m[0] - p[0], -0.5 * m[1] - p[2]);
-	glEnd();
+    t_load_identity_4(M);
     
-	glDisable (GL_LINE_STIPPLE);	
-    }
-    
+    M[12] = d[0] + p[0] - 0.5 * (a[0] - m[0]) +
+        0.5 * (A[0] + 1) * (a[0] - m[0] - p[0] - p[1]);
+    M[13] = d[1] + p[2] - 0.5 * (a[1] - m[1]) +
+        0.5 * (A[1] + 1) * (a[1] - m[1] - p[2] - p[3]);
+
+    t_push_modelview(M, T_MULTIPLY);
+
     [super draw];
+
+    t_pop_modelview();
 }
 
 @end

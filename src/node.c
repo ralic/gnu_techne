@@ -883,18 +883,17 @@ static void link_node(Node *node)
 	
 	*head = node;
     } else {
-    
 	/* Find where to insert the node.  Nodes are ordered according to
 	 * index in ascending order.  Nodes with no index are unordered
 	 * and come last in the list. */
 	
 	if (isnan(node->index)) {
 	    for (l = (*head)->left, r = *head;
-		 r != (*head)->left && !isnan(r->index);
+		 r && !isnan(r->index);
 		 l = r, r = r->right);
 	} else {
 	    for (l = (*head)->left, r = *head;
-		 r != (*head)->left && r->index > node->index;
+		 r && r->index > node->index;
 		 l = r, r = r->right);
 	}
     
@@ -906,6 +905,8 @@ static void link_node(Node *node)
 	    t_link_at_head (node, head);
 	}
     }
+
+    /* _TRACE ("LINK: %s: %p, %p\n", [(id)node name], node->left, node->right); */
 }
 
 static void unlink_node (Node *node)
@@ -915,6 +916,8 @@ static void unlink_node (Node *node)
     } else {
 	t_unlink_from(node, node->orphans);
     }
+
+    /* _TRACE ("UNLINK: %s: %p, %p\n", [(id)node name], node->left, node->right); */
 }
 
 @implementation Node
@@ -1176,6 +1179,8 @@ static void unlink_node (Node *node)
 	self->orphans = &list;
     }
 
+    self->left = NULL;
+    self->right = NULL;
     self->up = NULL;
     self->down = NULL;
 
@@ -1231,6 +1236,13 @@ static void unlink_node (Node *node)
 
     luaL_unref (_L, LUA_REGISTRYINDEX, self->unlink);
     luaL_unref (_L, LUA_REGISTRYINDEX, self->link);
+    
+    /* Unlink the node from the orphans list.  A collected node should
+     * always be an orphan (otherwise there would be references to
+     * it). */
+
+    assert(!self->up);
+    unlink_node(self);
     
     [super free];
 }

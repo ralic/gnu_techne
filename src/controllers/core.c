@@ -117,8 +117,11 @@ int luaopen_controllers_core (lua_State *L)
         j += 1;
         
     next:
-        lua_settop (L, h);                
-        close(fd);
+        lua_settop (L, h);
+
+        if (fd > 0) {
+            close(fd);
+        }
     }
 
     t_print_message ("Added %d input devices.\n", j);

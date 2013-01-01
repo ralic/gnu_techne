@@ -38,14 +38,10 @@ local function push (suffix, terminal, ...)
 
 	 return false
       else
-	 if type (binding) == "function" then
-	    binding(name, ...)
-	 end
+         binding(name, ...)
       end
    elseif catchall then
-      if type (catchall) == "function" then
-         catchall(name, ...)
-      end
+      catchall(name, ...)
    end
 
    if terminal then

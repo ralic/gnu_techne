@@ -803,6 +803,12 @@ static int uniforms_iterator(lua_State *L)
 	free(self->blocks);
     }
 
+    /* Free the samplers table. */
+
+    if (self->blocks_n > 0) {
+        free(self->samplers);
+    }
+    
     if (self->ismold) {
 	/* Free the uniform information and delete the program if this is
 	 * a mold. */

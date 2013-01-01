@@ -734,11 +734,6 @@ int main(int argc, char **argv)
     	[node toggle];
     }
     
-    /* Close the state to collect all values and call the respective
-     * finalizers. */
-    
-    lua_close (_L);
-    
     t_print_message("Bye!\n");
     exit (EXIT_SUCCESS);
 }

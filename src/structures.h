@@ -26,7 +26,7 @@
 	    *head = node;			\
 	}					\
 						\
-	(sibling)->right = (node);		\
+	(sibling)->left = (node);		\
     }
 
 #define t_link_between(node, brother, sister, head)	\

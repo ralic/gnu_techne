@@ -56,7 +56,7 @@ static enum {
 
 static float matrix[16];
 
-static int width, height;
+static int width = 640, height = 480;
 static int hide = 1, cursor = 1, decorate = 1;
 static double planes[6], frustum[3];
 static int focus = LUA_REFNIL, defocus = LUA_REFNIL;
@@ -486,8 +486,8 @@ static void draw (Node *root)
     window_attributes.wmclass_class = (char *)class;
     window_attributes.colormap = gdk_colormap_new(visual, FALSE);
     window_attributes.visual = visual;
-    window_attributes.width = 640;
-    window_attributes.height = 480;
+    window_attributes.width = width;
+    window_attributes.height = height;
     window_attributes.event_mask = (GDK_STRUCTURE_MASK |
 				    GDK_FOCUS_CHANGE_MASK |
 				    GDK_BUTTON_PRESS_MASK |

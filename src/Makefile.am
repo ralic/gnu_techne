@@ -79,7 +79,7 @@ dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    misc/resources.lua automotive/automotive.lua	\
 		    widgets/widgets.lua misc/serialize.lua		\
 		    console/console.lua shading/shading.lua 		\
-		    controllers/controllers.lua
+		    controllers/controllers.lua misc/rubberband.lua
 
 console_core_la_SOURCES = console/core.c
 console_core_la_CFLAGS = ${AM_CFLAGS}

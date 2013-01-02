@@ -373,42 +373,47 @@ int arraymath_raise (lua_State *L)
     return 1;
 }
 
-#define INTERPOLATE(FUNC, TYPE)						\
-    static void FUNC (TYPE *A, TYPE *B, double c, TYPE *C, int n)	\
+#define COMBINE(FUNC, TYPE)						\
+    static void FUNC (TYPE *A, TYPE *B, double c, double d,             \
+                      TYPE *C, int n)                                   \
     {									\
         int i;								\
 									\
         for (i = 0 ; i < n ; i += 1) {					\
-	    C[i] = A[i] + c * (B[i] - A[i]);				\
+	    C[i] = c * A[i] + d * B[i];                                 \
 	}								\
     }
 
-INTERPOLATE(interpolate_doubles, double)
-INTERPOLATE(interpolate_floats, float)
+COMBINE(combine_doubles, double)
+COMBINE(combine_floats, float)
 
-void arraymath_interpolate (lua_State *L)
+void arraymath_combine (lua_State *L)
 {
     array_Array *A, *B, *C;
-    double c;
+    double c, d;
+    int j, l;
 
-    A = lua_touserdata (L, -3);
-    B = lua_touserdata (L, -2);
-    c = lua_tonumber (L, -1);
+    A = lua_touserdata (L, -4);
+    B = lua_touserdata (L, -3);
+    c = lua_tonumber (L, -2);
+    d = lua_tonumber (L, -1);
 
-    C = array_createarray (L, A->type, NULL, 1, A->size[0]);
+    for (j = 0, l = 1; j < A->rank ; l *= A->size[j], j += 1);
+
+    C = array_createarrayv (L, A->type, NULL, A->rank, A->size);
     
     if (A->type == ARRAY_TDOUBLE) {
-	interpolate_doubles (A->values.doubles,
-			     B->values.doubles,
-			     c,
-			     C->values.doubles,
-			     A->size[0]);
+	combine_doubles (A->values.doubles,
+                         B->values.doubles,
+                         c, d, 
+                         C->values.doubles,
+                         l);
     } else {
-	interpolate_floats (A->values.floats,
-			    B->values.floats,
-			    c,
-			    C->values.floats,
-			    A->size[0]);
+	combine_floats (A->values.floats,
+                        B->values.floats,
+                        c, d, 
+                        C->values.floats,
+                        l);
     }
 }
 

@@ -54,7 +54,7 @@ return {
 		     c = self.gain or 1 / 628
 
 		     a = hinge.anchor
-		     e = arraymath.add(a, arraymath.scale (hinge.axis, d + c * hinge.state[2]))
+		     e = arraymath.combine(a, hinge.axis, 1, d + c * hinge.state[2])
 
 		     self.lines.positions = array.doubles {a, e}
 		     self.points.positions = array.doubles {a, e}
@@ -145,11 +145,11 @@ return {
 	    	  end
 		  
 		  self.tube.lines.positions = array.doubles {
-		     a, arraymath.add(b, arraymath.scale(x, d))
+		     a, arraymath.combine(b, x, 1, d)
 							    }
 		  
 		  self.rod.lines.positions = array.doubles {
-		     b, arraymath.add(b, arraymath.scale(x, d))
+		     b, arraymath.combine(b, x, 1, d)
 							   }
 	       end,
 
@@ -188,11 +188,9 @@ return {
 
 	       a = universal.anchor
 	       x, y = table.unpack(universal.axes)
-	       e = arraymath.add(a, arraymath.scale
-				 (x, d + c * universal.state[3]))
+	       e = arraymath.combine(a, x, 1, d + c * universal.state[3])
 
-	       f = arraymath.add(a, arraymath.scale
-				 (y, d + c * universal.state[4]))
+	       f = arraymath.combine(a, y, 1, d + c * universal.state[4])
 
 	       self.lines.positions = array.doubles {f, a, e}
 	       self.points.positions = array.doubles {f, a, e}

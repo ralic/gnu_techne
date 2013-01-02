@@ -132,15 +132,16 @@ DEFINE_OPERATION_WRAPPER(multiply)
 DEFINE_OPERATION_WRAPPER(subtract)
 DEFINE_OPERATION_WRAPPER(divide)
 
-static int interpolate (lua_State *L)
+static int combine (lua_State *L)
 {
     checkreal (L, 1);
     checkreal (L, 2);
     luaL_checknumber (L, 3);
+    luaL_checknumber (L, 4);
 
     checksimilar(L, 1, 2);
     
-    arraymath_interpolate(L);
+    arraymath_combine(L);
     
     return 1;
 }
@@ -642,7 +643,7 @@ int luaopen_arraymath_core (lua_State *L)
 	{"divide", divide},
 	{"scale", scale},
 	{"raise", raise},
-	{"interpolate", interpolate},
+	{"combine", combine},
 	    
 	{"dot", dot},
 	{"cross", cross},
@@ -650,8 +651,8 @@ int luaopen_arraymath_core (lua_State *L)
 	{"normalize", normalize},
 	{"distance", distance},
 	{"transpose", transpose},
-	{"multiply", matrix_multiply},
-	{"multiplyadd", matrix_multiplyadd},
+	{"matrixmultiply", matrix_multiply},
+	{"matrixmultiplyadd", matrix_multiplyadd},
 	    
 	{"rotation", rotation},
 	{"shear", shear},

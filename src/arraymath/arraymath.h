@@ -30,7 +30,7 @@ int arraymath_subtract(lua_State *L);
 int arraymath_divide(lua_State *L);
 int arraymath_scale(lua_State *L);
 int arraymath_raise(lua_State *L);
-void arraymath_interpolate(lua_State *L);
+void arraymath_combine(lua_State *L);
 double arraymath_dot(lua_State *L);
 void arraymath_cross(lua_State *L);
 double arraymath_length(lua_State *L);

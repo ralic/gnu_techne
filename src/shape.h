@@ -41,7 +41,6 @@ typedef struct shape_Buffer {
     shape_Buffer *buffers, *indices;
     unsigned int name;
     int wireframe;
-    double width;
     GLenum mode;
 }
 

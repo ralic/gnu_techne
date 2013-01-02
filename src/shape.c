@@ -350,7 +350,7 @@ static void match_attribute_to_buffer (unsigned int program,
     isindices = !strcmp(k, "indices");
 
     /* If index data is provided as a normal Lua table attempt to
-     * promote it to and unsigned integer array.  For vertex attribute
+     * promote it to an unsigned integer array.  For vertex attribute
      * buffers promote to the default (double) type. */
     
     if (isindices && lua_type(_L, 3) == LUA_TTABLE) {

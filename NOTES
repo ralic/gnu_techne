@@ -25,7 +25,5 @@ TODO (ASAP):
   - Plane
   - Racetrack
 
-* Resolve naming conflicts in arraymath.
 * Fix the chain node to properly reflect the velocity when the run changes.
-* Add the rubberband as a virtual input device.
 * Add a Lua texture object wrapper.

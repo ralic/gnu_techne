@@ -17,7 +17,7 @@ local array = require 'array'
 local arraymath = require 'arraymath.core'
 
 function arraymath.tensor(u, v)
-   return arraymath.multiply(array.cast(#u, 1, u), array.cast (1, #v, v))
+   return arraymath.matrixmultiply(array.cast(#u, 1, u), array.cast (1, #v, v))
 end
 
 function arraymath.euler(theta, phi, psi)
@@ -49,10 +49,10 @@ function arraymath.concatenate(...)
    local matrices = {...}
    local M
 
-   M = arraymath.multiply(matrices[1], matrices[2])
+   M = arraymath.matrixmultiply(matrices[1], matrices[2])
 
    for i = 3, #matrices do
-      M = arraymath.multiply(M, matrices[i])
+      M = arraymath.matrixmultiply(M, matrices[i])
    end
    
    return M

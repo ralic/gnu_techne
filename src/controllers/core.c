@@ -32,7 +32,7 @@
 #include "controller.h"
 
 #define MAX_BITS ((EV_CNT / sizeof(unsigned int)) + 1)
-#define test(b, i) (b[i / sizeof(unsigned int)] << (i % sizeof(unsigned int)))
+#define test(b, i) (b[i / sizeof(unsigned int)] & (1 << (i % sizeof(unsigned int))))
 
 static int constructkeyboard(lua_State *L)
 {
@@ -89,7 +89,7 @@ int luaopen_controllers_core (lua_State *L)
         }
 
         if(ioctl(fd, EVIOCGNAME(sizeof(name)), name) < 0) {
-            t_print_warning("Cannot get input device name");
+            t_print_warning("Could not get input device name");
             goto next;
         }
 
@@ -97,17 +97,17 @@ int luaopen_controllers_core (lua_State *L)
         lua_insert (L, -2);
 
         memset(bits, 0, sizeof(bits));
-        n = ioctl(fd, EVIOCGBIT(0, sizeof(bits)), &bits);
+        n = ioctl(fd, EVIOCGBIT(0, sizeof(bits)), bits);
             
         if (n < 0) {
-            t_print_warning("Cannot get input device event set");
+            t_print_warning("Could not get input device event set");
             goto next;
         }
             
         if(!(test(bits, EV_ABS) || test(bits, EV_KEY))) {
             goto next;
         }
-            
+        
         t_print_message ("Adding input device %s at %s.\n",
                          lua_tostring(L, -2),
                          lua_tostring(L, -1));

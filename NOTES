@@ -1,3 +1,13 @@
+Closing the Lua state on exit:
+==============================
+
+Closing the Lua state calls all finalizers on exit and frees memory
+resources.  Normaly only entirely unlinked nodes can be collected but
+this doesn't hold on exit, therefore heap corruption if a node's
+linkage changes and one of the nodes it points to has been collected.
+This needs to be addressed if closing the Lua state on exit proves
+necessary.
+
 Porting/cross-compiling:
 ========================
 

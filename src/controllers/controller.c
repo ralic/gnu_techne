@@ -28,6 +28,10 @@
 #include "techne.h"
 #include "controller.h"
 
+#define MAX_KEY_WORDS ((KEY_CNT / sizeof(unsigned int)) + 1)
+#define MAX_ABSOLUTE_WORDS ((ABS_CNT / sizeof(unsigned int)) + 1)
+#define test(b, i) (b[i / sizeof(unsigned int)] & (1 << (i % sizeof(unsigned int))))
+
 @implementation Controller
 
 -(void) initWithDevice: (const char *)name
@@ -37,7 +41,11 @@
     [super init];
 
     self->device = open(name, O_NONBLOCK | O_RDWR);
-        
+
+    if (self->device < 0) {
+        t_print_warning("Could not open input device %s", name);
+    }
+    
     self->force[0] = 0;
     self->force[1] = 0;
 
@@ -47,15 +55,17 @@
     ie.code = FF_AUTOCENTER;
     ie.value = 0;
             
-    if (write(self->device, &ie, sizeof(ie)) == -1)
-        perror("set auto-center");
+    if (write(self->device, &ie, sizeof(ie)) < 0) {
+        t_print_warning("Could not disable auto-center for input device %s", name);
+    }
             
     ie.type = EV_FF;
     ie.code = FF_GAIN;
     ie.value = 0xFFFFUL;
 
-    if (write(self->device, &ie, sizeof(ie)) == -1)
-        perror("set gain");
+    if (write(self->device, &ie, sizeof(ie)) < 0) {
+        t_print_warning("Could not set gain for input device %s", name);
+    }
 
     self->effect.type = FF_CONSTANT;
     self->effect.id = -1;
@@ -66,8 +76,8 @@
     ie.code = effect.id;
     ie.value = 1;
 
-    if (write(self->device, (const void*) &ie, sizeof(ie)) == -1) {
-        perror("Play effect");
+    if (write(self->device, (const void*) &ie, sizeof(ie)) < 0) {
+        t_print_warning("Could not start force rendering for input device %", name);
     }
 }
 
@@ -96,7 +106,6 @@
                 }
 
                 break;                  
-            case EV_REL:
             case EV_ABS:
                 t_pushuserdata (_L, 1, self);
 		
@@ -164,6 +173,88 @@
 
         ioctl(self->device, EVIOCSFF, &self->effect);
     }
+}
+
+-(int) _get_buttons
+{
+    unsigned int exists[MAX_KEY_WORDS], depressed[MAX_KEY_WORDS];
+    int i, j;
+    
+    /* Read the key map and state. */
+    
+    memset(exists, 0, sizeof(exists));
+    if(ioctl(self->device, EVIOCGBIT(EV_KEY, sizeof(exists)), exists) < 0) {
+        t_print_warning("Could not get the device's key map.");
+    }
+    
+    memset(depressed, 0, sizeof(depressed));
+    if(ioctl(self->device, EVIOCGKEY(sizeof(depressed)), depressed) < 0) {
+        t_print_warning("Could not get the device's key state.");
+    }
+
+    /* Scan the bitfields and create a table. */
+    
+    lua_newtable(_L);
+
+    for (i = 0 ; i < MAX_KEY_WORDS ; i += 1) {
+        for (j = 0 ; j < 8 * sizeof(unsigned int) ; j += 1) {
+            if (exists[i] & (1 << j)) {
+                lua_pushinteger(_L, 8 * sizeof(unsigned int) * i + j);
+                lua_pushboolean(_L, depressed[i] & (1 << j));
+                lua_settable(_L, -3);
+            }
+        }
+    }
+
+    return 1;
+}
+
+-(void) _set_buttons
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_axes
+{
+    unsigned int exists[MAX_ABSOLUTE_WORDS];
+    struct input_absinfo info;
+    int i, j;
+    
+    /* Read the abs map and state. */
+    
+    memset(exists, 0, sizeof(exists));
+    if(ioctl(self->device, EVIOCGBIT(EV_ABS, sizeof(exists)), exists) < 0) {
+        t_print_warning("Could not get the device's absolute axis map.");
+    }
+
+    /* Scan the bitfields and create a table. */
+    
+    lua_newtable(_L);
+
+    for (i = 0 ; i < MAX_ABSOLUTE_WORDS ; i += 1) {
+        for (j = 0 ; j < 8 * sizeof(unsigned int) ; j += 1) {
+            if (exists[i] & (1 << j)) {
+                int k;
+
+                k = 8 * sizeof(unsigned int) * i + j;
+                
+                if(ioctl(self->device, EVIOCGABS(k), &info) < 0) {
+                    t_print_warning("Could not get the state of absolute axis %d.", k);
+                }
+                
+                lua_pushinteger(_L, k);
+                lua_pushboolean(_L, info.value);
+                lua_settable(_L, -3);
+            }
+        }
+    }
+
+    return 1;
+}
+
+-(void) _set_axes
+{
+    T_WARN_READONLY;
 }
 
 @end

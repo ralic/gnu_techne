@@ -18,12 +18,17 @@
 #define _CONTROLLER_H_
 
 #include "device.h"
+#include <linux/input.h>
 
 @interface Controller: Device {
     int device;
+    struct ff_effect effect;
+    double force[2];
 }
 
 -(void) initWithDevice: (const char *)name;
+-(int) _get_force;
+-(void) _set_force;
 
 @end
 

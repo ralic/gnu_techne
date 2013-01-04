@@ -21,7 +21,7 @@
 #include <linux/input.h>
 
 @interface Controller: Device {
-    int device;
+    int device, has_force;
     struct ff_effect effect;
     double force[2];
 }

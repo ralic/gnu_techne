@@ -28,6 +28,7 @@
 #include "techne.h"
 #include "controller.h"
 
+#define MAX_EVENT_WORDS ((EV_CNT / sizeof(unsigned int)) + 1)
 #define MAX_KEY_WORDS ((KEY_CNT / sizeof(unsigned int)) + 1)
 #define MAX_ABSOLUTE_WORDS ((ABS_CNT / sizeof(unsigned int)) + 1)
 #define test(b, i) (b[i / sizeof(unsigned int)] & (1 << (i % sizeof(unsigned int))))
@@ -36,6 +37,7 @@
 
 -(void) initWithDevice: (const char *)name
 {
+    unsigned int bits[MAX_EVENT_WORDS];
     struct input_event ie;
     
     [super init];
@@ -43,41 +45,65 @@
     self->device = open(name, O_NONBLOCK | O_RDWR);
 
     if (self->device < 0) {
-        t_print_warning("Could not open input device %s", name);
-    }
-    
-    self->force[0] = 0;
-    self->force[1] = 0;
-
-    memset (&self->effect, 0, sizeof(self->effect));
+        t_print_warning("Could not open input device %s for writing, "
+                        "force effects won't be available even if "
+                        "supported by the device.", name);
         
-    ie.type = EV_FF;
-    ie.code = FF_AUTOCENTER;
-    ie.value = 0;
+        self->device = open(name, O_NONBLOCK | O_RDONLY);
+        self->has_force = 0;            
+    } else {
+        /* Read the device's supported events. */
+    
+        memset(bits, 0, sizeof(bits));
+        if(ioctl(self->device, EVIOCGBIT(EV_ABS, sizeof(bits)), bits) < 0) {
+            t_print_warning("Could not get the device's capabilities.");
+        }
+
+        /* Initialize force-feedback if supported. */
+        
+        if(test(bits, EV_FF)) {
+            self->has_force = 1;
             
-    if (write(self->device, &ie, sizeof(ie)) < 0) {
-        t_print_warning("Could not disable auto-center for input device %s", name);
-    }
+            self->force[0] = 0;
+            self->force[1] = 0;
+
+            memset (&self->effect, 0, sizeof(self->effect));
+        
+            ie.type = EV_FF;
+            ie.code = FF_AUTOCENTER;
+            ie.value = 0;
             
-    ie.type = EV_FF;
-    ie.code = FF_GAIN;
-    ie.value = 0xFFFFUL;
+            if (write(self->device, &ie, sizeof(ie)) < 0) {
+                t_print_warning("Could not disable auto-center for input device %s", name);
+            }
+            
+            ie.type = EV_FF;
+            ie.code = FF_GAIN;
+            ie.value = 0xFFFFUL;
 
-    if (write(self->device, &ie, sizeof(ie)) < 0) {
-        t_print_warning("Could not set gain for input device %s", name);
-    }
+            if (write(self->device, &ie, sizeof(ie)) < 0) {
+                t_print_warning("Could not set gain for input device %s", name);
+            }
 
-    self->effect.type = FF_CONSTANT;
-    self->effect.id = -1;
+            self->effect.type = FF_CONSTANT;
+            self->effect.id = -1;
 
-    ioctl(self->device, EVIOCSFF, &self->effect);
+            ioctl(self->device, EVIOCSFF, &self->effect);
 
-    ie.type = EV_FF;
-    ie.code = effect.id;
-    ie.value = 1;
+            ie.type = EV_FF;
+            ie.code = effect.id;
+            ie.value = 1;
 
-    if (write(self->device, (const void*) &ie, sizeof(ie)) < 0) {
-        t_print_warning("Could not start force rendering for input device %", name);
+            if (write(self->device, (const void*) &ie, sizeof(ie)) < 0) {
+                t_print_warning("Could not start force rendering for input device %", name);
+            }
+        } else {
+            self->has_force = 0;
+        }
+    }        
+        
+    if (self->device < 0) {
+        t_print_warning("Could not open input device %s", name);
     }
 }
 
@@ -133,15 +159,19 @@
 -(int) _get_force
 {
     int j;
-    
-    lua_newtable (_L);
+
+    if(self->has_force) {
+        lua_newtable (_L);
         
-    for(j = 0 ; j < 2 ; j += 1) {
-	lua_pushnumber (_L, self->force[j]);
+        for(j = 0 ; j < 2 ; j += 1) {
+            lua_pushnumber (_L, self->force[j]);
 
-	lua_rawseti (_L, -2, j + 1);
+            lua_rawseti (_L, -2, j + 1);
+        }
+    } else {
+        lua_pushnil(_L);
     }
-
+    
     return 1;
 }
 
@@ -149,7 +179,7 @@
 {
     int j;
     
-    if(lua_istable (_L, 3)) {
+    if(self->has_force && lua_istable (_L, 3)) {
 	for(j = 0 ; j < 2 ; j += 1) {
 	    lua_rawgeti (_L, 3, j + 1);
 	    self->force[j] = lua_tonumber (_L, -1);

@@ -796,7 +796,6 @@ static int sampler_index(lua_State *L)
     self->normals = NULL;
     self->uv = NULL;
     self->size = 0;
-    self->dirty = 0;
 
     self->scale[0] = 1;
     self->scale[1] = 1;
@@ -807,8 +806,6 @@ static int sampler_index(lua_State *L)
 
     data = dGeomGetClassData (self->geom);
 
-    [super init];
-
     data->segments = NULL;
     data->size = 0;
     data->tolerance = 0.01 / 10;
@@ -818,6 +815,11 @@ static int sampler_index(lua_State *L)
     data->depth = 0;
     data->resolution = NULL;
     data->sampler = NULL;
+
+    [super init];
+
+    self->shape = [RacetrackShape alloc];
+    [self->shape init];
 }
 
 -(void) meetSibling: (id)sibling
@@ -1203,32 +1205,27 @@ static int sampler_index(lua_State *L)
     }
 
     /* printf ("!!! %f, %f, %f,  %f\n", p_0[0], p_0[1], p_0[2], theta_0 / M_PI); */
-    
-    self->dirty = 0;
+    [self->shape updateWithData: data];
 }
 
--(void) stepBy: (double) h at: (double) t
-{
-    [super stepBy: h at: t];
-
-    if (self->dirty) {
-	[self update];
-    }
-}
-
--(int) _get_element
+-(int) _get_segments
 {
     int i, j;    
     struct trackdata *data;
     
     data = dGeomGetClassData (self->geom);
-    j = lua_tonumber (_L, 2) - 1;
-	
-    lua_newtable (_L);
 
-    for(i = 0; i < 6; i += 1) {
-	lua_pushnumber (_L, data->segments[10 * j + i]);
-	lua_rawseti (_L, -2, i + 1);
+    lua_createtable(_L, data->size, 0);
+    
+    for (j = 0 ; j < data->size ; j += 1) {
+        lua_createtable (_L, 6, 0);
+
+        for(i = 0; i < 6; i += 1) {
+            lua_pushnumber (_L, data->segments[10 * j + i]);
+            lua_rawseti (_L, -2, i + 1);
+        }
+
+        lua_rawseti (_L, -2, j + 1);
     }
 
     return 1;
@@ -1261,10 +1258,6 @@ static int sampler_index(lua_State *L)
 -(int) _get_vertices
 {
     int i;
-    
-    if (self->dirty) {
-	[self update];
-    }
 
     lua_newtable (_L);
 
@@ -1305,34 +1298,37 @@ static int sampler_index(lua_State *L)
     return 1;
 }
 
--(void) _set_element
+-(void) _set_segments
 {
     int i, j;    
     struct trackdata *data;
 
     data = dGeomGetClassData (self->geom);
 
-    if(lua_istable (_L, 3)) {
-	j = lua_tonumber (_L, 2);
+    if(!lua_isnil (_L, 3)) {
+        lua_len (_L, 3);
+        
+        data->size = lua_tointeger(_L, -1);
+        data->segments = realloc (data->segments,
+                                  10 * data->size * sizeof(double));
+        
+        lua_pop (_L, 1);
 
-	if (j > self->length) {
-	    self->length = j;
-	}
-	
-	if (j > data->size) {
-	    data->size = j;
-	    data->segments = (double *)realloc (data->segments,
-						10 * j * sizeof(double));
-	}
+        for (j = 0 ; j < data->size ; j += 1) {
+            lua_pushinteger (_L, j + 1);
+            lua_gettable (_L, 3);
+            
+            for(i = 0 ; i < 6 ; i += 1) {
+                lua_pushinteger (_L, i + 1);
+                lua_gettable (_L, -2);
+                data->segments[10 * j + i] = lua_tonumber (_L, -1);
+                lua_pop (_L, 1);
+            }
 
-	for(i = 0 ; i < 6 ; i += 1) {
-	    lua_rawgeti (_L, 3, i + 1);
-	    data->segments[10 * (j - 1) + i] = lua_tonumber (_L, -1);
-                
-	    lua_pop (_L, 1);
-	}
+            lua_pop (_L, 1);
+        }
 
-	self->dirty = 1;
+        [self update];
     }
 }
 
@@ -1391,6 +1387,430 @@ static int sampler_index(lua_State *L)
     }
 
     [super free];
+}
+
+@end
+
+@implementation RacetrackShape
+
+-(void)init
+{
+    self->scale[0] = 1;
+    self->scale[1] = 1;
+    
+    self->tessellation[0] = 2 * M_PI / 32;
+    self->tessellation[1] = 0.1 / 10;
+
+    [super init];
+}
+
+-(void) updateWithData:(struct trackdata *)data
+{
+    float *vertices, *uv, *normals;    
+    int size;
+
+    double theta_0, p_0[3], delta_wl, delta_wr, w_l0, w_r0, u_0;
+    double S, kappa_0, delta_kappa, g_0, delta_g, e_0, delta_e;
+    double phi, psi;
+    int i, j;
+
+    u_0 = 0;
+
+    theta_0 = 0;
+    p_0[0] = 0;
+    p_0[1] = 0;
+    p_0[2] = 0;
+
+    w_l0 = data->segments[1];
+    w_r0 = data->segments[2];
+    kappa_0 = data->segments[3];
+    g_0 = data->segments[4];
+    e_0 = data->segments[5];
+    
+    phi = atan(e_0);
+    psi = -atan(g_0);
+    
+    vertices = malloc (2 * 3 * sizeof (float));
+    normals = malloc (2 * 3 * sizeof (float));
+    uv = malloc (2 * 2 * sizeof (float));
+    size = 0;
+
+    /* Kickstart the strip. */
+
+    vertices[0] = 0;
+    vertices[1] = w_r0;
+    vertices[2] = e_0 * w_r0;
+
+    vertices[3] = 0;
+    vertices[4] = -w_l0;
+    vertices[5] = -e_0 * w_l0;
+
+    normals[0] = cos(phi) * sin (psi);
+    normals[1] = -sin(phi);
+    normals[2] = cos(phi) * cos(psi);
+    
+    normals[3] = normals[0];
+    normals[4] = normals[1];
+    normals[5] = normals[2];
+
+    uv[0] = 0;
+    uv[1] = w_r0 / self->scale[1];
+    
+    uv[2] = 0;
+    uv[3] = -w_l0 / self->scale[1];
+    
+    size += 2;
+
+    /* printf ("%f, %f, %f\n", 0, w_r0, e_0 * w_r0); */
+    /* printf ("%f, %f, %f\n", 0, -w_l0, -e_0 * w_l0); */
+
+    for (i = 0 ; i < data->size ; i += 1) {
+	S = data->segments[10 * i];
+	delta_wl = data->segments[10 * i + 1] - w_l0;
+	delta_wr = data->segments[10 * i + 2] - w_r0;
+	delta_kappa = data->segments[10 * i + 3] - kappa_0;
+	delta_g = data->segments[10 * i + 4] - g_0;
+	delta_e = data->segments[10 * i + 5] - e_0;
+
+	if (fabs(kappa_0) < 1e-6 && fabs(delta_kappa) < 1e-6) {
+	    double dv[2], u;
+	    int m;
+
+	    m = fmax(ceil (sqrt(fabs (delta_g) * S / 8 / self->tessellation[1])), 1);
+
+	    /* printf ("++ %d, %f, %f\n", i, e_0, delta_e); */
+		
+	    /* A tangent. */
+
+	    dv[0] = -sin(theta_0);
+	    dv[1] = cos(theta_0);
+
+	    for (j = 1 ; j <= m ; j += 1) {
+		double h, p[2];
+
+		u = S * j / m;
+		h = u * g_0 + 0.5 * delta_g * u * u / S;
+		
+		p[0] = p_0[0] + S * j / m * cos(theta_0);
+		p[1] = p_0[1] + S * j / m * sin(theta_0);
+
+		e_0 += delta_e / m;
+		w_l0 += delta_wl / m;
+		w_r0 += delta_wr / m;
+
+		phi = atan(e_0);
+		psi = -atan(g_0 + delta_g * u / S);
+		
+		vertices = realloc (vertices,
+                                    (size + 2) *
+                                    3 * sizeof (float));
+		
+		normals = realloc (normals,
+                                   (size + 2) *
+                                   3 * sizeof (float));
+		
+		uv = realloc (uv,
+                              (size + 2) *
+                              2 * sizeof (float));
+		
+		vertices[3 * size] = p[0] + w_r0 * dv[0];
+		vertices[3 * size + 1] = p[1] + w_r0 * dv[1];
+		vertices[3 * size + 2] = p_0[2] + h + e_0 * w_r0;
+
+		vertices[3 * size + 3] = p[0] - w_l0 * dv[0];
+		vertices[3 * size + 4] = p[1] - w_l0 * dv[1];
+		vertices[3 * size + 5] = p_0[2] + h - e_0 * w_l0;
+
+		normals[3 * size + 0] =
+		    sin(theta_0) * sin(phi) +
+		    cos(phi) * sin (psi) * cos (theta_0);
+		normals[3 * size + 1] =
+		    -cos(theta_0) * sin(phi) +
+		    cos(phi) * sin (psi) * sin (theta_0);
+		normals[3 * size + 2] =
+		    cos(phi) * cos(psi);
+
+		normals[3 * size + 3] =
+		    normals[3 * size + 0];
+		normals[3 * size + 4] =
+		    normals[3 * size + 1];
+		normals[3 * size + 5] =
+		    normals[3 * size + 2];
+
+		uv[2 * size] = (u_0 + u) / self->scale[0];
+		uv[2 * size + 1] = w_r0 / self->scale[1];
+    
+		uv[2 * size + 2] = (u_0 + u) / self->scale[0];
+		uv[2 * size + 3] = -w_l0 / self->scale[1];
+
+		size += 2;
+	    }
+		    
+	    p_0[0] += S * cos(theta_0);
+	    p_0[1] += S * sin(theta_0);
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	} else if (fabs(kappa_0) > 1e-6 && fabs(delta_kappa) < 1e-6) {
+	    double u, r, c[2];
+	    int m;
+
+	    r = 1 / kappa_0;
+
+	    m = fmax(ceil(S / self->tessellation[0]),
+		     ceil (sqrt(fabs (delta_g) * S / 8 / self->tessellation[1])));
+	    m = m > 0 ? m : 1;
+		
+	    c[0] = p_0[0] - r * sin(theta_0);
+	    c[1] = p_0[1] + r * cos(theta_0);
+
+	    for (j = 0, u = S / m ; j < m ; j += 1, u += S / m) {
+		double h, theta;
+		    
+		theta = theta_0 + S * (j + 1) / m / r;
+		    
+		e_0 += delta_e / m;
+		w_l0 += delta_wl / m;
+		w_r0 += delta_wr / m;
+		    
+		h = u * g_0 + 0.5 * delta_g * u * u / S;
+
+		phi = atan(e_0);
+		psi = -atan(g_0 + delta_g * u / S);
+		
+		vertices = realloc (vertices,
+                                    (size + 2) *
+                                    3 * sizeof (float));
+		
+		normals = realloc (normals,
+                                   (size + 2) *
+                                   3 * sizeof (float));
+		
+		uv = realloc (uv,
+                              (size + 2) *
+                              2 * sizeof (float));
+		
+		vertices[3 * size] =
+		    c[0] + (r - w_r0) * sin(theta);
+		vertices[3 * size + 1] =
+		    c[1] - (r - w_r0) * cos(theta);
+		vertices[3 * size + 2] =
+		    p_0[2] + h + w_r0 * e_0;
+
+		vertices[3 * size + 3] =
+		    c[0] + (r + w_l0) * sin(theta);
+		vertices[3 * size + 4] =
+		    c[1] - (r + w_l0) * cos(theta);
+		vertices[3 * size + 5] =
+		    p_0[2] + h - w_l0 * e_0;
+
+		normals[3 * size + 0] =
+		    sin(theta) * sin(phi) +
+		    cos(phi) * sin (psi) * cos (theta);
+		normals[3 * size + 1] =
+		    -cos(theta) * sin(phi) +
+		    cos(phi) * sin (psi) * sin (theta);
+		normals[3 * size + 2] =
+		    cos(phi) * cos(psi);
+
+		normals[3 * size + 3] =
+		    normals[3 * size + 0];
+		normals[3 * size + 4] =
+		    normals[3 * size + 1];
+		normals[3 * size + 5] =
+		    normals[3 * size + 2];
+
+		uv[2 * size] = (u_0 + u) / self->scale[0];
+		uv[2 * size + 1] = w_r0 / self->scale[1];
+    
+		uv[2 * size + 2] = (u_0 + u) / self->scale[0];
+		uv[2 * size + 3] = -w_l0 / self->scale[1];
+
+		size += 2;
+
+		/* printf ("%f, %f, %f\n", c[0] + (r - w_r0) * sin(theta), */
+		/* 	    c[1] - (r - w_r0) * cos(theta), */
+		/* 	    p_0[2] + h + w_r0 * e_0); */
+		/* printf ("%f, %f, %f\n", c[0] + (r + w_l0) * sin(theta), */
+		/* 	    c[1] - (r + w_l0) * cos(theta), */
+		/* 	    p_0[2] + h - w_l0 * e_0); */
+	    }
+		
+	    theta_0 += S / r;
+	    p_0[0] = c[0] + r * sin(theta_0);
+	    p_0[1] = c[1] - r * cos(theta_0);
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	} else {
+	    double r, c[2], u;
+	    int m, n, k;
+
+	    m = (int)fmax(ceil(fabs(delta_kappa) / data->tolerance), 1);
+
+	    n = fmax(ceil(S / m / self->tessellation[0]),
+		     ceil (sqrt(fabs (delta_g * S) / m / m / 8 / self->tessellation[1])));
+	    n = n > 0 ? n : 1;
+	    /* printf ("* %d, %d, %d\n", i, m, n); */
+		
+	    for (j = 0, u = 0; j < m ; j += 1) {
+		double h;
+
+		kappa_0 += delta_kappa / (m + 1);
+		r = 1 / kappa_0;
+		
+		c[0] = p_0[0] - r * sin(theta_0);
+		c[1] = p_0[1] + r * cos(theta_0);
+
+		for (k = 0 ; k < n ; k += 1) {
+		    double theta;
+		    
+		    e_0 += delta_e / m / n;
+		    w_l0 += delta_wl / m / n;
+		    w_r0 += delta_wr / m / n;
+		    u += S / m / n;
+		    
+		    theta = theta_0 + S * (k + 1) / n / r / m;
+		    h = u * g_0 + 0.5 * delta_g * u * u / S;
+	
+		    phi = atan(e_0);
+		    psi = -atan(g_0 + delta_g * u / S);
+	
+		    vertices = realloc (vertices,
+                                        (size + 2) *
+                                        3 * sizeof (float));
+
+		    normals = realloc (normals,
+                                       (size + 2) *
+                                       3 * sizeof (float));
+
+		    uv = realloc (uv,
+                                  (size + 2) *
+                                  2 * sizeof (float));
+		
+		    vertices[3 * size] =
+			c[0] + (r - w_r0) * sin(theta);
+		    vertices[3 * size + 1] =
+			c[1] - (r - w_r0) * cos(theta);
+		    vertices[3 * size + 2] =
+			p_0[2] + h + w_r0 * e_0;
+
+		    vertices[3 * size + 3] =
+			c[0] + (r + w_l0) * sin(theta);
+		    vertices[3 * size + 4] =
+			c[1] - (r + w_l0) * cos(theta);
+		    vertices[3 * size + 5] =
+			p_0[2] + h - w_l0 * e_0;
+
+		    normals[3 * size + 0] =
+			sin(theta) * sin(phi) +
+			cos(phi) * sin (psi) * cos (theta);
+		    normals[3 * size + 1] =
+			-cos(theta) * sin(phi) +
+			cos(phi) * sin (psi) * sin (theta);
+		    normals[3 * size + 2] =
+			cos(phi) * cos(psi);
+
+		    normals[3 * size + 3] =
+			normals[3 * size + 0];
+		    normals[3 * size + 4] =
+			normals[3 * size + 1];
+		    normals[3 * size + 5] =
+			normals[3 * size + 2];
+
+		    uv[2 * size] = (u_0 + u) / self->scale[0];
+		    uv[2 * size + 1] = w_r0 / self->scale[1];
+    
+		    uv[2 * size + 2] = (u_0 + u) / self->scale[0];
+		    uv[2 * size + 3] = -w_l0 / self->scale[1];
+		    
+		    size += 2;
+	
+		    /* printf ("%f, %f, %f\n", c[0] + (r - w_r0) * sin(theta), */
+		    /* 		c[1] - (r - w_r0) * cos(theta), */
+		    /* 		p_0[2] + h + w_r0 * e_0); */
+		    /* printf ("%f, %f, %f\n", c[0] + (r + w_l0) * sin(theta), */
+		    /* 		c[1] - (r + w_l0) * cos(theta), */
+		    /* 		p_0[2] + h - w_l0 * e_0); */
+		}
+
+		theta_0 += S / r / m;
+		
+		p_0[0] = c[0] + r * sin(theta_0);
+		p_0[1] = c[1] - r * cos(theta_0);
+	    }
+
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	}
+
+	u_0 += S;
+	w_l0 = data->segments[10 * i + 1];
+	w_r0 = data->segments[10 * i + 2];
+	kappa_0 = data->segments[10 * i + 3];
+	g_0 = data->segments[10 * i + 4];
+	e_0 = data->segments[10 * i + 5];
+    }
+
+    /* printf ("!!! %f, %f, %f,  %f\n", p_0[0], p_0[1], p_0[2], theta_0 / M_PI); */
+    t_pushuserdata(_L, 1, self);
+
+    lua_pushliteral(_L, "positions");
+    array_createarray(_L, ARRAY_TFLOAT, vertices, 2, size, 3);
+    lua_settable (_L, -3);
+
+    lua_pushliteral(_L, "mapping");
+    array_createarray(_L, ARRAY_TFLOAT, uv, 2, size, 2);
+    lua_settable (_L, -3);
+
+    lua_pushliteral(_L, "normals");
+    array_createarray(_L, ARRAY_TFLOAT, normals, 2, size, 3);
+    lua_settable (_L, -3);
+
+    free(vertices);
+    free(uv);
+    free(normals);
+}
+
+-(int) _get_scale
+{
+    lua_newtable (_L);
+	
+    lua_pushnumber (_L, self->scale[0]);
+    lua_rawseti (_L, 3, 1);
+	
+    lua_pushnumber (_L, self->scale[1]);
+    lua_rawseti (_L, 3, 2);
+
+    return 1;
+}
+
+-(int) _get_tessellation
+{
+    lua_newtable (_L);
+    
+    lua_pushnumber (_L, self->tessellation[0]);
+    lua_rawseti (_L, 3, 1);
+	
+    lua_pushnumber (_L, self->tessellation[1]);
+    lua_rawseti (_L, 3, 2);
+
+    return 1;
+}
+
+-(void) _set_scale
+{
+    lua_rawgeti (_L, 3, 1);
+    self->scale[0] = lua_tonumber (_L, -1);
+	
+    lua_rawgeti (_L, 3, 2);
+    self->scale[1] = lua_tonumber (_L, -1);
+}
+
+-(void) _set_tessellation
+{
+    lua_rawgeti (_L, 3, 1);
+    self->tessellation[0] = lua_tonumber (_L, -1);
+	
+    lua_rawgeti (_L, 3, 2);
+    self->tessellation[1] = lua_tonumber (_L, -1);
+
+    lua_pop (_L, 3);
 }
 
 @end

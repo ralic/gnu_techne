@@ -18,6 +18,7 @@
 #define _RACETRACK_H_
 
 #include "body.h"
+#include "shape.h"
 
 struct trackdata {
     /* Tarmac. */
@@ -36,21 +37,37 @@ struct trackdata {
 
 int dTrackClass;
 
+@interface RacetrackShape: Shape {
+    double tessellation[2], scale[2];
+}
+
+-(void) updateWithData:(struct trackdata *)data;
+
+-(int) _get_scale;
+-(int) _get_tessellation;
+
+-(void) _set_scale;
+-(void) _set_tessellation;
+
+@end
+
 @interface Racetrack: Body {
+    RacetrackShape *shape;
+    
     double *vertices, *uv, *normals;    
     double tessellation[3], scale[2];
-    int size, dirty;
+    int size;
 }
 
 -(void) update;
 
--(int) _get_element;	
+-(int) _get_segments;	
 -(int) _get_sampler;
 -(int) _get_vertices;
 -(int) _get_scale;
 -(int) _get_tessellation;
 
--(void) _set_element;
+-(void) _set_segments;
 -(void) _set_vertices;
 -(void) _set_sampler;
 -(void) _set_scale;

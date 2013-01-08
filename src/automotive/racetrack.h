@@ -24,7 +24,7 @@ struct trackdata {
     /* Tarmac. */
 
     double *segments, tolerance;
-    int size, last;
+    int segments_n, last;
 
     /* Terrain. */
 
@@ -37,11 +37,35 @@ struct trackdata {
 
 int dTrackClass;
 
-@interface RacetrackShape: Shape {
-    double tessellation[2], scale[2];
+@interface Racetrack: Node {
+@public
+    double *segments, tolerance;
+    int segments_n;
 }
 
--(void) updateWithData:(struct trackdata *)data;
+-(int) _get_segments;	
+-(void) _set_segments;
+
+-(int) _get_tolerance;
+-(void) _set_tolerance;
+
+-(int) _get_body;
+-(void) _set_body;
+
+-(int) _get_shape;
+-(void) _set_shape;
+
+@end
+
+@interface RacetrackShape: Shape {
+    double *segments, tolerance;
+    int segments_n;
+    
+    double tessellation[2], scale[2];
+    int dirty;
+}
+
+-(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
 
 -(int) _get_scale;
 -(int) _get_tessellation;
@@ -51,27 +75,13 @@ int dTrackClass;
 
 @end
 
-@interface Racetrack: Body {
-    RacetrackShape *shape;
-    
-    double *vertices, *uv, *normals;    
-    double tessellation[3], scale[2];
-    int size;
+@interface RacetrackBody: Body {
 }
 
--(void) update;
+-(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
 
--(int) _get_segments;	
 -(int) _get_sampler;
--(int) _get_vertices;
--(int) _get_scale;
--(int) _get_tessellation;
-
--(void) _set_segments;
--(void) _set_vertices;
 -(void) _set_sampler;
--(void) _set_scale;
--(void) _set_tessellation;
 
 @end
 

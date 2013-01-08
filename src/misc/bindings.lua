@@ -81,11 +81,11 @@ local function release (self, prefix, key, ...)
    current = nil
 end
 
-local function motion (self, prefix, button, axis, value, ...)
+local function motion (self, prefix, motion, button, axis, value, ...)
    if button then
-      push (prefix .. "drag-axis-" ..  tostring(axis), true, value, button)
+      push (prefix .. "drag-" .. motion .. "-axis-" ..  tostring(axis), true, value, button)
    else
-      push (prefix .. "axis-" ..  tostring(axis), true, value)
+      push (prefix .. motion .. "-axis-" ..  tostring(axis), true, value)
    end
 end
 
@@ -122,8 +122,12 @@ for name, device in pairs(controllers) do
          release (self, prefix, key)
       end,
 
-      motion = function (self, axis, value)
-         motion(self, prefix, next(buttons), axis, value)
+      absolute = function (self, axis, value)
+         motion(self, prefix, "absolute", next(buttons), axis, value)
+      end,
+
+      relative = function (self, axis, value)
+         motion(self, prefix, "relative", next(buttons), axis, value)
       end,
      
                        }

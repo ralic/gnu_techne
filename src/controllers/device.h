@@ -20,16 +20,18 @@
 #include "event.h"
 
 @interface Device: Event {
-    int buttonpress, buttonrelease, motion;
+    int buttonpress, buttonrelease, absolute, relative;
 }
 
 -(int) _get_buttonpress;
 -(int) _get_buttonrelease;
--(int) _get_motion;
+-(int) _get_absolute;
+-(int) _get_relative;
 
 -(void) _set_buttonpress;
 -(void) _set_buttonrelease;
--(void) _set_motion;
+-(void) _set_absolute;
+-(void) _set_relative;
 
 @end
 

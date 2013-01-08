@@ -35,14 +35,16 @@
 
     self->buttonpress = LUA_REFNIL;
     self->buttonrelease = LUA_REFNIL;
-    self->motion = LUA_REFNIL;
+    self->absolute = LUA_REFNIL;
+    self->relative = LUA_REFNIL;
 }
 
 -(void) free
 {
     luaL_unref (_L, LUA_REGISTRYINDEX, self->buttonpress);
     luaL_unref (_L, LUA_REGISTRYINDEX, self->buttonrelease);
-    luaL_unref (_L, LUA_REGISTRYINDEX, motion);
+    luaL_unref (_L, LUA_REGISTRYINDEX, absolute);
+    luaL_unref (_L, LUA_REGISTRYINDEX, relative);
 
     [super free];
 }
@@ -61,9 +63,16 @@
     return 1;
 }
 
--(int) _get_motion
+-(int) _get_absolute
 {
-    lua_rawgeti(_L, LUA_REGISTRYINDEX, motion);
+    lua_rawgeti(_L, LUA_REGISTRYINDEX, absolute);
+
+    return 1;
+}
+
+-(int) _get_relative
+{
+    lua_rawgeti(_L, LUA_REGISTRYINDEX, relative);
 
     return 1;
 }
@@ -80,10 +89,16 @@
     self->buttonrelease = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 
--(void) _set_motion
+-(void) _set_absolute
 {
-    luaL_unref (_L, LUA_REGISTRYINDEX, motion);
-    self->motion = luaL_ref (_L, LUA_REGISTRYINDEX);
+    luaL_unref (_L, LUA_REGISTRYINDEX, absolute);
+    self->absolute = luaL_ref (_L, LUA_REGISTRYINDEX);
+}
+
+-(void) _set_relative
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, relative);
+    self->relative = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 
 @end

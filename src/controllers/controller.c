@@ -31,6 +31,7 @@
 #define MAX_EVENT_WORDS ((EV_CNT / sizeof(unsigned int)) + 1)
 #define MAX_KEY_WORDS ((KEY_CNT / sizeof(unsigned int)) + 1)
 #define MAX_ABSOLUTE_WORDS ((ABS_CNT / sizeof(unsigned int)) + 1)
+#define MAX_RELATIVE_WORDS ((REL_CNT / sizeof(unsigned int)) + 1)
 #define test(b, i) (b[i / sizeof(unsigned int)] & (1 << (i % sizeof(unsigned int))))
 
 @implementation Controller
@@ -45,9 +46,9 @@
     self->device = open(name, O_NONBLOCK | O_RDWR);
 
     if (self->device < 0) {
-        t_print_warning("Could not open input device %s for writing, "
-                        "force effects won't be available even if "
-                        "supported by the device.", name);
+        t_print_warning("Could not open input device %s for writing.  "
+                        "Force effects won't be available even if "
+                        "supported.", name);
         
         self->device = open(name, O_NONBLOCK | O_RDONLY);
         self->has_force = 0;            
@@ -138,7 +139,16 @@
                 lua_pushnumber (_L, events[i].code);
                 lua_pushnumber (_L, events[i].value);
 
-                t_callhook (_L, self->motion, 3, 0);
+                t_callhook (_L, self->absolute, 3, 0);
+
+                break;
+            case EV_REL:
+                t_pushuserdata (_L, 1, self);
+		
+                lua_pushnumber (_L, events[i].code);
+                lua_pushnumber (_L, events[i].value);
+
+                t_callhook (_L, self->relative, 3, 0);
 
                 break;
             }
@@ -244,7 +254,7 @@
     T_WARN_READONLY;
 }
 
--(int) _get_axes
+-(int) _get_absolute
 {
     unsigned int exists[MAX_ABSOLUTE_WORDS];
     struct input_absinfo info;
@@ -282,7 +292,7 @@
     return 1;
 }
 
--(void) _set_axes
+-(void) _set_absolute
 {
     T_WARN_READONLY;
 }

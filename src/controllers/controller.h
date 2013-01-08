@@ -33,8 +33,8 @@
 -(int) _get_buttons;
 -(void) _set_buttons;
 
--(int) _get_axes;
--(void) _set_axes;
+-(int) _get_absolute;
+-(void) _set_absolute;
 
 @end
 

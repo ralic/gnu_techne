@@ -56,27 +56,27 @@
             t_pushuserdata (_L, 1, self);
 
             if (event->scroll.direction == GDK_SCROLL_UP) {
-                lua_pushinteger (_L, 2);
+                lua_pushinteger (_L, 0);
                 lua_pushinteger (_L, 1);
             } else if (event->scroll.direction == GDK_SCROLL_DOWN) {
-                lua_pushinteger (_L, 2);
+                lua_pushinteger (_L, 0);
                 lua_pushinteger (_L, -1);
             } else if (event->scroll.direction == GDK_SCROLL_LEFT) {
-                lua_pushinteger (_L, 3);
+                lua_pushinteger (_L, 1);
                 lua_pushinteger (_L, -1);
             } else if (event->scroll.direction == GDK_SCROLL_RIGHT) {
-                lua_pushinteger (_L, 3);
+                lua_pushinteger (_L, 1);
                 lua_pushinteger (_L, 1);
             }
 	
-            t_callhook (_L, self->motion, 3, 0);
+            t_callhook (_L, self->relative, 3, 0);
         } else if (event->type == GDK_MOTION_NOTIFY) {
             if (event->motion.x != self->axes[0]) {
                 t_pushuserdata (_L, 1, self);
                 lua_pushinteger (_L, 0);
                 lua_pushinteger (_L, event->motion.x);
 
-                t_callhook (_L, self->motion, 3, 0);
+                t_callhook (_L, self->absolute, 3, 0);
             }
             
             if (event->motion.y != self->axes[1]) {
@@ -84,7 +84,7 @@
                 lua_pushinteger (_L, 1);
                 lua_pushinteger (_L, event->motion.y);
 
-                t_callhook (_L, self->motion, 3, 0);
+                t_callhook (_L, self->absolute, 3, 0);
             }
 
             self->axes[0] = event->motion.x;

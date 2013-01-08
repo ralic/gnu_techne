@@ -104,7 +104,7 @@ int luaopen_controllers_core (lua_State *L)
             goto next;
         }
             
-        if(!(test(bits, EV_ABS) || test(bits, EV_KEY))) {
+        if(!(test(bits, EV_ABS) || test(bits, EV_REL) || test(bits, EV_KEY))) {
             goto next;
         }
         

@@ -26,6 +26,481 @@
 #include "ground.h"
 #include "wheel.h"
 
+static int constructbody(lua_State *L)
+{
+    Racetrack *track;
+    RacetrackBody *body;
+    
+    track = (Racetrack *)t_tonode (L, lua_upvalueindex(1));
+    body = [RacetrackBody alloc];
+    [body initWith: track->segments_n
+          segments: track->segments
+      andTolerance: track->tolerance];
+
+    t_configurenode(L, 1);
+
+    return 1;
+}
+
+static int constructshape(lua_State *L)
+{
+    Racetrack *track;
+    RacetrackShape *shape;
+    
+    track = (Racetrack *)t_tonode (L, lua_upvalueindex(1));
+    shape = [RacetrackShape alloc];
+    [shape initWith: track->segments_n
+           segments: track->segments
+       andTolerance: track->tolerance];
+
+    t_configurenode(L, 1);
+
+    return 1;
+}
+
+static void update_track_segments(double *segments, int segments_n,
+                                  double tolerance)
+                   
+{
+    double theta_0, p_0[3], delta_wl, delta_wr, w_l0, w_r0;
+    double S, kappa_0, delta_kappa, g_0, delta_g, e_0, delta_e;
+    int i, j;
+
+    theta_0 = 0;
+    p_0[0] = 0;
+    p_0[1] = 0;
+    p_0[2] = 0;
+
+    w_l0 = segments[1];
+    w_r0 = segments[2];
+    kappa_0 = segments[3];
+    g_0 = segments[4];
+    e_0 = segments[5];
+    
+    /* printf ("%f, %f, %f\n", 0, w_r0, e_0 * w_r0); */
+    /* printf ("%f, %f, %f\n", 0, -w_l0, -e_0 * w_l0); */
+
+    for (i = 0 ; i < segments_n ; i += 1) {
+        /* Fill in the initial position and angle for each segment. */
+        
+	segments[10 * i + 6] = p_0[0];
+	segments[10 * i + 7] = p_0[1];
+	segments[10 * i + 8] = p_0[2];
+	segments[10 * i + 9] = theta_0;
+
+        /* printf ("%f, %f, %f, %f\n", */
+        /*         segments[10 * i + 6], */
+        /*         segments[10 * i + 7], */
+        /*         segments[10 * i + 8], */
+        /*         segments[10 * i + 9]); */
+        
+	S = segments[10 * i];
+	delta_wl = segments[10 * i + 1] - w_l0;
+	delta_wr = segments[10 * i + 2] - w_r0;
+	delta_kappa = segments[10 * i + 3] - kappa_0;
+	delta_g = segments[10 * i + 4] - g_0;
+	delta_e = segments[10 * i + 5] - e_0;
+        
+        /* Figure out what the next segment is based on current and
+         * previous curvature. */
+        
+	if (fabs(kappa_0) < 1e-6 && fabs(delta_kappa) < 1e-6) {
+	    /* A tangent. */
+
+            e_0 += delta_e;
+            w_l0 += delta_wl;
+            w_r0 += delta_wr;
+		    
+	    p_0[0] += S * cos(theta_0);
+	    p_0[1] += S * sin(theta_0);
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	} else if (fabs(kappa_0) > 1e-6 && fabs(delta_kappa) < 1e-6) {
+	    double r, c[2];
+
+            /* A circular segment. */
+            
+	    r = 1 / kappa_0;
+		
+	    c[0] = p_0[0] - r * sin(theta_0);
+	    c[1] = p_0[1] + r * cos(theta_0);
+		    
+            e_0 += delta_e;
+            w_l0 += delta_wl;
+            w_r0 += delta_wr;
+		
+	    theta_0 += S / r;
+            
+	    p_0[0] = c[0] + r * sin(theta_0);
+	    p_0[1] = c[1] - r * cos(theta_0);
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	} else {
+	    double r, c[2];
+	    int m;
+
+            /* A transitional curve. */
+            
+	    m = (int)fmax(ceil(fabs(delta_kappa) / tolerance), 1);
+
+	    /* printf ("* %d, %d, %d\n", i, m, n); */
+		
+	    for (j = 0; j < m ; j += 1) {
+
+		kappa_0 += delta_kappa / (m + 1);
+		r = 1 / kappa_0;
+		
+		c[0] = p_0[0] - r * sin(theta_0);
+		c[1] = p_0[1] + r * cos(theta_0);
+
+                e_0 += delta_e / m;
+                w_l0 += delta_wl / m;
+                w_r0 += delta_wr / m;
+
+		theta_0 += S / r / m;
+		
+		p_0[0] = c[0] + r * sin(theta_0);
+		p_0[1] = c[1] - r * cos(theta_0);
+	    }
+
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	}
+
+	w_l0 = segments[10 * i + 1];
+	w_r0 = segments[10 * i + 2];
+	kappa_0 = segments[10 * i + 3];
+	g_0 = segments[10 * i + 4];
+	e_0 = segments[10 * i + 5];
+    }
+}
+
+static void update_track_shape(double *segments, int segments_n, double tolerance,
+                               double *tessellation, double *scale,
+                               float **vertices, float **normals, float **uv,
+                               int *vertices_n)
+                   
+{
+    float *V, *N, *UV;
+    double theta_0, p_0[3], delta_wl, delta_wr, w_l0, w_r0, u_0;
+    double S, kappa_0, delta_kappa, g_0, delta_g, e_0, delta_e;
+    double phi, psi;
+    int i, j, n;
+
+    u_0 = 0;
+
+    theta_0 = 0;
+    p_0[0] = 0;
+    p_0[1] = 0;
+    p_0[2] = 0;
+
+    w_l0 = segments[1];
+    w_r0 = segments[2];
+    kappa_0 = segments[3];
+    g_0 = segments[4];
+    e_0 = segments[5];
+    
+    phi = atan(e_0);
+    psi = -atan(g_0);
+
+    V = malloc (2 * 3 * sizeof (float));
+    N = malloc (2 * 3 * sizeof (float));
+    UV = malloc (2 * 2 * sizeof (float));
+    n = 0;
+
+    /* Kickstart the strip. */
+
+    V[0] = 0;
+    V[1] = w_r0;
+    V[2] = e_0 * w_r0;
+
+    V[3] = 0;
+    V[4] = -w_l0;
+    V[5] = -e_0 * w_l0;
+
+    N[0] = cos(phi) * sin (psi);
+    N[1] = -sin(phi);
+    N[2] = cos(phi) * cos(psi);
+    
+    N[3] = N[0];
+    N[4] = N[1];
+    N[5] = N[2];
+
+    UV[0] = 0;
+    UV[1] = w_r0 / scale[1];
+    
+    UV[2] = 0;
+    UV[3] = -w_l0 / scale[1];
+    
+    n += 2;
+    
+    /* printf ("%f, %f, %f\n", 0, w_r0, e_0 * w_r0); */
+    /* printf ("%f, %f, %f\n", 0, -w_l0, -e_0 * w_l0); */
+
+    for (i = 0 ; i < segments_n ; i += 1) {
+	segments[10 * i + 6] = p_0[0];
+	segments[10 * i + 7] = p_0[1];
+	segments[10 * i + 8] = p_0[2];
+	segments[10 * i + 9] = theta_0;
+
+        /* printf ("%f, %f, %f, %f\n", */
+        /*         segments[10 * i + 6], */
+        /*         segments[10 * i + 7], */
+        /*         segments[10 * i + 8], */
+        /*         segments[10 * i + 9]); */
+        
+	S = segments[10 * i];
+	delta_wl = segments[10 * i + 1] - w_l0;
+	delta_wr = segments[10 * i + 2] - w_r0;
+	delta_kappa = segments[10 * i + 3] - kappa_0;
+	delta_g = segments[10 * i + 4] - g_0;
+	delta_e = segments[10 * i + 5] - e_0;
+
+	if (fabs(kappa_0) < 1e-6 && fabs(delta_kappa) < 1e-6) {
+	    double dv[2], u;
+	    int m;
+
+            m = fmax(ceil (sqrt(fabs (delta_g) * S / 8 / tessellation[1])), 1);
+
+	    /* printf ("++ %d, %f, %f\n", i, e_0, delta_e); */
+		
+	    /* A tangent. */
+
+	    dv[0] = -sin(theta_0);
+	    dv[1] = cos(theta_0);
+
+	    for (j = 1 ; j <= m ; j += 1) {
+		double h, p[2];
+
+		u = S * j / m;
+		h = u * g_0 + 0.5 * delta_g * u * u / S;
+		
+		p[0] = p_0[0] + S * j / m * cos(theta_0);
+		p[1] = p_0[1] + S * j / m * sin(theta_0);
+
+		e_0 += delta_e / m;
+		w_l0 += delta_wl / m;
+		w_r0 += delta_wr / m;
+
+		phi = atan(e_0);
+		psi = -atan(g_0 + delta_g * u / S);
+
+                V = realloc (V, (n + 2) * 3 * sizeof (float));
+		
+                N = realloc (N, (n + 2) * 3 * sizeof (float));
+		
+                UV = realloc (UV, (n + 2) * 2 * sizeof (float));
+		
+                V[3 * n] = p[0] + w_r0 * dv[0];
+                V[3 * n + 1] = p[1] + w_r0 * dv[1];
+                V[3 * n + 2] = p_0[2] + h + e_0 * w_r0;
+
+                V[3 * n + 3] = p[0] - w_l0 * dv[0];
+                V[3 * n + 4] = p[1] - w_l0 * dv[1];
+                V[3 * n + 5] = p_0[2] + h - e_0 * w_l0;
+
+                N[3 * n + 0] =
+                    sin(theta_0) * sin(phi) +
+                    cos(phi) * sin (psi) * cos (theta_0);
+                N[3 * n + 1] =
+                    -cos(theta_0) * sin(phi) +
+                    cos(phi) * sin (psi) * sin (theta_0);
+                N[3 * n + 2] =
+                    cos(phi) * cos(psi);
+
+                N[3 * n + 3] = N[3 * n + 0];
+                N[3 * n + 4] = N[3 * n + 1];
+                N[3 * n + 5] = N[3 * n + 2];
+
+                UV[2 * n] = (u_0 + u) / scale[0];
+                UV[2 * n + 1] = w_r0 / scale[1];
+    
+                UV[2 * n + 2] = (u_0 + u) / scale[0];
+                UV[2 * n + 3] = -w_l0 / scale[1];
+
+                n += 2;
+	    }
+		    
+	    p_0[0] += S * cos(theta_0);
+	    p_0[1] += S * sin(theta_0);
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	} else if (fabs(kappa_0) > 1e-6 && fabs(delta_kappa) < 1e-6) {
+	    double u, r, c[2];
+	    int m;
+
+            /* A circular segment. */
+            
+	    r = 1 / kappa_0;
+
+            m = fmax(ceil(S / tessellation[0]),
+                     ceil (sqrt(fabs (delta_g) * S / 8 / tessellation[1])));
+            m = m > 0 ? m : 1;
+		
+	    c[0] = p_0[0] - r * sin(theta_0);
+	    c[1] = p_0[1] + r * cos(theta_0);
+
+	    for (j = 0, u = S / m ; j < m ; j += 1, u += S / m) {
+		double h, theta;
+		    
+		theta = theta_0 + S * (j + 1) / m / r;
+		    
+		e_0 += delta_e / m;
+		w_l0 += delta_wl / m;
+		w_r0 += delta_wr / m;
+		    
+		h = u * g_0 + 0.5 * delta_g * u * u / S;
+
+		phi = atan(e_0);
+		psi = -atan(g_0 + delta_g * u / S);
+
+                V = realloc (V, (n + 2) * 3 * sizeof (float));
+		
+                N = realloc (N, (n + 2) * 3 * sizeof (float));
+		
+                UV = realloc (UV, (n + 2) * 2 * sizeof (float));
+		
+                V[3 * n] = c[0] + (r - w_r0) * sin(theta);
+                V[3 * n + 1] = c[1] - (r - w_r0) * cos(theta);
+                V[3 * n + 2] = p_0[2] + h + w_r0 * e_0;
+
+                V[3 * n + 3] = c[0] + (r + w_l0) * sin(theta);
+                V[3 * n + 4] = c[1] - (r + w_l0) * cos(theta);
+                V[3 * n + 5] = p_0[2] + h - w_l0 * e_0;
+
+                N[3 * n + 0] =
+                    sin(theta) * sin(phi) +
+                    cos(phi) * sin (psi) * cos (theta);
+                N[3 * n + 1] =
+                    -cos(theta) * sin(phi) +
+                    cos(phi) * sin (psi) * sin (theta);
+                N[3 * n + 2] =
+                    cos(phi) * cos(psi);
+
+                N[3 * n + 3] = N[3 * n + 0];
+                N[3 * n + 4] = N[3 * n + 1];
+                N[3 * n + 5] = N[3 * n + 2];
+
+                UV[2 * n] = (u_0 + u) / scale[0];
+                UV[2 * n + 1] = w_r0 / scale[1];
+    
+                UV[2 * n + 2] = (u_0 + u) / scale[0];
+                UV[2 * n + 3] = -w_l0 / scale[1];
+
+                n += 2;
+                
+		/* printf ("%f, %f, %f\n", c[0] + (r - w_r0) * sin(theta), */
+		/* 	    c[1] - (r - w_r0) * cos(theta), */
+		/* 	    p_0[2] + h + w_r0 * e_0); */
+		/* printf ("%f, %f, %f\n", c[0] + (r + w_l0) * sin(theta), */
+		/* 	    c[1] - (r + w_l0) * cos(theta), */
+		/* 	    p_0[2] + h - w_l0 * e_0); */
+	    }
+		
+	    theta_0 += S / r;
+	    p_0[0] = c[0] + r * sin(theta_0);
+	    p_0[1] = c[1] - r * cos(theta_0);
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	} else {
+	    double r, c[2], u;
+	    int m, l, k;
+
+            /* A transitional curve. */
+
+	    m = (int)fmax(ceil(fabs(delta_kappa) / tolerance), 1);
+
+            l = fmax(ceil(S / m / tessellation[0]),
+                     ceil (sqrt(fabs (delta_g * S) / m / m / 8 / tessellation[1])));
+            l = l > 0 ? l : 1;
+	    /* printf ("* %d, %d, %d\n", i, m, n); */
+		
+	    for (j = 0, u = 0; j < m ; j += 1) {
+		double h;
+
+		kappa_0 += delta_kappa / (m + 1);
+		r = 1 / kappa_0;
+		
+		c[0] = p_0[0] - r * sin(theta_0);
+		c[1] = p_0[1] + r * cos(theta_0);
+
+		for (k = 0 ; k < l ; k += 1) {
+		    double theta;
+		    
+		    e_0 += delta_e / m / l;
+		    w_l0 += delta_wl / m / l;
+		    w_r0 += delta_wr / m / l;
+		    u += S / m / l;
+		    
+		    theta = theta_0 + S * (k + 1) / l / r / m;
+		    h = u * g_0 + 0.5 * delta_g * u * u / S;
+	
+		    phi = atan(e_0);
+		    psi = -atan(g_0 + delta_g * u / S);
+	
+                    V = realloc (V, (n + 2) * 3 * sizeof (float));
+
+                    N = realloc (N, (n + 2) * 3 * sizeof (float));
+
+                    UV = realloc (UV, (n + 2) * 2 * sizeof (float));
+		
+                    V[3 * n] = c[0] + (r - w_r0) * sin(theta);
+                    V[3 * n + 1] = c[1] - (r - w_r0) * cos(theta);
+                    V[3 * n + 2] = p_0[2] + h + w_r0 * e_0;
+
+                    V[3 * n + 3] = c[0] + (r + w_l0) * sin(theta);
+                    V[3 * n + 4] = c[1] - (r + w_l0) * cos(theta);
+                    V[3 * n + 5] = p_0[2] + h - w_l0 * e_0;
+
+                    N[3 * n + 0] =
+                        sin(theta) * sin(phi) +
+                        cos(phi) * sin (psi) * cos (theta);
+                    N[3 * n + 1] =
+                        -cos(theta) * sin(phi) +
+                        cos(phi) * sin (psi) * sin (theta);
+                    N[3 * n + 2] =
+                        cos(phi) * cos(psi);
+
+                    N[3 * n + 3] = N[3 * n + 0];
+                    N[3 * n + 4] = N[3 * n + 1];
+                    N[3 * n + 5] = N[3 * n + 2];
+
+                    UV[2 * n] = (u_0 + u) / scale[0];
+                    UV[2 * n + 1] = w_r0 / scale[1];
+    
+                    UV[2 * n + 2] = (u_0 + u) / scale[0];
+                    UV[2 * n + 3] = -w_l0 / scale[1];
+		    
+                    n += 2;
+
+		    /* printf ("%f, %f, %f\n", c[0] + (r - w_r0) * sin(theta), */
+		    /* 		c[1] - (r - w_r0) * cos(theta), */
+		    /* 		p_0[2] + h + w_r0 * e_0); */
+		    /* printf ("%f, %f, %f\n", c[0] + (r + w_l0) * sin(theta), */
+		    /* 		c[1] - (r + w_l0) * cos(theta), */
+		    /* 		p_0[2] + h - w_l0 * e_0); */
+		}
+
+		theta_0 += S / r / m;
+		
+		p_0[0] = c[0] + r * sin(theta_0);
+		p_0[1] = c[1] - r * cos(theta_0);
+	    }
+
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	}
+
+	u_0 += S;
+	w_l0 = segments[10 * i + 1];
+	w_r0 = segments[10 * i + 2];
+	kappa_0 = segments[10 * i + 3];
+	g_0 = segments[10 * i + 4];
+	e_0 = segments[10 * i + 5];
+    }
+
+    *vertices = V;
+    *normals = N;
+    *uv = UV;
+    *vertices_n = n;
+
+    /* printf ("!!! %f, %f, %f,  %f\n", p_0[0], p_0[1], p_0[2], theta_0 / M_PI); */
+}
+
 static int test (double *segments, int index, int size, double tolerance,
 		 const dReal *q, dReal *n, dReal *d,
 		 double *longitude, double *latitude)
@@ -314,7 +789,7 @@ static int collideTrackWithWheel (dGeomID track,
 
     segment = test (trackdata->segments,
 		    trackdata->last,
-		    trackdata->size,
+		    trackdata->segments_n,
 		    trackdata->tolerance,
 		    r, n, &wheeldata->contact.depth,
 		    NULL, NULL);
@@ -374,7 +849,7 @@ static int collideTrackWithWheel (dGeomID track,
 
     segment = test (trackdata->segments,
 		    trackdata->last,
-		    trackdata->size,
+		    trackdata->segments_n,
 		    trackdata->tolerance,
 		    wheeldata->contact.pos,
 		    wheeldata->contact.normal,
@@ -746,7 +1221,7 @@ static int sampler_index(lua_State *L)
 	/* Sample the track. */
 	
 	s = test (data->segments, 0,
-		  data->size, data->tolerance,
+		  data->segments_n, data->tolerance,
 		  p, n, &d, &u, &v);
 	
 	if (s >= 0) {
@@ -772,9 +1247,115 @@ static int sampler_index(lua_State *L)
     return 1;
 }
 
+
 @implementation Racetrack
 
--(void)init
+-(void) init
+{
+    [super init];
+    
+    self->segments = NULL;
+    self->segments_n = 0;
+    self->tolerance = 0.01 / 10;
+}
+
+-(int) _get_segments
+{
+    int i, j;    
+
+    lua_createtable(_L, self->segments_n, 0);
+    
+    for (j = 0 ; j < self->segments_n ; j += 1) {
+        lua_createtable (_L, 6, 0);
+
+        for(i = 0; i < 6; i += 1) {
+            lua_pushnumber (_L, self->segments[10 * j + i]);
+            lua_rawseti (_L, -2, i + 1);
+        }
+
+        lua_rawseti (_L, -2, j + 1);
+    }
+
+    return 1;
+}
+
+-(void) _set_segments
+{
+    int i, j;    
+
+    if(!lua_isnil (_L, 3)) {
+        lua_len (_L, 3);
+        
+        self->segments_n = lua_tointeger(_L, -1);
+        self->segments = realloc (self->segments,
+                                  10 * self->segments_n * sizeof(double));
+        
+        lua_pop (_L, 1);
+
+        for (j = 0 ; j < self->segments_n ; j += 1) {
+            lua_pushinteger (_L, j + 1);
+            lua_gettable (_L, 3);
+            
+            for(i = 0 ; i < 6 ; i += 1) {
+                lua_pushinteger (_L, i + 1);
+                lua_gettable (_L, -2);
+                self->segments[10 * j + i] = lua_tonumber (_L, -1);
+                lua_pop (_L, 1);
+            }
+
+            lua_pop (_L, 1);
+        }
+    }
+}
+
+-(int) _get_tolerance
+{
+    lua_pushnumber (_L, self->tolerance);
+
+    return 1;
+}
+
+-(void) _set_tolerance
+{
+    self->tolerance = lua_tonumber (_L, 3);
+}
+
+-(int) _get_body
+{
+    t_pushuserdata(_L, 1, self);
+    lua_pushcclosure(_L, constructbody, 1);
+
+    return 1;
+}
+
+-(void) _set_body
+{
+}
+
+-(int) _get_shape
+{
+    t_pushuserdata(_L, 1, self);
+    lua_pushcclosure(_L, constructshape, 1);
+
+    return 1;
+}
+
+-(void) _set_shape
+{
+}
+
+-(void) free
+{
+    if (self->segments) {
+        free(self->segments);
+    }
+}
+
+@end
+
+@implementation RacetrackBody
+
+-(void)initWith: (int)n segments: (double *)s andTolerance: (double)t
 {
     struct trackdata *data;
     
@@ -792,32 +1373,22 @@ static int sampler_index(lua_State *L)
     self->geom = dCreateGeom (dTrackClass);
     dGeomSetData (self->geom, self);
 
-    self->vertices = NULL;
-    self->normals = NULL;
-    self->uv = NULL;
-    self->size = 0;
-    self->dirty = 0;
-
-    self->scale[0] = 1;
-    self->scale[1] = 1;
-    
-    self->tessellation[0] = 2 * M_PI / 32;
-    self->tessellation[1] = 0.01 / 10;
-    self->tessellation[2] = 0.1 / 10;
-
     data = dGeomGetClassData (self->geom);
 
-    [super init];
-
-    data->segments = NULL;
-    data->size = 0;
-    data->tolerance = 0.01 / 10;
+    data->segments = malloc(10 * n * sizeof(double));
+    memcpy (data->segments, s, 10 * n * sizeof(double));
+    data->segments_n = n;
+    data->tolerance = t;
     data->last = 0;
     
     data->tiles = NULL;
     data->depth = 0;
     data->resolution = NULL;
     data->sampler = NULL;
+
+    update_track_segments(data->segments, data->segments_n, data->tolerance);
+
+    [super init];
 }
 
 -(void) meetSibling: (id)sibling
@@ -852,387 +1423,6 @@ static int sampler_index(lua_State *L)
 	data->resolution = NULL;
     }
 }
-
--(void) update
-{
-    struct trackdata *data;
-
-    double theta_0, p_0[3], delta_wl, delta_wr, w_l0, w_r0, u_0;
-    double S, kappa_0, delta_kappa, g_0, delta_g, e_0, delta_e;
-    double phi, psi;
-    int i, j;
-
-    data = dGeomGetClassData (self->geom);
-
-    u_0 = 0;
-
-    theta_0 = 0;
-    p_0[0] = 0;
-    p_0[1] = 0;
-    p_0[2] = 0;
-
-    w_l0 = data->segments[1];
-    w_r0 = data->segments[2];
-    kappa_0 = data->segments[3];
-    g_0 = data->segments[4];
-    e_0 = data->segments[5];
-    
-    phi = atan(e_0);
-    psi = -atan(g_0);
-    
-    self->vertices = realloc (self->vertices, 2 * 3 * sizeof (double));
-    self->normals = realloc (self->normals, 2 * 3 * sizeof (double));
-    self->uv = realloc (self->uv, 2 * 2 * sizeof (double));
-    self->size = 0;
-
-    /* Kickstart the strip. */
-
-    self->vertices[0] = 0;
-    self->vertices[1] = w_r0;
-    self->vertices[2] = e_0 * w_r0;
-
-    self->vertices[3] = 0;
-    self->vertices[4] = -w_l0;
-    self->vertices[5] = -e_0 * w_l0;
-
-    self->normals[0] = cos(phi) * sin (psi);
-    self->normals[1] = -sin(phi);
-    self->normals[2] = cos(phi) * cos(psi);
-    
-    self->normals[3] = self->normals[0];
-    self->normals[4] = self->normals[1];
-    self->normals[5] = self->normals[2];
-
-    self->uv[0] = 0;
-    self->uv[1] = w_r0 / self->scale[1];
-    
-    self->uv[2] = 0;
-    self->uv[3] = -w_l0 / self->scale[1];
-    
-    self->size += 2;
-
-    /* printf ("%f, %f, %f\n", 0, w_r0, e_0 * w_r0); */
-    /* printf ("%f, %f, %f\n", 0, -w_l0, -e_0 * w_l0); */
-
-    for (i = 0 ; i < data->size ; i += 1) {
-	data->segments[10 * i + 6] = p_0[0];
-	data->segments[10 * i + 7] = p_0[1];
-	data->segments[10 * i + 8] = p_0[2];
-	data->segments[10 * i + 9] = theta_0;
-
-	S = data->segments[10 * i];
-	delta_wl = data->segments[10 * i + 1] - w_l0;
-	delta_wr = data->segments[10 * i + 2] - w_r0;
-	delta_kappa = data->segments[10 * i + 3] - kappa_0;
-	delta_g = data->segments[10 * i + 4] - g_0;
-	delta_e = data->segments[10 * i + 5] - e_0;
-
-	if (fabs(kappa_0) < 1e-6 && fabs(delta_kappa) < 1e-6) {
-	    double dv[2], u;
-	    int m;
-
-	    m = fmax(ceil (sqrt(fabs (delta_g) * S / 8 / self->tessellation[2])), 1);
-
-	    /* printf ("++ %d, %f, %f\n", i, e_0, delta_e); */
-		
-	    /* A tangent. */
-
-	    dv[0] = -sin(theta_0);
-	    dv[1] = cos(theta_0);
-
-	    for (j = 1 ; j <= m ; j += 1) {
-		double h, p[2];
-
-		u = S * j / m;
-		h = u * g_0 + 0.5 * delta_g * u * u / S;
-		
-		p[0] = p_0[0] + S * j / m * cos(theta_0);
-		p[1] = p_0[1] + S * j / m * sin(theta_0);
-
-		e_0 += delta_e / m;
-		w_l0 += delta_wl / m;
-		w_r0 += delta_wr / m;
-
-		phi = atan(e_0);
-		psi = -atan(g_0 + delta_g * u / S);
-		
-		self->vertices = realloc (self->vertices,
-					  (self->size + 2) *
-					  3 * sizeof (double));
-		
-		self->normals = realloc (self->normals,
-					 (self->size + 2) *
-					 3 * sizeof (double));
-		
-		self->uv = realloc (self->uv,
-				    (self->size + 2) *
-				    2 * sizeof (double));
-		
-		self->vertices[3 * self->size] = p[0] + w_r0 * dv[0];
-		self->vertices[3 * self->size + 1] = p[1] + w_r0 * dv[1];
-		self->vertices[3 * self->size + 2] = p_0[2] + h + e_0 * w_r0;
-
-		self->vertices[3 * self->size + 3] = p[0] - w_l0 * dv[0];
-		self->vertices[3 * self->size + 4] = p[1] - w_l0 * dv[1];
-		self->vertices[3 * self->size + 5] = p_0[2] + h - e_0 * w_l0;
-
-		self->normals[3 * self->size + 0] =
-		    sin(theta_0) * sin(phi) +
-		    cos(phi) * sin (psi) * cos (theta_0);
-		self->normals[3 * self->size + 1] =
-		    -cos(theta_0) * sin(phi) +
-		    cos(phi) * sin (psi) * sin (theta_0);
-		self->normals[3 * self->size + 2] =
-		    cos(phi) * cos(psi);
-
-		self->normals[3 * self->size + 3] =
-		    self->normals[3 * self->size + 0];
-		self->normals[3 * self->size + 4] =
-		    self->normals[3 * self->size + 1];
-		self->normals[3 * self->size + 5] =
-		    self->normals[3 * self->size + 2];
-
-		self->uv[2 * self->size] = (u_0 + u) / self->scale[0];
-		self->uv[2 * self->size + 1] = w_r0 / self->scale[1];
-    
-		self->uv[2 * self->size + 2] = (u_0 + u) / self->scale[0];
-		self->uv[2 * self->size + 3] = -w_l0 / self->scale[1];
-
-		self->size += 2;
-	    }
-		    
-	    p_0[0] += S * cos(theta_0);
-	    p_0[1] += S * sin(theta_0);
-	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
-	} else if (fabs(kappa_0) > 1e-6 && fabs(delta_kappa) < 1e-6) {
-	    double u, r, c[2];
-	    int m;
-
-	    r = 1 / kappa_0;
-
-	    m = fmax(ceil(S / self->tessellation[0]),
-		     ceil (sqrt(fabs (delta_g) * S / 8 / self->tessellation[2])));
-	    m = m > 0 ? m : 1;
-		
-	    c[0] = p_0[0] - r * sin(theta_0);
-	    c[1] = p_0[1] + r * cos(theta_0);
-
-	    for (j = 0, u = S / m ; j < m ; j += 1, u += S / m) {
-		double h, theta;
-		    
-		theta = theta_0 + S * (j + 1) / m / r;
-		    
-		e_0 += delta_e / m;
-		w_l0 += delta_wl / m;
-		w_r0 += delta_wr / m;
-		    
-		h = u * g_0 + 0.5 * delta_g * u * u / S;
-
-		phi = atan(e_0);
-		psi = -atan(g_0 + delta_g * u / S);
-		
-		self->vertices = realloc (self->vertices,
-					  (self->size + 2) *
-					  3 * sizeof (double));
-		
-		self->normals = realloc (self->normals,
-					 (self->size + 2) *
-					 3 * sizeof (double));
-		
-		self->uv = realloc (self->uv,
-				    (self->size + 2) *
-				    2 * sizeof (double));
-		
-		self->vertices[3 * self->size] =
-		    c[0] + (r - w_r0) * sin(theta);
-		self->vertices[3 * self->size + 1] =
-		    c[1] - (r - w_r0) * cos(theta);
-		self->vertices[3 * self->size + 2] =
-		    p_0[2] + h + w_r0 * e_0;
-
-		self->vertices[3 * self->size + 3] =
-		    c[0] + (r + w_l0) * sin(theta);
-		self->vertices[3 * self->size + 4] =
-		    c[1] - (r + w_l0) * cos(theta);
-		self->vertices[3 * self->size + 5] =
-		    p_0[2] + h - w_l0 * e_0;
-
-		self->normals[3 * self->size + 0] =
-		    sin(theta) * sin(phi) +
-		    cos(phi) * sin (psi) * cos (theta);
-		self->normals[3 * self->size + 1] =
-		    -cos(theta) * sin(phi) +
-		    cos(phi) * sin (psi) * sin (theta);
-		self->normals[3 * self->size + 2] =
-		    cos(phi) * cos(psi);
-
-		self->normals[3 * self->size + 3] =
-		    self->normals[3 * self->size + 0];
-		self->normals[3 * self->size + 4] =
-		    self->normals[3 * self->size + 1];
-		self->normals[3 * self->size + 5] =
-		    self->normals[3 * self->size + 2];
-
-		self->uv[2 * self->size] = (u_0 + u) / self->scale[0];
-		self->uv[2 * self->size + 1] = w_r0 / self->scale[1];
-    
-		self->uv[2 * self->size + 2] = (u_0 + u) / self->scale[0];
-		self->uv[2 * self->size + 3] = -w_l0 / self->scale[1];
-
-		self->size += 2;
-
-		/* printf ("%f, %f, %f\n", c[0] + (r - w_r0) * sin(theta), */
-		/* 	    c[1] - (r - w_r0) * cos(theta), */
-		/* 	    p_0[2] + h + w_r0 * e_0); */
-		/* printf ("%f, %f, %f\n", c[0] + (r + w_l0) * sin(theta), */
-		/* 	    c[1] - (r + w_l0) * cos(theta), */
-		/* 	    p_0[2] + h - w_l0 * e_0); */
-	    }
-		
-	    theta_0 += S / r;
-	    p_0[0] = c[0] + r * sin(theta_0);
-	    p_0[1] = c[1] - r * cos(theta_0);
-	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
-	} else {
-	    double r, c[2], u;
-	    int m, n, k;
-
-	    m = (int)fmax(ceil(fabs(delta_kappa) / self->tessellation[1]), 1);
-
-	    n = fmax(ceil(S / m / self->tessellation[0]),
-		     ceil (sqrt(fabs (delta_g * S) / m / m / 8 / self->tessellation[2])));
-	    n = n > 0 ? n : 1;
-	    /* printf ("* %d, %d, %d\n", i, m, n); */
-		
-	    for (j = 0, u = 0; j < m ; j += 1) {
-		double h;
-
-		kappa_0 += delta_kappa / (m + 1);
-		r = 1 / kappa_0;
-		
-		c[0] = p_0[0] - r * sin(theta_0);
-		c[1] = p_0[1] + r * cos(theta_0);
-
-		for (k = 0 ; k < n ; k += 1) {
-		    double theta;
-		    
-		    e_0 += delta_e / m / n;
-		    w_l0 += delta_wl / m / n;
-		    w_r0 += delta_wr / m / n;
-		    u += S / m / n;
-		    
-		    theta = theta_0 + S * (k + 1) / n / r / m;
-		    h = u * g_0 + 0.5 * delta_g * u * u / S;
-	
-		    phi = atan(e_0);
-		    psi = -atan(g_0 + delta_g * u / S);
-	
-		    self->vertices = realloc (self->vertices,
-					      (self->size + 2) *
-					      3 * sizeof (double));
-
-		    self->normals = realloc (self->normals,
-					     (self->size + 2) *
-					     3 * sizeof (double));
-
-		    self->uv = realloc (self->uv,
-					(self->size + 2) *
-					2 * sizeof (double));
-		
-		    self->vertices[3 * self->size] =
-			c[0] + (r - w_r0) * sin(theta);
-		    self->vertices[3 * self->size + 1] =
-			c[1] - (r - w_r0) * cos(theta);
-		    self->vertices[3 * self->size + 2] =
-			p_0[2] + h + w_r0 * e_0;
-
-		    self->vertices[3 * self->size + 3] =
-			c[0] + (r + w_l0) * sin(theta);
-		    self->vertices[3 * self->size + 4] =
-			c[1] - (r + w_l0) * cos(theta);
-		    self->vertices[3 * self->size + 5] =
-			p_0[2] + h - w_l0 * e_0;
-
-		    self->normals[3 * self->size + 0] =
-			sin(theta) * sin(phi) +
-			cos(phi) * sin (psi) * cos (theta);
-		    self->normals[3 * self->size + 1] =
-			-cos(theta) * sin(phi) +
-			cos(phi) * sin (psi) * sin (theta);
-		    self->normals[3 * self->size + 2] =
-			cos(phi) * cos(psi);
-
-		    self->normals[3 * self->size + 3] =
-			self->normals[3 * self->size + 0];
-		    self->normals[3 * self->size + 4] =
-			self->normals[3 * self->size + 1];
-		    self->normals[3 * self->size + 5] =
-			self->normals[3 * self->size + 2];
-
-		    self->uv[2 * self->size] = (u_0 + u) / self->scale[0];
-		    self->uv[2 * self->size + 1] = w_r0 / self->scale[1];
-    
-		    self->uv[2 * self->size + 2] = (u_0 + u) / self->scale[0];
-		    self->uv[2 * self->size + 3] = -w_l0 / self->scale[1];
-		    
-		    self->size += 2;
-	
-		    /* printf ("%f, %f, %f\n", c[0] + (r - w_r0) * sin(theta), */
-		    /* 		c[1] - (r - w_r0) * cos(theta), */
-		    /* 		p_0[2] + h + w_r0 * e_0); */
-		    /* printf ("%f, %f, %f\n", c[0] + (r + w_l0) * sin(theta), */
-		    /* 		c[1] - (r + w_l0) * cos(theta), */
-		    /* 		p_0[2] + h - w_l0 * e_0); */
-		}
-
-		theta_0 += S / r / m;
-		
-		p_0[0] = c[0] + r * sin(theta_0);
-		p_0[1] = c[1] - r * cos(theta_0);
-	    }
-
-	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
-	}
-
-	u_0 += S;
-	w_l0 = data->segments[10 * i + 1];
-	w_r0 = data->segments[10 * i + 2];
-	kappa_0 = data->segments[10 * i + 3];
-	g_0 = data->segments[10 * i + 4];
-	e_0 = data->segments[10 * i + 5];
-    }
-
-    /* printf ("!!! %f, %f, %f,  %f\n", p_0[0], p_0[1], p_0[2], theta_0 / M_PI); */
-    
-    self->dirty = 0;
-}
-
--(void) stepBy: (double) h at: (double) t
-{
-    [super stepBy: h at: t];
-
-    if (self->dirty) {
-	[self update];
-    }
-}
-
--(int) _get_element
-{
-    int i, j;    
-    struct trackdata *data;
-    
-    data = dGeomGetClassData (self->geom);
-    j = lua_tonumber (_L, 2) - 1;
-	
-    lua_newtable (_L);
-
-    for(i = 0; i < 6; i += 1) {
-	lua_pushnumber (_L, data->segments[10 * j + i]);
-	lua_rawseti (_L, -2, i + 1);
-    }
-
-    return 1;
-}
 	
 -(int) _get_sampler
 {
@@ -1258,22 +1448,44 @@ static int sampler_index(lua_State *L)
     return 1;
 }
 
--(int) _get_vertices
+-(void) _set_sampler
 {
-    int i;
+    T_WARN_READONLY;
+}
+
+-(void) free
+{
+    struct trackdata *data;
+
+    data = dGeomGetClassData (self->geom);
+
+    if (data->segments) {
+	free (data->segments);
+    }
+
+    [super free];
+}
+
+@end
+
+@implementation RacetrackShape
+
+-(void)initWith: (int)n segments: (double *)s andTolerance: (double)t
+{
+    self->dirty = 1;
     
-    if (self->dirty) {
-	[self update];
-    }
+    self->scale[0] = 1;
+    self->scale[1] = 1;
+    
+    self->tessellation[0] = 2 * M_PI / 32;
+    self->tessellation[1] = 0.1 / 10;
 
-    lua_newtable (_L);
-
-    for (i = 0 ; i < 3 * self->size ; i += 1) {
-	lua_pushnumber (_L, self->vertices[i]);
-	lua_rawseti (_L, -2, i + 1);
-    }
-
-    return 1;
+    self->tolerance = t;
+    self->segments_n = n;
+    self->segments = malloc(10 * n * sizeof(double));
+    memcpy (self->segments, s, 10 * n * sizeof(double));
+    
+    [super initWithMode: GL_TRIANGLE_STRIP];
 }
 
 -(int) _get_scale
@@ -1292,105 +1504,78 @@ static int sampler_index(lua_State *L)
 -(int) _get_tessellation
 {
     lua_newtable (_L);
-	
+    
     lua_pushnumber (_L, self->tessellation[0]);
     lua_rawseti (_L, 3, 1);
 	
     lua_pushnumber (_L, self->tessellation[1]);
     lua_rawseti (_L, 3, 2);
-	
-    lua_pushnumber (_L, self->tessellation[2]);
-    lua_rawseti (_L, 3, 3);
 
     return 1;
 }
 
--(void) _set_element
-{
-    int i, j;    
-    struct trackdata *data;
-
-    data = dGeomGetClassData (self->geom);
-
-    if(lua_istable (_L, 3)) {
-	j = lua_tonumber (_L, 2);
-
-	if (j > self->length) {
-	    self->length = j;
-	}
-	
-	if (j > data->size) {
-	    data->size = j;
-	    data->segments = (double *)realloc (data->segments,
-						10 * j * sizeof(double));
-	}
-
-	for(i = 0 ; i < 6 ; i += 1) {
-	    lua_rawgeti (_L, 3, i + 1);
-	    data->segments[10 * (j - 1) + i] = lua_tonumber (_L, -1);
-                
-	    lua_pop (_L, 1);
-	}
-
-	self->dirty = 1;
-    }
-}
-
--(void) _set_vertices
-{
-    T_WARN_READONLY;
-}
-
--(void) _set_sampler
-{
-    T_WARN_READONLY;
-}
-
 -(void) _set_scale
 {
-    lua_rawgeti (_L, 3, 1);
-    self->scale[0] = lua_tonumber (_L, -1);
+    if (!lua_isnil(_L, 3)) {
+        lua_rawgeti (_L, 3, 1);
+        self->scale[0] = lua_tonumber (_L, -1);
 	
-    lua_rawgeti (_L, 3, 2);
-    self->scale[1] = lua_tonumber (_L, -1);
+        lua_rawgeti (_L, 3, 2);
+        self->scale[1] = lua_tonumber (_L, -1);
+
+        self->dirty = 1;
+    }    
 }
 
 -(void) _set_tessellation
 {
-    struct trackdata *data;
-
-    data = dGeomGetClassData (self->geom);
-
-    lua_rawgeti (_L, 3, 1);
-    self->tessellation[0] = lua_tonumber (_L, -1);
+    if (!lua_isnil(_L, 3)) {
+        lua_rawgeti (_L, 3, 1);
+        self->tessellation[0] = lua_tonumber (_L, -1);
 	
-    lua_rawgeti (_L, 3, 2);
-    self->tessellation[1] = lua_tonumber (_L, -1);
-    data->tolerance = lua_tonumber (_L, -1);
-	
-    lua_rawgeti (_L, 3, 3);
-    self->tessellation[2] = lua_tonumber (_L, -1);
+        lua_rawgeti (_L, 3, 2);
+        self->tessellation[1] = lua_tonumber (_L, -1);
 
-    lua_pop (_L, 3);
+        lua_pop (_L, 2);
+
+        self->dirty = 1;
+    }    
 }
 
--(void) free
+-(void) draw
 {
-    struct trackdata *data;
+    if (self->dirty) {
+        float *vertices, *normals, *uv;
+        int size;
 
-    data = dGeomGetClassData (self->geom);
-
-    if (data->segments) {
-	free (data->segments);
-    }
+        update_track_shape(self->segments, self->segments_n, self->tolerance,
+                           self->tessellation, self->scale,
+                           &vertices, &normals, &uv, &size);
+        
+        t_pushuserdata(_L, 1, self);
     
-    if (self->vertices) {
-	free (self->vertices);
-	free (self->normals);
-	free (self->uv);
+        lua_pushliteral(_L, "positions");
+        array_createarray(_L, ARRAY_TFLOAT, vertices, 2, size, 3);
+        lua_settable (_L, -3);
+
+        lua_pushliteral(_L, "mapping");
+        array_createarray(_L, ARRAY_TFLOAT, uv, 2, size, 2);
+        lua_settable (_L, -3);
+
+        lua_pushliteral(_L, "normals");
+        array_createarray(_L, ARRAY_TFLOAT, normals, 2, size, 3);
+        lua_settable (_L, -3);
+
+        lua_pop(_L, 1);
+        
+        free(vertices);
+        free(uv);
+        free(normals);
+
+        self->dirty = 0;
     }
 
-    [super free];
+    [super draw];
 }
 
 @end

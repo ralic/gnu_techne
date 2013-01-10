@@ -96,7 +96,7 @@ id t_checknode (lua_State *L, int index, Class class)
 
 void t_configurenode (lua_State *L, int index)
 {
-    /* Configure the node at the top of the stach with the values
+    /* Configure the node at the top of the stack with the values
      * contained in the table at index. */
     
     if(lua_istable(L, index)) {
@@ -119,7 +119,7 @@ static int constructnode (lua_State *L)
     [[class alloc] init];
     t_configurenode (L, 1);
 
-    return 1;
+    return lua_gettop(_L) - 1;
 }
 
 void t_exportnodes (lua_State *L, Class *classes)

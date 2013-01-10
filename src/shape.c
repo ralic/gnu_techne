@@ -487,13 +487,13 @@ static void match_attribute_to_buffer (unsigned int program,
 		}
 	    }				  
 	
-	    if (!b) {
-		t_print_warning("%s node does not define vertex attribute "
+	    if (j < n) {
+                match_attribute_to_buffer(program, j, b);
+            } else {
+                t_print_warning("%s node does not define vertex attribute "
 				"'%s'.\n",
 				[shader name], b->key);
 	    }
-
-	    match_attribute_to_buffer(program, j, b);
 	}
 	
 	return 1;

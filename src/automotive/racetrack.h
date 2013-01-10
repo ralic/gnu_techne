@@ -18,12 +18,13 @@
 #define _RACETRACK_H_
 
 #include "body.h"
+#include "shape.h"
 
 struct trackdata {
     /* Tarmac. */
 
     double *segments, tolerance;
-    int size, last;
+    int segments_n, last;
 
     /* Terrain. */
 
@@ -36,25 +37,51 @@ struct trackdata {
 
 int dTrackClass;
 
-@interface Racetrack: Body {
-    double *vertices, *uv, *normals;    
-    double tessellation[3], scale[2];
-    int size, dirty;
+@interface Racetrack: Node {
+@public
+    double *segments, tolerance;
+    int segments_n;
 }
 
--(void) update;
+-(int) _get_segments;	
+-(void) _set_segments;
 
--(int) _get_element;	
--(int) _get_sampler;
--(int) _get_vertices;
+-(int) _get_tolerance;
+-(void) _set_tolerance;
+
+-(int) _get_body;
+-(void) _set_body;
+
+-(int) _get_shape;
+-(void) _set_shape;
+
+@end
+
+@interface RacetrackShape: Shape {
+    double *segments, tolerance;
+    int segments_n;
+    
+    double tessellation[2], scale[2];
+    int dirty;
+}
+
+-(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
+
 -(int) _get_scale;
 -(int) _get_tessellation;
 
--(void) _set_element;
--(void) _set_vertices;
--(void) _set_sampler;
 -(void) _set_scale;
 -(void) _set_tessellation;
+
+@end
+
+@interface RacetrackBody: Body {
+}
+
+-(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
+
+-(int) _get_sampler;
+-(void) _set_sampler;
 
 @end
 

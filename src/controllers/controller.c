@@ -28,11 +28,12 @@
 #include "techne.h"
 #include "controller.h"
 
-#define MAX_EVENT_WORDS ((EV_CNT / sizeof(unsigned int)) + 1)
-#define MAX_KEY_WORDS ((KEY_CNT / sizeof(unsigned int)) + 1)
-#define MAX_ABSOLUTE_WORDS ((ABS_CNT / sizeof(unsigned int)) + 1)
-#define MAX_RELATIVE_WORDS ((REL_CNT / sizeof(unsigned int)) + 1)
-#define test(b, i) (b[i / sizeof(unsigned int)] & (1 << (i % sizeof(unsigned int))))
+#define BITS_PER_WORD (sizeof(unsigned int) * 8)
+#define MAX_EVENT_WORDS ((EV_MAX / BITS_PER_WORD) + 1)
+#define MAX_KEY_WORDS ((KEY_MAX / BITS_PER_WORD) + 1)
+#define MAX_ABSOLUTE_WORDS ((ABS_MAX / BITS_PER_WORD) + 1)
+#define MAX_RELATIVE_WORDS ((REL_MAX / BITS_PER_WORD) + 1)
+#define test(b, i) (b[i / BITS_PER_WORD] & (1 << (i % BITS_PER_WORD)))
 
 @implementation Controller
 
@@ -56,7 +57,7 @@
         /* Read the device's supported events. */
     
         memset(bits, 0, sizeof(bits));
-        if(ioctl(self->device, EVIOCGBIT(EV_ABS, sizeof(bits)), bits) < 0) {
+        if(ioctl(self->device, EVIOCGBIT(0, sizeof(bits)), bits) < 0) {
             t_print_warning("Could not get the device's capabilities.");
         }
 
@@ -237,9 +238,9 @@
     lua_newtable(_L);
 
     for (i = 0 ; i < MAX_KEY_WORDS ; i += 1) {
-        for (j = 0 ; j < 8 * sizeof(unsigned int) ; j += 1) {
+        for (j = 0 ; j < BITS_PER_WORD ; j += 1) {
             if (exists[i] & (1 << j)) {
-                lua_pushinteger(_L, 8 * sizeof(unsigned int) * i + j);
+                lua_pushinteger(_L, BITS_PER_WORD * i + j);
                 lua_pushboolean(_L, depressed[i] & (1 << j));
                 lua_settable(_L, -3);
             }
@@ -254,7 +255,7 @@
     T_WARN_READONLY;
 }
 
--(int) _get_absolute
+-(int) _get_axes
 {
     unsigned int exists[MAX_ABSOLUTE_WORDS];
     struct input_absinfo info;
@@ -272,11 +273,11 @@
     lua_newtable(_L);
 
     for (i = 0 ; i < MAX_ABSOLUTE_WORDS ; i += 1) {
-        for (j = 0 ; j < 8 * sizeof(unsigned int) ; j += 1) {
+        for (j = 0 ; j < BITS_PER_WORD ; j += 1) {
             if (exists[i] & (1 << j)) {
                 int k;
 
-                k = 8 * sizeof(unsigned int) * i + j;
+                k = BITS_PER_WORD * i + j;
                 
                 if(ioctl(self->device, EVIOCGABS(k), &info) < 0) {
                     t_print_warning("Could not get the state of absolute axis %d.", k);
@@ -292,7 +293,7 @@
     return 1;
 }
 
--(void) _set_absolute
+-(void) _set_axes
 {
     T_WARN_READONLY;
 }

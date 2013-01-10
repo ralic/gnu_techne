@@ -31,8 +31,9 @@
 #include "keyboard.h"
 #include "controller.h"
 
-#define MAX_BITS ((EV_CNT / sizeof(unsigned int)) + 1)
-#define test(b, i) (b[i / sizeof(unsigned int)] & (1 << (i % sizeof(unsigned int))))
+#define BITS_PER_WORD (sizeof(unsigned int) * 8)
+#define MAX_EVENT_WORDS ((EV_MAX / BITS_PER_WORD) + 1)
+#define test(b, i) (b[i / BITS_PER_WORD] & (1 << (i % BITS_PER_WORD)))
 
 static int constructkeyboard(lua_State *L)
 {
@@ -66,7 +67,7 @@ int luaopen_controllers_core (lua_State *L)
     
     int fd, i, j, n, h;
     char name[256] = "Unknown device";
-    unsigned int bits[MAX_BITS];
+    unsigned int bits[MAX_EVENT_WORDS];
 
     lua_newtable(L);
 

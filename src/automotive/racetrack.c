@@ -34,8 +34,8 @@ static int constructbody(lua_State *L)
     track = (Racetrack *)t_tonode (L, lua_upvalueindex(1));
     body = [RacetrackBody alloc];
     [body initWith: track->segments_n
-     segments: track->segments
-     andTolerance: track->tolerance];
+          segments: track->segments
+      andTolerance: track->tolerance];
 
     t_configurenode(L, 1);
 
@@ -50,8 +50,8 @@ static int constructshape(lua_State *L)
     track = (Racetrack *)t_tonode (L, lua_upvalueindex(1));
     shape = [RacetrackShape alloc];
     [shape initWith: track->segments_n
-     segments: track->segments
-     andTolerance: track->tolerance];
+           segments: track->segments
+       andTolerance: track->tolerance];
 
     t_configurenode(L, 1);
 
@@ -1342,6 +1342,13 @@ static int sampler_index(lua_State *L)
 
 -(void) _set_shape
 {
+}
+
+-(void) free
+{
+    if (self->segments) {
+        free(self->segments);
+    }
 }
 
 @end

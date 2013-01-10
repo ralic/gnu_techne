@@ -34,8 +34,8 @@ static int constructbody(lua_State *L)
     track = (Racetrack *)t_tonode (L, lua_upvalueindex(1));
     body = [RacetrackBody alloc];
     [body initWith: track->segments_n
-          segments: track->segments
-      andTolerance: track->tolerance];
+     segments: track->segments
+     andTolerance: track->tolerance];
 
     t_configurenode(L, 1);
 
@@ -50,18 +50,132 @@ static int constructshape(lua_State *L)
     track = (Racetrack *)t_tonode (L, lua_upvalueindex(1));
     shape = [RacetrackShape alloc];
     [shape initWith: track->segments_n
-           segments: track->segments
-       andTolerance: track->tolerance];
+     segments: track->segments
+     andTolerance: track->tolerance];
 
     t_configurenode(L, 1);
 
     return 1;
 }
 
-static void update(double *segments, int segments_n, double tolerance,
-                   int tessellate, double *tessellation, double *scale,
-                   float **vertices, float **normals, float **uv,
-                   int *vertices_n)
+static void update_track_segments(double *segments, int segments_n,
+                                  double tolerance)
+                   
+{
+    double theta_0, p_0[3], delta_wl, delta_wr, w_l0, w_r0;
+    double S, kappa_0, delta_kappa, g_0, delta_g, e_0, delta_e;
+    int i, j;
+
+    theta_0 = 0;
+    p_0[0] = 0;
+    p_0[1] = 0;
+    p_0[2] = 0;
+
+    w_l0 = segments[1];
+    w_r0 = segments[2];
+    kappa_0 = segments[3];
+    g_0 = segments[4];
+    e_0 = segments[5];
+    
+    /* printf ("%f, %f, %f\n", 0, w_r0, e_0 * w_r0); */
+    /* printf ("%f, %f, %f\n", 0, -w_l0, -e_0 * w_l0); */
+
+    for (i = 0 ; i < segments_n ; i += 1) {
+        /* Fill in the initial position and angle for each segment. */
+        
+	segments[10 * i + 6] = p_0[0];
+	segments[10 * i + 7] = p_0[1];
+	segments[10 * i + 8] = p_0[2];
+	segments[10 * i + 9] = theta_0;
+
+        /* printf ("%f, %f, %f, %f\n", */
+        /*         segments[10 * i + 6], */
+        /*         segments[10 * i + 7], */
+        /*         segments[10 * i + 8], */
+        /*         segments[10 * i + 9]); */
+        
+	S = segments[10 * i];
+	delta_wl = segments[10 * i + 1] - w_l0;
+	delta_wr = segments[10 * i + 2] - w_r0;
+	delta_kappa = segments[10 * i + 3] - kappa_0;
+	delta_g = segments[10 * i + 4] - g_0;
+	delta_e = segments[10 * i + 5] - e_0;
+        
+        /* Figure out what the next segment is based on current and
+         * previous curvature. */
+        
+	if (fabs(kappa_0) < 1e-6 && fabs(delta_kappa) < 1e-6) {
+	    /* A tangent. */
+
+            e_0 += delta_e;
+            w_l0 += delta_wl;
+            w_r0 += delta_wr;
+		    
+	    p_0[0] += S * cos(theta_0);
+	    p_0[1] += S * sin(theta_0);
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	} else if (fabs(kappa_0) > 1e-6 && fabs(delta_kappa) < 1e-6) {
+	    double r, c[2];
+
+            /* A circular segment. */
+            
+	    r = 1 / kappa_0;
+		
+	    c[0] = p_0[0] - r * sin(theta_0);
+	    c[1] = p_0[1] + r * cos(theta_0);
+		    
+            e_0 += delta_e;
+            w_l0 += delta_wl;
+            w_r0 += delta_wr;
+		
+	    theta_0 += S / r;
+            
+	    p_0[0] = c[0] + r * sin(theta_0);
+	    p_0[1] = c[1] - r * cos(theta_0);
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	} else {
+	    double r, c[2];
+	    int m;
+
+            /* A transitional curve. */
+            
+	    m = (int)fmax(ceil(fabs(delta_kappa) / tolerance), 1);
+
+	    /* printf ("* %d, %d, %d\n", i, m, n); */
+		
+	    for (j = 0; j < m ; j += 1) {
+
+		kappa_0 += delta_kappa / (m + 1);
+		r = 1 / kappa_0;
+		
+		c[0] = p_0[0] - r * sin(theta_0);
+		c[1] = p_0[1] + r * cos(theta_0);
+
+                e_0 += delta_e / m;
+                w_l0 += delta_wl / m;
+                w_r0 += delta_wr / m;
+
+		theta_0 += S / r / m;
+		
+		p_0[0] = c[0] + r * sin(theta_0);
+		p_0[1] = c[1] - r * cos(theta_0);
+	    }
+
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	}
+
+	w_l0 = segments[10 * i + 1];
+	w_r0 = segments[10 * i + 2];
+	kappa_0 = segments[10 * i + 3];
+	g_0 = segments[10 * i + 4];
+	e_0 = segments[10 * i + 5];
+    }
+}
+
+static void update_track_shape(double *segments, int segments_n, double tolerance,
+                               double *tessellation, double *scale,
+                               float **vertices, float **normals, float **uv,
+                               int *vertices_n)
                    
 {
     float *V, *N, *UV;
@@ -86,38 +200,36 @@ static void update(double *segments, int segments_n, double tolerance,
     phi = atan(e_0);
     psi = -atan(g_0);
 
-    if (tessellate) {
-        V = malloc (2 * 3 * sizeof (float));
-        N = malloc (2 * 3 * sizeof (float));
-        UV = malloc (2 * 2 * sizeof (float));
-        n = 0;
+    V = malloc (2 * 3 * sizeof (float));
+    N = malloc (2 * 3 * sizeof (float));
+    UV = malloc (2 * 2 * sizeof (float));
+    n = 0;
 
-        /* Kickstart the strip. */
+    /* Kickstart the strip. */
 
-        V[0] = 0;
-        V[1] = w_r0;
-        V[2] = e_0 * w_r0;
+    V[0] = 0;
+    V[1] = w_r0;
+    V[2] = e_0 * w_r0;
 
-        V[3] = 0;
-        V[4] = -w_l0;
-        V[5] = -e_0 * w_l0;
+    V[3] = 0;
+    V[4] = -w_l0;
+    V[5] = -e_0 * w_l0;
 
-        N[0] = cos(phi) * sin (psi);
-        N[1] = -sin(phi);
-        N[2] = cos(phi) * cos(psi);
+    N[0] = cos(phi) * sin (psi);
+    N[1] = -sin(phi);
+    N[2] = cos(phi) * cos(psi);
     
-        N[3] = N[0];
-        N[4] = N[1];
-        N[5] = N[2];
+    N[3] = N[0];
+    N[4] = N[1];
+    N[5] = N[2];
 
-        UV[0] = 0;
-        UV[1] = w_r0 / scale[1];
+    UV[0] = 0;
+    UV[1] = w_r0 / scale[1];
     
-        UV[2] = 0;
-        UV[3] = -w_l0 / scale[1];
+    UV[2] = 0;
+    UV[3] = -w_l0 / scale[1];
     
-        n += 2;
-    }
+    n += 2;
     
     /* printf ("%f, %f, %f\n", 0, w_r0, e_0 * w_r0); */
     /* printf ("%f, %f, %f\n", 0, -w_l0, -e_0 * w_l0); */
@@ -128,6 +240,12 @@ static void update(double *segments, int segments_n, double tolerance,
 	segments[10 * i + 8] = p_0[2];
 	segments[10 * i + 9] = theta_0;
 
+        /* printf ("%f, %f, %f, %f\n", */
+        /*         segments[10 * i + 6], */
+        /*         segments[10 * i + 7], */
+        /*         segments[10 * i + 8], */
+        /*         segments[10 * i + 9]); */
+        
 	S = segments[10 * i];
 	delta_wl = segments[10 * i + 1] - w_l0;
 	delta_wr = segments[10 * i + 2] - w_r0;
@@ -139,11 +257,7 @@ static void update(double *segments, int segments_n, double tolerance,
 	    double dv[2], u;
 	    int m;
 
-            if(tessellate) {
-                m = fmax(ceil (sqrt(fabs (delta_g) * S / 8 / tessellation[1])), 1);
-            } else {
-                m = 1;
-            }
+            m = fmax(ceil (sqrt(fabs (delta_g) * S / 8 / tessellation[1])), 1);
 
 	    /* printf ("++ %d, %f, %f\n", i, e_0, delta_e); */
 		
@@ -168,42 +282,40 @@ static void update(double *segments, int segments_n, double tolerance,
 		phi = atan(e_0);
 		psi = -atan(g_0 + delta_g * u / S);
 
-                if (tessellate) {
-                    V = realloc (V, (n + 2) * 3 * sizeof (float));
+                V = realloc (V, (n + 2) * 3 * sizeof (float));
 		
-                    N = realloc (N, (n + 2) * 3 * sizeof (float));
+                N = realloc (N, (n + 2) * 3 * sizeof (float));
 		
-                    UV = realloc (UV, (n + 2) * 2 * sizeof (float));
+                UV = realloc (UV, (n + 2) * 2 * sizeof (float));
 		
-                    V[3 * n] = p[0] + w_r0 * dv[0];
-                    V[3 * n + 1] = p[1] + w_r0 * dv[1];
-                    V[3 * n + 2] = p_0[2] + h + e_0 * w_r0;
+                V[3 * n] = p[0] + w_r0 * dv[0];
+                V[3 * n + 1] = p[1] + w_r0 * dv[1];
+                V[3 * n + 2] = p_0[2] + h + e_0 * w_r0;
 
-                    V[3 * n + 3] = p[0] - w_l0 * dv[0];
-                    V[3 * n + 4] = p[1] - w_l0 * dv[1];
-                    V[3 * n + 5] = p_0[2] + h - e_0 * w_l0;
+                V[3 * n + 3] = p[0] - w_l0 * dv[0];
+                V[3 * n + 4] = p[1] - w_l0 * dv[1];
+                V[3 * n + 5] = p_0[2] + h - e_0 * w_l0;
 
-                    N[3 * n + 0] =
-                        sin(theta_0) * sin(phi) +
-                        cos(phi) * sin (psi) * cos (theta_0);
-                    N[3 * n + 1] =
-                        -cos(theta_0) * sin(phi) +
-                        cos(phi) * sin (psi) * sin (theta_0);
-                    N[3 * n + 2] =
-                        cos(phi) * cos(psi);
+                N[3 * n + 0] =
+                    sin(theta_0) * sin(phi) +
+                    cos(phi) * sin (psi) * cos (theta_0);
+                N[3 * n + 1] =
+                    -cos(theta_0) * sin(phi) +
+                    cos(phi) * sin (psi) * sin (theta_0);
+                N[3 * n + 2] =
+                    cos(phi) * cos(psi);
 
-                    N[3 * n + 3] = N[3 * n + 0];
-                    N[3 * n + 4] = N[3 * n + 1];
-                    N[3 * n + 5] = N[3 * n + 2];
+                N[3 * n + 3] = N[3 * n + 0];
+                N[3 * n + 4] = N[3 * n + 1];
+                N[3 * n + 5] = N[3 * n + 2];
 
-                    UV[2 * n] = (u_0 + u) / scale[0];
-                    UV[2 * n + 1] = w_r0 / scale[1];
+                UV[2 * n] = (u_0 + u) / scale[0];
+                UV[2 * n + 1] = w_r0 / scale[1];
     
-                    UV[2 * n + 2] = (u_0 + u) / scale[0];
-                    UV[2 * n + 3] = -w_l0 / scale[1];
+                UV[2 * n + 2] = (u_0 + u) / scale[0];
+                UV[2 * n + 3] = -w_l0 / scale[1];
 
-                    n += 2;
-                }
+                n += 2;
 	    }
 		    
 	    p_0[0] += S * cos(theta_0);
@@ -213,15 +325,13 @@ static void update(double *segments, int segments_n, double tolerance,
 	    double u, r, c[2];
 	    int m;
 
+            /* A circular segment. */
+            
 	    r = 1 / kappa_0;
 
-            if(tessellate) {
-                m = fmax(ceil(S / tessellation[0]),
-                         ceil (sqrt(fabs (delta_g) * S / 8 / tessellation[1])));
-                m = m > 0 ? m : 1;
-            } else {
-                m = 1;
-            }
+            m = fmax(ceil(S / tessellation[0]),
+                     ceil (sqrt(fabs (delta_g) * S / 8 / tessellation[1])));
+            m = m > 0 ? m : 1;
 		
 	    c[0] = p_0[0] - r * sin(theta_0);
 	    c[1] = p_0[1] + r * cos(theta_0);
@@ -240,11 +350,93 @@ static void update(double *segments, int segments_n, double tolerance,
 		phi = atan(e_0);
 		psi = -atan(g_0 + delta_g * u / S);
 
-                if (tessellate) {
+                V = realloc (V, (n + 2) * 3 * sizeof (float));
+		
+                N = realloc (N, (n + 2) * 3 * sizeof (float));
+		
+                UV = realloc (UV, (n + 2) * 2 * sizeof (float));
+		
+                V[3 * n] = c[0] + (r - w_r0) * sin(theta);
+                V[3 * n + 1] = c[1] - (r - w_r0) * cos(theta);
+                V[3 * n + 2] = p_0[2] + h + w_r0 * e_0;
+
+                V[3 * n + 3] = c[0] + (r + w_l0) * sin(theta);
+                V[3 * n + 4] = c[1] - (r + w_l0) * cos(theta);
+                V[3 * n + 5] = p_0[2] + h - w_l0 * e_0;
+
+                N[3 * n + 0] =
+                    sin(theta) * sin(phi) +
+                    cos(phi) * sin (psi) * cos (theta);
+                N[3 * n + 1] =
+                    -cos(theta) * sin(phi) +
+                    cos(phi) * sin (psi) * sin (theta);
+                N[3 * n + 2] =
+                    cos(phi) * cos(psi);
+
+                N[3 * n + 3] = N[3 * n + 0];
+                N[3 * n + 4] = N[3 * n + 1];
+                N[3 * n + 5] = N[3 * n + 2];
+
+                UV[2 * n] = (u_0 + u) / scale[0];
+                UV[2 * n + 1] = w_r0 / scale[1];
+    
+                UV[2 * n + 2] = (u_0 + u) / scale[0];
+                UV[2 * n + 3] = -w_l0 / scale[1];
+
+                n += 2;
+                
+		/* printf ("%f, %f, %f\n", c[0] + (r - w_r0) * sin(theta), */
+		/* 	    c[1] - (r - w_r0) * cos(theta), */
+		/* 	    p_0[2] + h + w_r0 * e_0); */
+		/* printf ("%f, %f, %f\n", c[0] + (r + w_l0) * sin(theta), */
+		/* 	    c[1] - (r + w_l0) * cos(theta), */
+		/* 	    p_0[2] + h - w_l0 * e_0); */
+	    }
+		
+	    theta_0 += S / r;
+	    p_0[0] = c[0] + r * sin(theta_0);
+	    p_0[1] = c[1] - r * cos(theta_0);
+	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
+	} else {
+	    double r, c[2], u;
+	    int m, l, k;
+
+            /* A transitional curve. */
+
+	    m = (int)fmax(ceil(fabs(delta_kappa) / tolerance), 1);
+
+            l = fmax(ceil(S / m / tessellation[0]),
+                     ceil (sqrt(fabs (delta_g * S) / m / m / 8 / tessellation[1])));
+            l = l > 0 ? l : 1;
+	    /* printf ("* %d, %d, %d\n", i, m, n); */
+		
+	    for (j = 0, u = 0; j < m ; j += 1) {
+		double h;
+
+		kappa_0 += delta_kappa / (m + 1);
+		r = 1 / kappa_0;
+		
+		c[0] = p_0[0] - r * sin(theta_0);
+		c[1] = p_0[1] + r * cos(theta_0);
+
+		for (k = 0 ; k < l ; k += 1) {
+		    double theta;
+		    
+		    e_0 += delta_e / m / l;
+		    w_l0 += delta_wl / m / l;
+		    w_r0 += delta_wr / m / l;
+		    u += S / m / l;
+		    
+		    theta = theta_0 + S * (k + 1) / l / r / m;
+		    h = u * g_0 + 0.5 * delta_g * u * u / S;
+	
+		    phi = atan(e_0);
+		    psi = -atan(g_0 + delta_g * u / S);
+	
                     V = realloc (V, (n + 2) * 3 * sizeof (float));
-		
+
                     N = realloc (N, (n + 2) * 3 * sizeof (float));
-		
+
                     UV = realloc (UV, (n + 2) * 2 * sizeof (float));
 		
                     V[3 * n] = c[0] + (r - w_r0) * sin(theta);
@@ -273,96 +465,9 @@ static void update(double *segments, int segments_n, double tolerance,
     
                     UV[2 * n + 2] = (u_0 + u) / scale[0];
                     UV[2 * n + 3] = -w_l0 / scale[1];
-
+		    
                     n += 2;
-                }
-                
-		/* printf ("%f, %f, %f\n", c[0] + (r - w_r0) * sin(theta), */
-		/* 	    c[1] - (r - w_r0) * cos(theta), */
-		/* 	    p_0[2] + h + w_r0 * e_0); */
-		/* printf ("%f, %f, %f\n", c[0] + (r + w_l0) * sin(theta), */
-		/* 	    c[1] - (r + w_l0) * cos(theta), */
-		/* 	    p_0[2] + h - w_l0 * e_0); */
-	    }
-		
-	    theta_0 += S / r;
-	    p_0[0] = c[0] + r * sin(theta_0);
-	    p_0[1] = c[1] - r * cos(theta_0);
-	    p_0[2] += S * g_0 + 0.5 * delta_g * S;
-	} else {
-	    double r, c[2], u;
-	    int m, l, k;
 
-	    m = (int)fmax(ceil(fabs(delta_kappa) / tolerance), 1);
-
-            if(tessellate) {
-                l = fmax(ceil(S / m / tessellation[0]),
-                         ceil (sqrt(fabs (delta_g * S) / m / m / 8 / tessellation[1])));
-                l = l > 0 ? l : 1;
-            } else {
-                l = 1;
-            }
-	    /* printf ("* %d, %d, %d\n", i, m, n); */
-		
-	    for (j = 0, u = 0; j < m ; j += 1) {
-		double h;
-
-		kappa_0 += delta_kappa / (m + 1);
-		r = 1 / kappa_0;
-		
-		c[0] = p_0[0] - r * sin(theta_0);
-		c[1] = p_0[1] + r * cos(theta_0);
-
-		for (k = 0 ; k < l ; k += 1) {
-		    double theta;
-		    
-		    e_0 += delta_e / m / l;
-		    w_l0 += delta_wl / m / l;
-		    w_r0 += delta_wr / m / l;
-		    u += S / m / l;
-		    
-		    theta = theta_0 + S * (k + 1) / l / r / m;
-		    h = u * g_0 + 0.5 * delta_g * u * u / S;
-	
-		    phi = atan(e_0);
-		    psi = -atan(g_0 + delta_g * u / S);
-	
-                    if (tessellate) {
-                        V = realloc (V, (n + 2) * 3 * sizeof (float));
-
-                        N = realloc (N, (n + 2) * 3 * sizeof (float));
-
-                        UV = realloc (UV, (n + 2) * 2 * sizeof (float));
-		
-                        V[3 * n] = c[0] + (r - w_r0) * sin(theta);
-                        V[3 * n + 1] = c[1] - (r - w_r0) * cos(theta);
-                        V[3 * n + 2] = p_0[2] + h + w_r0 * e_0;
-
-                        V[3 * n + 3] = c[0] + (r + w_l0) * sin(theta);
-                        V[3 * n + 4] = c[1] - (r + w_l0) * cos(theta);
-                        V[3 * n + 5] = p_0[2] + h - w_l0 * e_0;
-
-                        N[3 * n + 0] =
-                            sin(theta) * sin(phi) +
-                            cos(phi) * sin (psi) * cos (theta);
-                        N[3 * n + 1] =
-                            -cos(theta) * sin(phi) +
-                            cos(phi) * sin (psi) * sin (theta);
-                        N[3 * n + 2] =
-                            cos(phi) * cos(psi);
-
-                        N[3 * n + 3] = N[3 * n + 0];
-                        N[3 * n + 4] = N[3 * n + 1];
-                        N[3 * n + 5] = N[3 * n + 2];
-
-                        UV[2 * n] = (u_0 + u) / scale[0];
-                        UV[2 * n + 1] = w_r0 / scale[1];
-    
-                        UV[2 * n + 2] = (u_0 + u) / scale[0];
-                        UV[2 * n + 3] = -w_l0 / scale[1];
-		    
-                        n += 2;
-                    }	
 		    /* printf ("%f, %f, %f\n", c[0] + (r - w_r0) * sin(theta), */
 		    /* 		c[1] - (r - w_r0) * cos(theta), */
 		    /* 		p_0[2] + h + w_r0 * e_0); */
@@ -388,12 +493,11 @@ static void update(double *segments, int segments_n, double tolerance,
 	e_0 = segments[10 * i + 5];
     }
 
-    if (tessellate) {
-        *vertices = V;
-        *normals = N;
-        *uv = UV;
-        *vertices_n = n;
-    }
+    *vertices = V;
+    *normals = N;
+    *uv = UV;
+    *vertices_n = n;
+
     /* printf ("!!! %f, %f, %f,  %f\n", p_0[0], p_0[1], p_0[2], theta_0 / M_PI); */
 }
 
@@ -1275,8 +1379,7 @@ static int sampler_index(lua_State *L)
     data->resolution = NULL;
     data->sampler = NULL;
 
-    update(data->segments, data->segments_n, data->tolerance,
-           0, NULL, NULL, NULL, NULL, NULL, NULL);
+    update_track_segments(data->segments, data->segments_n, data->tolerance);
 
     [super init];
 }
@@ -1438,9 +1541,9 @@ static int sampler_index(lua_State *L)
         float *vertices, *normals, *uv;
         int size;
 
-        update(self->segments, self->segments_n, self->tolerance,
-               1, self->tessellation, self->scale,
-               &vertices, &normals, &uv, &size);
+        update_track_shape(self->segments, self->segments_n, self->tolerance,
+                           self->tessellation, self->scale,
+                           &vertices, &normals, &uv, &size);
         
         t_pushuserdata(_L, 1, self);
     

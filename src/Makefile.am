@@ -44,7 +44,7 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     space.h shape.c shape.h shader.c shader.h		\
 		     array/array.c arraymath/operations.c		\
 		     array/array.h prompt/prompt.c prompt/prompt.h	\
-		     joints/contact.c moremath.c timing.c		\
+		     joints/contact.c moremath.c morebase.c timing.c	\
 		     memory.c network.c network.h proxy.c proxy.h	\
 		     input.c input.h structures.h math.h root.c root.h	\
 		     builtin.c builtin.h dynamic.c dynamic.h graphic.c  \
@@ -67,8 +67,7 @@ nobase_pkglib_LTLIBRARIES = array/core.la arraymath/core.la		\
 			    joints/core.la bodies/core.la		\
 			    primitives/core.la controllers/core.la	\
 			    shapes/core.la widgets/core.la		\
-			    automotive/core.la console/core.la		\
-			    shading/core.la
+			    automotive/core.la shading/core.la
 
 pkglib_LTLIBRARIES = misc/physics.la
 
@@ -78,13 +77,8 @@ dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    misc/bindings.lua misc/units.lua			\
 		    misc/resources.lua automotive/automotive.lua	\
 		    widgets/widgets.lua misc/serialize.lua		\
-		    console/console.lua shading/shading.lua 		\
-		    controllers/controllers.lua misc/rubberband.lua
-
-console_core_la_SOURCES = console/core.c
-console_core_la_CFLAGS = ${AM_CFLAGS}
-console_core_la_LDFLAGS = -module -avoid-version -no-undefined
-console_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
+		    shading/shading.lua controllers/controllers.lua     \
+		     misc/rubberband.lua
 
 controllers_core_la_SOURCES = controllers/core.c controllers/controller.c \
 			      controllers/controller.h 			  \

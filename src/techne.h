@@ -58,6 +58,7 @@ void t_push_modelview (float *matrix, t_Enumerated mode);
 void t_pop_modelview ();
 
 int luaopen_moremath (lua_State *L);
+int luaopen_morebase (lua_State *L);
 
 @interface Techne: Builtin {
 }

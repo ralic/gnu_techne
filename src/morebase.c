@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
+/* Copyright (C) 2012 Papavasileiou Dimitris                             
  *                                                                      
  * This program is free software: you can redistribute it and/or modify 
  * it under the terms of the GNU General Public License as published by 
@@ -14,12 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <lua.h>
+#include <lualib.h>
 #include <lauxlib.h>
 
 #include "prompt/prompt.h"
 #include "techne.h"
-#include "node.h"
 
 static int trace (lua_State *L)
 {
@@ -42,15 +41,54 @@ static int trace (lua_State *L)
     return 0;
 }
 
-int luaopen_console_core (lua_State *L)
+static int replacemetatable(lua_State *L)
 {
-    luaL_Reg core[] = {
-	{"trace", trace},
-	{NULL, NULL},
-    };
-    
-    lua_newtable (L);
-    luaL_newlib (L, core);
+    luaL_checktype (L, 1, LUA_TUSERDATA);
+    luaL_checktype (L, 2, LUA_TTABLE);
+
+    if (lua_getmetatable (L, 1)) {
+	/* If the value already has a metatable, copy any fields that
+	 * are not set in the supplied one. */
+	
+	lua_pushnil (L);
+	
+	while (lua_next (L, -2)) {
+	    /* Check to see whether the field is overriden and if not
+	     * copy it to the new metatable. */
+	    
+	    lua_pushvalue (L, -2);
+	    lua_gettable (L, 2);
+
+	    if (lua_isnil (L, -1)) {
+		
+		lua_pop (L, 1);
+		lua_pushvalue (L, -2);
+		lua_insert (L, -2);		
+		lua_settable (L, 2);
+	    } else {
+		lua_pop (L, 2);
+	    }
+	}
+
+	lua_pop (L, 1);
+    }
+
+    lua_setmetatable (L, 1);
 
     return 1;
 }
+
+int luaopen_morebase (lua_State *L)
+{
+    luaL_Reg api[] = {
+	{"trace", trace},
+	{"replacemetatable", replacemetatable},
+	{NULL, NULL}
+    };
+
+    luaL_requiref(L, "base", luaopen_base, 0);
+    luaL_setfuncs(L, api, 0);
+
+    return 1;
+}
+

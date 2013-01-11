@@ -141,43 +141,6 @@ static int construct_hooks(lua_State *L)
     return 1;
 }
 
-static int replacemetatable(lua_State *L)
-{
-    luaL_checktype (L, 1, LUA_TUSERDATA);
-    luaL_checktype (L, 2, LUA_TTABLE);
-
-    if (lua_getmetatable (L, 1)) {
-	/* If the value already has a metatable, copy any fields that
-	 * are not set in the supplied one. */
-	
-	lua_pushnil (L);
-	
-	while (lua_next (L, -2)) {
-	    /* Check to see whether the field is overriden and if not
-	     * copy it to the new metatable. */
-	    
-	    lua_pushvalue (L, -2);
-	    lua_gettable (L, 2);
-
-	    if (lua_isnil (L, -1)) {
-		
-		lua_pop (L, 1);
-		lua_pushvalue (L, -2);
-		lua_insert (L, -2);		
-		lua_settable (L, 2);
-	    } else {
-		lua_pop (L, 2);
-	    }
-	}
-
-	lua_pop (L, 1);
-    }
-
-    lua_setmetatable (L, 1);
-
-    return 1;
-}
-
 static void push_lua_stack(lua_State *L)
 {
     lua_Debug ar;
@@ -471,14 +434,6 @@ int main(int argc, char **argv)
     
     lua_pop (_L, 1);
 
-    /* Load the console module on startup. */
-
-    lua_getglobal(_L, "require");
-    lua_pushstring(_L, "console");
-    if (lua_pcall(_L, 1, 0, 0) != LUA_OK) {
-	lua_pop (_L, 1);
-    }
-
     lua_atpanic (_L, panic);
 
     /* Create the options table. */
@@ -569,7 +524,7 @@ int main(int argc, char **argv)
                 "resources", "array", "arraymath", 
                 "joints", "primitives", "bodies", 
                 "shading", "shapes", "automotive", 
-                "widgets", "console", "controllers"
+                "widgets", "controllers"
             };
             int i, n;
 
@@ -676,7 +631,7 @@ int main(int argc, char **argv)
     luaL_requiref (_L, "input", luaopen_input, 0);
     luaL_requiref (_L, "network", luaopen_network, 0);
 
-    luaL_requiref(_L, "base", luaopen_base, 1);
+    luaL_requiref(_L, "base", luaopen_morebase, 1);
     luaL_requiref(_L, "coroutine", luaopen_coroutine, 0);
     luaL_requiref(_L, "string", luaopen_string, 0);
     luaL_requiref(_L, "table", luaopen_table, 0);
@@ -696,9 +651,6 @@ int main(int argc, char **argv)
 
     lua_pushcfunction (_L, construct_hooks);
     lua_setglobal (_L, "hooks");
-    
-    lua_pushcfunction (_L, replacemetatable);
-    lua_setglobal (_L, "replacemetatable");
     
     /* Proceed to execute specified input. */
 

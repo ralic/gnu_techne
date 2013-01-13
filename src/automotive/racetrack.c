@@ -23,8 +23,11 @@
 
 #include "techne.h"
 #include "racetrack.h"
-#include "ground.h"
+#include "topography/elevation.h"
 #include "wheel.h"
+
+void look_up_sample(elevation_Tileset *tiles,
+                    int i, int j, double *h, double *e);
 
 static int constructbody(lua_State *L)
 {
@@ -900,9 +903,7 @@ static int collideTrackWithWheel (dGeomID track,
 static int collideHeightfieldWithWheel (dGeomID field,
 					dGeomID wheel,
 					dContactGeom *contact,
-					void (*sampler)(int, int, double *, double *),
-					const int *l, const int d,
-					const double *s)
+                                        elevation_Tileset *tiles)
 {
     struct wheeldata *wheeldata;
 
@@ -951,8 +952,10 @@ static int collideHeightfieldWithWheel (dGeomID field,
        difference in the geoms origin versus the heightfield's
        origin in memory. */
     
-    t_f = modf(-r[0] / s[0] + 0.5 * (1 << d) * l[0], &t_i);
-    u_f = modf(r[2] / s[1] + 0.5 * (1 << d) * l[1], &u_i);
+    t_f = modf(-r[0] / tiles->resolution[0] +
+               0.5 * (1 << tiles->depth) * tiles->size[0], &t_i);
+    u_f = modf(r[2] / tiles->resolution[1] +
+               0.5 * (1 << tiles->depth) * tiles->size[1], &u_i);
 
     for (i = 0 ; i < 4 ; y[i] = NAN, i += 1);
     for (i = 4 ; i < 16 ; y[i] = 0, i += 1);
@@ -979,10 +982,10 @@ static int collideHeightfieldWithWheel (dGeomID field,
     
     **********************/
 
-    sampler (t_i + 0, u_i + 0, &y[0], NULL);
-    sampler (t_i + 1, u_i + 0, &y[1], NULL);
-    sampler (t_i + 1, u_i + 1, &y[2], NULL);
-    sampler (t_i + 0, u_i + 1, &y[3], NULL);
+    look_up_sample (tiles, t_i + 0, u_i + 0, &y[0], NULL);
+    look_up_sample (tiles, t_i + 1, u_i + 0, &y[1], NULL);
+    look_up_sample (tiles, t_i + 1, u_i + 1, &y[2], NULL);
+    look_up_sample (tiles, t_i + 0, u_i + 1, &y[3], NULL);
 
     /* If any of these is still a NAN it means
        we tried to index past the edge so just
@@ -996,18 +999,18 @@ static int collideHeightfieldWithWheel (dGeomID field,
 
     /* Now sample the neighborhood. */
 
-    sampler (t_i - 1, u_i - 1, &y[4], NULL);
-    sampler (t_i + 0, u_i - 1, &y[5], NULL);
-    sampler (t_i + 1, u_i - 1, &y[6], NULL);
-    sampler (t_i + 2, u_i - 1, &y[7], NULL);
-    sampler (t_i + 2, u_i + 0, &y[8], NULL);
-    sampler (t_i + 2, u_i + 1, &y[9], NULL);
-    sampler (t_i + 2, u_i + 2, &y[10], NULL);
-    sampler (t_i + 1, u_i + 2, &y[11], NULL);
-    sampler (t_i + 0, u_i + 2, &y[12], NULL);
-    sampler (t_i - 1, u_i + 2, &y[13], NULL);
-    sampler (t_i - 1, u_i + 1, &y[14], NULL);
-    sampler (t_i - 1, u_i + 0, &y[15], NULL);
+    look_up_sample (tiles, t_i - 1, u_i - 1, &y[4], NULL);
+    look_up_sample (tiles, t_i + 0, u_i - 1, &y[5], NULL);
+    look_up_sample (tiles, t_i + 1, u_i - 1, &y[6], NULL);
+    look_up_sample (tiles, t_i + 2, u_i - 1, &y[7], NULL);
+    look_up_sample (tiles, t_i + 2, u_i + 0, &y[8], NULL);
+    look_up_sample (tiles, t_i + 2, u_i + 1, &y[9], NULL);
+    look_up_sample (tiles, t_i + 2, u_i + 2, &y[10], NULL);
+    look_up_sample (tiles, t_i + 1, u_i + 2, &y[11], NULL);
+    look_up_sample (tiles, t_i + 0, u_i + 2, &y[12], NULL);
+    look_up_sample (tiles, t_i - 1, u_i + 2, &y[13], NULL);
+    look_up_sample (tiles, t_i - 1, u_i + 1, &y[14], NULL);
+    look_up_sample (tiles, t_i - 1, u_i + 0, &y[15], NULL);
 
     /* Now compute partial derivatives using Evans' method. */
 
@@ -1051,9 +1054,9 @@ static int collideHeightfieldWithWheel (dGeomID field,
     /* Calculate and normalize the
        contact normal vector. */
     
-    n[0] = -y1_i / s[0];
+    n[0] = -y1_i / tiles->resolution[0];
     n[1] = 1;
-    n[2] = -y2_i / s[1];
+    n[2] = -y2_i / tiles->resolution[1];
 
     dSafeNormalize3(n);
 
@@ -1168,10 +1171,7 @@ static int collideWithWheel (dGeomID track,
 	if (!trackdata->field ||
 	    collideHeightfieldWithWheel (trackdata->field,
 					 wheel, contact,
-					 trackdata->sampler,
-					 trackdata->tiles,
-					 trackdata->depth,
-					 trackdata->resolution) < 0) {
+					 trackdata->tileset) < 0) {
 	    wheeldata->airborne = 1;
 	}
     }
@@ -1380,10 +1380,8 @@ static int sampler_index(lua_State *L)
     data->tolerance = t;
     data->last = 0;
     
-    data->tiles = NULL;
-    data->depth = 0;
-    data->resolution = NULL;
-    data->sampler = NULL;
+    data->tileset = NULL;
+    data->field = NULL;
 
     update_track_segments(data->segments, data->segments_n, data->tolerance);
 
@@ -1394,17 +1392,13 @@ static int sampler_index(lua_State *L)
 {
     struct trackdata *data;
 
-    if ([sibling isKindOf: [Ground class]]) {
-	Ground *ground;
+    if ([sibling isKindOf: [ElevationBody class]]) {
+	ElevationBody *elevation;
 
-	ground = (Ground *)sibling;
+	elevation = (ElevationBody *)sibling;
 	data = dGeomGetClassData (self->geom);
-
-	data->sampler = ground->sampler;
-	data->field = ground->geom;
-	data->tiles = ground->size;
-	data->depth = ground->depth;
-	data->resolution = ground->resolution;
+	data->tileset = elevation->tileset;
+        data->field = elevation->geom;
     }
 }
 
@@ -1412,14 +1406,10 @@ static int sampler_index(lua_State *L)
 {
     struct trackdata *data;
 
-    if ([sibling isKindOf: [Ground class]]) {
+    if ([sibling isKindOf: [ElevationBody class]]) {
 	data = dGeomGetClassData (self->geom);
-
-	data->sampler = NULL;
-	data->field = NULL;
-	data->tiles = NULL;
-	data->depth = 0;
-	data->resolution = NULL;
+	data->tileset = NULL;
+        data->field = NULL;
     }
 }
 	

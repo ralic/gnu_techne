@@ -188,7 +188,9 @@ automotive_core_la_SOURCES = automotive/core.c automotive/chain.c	\
 		  	     automotive/wheel.c automotive/wheel.h	\
 		  	     automotive/racetrack.c			\
 		  	     automotive/racetrack.h			\
-		  	     automotive/ground.c automotive/ground.h
+                             topography/elevation.c			\
+			     topography/elevation.h
+
 automotive_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 automotive_core_la_LDFLAGS = -module -avoid-version -no-undefined
 automotive_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}

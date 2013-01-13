@@ -44,4 +44,4 @@ TODO (ASAP):
   topography.elevationMold {...}.
 * Adapt the Racetrack node to the mold node approach.
 * Figure out how to handle sampling the elevation data for contact detection.
-* Add ElevationShading and ElevationBody nodes.
+* Add an ElevationShading node.

@@ -19,6 +19,7 @@
 
 #include "body.h"
 #include "shape.h"
+#include "topography/elevation.h"
 
 struct trackdata {
     /* Tarmac. */
@@ -29,10 +30,7 @@ struct trackdata {
     /* Terrain. */
 
     dGeomID field;
-    const int *tiles;
-    int depth;
-    const double *resolution;
-    void (*sampler)(int, int, double *, double *);
+    elevation_Tileset *tileset;
 };
 
 int dTrackClass;

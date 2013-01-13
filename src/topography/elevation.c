@@ -104,7 +104,7 @@ static void switch_to_context(ElevationShape *new)
     context = new;
 }
 
-static void look_up_sample(elevation_Tileset *tiles,
+void look_up_sample(elevation_Tileset *tiles,
                            int i, int j, double *h, double *e)
 {
     int a, b, c, d;

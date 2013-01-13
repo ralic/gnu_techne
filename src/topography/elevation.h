@@ -23,9 +23,9 @@
 
 #include "roam.h"
 #include "shape.h"
+#include "body.h"
 
-@interface ElevationMold: Node {
-@public
+typedef struct {
     unsigned short **samples;
     unsigned short **bounds;
     double *scales, *offsets;
@@ -34,6 +34,11 @@
 
     int size[2], depth;
     double resolution[2];
+} elevation_Tileset;
+
+@interface ElevationMold: Node {
+@public
+    elevation_Tileset tileset;
 
     int *references;
 }
@@ -45,27 +50,14 @@
 
 @interface ElevationShape: Shape {
 @public
-    /* Start of common part. */
-
-    unsigned short **samples;
-    unsigned short **bounds;
-    double *scales, *offsets;
-    GLuint *imagery;
-    int *orders;
-
-    int size[2], depth;
-    double resolution[2];
-
-    /* End of common part. */
+    elevation_Tileset *tileset;
 
     int reference;
 
     struct block *pools[2];
     
     struct diamond *queues[2][QUEUE_SIZE];
-    struct triangle *(*roots)[2];
-    
-    double anisotropy;
+    struct triangle *(*roots)[2];    
     
     int blocks[2], chunks[2], queued[2];
     int triangles, diamonds, culled, visible, drawn;
@@ -76,10 +68,17 @@
 
 -(int) _get_target;
 -(void) _set_target;
--(int) _get_anisotropy;
--(void) _set_anisotropy;
 -(int) _get_state;
 -(void) _set_state;
+
+@end
+
+@interface ElevationBody: Body {
+@public
+    elevation_Tileset *tileset;
+    dHeightfieldDataID data;
+    int reference;
+}
 
 @end
 

@@ -22,7 +22,7 @@
 #define DIAMOND_POOL (1)
 
 #define QUEUE_SIZE (65536)
-#define TREE_HEIGHT ((context->depth << 1) + 1)
+#define TREE_HEIGHT ((context->tileset->depth << 1) + 1)
 
 /* Triangle cull flags */
 
@@ -44,7 +44,7 @@
 #define FLIPPED     (1 << 0)
 
 #define is_locked(n) ((n)->diamond->level >=                \
-                      (context->orders[(n)->index] << 1))
+                      (context->tileset->orders[(n)->index] << 1))
 
 #define is_leaf(n) (!(n)->children[0])
 #define is_out(n) ((n)->cullbits & OUT)

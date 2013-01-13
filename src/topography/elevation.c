@@ -104,16 +104,17 @@ static void switch_to_context(ElevationShape *new)
     context = new;
 }
 
-static void look_up_sample(int i, int j, double *h, double *e)
+static void look_up_sample(elevation_Tileset *tiles,
+                           int i, int j, double *h, double *e)
 {
     int a, b, c, d;
     unsigned int k, l, m;
     
-    a = context->size[0];
-    b = context->size[1];
-    c = context->depth;
-/*     d = (1 << context->depth) + 1; */
-    d = 1 << context->depth;
+    a = tiles->size[0];
+    b = tiles->size[1];
+    c = tiles->depth;
+/*     d = (1 << tiles->depth) + 1; */
+    d = 1 << tiles->depth;
 
     if (h) {
 	*h = 0.0;
@@ -129,31 +130,31 @@ static void look_up_sample(int i, int j, double *h, double *e)
 	
 	k = ((j / d) * a) + (i / d);
 
-	if (k >= a * b || !context->samples[k]) {
+	if (k >= a * b || !tiles->samples[k]) {
 	    d += 1;
 	    k = ((j / d) * a) + (i / d);
 	}
     	
-	if (context->samples[k]) {
+	if (tiles->samples[k]) {
 	    double s, delta;
 	    
-	    delta = context->offsets[k];
-	    s = context->scales[k];
-	    l = context->orders[k];
+	    delta = tiles->offsets[k];
+	    s = tiles->scales[k];
+	    l = tiles->orders[k];
 	    m = (((j % d) >> (c - l)) << l) + ((j % d + i % d) >> (c - l));
 
 	    if (h) {
-		*h = s * context->samples[k][m] + delta;
+		*h = s * tiles->samples[k][m] + delta;
 	    }
 
 	    /* if (!e) { */
 	    /* 	printf ("(%d, %d) => %d (%d), %d, %d, %f\n", */
-	    /* 		i, j, k, l, m, context->samples[k][m], *h); */
+	    /* 		i, j, k, l, m, tiles->samples[k][m], *h); */
 	    /* } */
-	    /* printf ("%d => %f (%f, %f)\n", context->samples[k][m], *h, s, delta); */
+	    /* printf ("%d => %f (%f, %f)\n", tiles->samples[k][m], *h, s, delta); */
 	    
 	    if (e) {
-		int e_i = context->bounds[k][m];
+		int e_i = tiles->bounds[k][m];
 
 		/* Interpret that maximum representable error bound
 		   as 'infinite error'.  This basically means that
@@ -261,7 +262,7 @@ static void initialize_diamond(Diamond *d, Triangle *n,
 	c[0] = (v0[0] + v1[0]) * 0.5;
 	c[1] = (v0[1] + v1[1]) * 0.5;
 
-	look_up_sample((int)c[0], (int)c[1], &c[2], &e);
+	look_up_sample (context->tileset, (int)c[0], (int)c[1], &c[2], &e);
 
 	assert((nearbyint(c[0]) == c[0] && nearbyint(c[1]) == c[1]));
     } else {
@@ -1011,10 +1012,13 @@ static void traverse_quadtree(Triangle *n, Triangle *m, int l)
 
 static void optimize_earth_geometry()
 {
+    elevation_Tileset *tiles;
     Diamond *d = NULL, *d_0;
     const float *M, *P;
     int i, j, delta, overlap;
 
+    tiles = context->tileset;
+    
     /* Update the book. */
 
     context->culled = 0;
@@ -1031,7 +1035,7 @@ static void optimize_earth_geometry()
 
     /* Reclassify the mesh for the current frame. */
     
-    for (i = 0 ; i < context->size[0] * context->size[1] ; i += 1) {
+    for (i = 0 ; i < tiles->size[0] * tiles->size[1] ; i += 1) {
 	reclassify_subtree(context->roots[i][0], 0);
 	reclassify_subtree(context->roots[i][1], 0);
     }
@@ -1134,24 +1138,27 @@ static void draw_subtree(Triangle *n)
     
 static void draw_earth_geometry()
 {
+    elevation_Tileset *tiles;
     int i, j;
     float q;
+
+    tiles = context->tileset;
     
     /* Set up the GL state and draw. */  
 
-    q = ldexpf(1, -context->depth);
+    q = ldexpf(1, -tiles->depth);
     
     glActiveTexture(GL_TEXTURE0);
 
     context->drawn = 0;
 
-    for (i = 0 ; i < context->size[0] ; i += 1) {    
-	for (j = 0 ; j < context->size[1] ; j += 1) {
-	    int k = i * context->size[0] + j;
+    for (i = 0 ; i < tiles->size[0] ; i += 1) {    
+	for (j = 0 ; j < tiles->size[1] ; j += 1) {
+	    int k = i * tiles->size[0] + j;
 	    
 	    glTexGenfv(GL_S, GL_OBJECT_PLANE, (float[4]){q, 0, 0, -j});
 	    glTexGenfv(GL_T, GL_OBJECT_PLANE, (float[4]){0, q, 0, -i});
-	    glBindTexture(GL_TEXTURE_2D, context->imagery[k]);
+	    glBindTexture(GL_TEXTURE_2D, tiles->imagery[k]);
 
 	    glBegin(GL_TRIANGLES);
 	
@@ -1174,9 +1181,12 @@ static void draw_earth_geometry()
 
 static void *allocate_mesh()
 {
+    elevation_Tileset *tiles;
     Triangle *(*T)[4];
     Diamond *(*D)[3];
     int i, j, d, s, t;
+
+    tiles = context->tileset;
 
     /* The base mesh consists of a 5 by 5 lattice of diamonds.  Only
        the center diamond is visible.  The others are there merely to
@@ -1189,9 +1199,9 @@ static void *allocate_mesh()
        they will get inserted into Qs and counted as visible when we
        reclassify the mesh later on. */
 
-    s = context->size[0];
-    t = context->size[1];
-    d = 1 << context->depth;
+    s = tiles->size[0];
+    t = tiles->size[1];
+    d = 1 << tiles->depth;
 
     /* Allocate all needed diamonds and triangles. */
 
@@ -1267,22 +1277,22 @@ static void *allocate_mesh()
 	    
 	    v[0][0] = (j - 2) * d;
 	    v[0][1] = (i - 2) * d;
-	    look_up_sample(v[0][0], v[0][1], &h, &e);
+	    look_up_sample (tiles, v[0][0], v[0][1], &h, &e);
 	    v[0][2] = h;
 
 	    v[1][0] = (j - 3) * d;
 	    v[1][1] = (i - 1) * d;
-	    look_up_sample(v[1][0], v[1][1], &h, &e);
+	    look_up_sample (tiles, v[1][0], v[1][1], &h, &e);
 	    v[1][2] = h;
 
 	    v[2][0] = (j - 1) * d;
 	    v[2][1] = (i - 1) * d;
-	    look_up_sample(v[2][0], v[2][1], &h, &e);
+	    look_up_sample (tiles, v[2][0], v[2][1], &h, &e);
 	    v[2][2] = h;
 
 	    v[3][0] = j * d;
 	    v[3][1] = (i - 2) * d;
-	    look_up_sample(v[3][0], v[3][1], &h, &e);
+	    look_up_sample (tiles, v[3][0], v[3][1], &h, &e);
 	    v[3][2] = h;
 
 	    /* Initialize base diamonds and triangles. */
@@ -1333,11 +1343,14 @@ static void free_mesh()
     }
 }
 
-static int constructshape(lua_State *L)
+static int construct(lua_State *L)
 {
-    lua_pushvalue(_L, lua_upvalueindex(1));
+    Class class;
 
-    [[ElevationShape alloc] init];
+    lua_pushvalue(_L, lua_upvalueindex(1));
+    class = (Class)lua_touserdata(L, lua_upvalueindex (2));
+
+    [[class alloc] init];
     t_configurenode (_L, 1);
 
     return 1;
@@ -1347,10 +1360,13 @@ static int constructshape(lua_State *L)
 
 -(void) init
 {
+    elevation_Tileset *tiles;
     int i;
 
     [super init];
 
+    tiles = &self->tileset;
+    
     /* Read in resolution and size data. */
     
     lua_pushstring(_L, "size");
@@ -1359,7 +1375,7 @@ static int constructshape(lua_State *L)
     if(lua_istable(_L, 1)) {
         for(i = 0 ; i < 2 ; i += 1) {
             lua_rawgeti(_L, -1, i + 1);
-            self->size[i] = lua_tonumber(_L, -1);
+            tiles->size[i] = lua_tonumber(_L, -1);
                 
             lua_pop(_L, 1);
         }
@@ -1370,7 +1386,7 @@ static int constructshape(lua_State *L)
     lua_pushstring(_L, "depth");
     lua_gettable(_L, 1);
 
-    self->depth = lua_tonumber(_L, -1);
+    tiles->depth = lua_tonumber(_L, -1);
     
     lua_pop(_L, 1);
 
@@ -1380,7 +1396,7 @@ static int constructshape(lua_State *L)
     if(lua_istable(_L, 1)) {
         for(i = 0 ; i < 2 ; i += 1) {
             lua_rawgeti(_L, -1, i + 1);
-            self->resolution[i] = lua_tonumber(_L, -1);
+            tiles->resolution[i] = lua_tonumber(_L, -1);
                 
             lua_pop(_L, 1);
         }
@@ -1390,27 +1406,28 @@ static int constructshape(lua_State *L)
 
     /* Allocate the tile tables. */
     
-    self->references = (int *)calloc (self->size[0] *
-                                  self->size[1] * 2,
-                                  sizeof (int));
-    self->samples = (unsigned short **)calloc (self->size[0] *
-                                               self->size[1],
-                                               sizeof (unsigned short *));
-    self->bounds = (unsigned short **)calloc (self->size[0] *
-                                              self->size[1],
-                                              sizeof (unsigned short *));
-    self->orders = (int *)calloc (self->size[0] * self->size[1],
-                                  sizeof (int));
-    self->imagery = (GLuint *)calloc (self->size[0] * self->size[1],
-                                      sizeof (GLuint));
-    self->scales = (double*)calloc (self->size[0] * self->size[1],
-                                    sizeof (double));
-    self->offsets = (double*)calloc (self->size[0] * self->size[1],
-                                     sizeof (double));
-
-    glGenTextures(self->size[0] * self->size[1], self->imagery);
+    self->references = (int *)calloc (tiles->size[0] *
+                                      tiles->size[1] * 2,
+                                      sizeof (int));
     
-    for (i = 0 ; i < 2 * self->size[0] * self->size[1] ; i += 1) {
+    tiles->samples = (unsigned short **)calloc (tiles->size[0] *
+                                                tiles->size[1],
+                                                sizeof (unsigned short *));
+    tiles->bounds = (unsigned short **)calloc (tiles->size[0] *
+                                               tiles->size[1],
+                                               sizeof (unsigned short *));
+    tiles->orders = (int *)calloc (tiles->size[0] * tiles->size[1],
+                                   sizeof (int));
+    tiles->imagery = (GLuint *)calloc (tiles->size[0] * tiles->size[1],
+                                       sizeof (GLuint));
+    tiles->scales = (double*)calloc (tiles->size[0] * tiles->size[1],
+                                     sizeof (double));
+    tiles->offsets = (double*)calloc (tiles->size[0] * tiles->size[1],
+                                      sizeof (double));
+
+    glGenTextures(tiles->size[0] * tiles->size[1], tiles->imagery);
+    
+    for (i = 0 ; i < 2 * tiles->size[0] * tiles->size[1] ; i += 1) {
         self->references[i] = LUA_REFNIL;
     }
 
@@ -1420,7 +1437,7 @@ static int constructshape(lua_State *L)
     lua_gettable(_L, 1);
 
     if (lua_istable (_L, -1)) {
-        for (i = 0 ; i < size[0] * size[1] ; i += 1) {
+        for (i = 0 ; i < tiles->size[0] * tiles->size[1] ; i += 1) {
             lua_rawgeti(_L, -1, i + 1);
         
             if (lua_istable (_L, -1)) {
@@ -1497,11 +1514,11 @@ static int constructshape(lua_State *L)
 
                 /* Load the elevation tile. */
             
-                self->samples[i] = heights->values.ushorts;
-                self->bounds[i] = errors->values.ushorts;
-                self->orders[i] = (int)(log(heights->size[0] - 1) / log(2));
-                self->scales[i] = c / USHRT_MAX;
-                self->offsets[i] = delta;
+                tiles->samples[i] = heights->values.ushorts;
+                tiles->bounds[i] = errors->values.ushorts;
+                tiles->orders[i] = (int)(log(heights->size[0] - 1) / log(2));
+                tiles->scales[i] = c / USHRT_MAX;
+                tiles->offsets[i] = delta;
 
                 /* The imagery. */
 #if 0	    
@@ -1515,7 +1532,7 @@ static int constructshape(lua_State *L)
                     /* Create the texture object. */
 	
                     glGetError();
-                    glBindTexture(GL_TEXTURE_2D, self->imagery[i]);
+                    glBindTexture(GL_TEXTURE_2D, tiles->imagery[i]);
 	
                     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
                     glPixelStorei(GL_UNPACK_ROW_LENGTH, pixels->size[1]);
@@ -1528,9 +1545,6 @@ static int constructshape(lua_State *L)
                                   pixels->values.uchars);
 
                     glGenerateMipmap (GL_TEXTURE_2D);
-    
-                    glTexParameterf(GL_TEXTURE_2D,
-                                    GL_TEXTURE_MAX_ANISOTROPY_EXT, self->anisotropy);
 
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,GL_LINEAR);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
@@ -1559,7 +1573,8 @@ static int constructshape(lua_State *L)
 -(int) _get_shape
 {
     lua_pop (_L, 1);
-    lua_pushcclosure(_L, constructshape, 1);
+    lua_pushlightuserdata(_L, [ElevationShape class]);
+    lua_pushcclosure(_L, construct, 2);
     
     return 1;
 }
@@ -1568,23 +1583,39 @@ static int constructshape(lua_State *L)
 {
 }
 
+-(int) _get_body
+{
+    lua_pop (_L, 1);
+    lua_pushlightuserdata(_L, [ElevationBody class]);
+    lua_pushcclosure(_L, construct, 2);
+    
+    return 1;
+}
+
+-(void) _set_body
+{
+}
+
 -(void) free
 {
+    elevation_Tileset *tiles;
     int i;
 
-    glDeleteTextures (self->size[0] * self->size[1], self->imagery);
+    tiles = &self->tileset;
+
+    glDeleteTextures (tiles->size[0] * tiles->size[1], tiles->imagery);
     
-    for (i = 0 ; i < 2 * self->size[0] * self->size[1] ; i += 1) {
+    for (i = 0 ; i < 2 * tiles->size[0] * tiles->size[1] ; i += 1) {
         luaL_unref (_L, LUA_REGISTRYINDEX, self->references[i]);
     }
 
     free (self->references);
-    free (self->samples);
-    free (self->bounds);
-    free (self->imagery);
-    free (self->orders);
-    free (self->scales);
-    free (self->offsets);
+    free (tiles->samples);
+    free (tiles->bounds);
+    free (tiles->imagery);
+    free (tiles->orders);
+    free (tiles->scales);
+    free (tiles->offsets);
     
     [super free];
 }
@@ -1605,24 +1636,10 @@ static int constructshape(lua_State *L)
     
     [super init];
     
-    /* Copy common fields from the mold. */
+    self->tileset = &mold->tileset;
     
-    self->samples = mold->samples;
-    self->bounds = mold->bounds;
-    self->imagery = mold->imagery;
-    self->scales = mold->scales;
-    self->offsets = mold->offsets;
-    self->orders = mold->orders;
-
-    self->size[0] = mold->size[0];
-    self->size[1] = mold->size[1];
-    self->depth = mold->depth;
-    self->resolution[0] = mold->resolution[0];
-    self->resolution[1] = mold->resolution[1];
-
     /* Initialize our own values. */
     
-    self->anisotropy = 1;
     self->target = 5000;
    
     self->triangles = 0;
@@ -1643,7 +1660,8 @@ static int constructshape(lua_State *L)
     self->chunks[0] = 0;
     self->chunks[1] = 0;
 
-    self->roots = (Triangle *(*)[2])calloc(self->size[0] * self->size[1],
+    self->roots = (Triangle *(*)[2])calloc(self->tileset->size[0] *
+                                           self->tileset->size[1],
 					   sizeof(Triangle *[2]));
 
     /* Create the base mesh.  */
@@ -1667,13 +1685,6 @@ static int constructshape(lua_State *L)
 -(int) _get_target
 {
     lua_pushnumber (_L, self->target);
-
-    return 1;
-}
-
--(int) _get_anisotropy
-{
-    lua_pushnumber (_L, self->anisotropy);
 
     return 1;
 }
@@ -1711,22 +1722,6 @@ static int constructshape(lua_State *L)
     T_WARN_READONLY;
 }
 
--(void) _set_anisotropy
-{
-    int i;
-    
-    self->anisotropy = lua_tonumber (_L, 3);
-
-    for (i = 0 ; i < self->size[0] * self->size[1] ; i += 1) {
-        if (self->imagery[i] > 0) {
-            glBindTexture(GL_TEXTURE_2D, self->imagery[i]);
-            glTexParameterf(GL_TEXTURE_2D,
-                            GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                            self->anisotropy);
-        }
-    }
-}
-
 -(void) _set_target
 {
     self->target = lua_tonumber (_L, 3);
@@ -1734,24 +1729,30 @@ static int constructshape(lua_State *L)
 
 -(void) draw
 {
-    float M[16] = {self->resolution[0], 0, 0, 0,
-                   0, self->resolution[1], 0, 0,
-                   0, 0, 1, 0,
-                   0, 0, 0, 1};
-    
-    float T[16] = {1, 0, 0, 0,
-                   0, 1, 0, 0,
-                   0, 0, 1, 0,
-                   -(1 << (self->depth - 1)) * self->size[0],
-                   -(1 << (self->depth - 1)) * self->size[1],
-                   0, 1};
+    elevation_Tileset *tiles;
+
+    tiles = context->tileset;
 
     [super draw];
-    
-    t_push_modelview (self->matrix, T_MULTIPLY);
-    t_load_modelview (M, T_MULTIPLY);
-    t_load_modelview (T, T_MULTIPLY);
 
+    {
+        float M[16] = {tiles->resolution[0], 0, 0, 0,
+                       0, tiles->resolution[1], 0, 0,
+                       0, 0, 1, 0,
+                       0, 0, 0, 1};
+    
+        float T[16] = {1, 0, 0, 0,
+                       0, 1, 0, 0,
+                       0, 0, 1, 0,
+                       -(1 << (tiles->depth - 1)) * tiles->size[0],
+                       -(1 << (tiles->depth - 1)) * tiles->size[1],
+                       0, 1};
+    
+        t_push_modelview (self->matrix, T_MULTIPLY);
+        t_load_modelview (M, T_MULTIPLY);
+        t_load_modelview (T, T_MULTIPLY);
+    }
+    
     glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
 
     switch_to_context(self);
@@ -1760,6 +1761,131 @@ static int constructshape(lua_State *L)
     draw_earth_geometry();
 
     t_pop_modelview ();
+}
+
+@end
+
+static dReal heightfield_data_callback (void *data, int x, int z)
+{
+    elevation_Tileset *tiles;
+    ElevationBody *self = data;
+    double h;
+
+    /* The sign of the x coordinate needs to be flipped.
+       See comment about heightfield frames in ODE and
+       Techne below. */
+
+    tiles = self->tileset;
+    look_up_sample (tiles, (1 << tiles->depth) * tiles->size[0] - x, z, &h, NULL);
+    
+    /* printf ("%d, %d => %f\n", x, z, h); */
+    
+    return h;
+}
+
+@implementation ElevationBody
+
+-(void) init
+{
+    elevation_Tileset *tiles;
+    ElevationMold *mold;
+
+    /* Make a reference to the mold to make sure it's not
+     * collected. */
+
+    mold = t_tonode (_L, -1);
+    self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+    
+    [super init];
+    
+    tiles = self->tileset = &mold->tileset;
+    self->data = dGeomHeightfieldDataCreate();
+    
+    dGeomHeightfieldDataBuildCallback (self->data,
+				       self,
+				       heightfield_data_callback,
+				       (1 << tiles->depth) *
+				       tiles->size[0] * tiles->resolution[0],
+				       (1 << tiles->depth) *
+				       tiles->size[1] * tiles->resolution[1],
+				       (1 << tiles->depth) *
+				       tiles->size[0] + 1,
+				       (1 << tiles->depth) *
+				       tiles->size[1] + 1,
+				       1, 0, 100, 0);
+    
+    dGeomHeightfieldDataSetBounds (self->data, 0, dInfinity);    
+    
+    /* Create the geom itself. */
+
+    self->geom = dCreateHeightfield(NULL, self->data, 1);
+
+    dGeomSetData (self->geom, self);
+
+    {
+	/* ODE assumes that heighfield are oriented with the
+	   y-axis pointing upwards, while Techne thinks the
+	   z-axis does.  In order to align the two frames we
+	   need to apply a transform to the geom but in the
+	   process the x-axis has to be negated to keep the
+	   handedness of both frames the same. */
+	
+	dMatrix3 R = {-self->orientation[0],
+		      self->orientation[2],
+		      self->orientation[1],
+		      0,
+	
+		      -self->orientation[3],
+		      self->orientation[5],
+		      self->orientation[4],
+		      0,
+
+		      -self->orientation[6],
+		      self->orientation[8],
+		      self->orientation[7],
+		      0};
+	
+	dGeomSetRotation (self->geom, R);
+	dGeomSetPosition (self->geom,
+			  self->position[0],
+			  self->position[1],
+			  self->position[2]);
+    }
+}
+
+-(void) free
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->reference);
+    dGeomHeightfieldDataDestroy(self->data);
+        
+    [super free];
+}
+
+-(void) _set_orientation
+{    
+    dMatrix3 R;
+	
+    [super _set_orientation];
+
+    /* See comment about heightfield frames
+       in ODE and Techne above. */
+	    
+    R[0] = -self->orientation[0];
+    R[1] = self->orientation[2];
+    R[2] = self->orientation[1];
+    R[3] = 0;
+	
+    R[4] = -self->orientation[3];
+    R[5] = self->orientation[5];
+    R[6] = self->orientation[4];
+    R[7] = 0;
+
+    R[8] = -self->orientation[6];
+    R[9] = self->orientation[8];
+    R[10] = self->orientation[7];
+    R[11] = 0;
+
+    dGeomSetRotation (self->geom, R);
 }
 
 @end

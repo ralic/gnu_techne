@@ -68,7 +68,7 @@ nobase_pkglib_LTLIBRARIES = array/core.la arraymath/core.la		\
 			    primitives/core.la controllers/core.la	\
 			    shapes/core.la widgets/core.la		\
 			    automotive/core.la console/core.la		\
-			    shading/core.la
+			    shading/core.la topography/core.la
 
 pkglib_LTLIBRARIES = misc/physics.la
 
@@ -79,12 +79,19 @@ dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    misc/resources.lua automotive/automotive.lua	\
 		    widgets/widgets.lua misc/serialize.lua		\
 		    console/console.lua shading/shading.lua 		\
-		    controllers/controllers.lua misc/rubberband.lua
+		    controllers/controllers.lua misc/rubberband.lua	\
+		    topography/topography.lua
 
 console_core_la_SOURCES = console/core.c
 console_core_la_CFLAGS = ${AM_CFLAGS}
 console_core_la_LDFLAGS = -module -avoid-version -no-undefined
 console_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
+
+topography_core_la_SOURCES = topography/core.c topography/elevation.c \
+			     topography/elevation.h topography/roam.h
+topography_core_la_CFLAGS = ${AM_CFLAGS}
+topography_core_la_LDFLAGS = -module -avoid-version -no-undefined
+topography_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
 
 controllers_core_la_SOURCES = controllers/core.c controllers/controller.c \
 			      controllers/controller.h 			  \

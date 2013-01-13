@@ -316,22 +316,15 @@ static void match_attribute_to_buffer (unsigned int program,
     
     glBindBuffer(GL_ARRAY_BUFFER, b->name);
     glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-
-    array.type = b->type;
-    array.free = FREE_BOTH;
-    array.length = size;
-    array.rank = b->size == 1 ? 1 : 2;
-    array.size = malloc (array.rank * sizeof(int));
-
-    array.size[0] = b->length;
     
-    if (array.rank > 1) {
-	array.size[1] = b->size;
+    if (b->size == 1) {
+        array_initialize(&array, b->type, NULL, 1, b->length);
+    } else {
+        array_initialize(&array, b->type, NULL, 2, b->length, b->size);
     }
 
     /* Read back the data from the buffer object. */
     
-    array.values.any = malloc (size);
     glGetBufferSubData(GL_ARRAY_BUFFER, 0, size, array.values.any);
 
     array_pusharray(_L, &array);

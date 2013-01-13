@@ -237,5 +237,37 @@ int luaopen_array_core (lua_State *L)
     lua_pushcclosure (L, create, 1);
     lua_setfield (L, -2, "chars");    
     
+    lua_pushinteger (L, ARRAY_TNULONG);
+    lua_pushcclosure (L, create, 1);
+    lua_setfield (L, -2, "nulongs");
+    
+    lua_pushinteger (L, ARRAY_TNLONG);
+    lua_pushcclosure (L, create, 1);
+    lua_setfield (L, -2, "nlongs");
+    
+    lua_pushinteger (L, ARRAY_TNUINT);
+    lua_pushcclosure (L, create, 1);
+    lua_setfield (L, -2, "nuints");
+    
+    lua_pushinteger (L, ARRAY_TNINT);
+    lua_pushcclosure (L, create, 1);
+    lua_setfield (L, -2, "nints");
+    
+    lua_pushinteger (L, ARRAY_TNUSHORT);
+    lua_pushcclosure (L, create, 1);
+    lua_setfield (L, -2, "nushorts");
+    
+    lua_pushinteger (L, ARRAY_TNSHORT);
+    lua_pushcclosure (L, create, 1);
+    lua_setfield (L, -2, "nshorts");
+    
+    lua_pushinteger (L, ARRAY_TNUCHAR);
+    lua_pushcclosure (L, create, 1);
+    lua_setfield (L, -2, "nuchars");
+    
+    lua_pushinteger (L, ARRAY_TNCHAR);
+    lua_pushcclosure (L, create, 1);
+    lua_setfield (L, -2, "nchars");    
+    
     return 1;
 }

@@ -292,7 +292,8 @@ static int next_attribute(lua_State *L)
 
 	for (i = 1;
 	     i < protocol->size &&
-		 strcmp(k, protocol->properties[0][i - 1].name);
+                 (!protocol->properties[0][i - 1].name ||
+                  strcmp(k, protocol->properties[0][i - 1].name));
 	     i += 1);
     }
 
@@ -1022,8 +1023,9 @@ static void unlink_node (Node *node)
 
 			for (k = 0;
 			     k < sizes[j] &&
-				 strcmp(protocol->properties[j][k].name,
-					name);
+                                 (!protocol->properties[j][k].name ||
+                                  strcmp(protocol->properties[j][k].name,
+                                         name));
 			     k += 1);
 		    } else {
 			for (k = 0;

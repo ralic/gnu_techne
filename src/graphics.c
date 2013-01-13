@@ -217,6 +217,11 @@ void t_pop_projection ()
     SET_PROJECTION(projections[projections_n]);
 }
 
+const float *t_get_projection()
+{
+    return projections[projections_n];
+}
+
 #define SET_MODELVIEW(matrix)						\
     {									\
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
@@ -269,6 +274,11 @@ void t_pop_modelview ()
     modelviews_n -= 1;
 
     SET_MODELVIEW(modelviews[modelviews_n]);
+}
+
+const float *t_get_modelview()
+{
+    return modelviews[modelviews_n];
 }
 
 static void draw (Node *root)

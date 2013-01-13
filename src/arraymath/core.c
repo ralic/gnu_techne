@@ -40,19 +40,11 @@
 #define I(i, j) (j * 3 + i)
 #endif
 
-static int size[2] = {3, 3};
-
 static array_Array *pushtransform (lua_State *L, double *M)
 {
     array_Array array, *result;
 
-    array.rank = 2;
-    array.size = size;
-    array.length = 3 * 3 * sizeof(double);
-    array.type = ARRAY_TDOUBLE;
-    array.values.doubles = M;
-    array.free = FREE_VALUES;
-
+    array_initialize (&array, ARRAY_TDOUBLE, M, 2, 3, 3);
     result = array_pusharray (L, &array);
 
     return result;
@@ -328,21 +320,17 @@ static int apply (lua_State *L)
 static int scaling (lua_State *L)
 {
     array_Array *A;
-    double *M, *u;
+    double M[9], *u;
 
     luaL_checkany (L, 1);
 
     if (lua_isnumber (L, 1)) {
-	M = malloc (9 * sizeof (double));
-
 	M[I(0, 0)] = M[I(1, 1)] = M[I(2, 2)] = lua_tonumber (L, 1);
     } else {
 	A = array_checkcompatible (L, 1,
                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                    ARRAY_TDOUBLE, 1, 3);
 	u = A->values.doubles;
-
-	M = malloc (9 * sizeof (double));
 
 	M[I(0, 0)] = u[0];
 	M[I(1, 1)] = u[1];
@@ -359,7 +347,7 @@ static int scaling (lua_State *L)
 static int shear (lua_State *L)
 {
     array_Array *A, *B;
-    double *M, *u, *n, f;
+    double M[9], *u, *n, f;
 
     f = luaL_checknumber (L, 1);
     
@@ -372,8 +360,6 @@ static int shear (lua_State *L)
                                ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                ARRAY_TDOUBLE, 1, 3);
     n = B->values.doubles;
-
-    M = malloc (9 * sizeof (double));
 
     M[I(0, 0)] = 1 + f * u[0] * n[0];
     M[I(0, 1)] = f * u[0] * n[1];
@@ -395,14 +381,12 @@ static int shear (lua_State *L)
 static int reflection (lua_State *L)
 {
     array_Array *A;
-    double *M, *u;
+    double M[9], *u;
 
     A = array_checkcompatible (L, 1,
                                ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                ARRAY_TDOUBLE, 1, 3);
     u = A->values.doubles;
-
-    M = malloc (9 * sizeof (double));
 
     M[I(0, 0)] = 1 - 2 * u[0] * u[0];
     M[I(0, 1)] = 2 * u[0] * u[1];
@@ -422,15 +406,13 @@ static int reflection (lua_State *L)
 static int projection (lua_State *L)
 {
     array_Array *A, *B;
-    double *M, *u, *v;
+    double M[9], *u, *v;
 
     if (lua_gettop (L) == 1) {
 	A = array_checkcompatible (L, 1,
                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                    ARRAY_TDOUBLE, 1, 3);
 	u = A->values.doubles;
-
-	M = malloc (9 * sizeof (double));
 
 	M[I(0, 0)] = u[0] * u[0]; M[I(0, 1)] = u[0] * u[1]; M[I(0, 2)] = u[0] * u[2];
 	M[I(1, 0)] = M[I(0, 1)]; M[I(1, 1)] = u[1] * u[1]; M[I(1, 2)] = u[1] * u[2];
@@ -445,8 +427,6 @@ static int projection (lua_State *L)
 
 	u = A->values.doubles;
 	v = B->values.doubles;
-
-	M = malloc (9 * sizeof (double));
 
         M[I(0, 0)] = v[0] * v[0] + u[0] * u[0];
 	M[I(0, 1)] = v[0] * v[1] + u[0] * u[1];
@@ -469,9 +449,7 @@ static int projection (lua_State *L)
 static int rotation (lua_State *L)
 {
     array_Array *array;
-    double *M;
-
-    M = malloc (9 * sizeof (double));
+    double M[9];
 
     if ((array = array_testcompatible (L, 1,
                                        ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
@@ -533,8 +511,6 @@ static int rotation (lua_State *L)
 	    M[I(1, 0)] = s; M[I(1, 1)] = c; M[I(1, 2)] = 0; 
 	    M[I(2, 0)] = 0; M[I(2, 1)] = 0; M[I(2, 2)] = 1;
 	} else {
-	    free(M);
-
 	    lua_pushstring (L, "Invalid rotation axis.");
 	    lua_error (L);
 	}
@@ -563,8 +539,6 @@ static int rotation (lua_State *L)
 	M[I(2, 1)] = u[2] * u[1] * c_1 + u[0] * s;
 	M[I(2, 2)] = c + u[2] * u[2] * c_1;
     } else {
-	free(M);
-
 	lua_pushstring (L, "Invalid rotation argument combination.");
 	lua_error (L);
     }

@@ -1247,7 +1247,6 @@ static int sampler_index(lua_State *L)
     return 1;
 }
 
-
 @implementation Racetrack
 
 -(void) init

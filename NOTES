@@ -20,6 +20,11 @@ Techne can be configured for cross-compiling like this:
 
 LUA_CFLAGS='-I/usr/local/mingw/include' LUA_LIBS='-L/usr/local/mingw/lib -llua -lm' MHD_CFLAGS='-I/usr/local/mingw/include' MHD_LIBS='-L/usr/local/mingw/lib -lmicrohttpd' ./configure --build=x86_64-linux-gnu --host=i686-pc-mingw32
 
+Nodes with static data
+======================
+
+Nodes that need to have part of their configuration set beforehand and not subject to change must do so through a mold node.  This should read in a table with the static configuration on init and provide constructor functions like a regular module.  On free all static data should be freed.  Every node constructed by the moold should expect to find a the userdata of the mold node at the top of the stach from which it can copy the static configuration and to which it should make a reference so as to prevent its premature collection.
+
 TODO (eventually):
 ==================
 
@@ -31,11 +36,12 @@ TODO (eventually):
 TODO (ASAP):
 ============
 
-* Need debug meshes for the following items (remeber to delete traverse methods):
-  - Plane
-  - Racetrack
-
 * Fix the chain node to properly reflect the velocity when the run changes.
 * Add a Lua texture object wrapper.
-* Replace lua_rawgeti and lua_istable in all places accepting table data with
-  lua_gettable and !lua_isnil.
+* Replace state getters in all nodes that have them with individual read-only
+  attributes.
+* Figure out how to avoid having to write things such as
+  topography.elevationMold {...}.
+* Adapt the Racetrack node to the mold node approach.
+* Figure out how to handle sampling the elevation data for contact detection.
+* Add ElevationShading and ElevationBody nodes.

@@ -14,52 +14,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-
 #include <lua.h>
 #include <lauxlib.h>
 
-#include "gl.h"
-
 #include "techne.h"
-#include "flat.h"
-#include "shader.h"
+#include "elevation.h"
 
-static Shader *mold;
-static int reference;
-
-@implementation Flat
--(void)init
+int luaopen_topography_core (lua_State *L)
 {
-#include "glsl/flat_vertex.h"	
-#include "glsl/flat_fragment.h"	
-    
-    /* If this is the first instance create the program. */
+    Class classes[] = {[ElevationMold class], NULL};
 
-    if (!mold) {
-	mold = [Shader alloc];
-        
-        [mold init];
+    t_exportnodes (L, classes);
 
-	[mold addSource: glsl_flat_vertex for: VERTEX_STAGE];
-	[mold addSource: glsl_flat_fragment for: FRAGMENT_STAGE];
-	[mold link];
-
-	reference = luaL_ref (_L, LUA_REGISTRYINDEX);
-    }
-    
-    [self initFrom: mold];
+    return 1;
 }
-
--(void) draw
-{
-    glEnable (GL_CULL_FACE);
-    glEnable (GL_DEPTH_TEST);
-    
-    [super draw];
-
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_CULL_FACE);
-}
-
-@end

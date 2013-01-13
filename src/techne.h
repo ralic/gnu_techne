@@ -52,10 +52,12 @@ void t_reset_pool (void *p);
 void t_load_projection (float *matrix);
 void t_push_projection (float *matrix);
 void t_pop_projection ();
+const float *t_get_projection();
 
 void t_load_modelview (float *matrix, t_Enumerated mode);
 void t_push_modelview (float *matrix, t_Enumerated mode);
 void t_pop_modelview ();
+const float *t_get_modelview();
 
 int luaopen_moremath (lua_State *L);
 

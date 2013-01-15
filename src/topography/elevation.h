@@ -25,7 +25,7 @@
 #include "shape.h"
 #include "body.h"
 
-@interface ElevationMold: Node {
+@interface Elevation: Node {
 @public
     roam_Tileset tileset;
 

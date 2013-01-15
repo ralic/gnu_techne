@@ -22,7 +22,7 @@
 
 int luaopen_topography_core (lua_State *L)
 {
-    Class classes[] = {[ElevationMold class], NULL};
+    Class classes[] = {[Elevation class], NULL};
 
     t_exportnodes (L, classes);
 

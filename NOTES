@@ -40,7 +40,5 @@ TODO (ASAP):
 * Add a Lua texture object wrapper.
 * Replace state getters in all nodes that have them with individual read-only
   attributes.
-* Figure out how to avoid having to write things such as
-  topography.elevationMold {...}.
 * Adapt the Racetrack node to the mold node approach.
 * Add an ElevationShading node.

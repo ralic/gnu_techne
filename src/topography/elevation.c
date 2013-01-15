@@ -41,7 +41,7 @@ static int construct(lua_State *L)
     return 1;
 }
 
-@implementation ElevationMold
+@implementation Elevation
 
 -(void) init
 {
@@ -311,7 +311,7 @@ static int construct(lua_State *L)
 
 -(void) init
 {
-    ElevationMold *mold;
+    Elevation *mold;
 
     /* Make a reference to the mold to make sure it's not
      * collected. */
@@ -444,7 +444,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 -(void) init
 {
     roam_Tileset *tiles;
-    ElevationMold *mold;
+    Elevation *mold;
 
     /* Make a reference to the mold to make sure it's not
      * collected. */

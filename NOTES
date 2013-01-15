@@ -42,3 +42,4 @@ TODO (ASAP):
   attributes.
 * Adapt the Racetrack node to the mold node approach.
 * Add an ElevationShading node.
+* Figure out how to handle drawing of the ElevationShape node.

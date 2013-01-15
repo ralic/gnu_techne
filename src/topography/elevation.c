@@ -23,6 +23,7 @@
 #include "gl.h"
 
 #include "array/array.h"
+#include "structures.h"
 #include "techne.h"
 #include "algebra.h"
 #include "elevation.h"
@@ -39,6 +40,24 @@ static int construct(lua_State *L)
     t_configurenode (_L, 1);
 
     return 1;
+}
+
+static dReal heightfield_data_callback (void *data, int x, int z)
+{
+    roam_Tileset *tiles;
+    ElevationBody *self = data;
+    double h;
+
+    /* The sign of the x coordinate needs to be flipped.
+       See comment about heightfield frames in ODE and
+       Techne below. */
+
+    tiles = self->tileset;
+    look_up_sample (tiles, (1 << tiles->depth) * tiles->size[0] - x, z, &h, NULL);
+    
+    /* printf ("%d, %d => %f\n", x, z, h); */
+    
+    return h;
 }
 
 @implementation Elevation
@@ -311,6 +330,7 @@ static int construct(lua_State *L)
 
 -(void) init
 {
+    shape_Buffer *b;
     Elevation *mold;
 
     /* Make a reference to the mold to make sure it's not
@@ -319,10 +339,32 @@ static int construct(lua_State *L)
     mold = t_tonode (_L, -1);
     self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
     
-    [super init];
+    [super initWithMode: GL_TRIANGLES];
     
     self->context.tileset = &mold->tileset;
+    self->context.target = 5000;
+
+    /* Create the vertex buffer. */
+
+    b = malloc (sizeof (shape_Buffer));
+    b->key = strdup("positions");
+
+    glGenBuffers(1, &b->name);
     
+    b->type = ARRAY_TFLOAT;
+    b->size = 3;
+    b->length = 9 * self->context.target * sizeof(float);
+
+    glBindBuffer (GL_ARRAY_BUFFER, b->name);
+    glBufferData (GL_ARRAY_BUFFER, b->length, NULL,
+                  GL_STREAM_DRAW);
+
+    self->vertices = malloc(b->length);
+
+    /* Link in the buffer. */
+	
+    t_single_link_at_head(b, &self->buffers);
+
     /* Create the base mesh.  */
     
     switch_to_context(&self->context);
@@ -381,16 +423,30 @@ static int construct(lua_State *L)
 
 -(void) _set_target
 {
+    shape_Buffer *b;
+
     self->context.target = lua_tonumber (_L, 3);
+
+    /* Update the vertex buffer size. */
+
+    b = self->buffers;
+    b->length = 9 * self->context.target * sizeof(float);
+
+    glBindBuffer (GL_ARRAY_BUFFER, b->name);
+    glBufferData (GL_ARRAY_BUFFER, b->length, NULL,
+                  GL_STREAM_DRAW);
+
+    self->vertices = realloc(self->vertices, b->length);
 }
 
 -(void) draw
 {
+    shape_Buffer *b;
     roam_Tileset *tiles;
 
+    /* [super draw]; */
+    
     tiles = self->context.tileset;
-
-    [super draw];
 
     {
         float M[16] = {tiles->resolution[0], 0, 0, 0,
@@ -410,34 +466,25 @@ static int construct(lua_State *L)
         t_load_modelview (T, T_MULTIPLY);
     }
     
-    glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
+    /* glPolygonMode (GL_FRONT_AND_BACK, GL_LINE); */
 
     switch_to_context(&self->context);
     optimize_geometry();
-    draw_geometry();
 
+    draw_geometry(self->vertices);
+
+    b = self->buffers;
+    glBindBuffer (GL_ARRAY_BUFFER, b->name);
+    glBufferData (GL_ARRAY_BUFFER, b->length, NULL, GL_STREAM_DRAW);
+    glBufferData (GL_ARRAY_BUFFER, b->length, self->vertices, GL_STREAM_DRAW);
+
+    glBindVertexArray(self->name);
+    glDrawArrays (self->mode, 0, 9 * self->context.drawn);
+    
     t_pop_modelview ();
 }
 
 @end
-
-static dReal heightfield_data_callback (void *data, int x, int z)
-{
-    roam_Tileset *tiles;
-    ElevationBody *self = data;
-    double h;
-
-    /* The sign of the x coordinate needs to be flipped.
-       See comment about heightfield frames in ODE and
-       Techne below. */
-
-    tiles = self->tileset;
-    look_up_sample (tiles, (1 << tiles->depth) * tiles->size[0] - x, z, &h, NULL);
-    
-    /* printf ("%d, %d => %f\n", x, z, h); */
-    
-    return h;
-}
 
 @implementation ElevationBody
 

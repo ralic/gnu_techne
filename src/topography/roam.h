@@ -76,7 +76,7 @@ typedef struct {
     unsigned short **samples;
     unsigned short **bounds;
     double *scales, *offsets;
-    GLuint *imagery;
+    unsigned int *imagery;
     int *orders;
 
     int size[2], depth;
@@ -89,7 +89,9 @@ typedef struct {
     struct block *pools[2];
     
     struct diamond *queues[2][QUEUE_SIZE];
-    struct triangle *(*roots)[2];    
+    struct triangle *(*roots)[2];
+
+    float *buffer;
     
     int blocks[2], chunks[2], queued[2];
     int triangles, diamonds, culled, visible, drawn;
@@ -132,7 +134,7 @@ typedef struct triangle roam_Triangle;
 typedef struct diamond roam_Diamond;
 
 void look_up_sample(roam_Tileset *tiles, int i, int j, double *h, double *e);
-void draw_geometry();
+void draw_geometry(float *buffer);
 void optimize_geometry();
 void free_mesh();
 void *allocate_mesh();

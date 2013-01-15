@@ -40,6 +40,7 @@
 @interface ElevationShape: Shape {
 @public
     roam_Context context;
+    float *vertices;
     int reference;
 }
 

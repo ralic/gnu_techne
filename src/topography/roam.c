@@ -14,8 +14,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
+#include <math.h>
+
+#include "gl.h"
+
+#include "algebra.h"
+#include "techne.h"
 #include "roam.h"
-#include "elevation.h"
 
 #define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
@@ -1073,6 +1079,12 @@ void optimize_geometry()
 
     } while (d_0 != d && (overlap > 1 || abs(delta) > 5));
 
+    while (context->visible > context->target) {
+        d = context->queues[1][context->minimum];
+
+        merge_triangle_pair(d->triangle);
+    }
+
     /* for (i = 0 ; i < context->size[0] * context->size[1] ; i += 1) { */
     /* 	test_subtree(context->roots[i][0]); */
     /* 	test_subtree(context->roots[i][1]); */
@@ -1088,65 +1100,39 @@ static void draw_subtree(roam_Triangle *n)
 	} else {
 	    roam_Triangle *p;
 	    roam_Diamond *d, *e;
-	    int i;
+            float *b;
+	    int i, k;
 
 	    p = n->parent;
 	    d = n->diamond;
 	    e = p->diamond;
 	    i = is_primary(n);
 
-#if 0
-	    {
-		int i;
-		
-		glColor3f(1, 1, 1);
-
-		for (i = 0 ; i < 3 ; i += 1) {
-		    if(n->index != n->neighbors[i]->index) {
-			glColor3f(1, 0, 0);
-		    }
-		}
-	    }
-
-	    if(is_flagged(n, LOCKED)) {
-		glColor3f(0, 1, 0);
-	    } else {
-		glColor3f(1, 1, 1);
-	    }
-#endif    
-
-	    glVertex3fv(d->vertices[!i]);
-	    glVertex3fv(d->vertices[i]);
-	    glVertex3fv(e->center);
+            b = context->buffer;
+            k = context->drawn;
+            
+            memcpy (b + 9 * k, d->vertices[!i], 3 * sizeof(float));
+            memcpy (b + 9 * k + 3, d->vertices[i], 3 * sizeof(float));
+            memcpy (b + 9 * k + 6, e->center, 3 * sizeof(float));
 
 	    context->drawn += 1;
 	}
     }
 }
     
-void draw_geometry()
+void draw_geometry(float *buffer)
 {
     roam_Tileset *tiles;
     int i, j;
-    float q;
 
     tiles = context->tileset;
-    
-    /* Set up the GL state and draw. */  
 
-    q = ldexpf(1, -tiles->depth);
-    
-    glActiveTexture(GL_TEXTURE0);
-
+    context->buffer = buffer;
     context->drawn = 0;
 
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {
 	    int k = i * tiles->size[0] + j;
-	    
-	    glTexGenfv(GL_S, GL_OBJECT_PLANE, (float[4]){q, 0, 0, -j});
-	    glTexGenfv(GL_T, GL_OBJECT_PLANE, (float[4]){0, q, 0, -i});
-	    glBindTexture(GL_TEXTURE_2D, tiles->imagery[k]);
 
 	    glBegin(GL_TRIANGLES);
 	
@@ -1157,7 +1143,7 @@ void draw_geometry()
 	}
     }
     
-#if 1
+#if 0
     printf("%d triangles, %d diamonds, %d culled, %d visible, %d drawn\n"
            "Qs_max = %d, Qm_min = %d, |Qs| = %d, |Qm| = %d\n",
            context->triangles, context->diamonds,
@@ -1176,8 +1162,6 @@ void *allocate_mesh()
 
     tiles = context->tileset;
     
-    context->target = 5000;
-   
     context->triangles = 0;
     context->diamonds = 0;
     context->culled = 0;

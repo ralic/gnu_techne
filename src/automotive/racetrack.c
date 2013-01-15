@@ -26,9 +26,6 @@
 #include "topography/elevation.h"
 #include "wheel.h"
 
-void look_up_sample(elevation_Tileset *tiles,
-                    int i, int j, double *h, double *e);
-
 static int constructbody(lua_State *L)
 {
     Racetrack *track;
@@ -903,7 +900,7 @@ static int collideTrackWithWheel (dGeomID track,
 static int collideHeightfieldWithWheel (dGeomID field,
 					dGeomID wheel,
 					dContactGeom *contact,
-                                        elevation_Tileset *tiles)
+                                        roam_Tileset *tiles)
 {
     struct wheeldata *wheeldata;
 

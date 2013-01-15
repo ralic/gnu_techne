@@ -25,20 +25,9 @@
 #include "shape.h"
 #include "body.h"
 
-typedef struct {
-    unsigned short **samples;
-    unsigned short **bounds;
-    double *scales, *offsets;
-    GLuint *imagery;
-    int *orders;
-
-    int size[2], depth;
-    double resolution[2];
-} elevation_Tileset;
-
 @interface ElevationMold: Node {
 @public
-    elevation_Tileset tileset;
+    roam_Tileset tileset;
 
     int *references;
 }
@@ -50,20 +39,8 @@ typedef struct {
 
 @interface ElevationShape: Shape {
 @public
-    elevation_Tileset *tileset;
-
+    roam_Context context;
     int reference;
-
-    struct block *pools[2];
-    
-    struct diamond *queues[2][QUEUE_SIZE];
-    struct triangle *(*roots)[2];    
-    
-    int blocks[2], chunks[2], queued[2];
-    int triangles, diamonds, culled, visible, drawn;
-    int minimum, maximum;
-
-    int target;
 }
 
 -(int) _get_target;
@@ -75,7 +52,7 @@ typedef struct {
 
 @interface ElevationBody: Body {
 @public
-    elevation_Tileset *tileset;
+    roam_Tileset *tileset;
     dHeightfieldDataID data;
     int reference;
 }

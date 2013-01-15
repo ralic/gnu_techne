@@ -72,6 +72,32 @@
                          is_leaf((d)->triangle->neighbors[2]->children[0]) && \
                          is_leaf((d)->triangle->neighbors[2]->children[1]))
 
+typedef struct {
+    unsigned short **samples;
+    unsigned short **bounds;
+    double *scales, *offsets;
+    GLuint *imagery;
+    int *orders;
+
+    int size[2], depth;
+    double resolution[2];
+} roam_Tileset;
+
+typedef struct {
+    roam_Tileset *tileset;
+
+    struct block *pools[2];
+    
+    struct diamond *queues[2][QUEUE_SIZE];
+    struct triangle *(*roots)[2];    
+    
+    int blocks[2], chunks[2], queued[2];
+    int triangles, diamonds, culled, visible, drawn;
+    int minimum, maximum;
+
+    int target;
+} roam_Context;
+
 struct block {
     struct block *next;
     
@@ -100,11 +126,16 @@ struct diamond {
     char level, flags;
 };
 
-typedef struct context Context;
-typedef struct chunk Chunk;
-typedef struct block Block;
-typedef struct triangle Triangle;
-typedef struct diamond Diamond;
-typedef struct environment Environment;
+typedef struct chunk roam_Chunk;
+typedef struct block roam_Block;
+typedef struct triangle roam_Triangle;
+typedef struct diamond roam_Diamond;
+
+void look_up_sample(roam_Tileset *tiles, int i, int j, double *h, double *e);
+void draw_geometry();
+void optimize_geometry();
+void free_mesh();
+void *allocate_mesh();
+void switch_to_context(roam_Context *new);
 
 #endif

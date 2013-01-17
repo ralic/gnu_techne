@@ -1120,7 +1120,7 @@ static void draw_subtree(roam_Triangle *n)
     }
 }
     
-void draw_geometry(float *buffer)
+void draw_geometry(float *buffer, int *ranges)
 {
     roam_Tileset *tiles;
     int i, j;
@@ -1132,14 +1132,12 @@ void draw_geometry(float *buffer)
 
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {
-	    int k = i * tiles->size[0] + j;
+	    int k = i * tiles->size[1] + j;
 
-	    glBegin(GL_TRIANGLES);
-	
 	    draw_subtree(context->roots[k][0]);
 	    draw_subtree(context->roots[k][1]);
-	    
-	    glEnd();
+
+            ranges[k] = context->drawn;
 	}
     }
     

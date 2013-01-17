@@ -52,7 +52,7 @@ typedef enum {
                  withSource: (const char *)declaration;
 -(void) addSource: (const char *) source for: (shader_Stage)stage;
 -(void) link;
--(void)initFrom: (Shader *) mold;
+-(void) initFrom: (Shader *) mold;
 
 @end
 

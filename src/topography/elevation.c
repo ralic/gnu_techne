@@ -26,8 +26,11 @@
 #include "structures.h"
 #include "techne.h"
 #include "algebra.h"
+#include "shader.h"
 #include "elevation.h"
 #include "roam.h"
+
+static Shader *shader;
 
 static int construct(lua_State *L)
 {
@@ -122,11 +125,11 @@ static dReal heightfield_data_callback (void *data, int x, int z)
                                                sizeof (unsigned short *));
     tiles->orders = (int *)calloc (tiles->size[0] * tiles->size[1],
                                    sizeof (int));
-    tiles->imagery = (GLuint *)calloc (tiles->size[0] * tiles->size[1],
-                                       sizeof (GLuint));
-    tiles->scales = (double*)calloc (tiles->size[0] * tiles->size[1],
+    tiles->imagery = (unsigned int *)calloc (tiles->size[0] * tiles->size[1],
+                                             sizeof (unsigned int));
+    tiles->scales = (double *)calloc (tiles->size[0] * tiles->size[1],
                                      sizeof (double));
-    tiles->offsets = (double*)calloc (tiles->size[0] * tiles->size[1],
+    tiles->offsets = (double *)calloc (tiles->size[0] * tiles->size[1],
                                       sizeof (double));
 
     glGenTextures(tiles->size[0] * tiles->size[1], tiles->imagery);
@@ -145,7 +148,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
             lua_rawgeti(_L, -1, i + 1);
         
             if (lua_istable (_L, -1)) {
-                array_Array *heights, *errors;//, *pixels;
+                array_Array *heights, *errors, *pixels;
                 double c, delta;
 
                 /* The height samples. */
@@ -155,6 +158,11 @@ static dReal heightfield_data_callback (void *data, int x, int z)
                 heights = array_testcompatible (_L, -1,
                                                 ARRAY_TYPE | ARRAY_RANK,
                                                 ARRAY_TUSHORT, 2);
+
+                if (!heights) {
+                    t_print_error("Array specified for elevation data is incompatible.\n");
+                    abort();
+                }
 
                 if (heights->size[0] != heights->size[1]) {
                     t_print_error("Elevation tiles must be rectangular.\n");
@@ -170,6 +178,11 @@ static dReal heightfield_data_callback (void *data, int x, int z)
                 errors = array_testcompatible (_L, -1,
                                                ARRAY_TYPE | ARRAY_RANK,
                                                ARRAY_TUSHORT, 2);
+
+                if (!errors) {
+                    t_print_error("Array specified for elevation error bounds is incompatible.\n");
+                    abort();
+                }
 
                 if (errors->size[0] != errors->size[1]) {
                     t_print_error("Elevation tiles must be rectangular.\n");
@@ -225,22 +238,31 @@ static dReal heightfield_data_callback (void *data, int x, int z)
                 tiles->offsets[i] = delta;
 
                 /* The imagery. */
-#if 0	    
-                lua_rawgeti (_L, 3, 3);
 
-                if (lua_istable (_L, -1)) {
+                lua_rawgeti (_L, -1, 3);
+
+                if (!lua_isnil (_L, -1)) {
                     pixels = array_testcompatible (_L, -1,
                                                    ARRAY_TYPE | ARRAY_RANK,
-                                                   ARRAY_TNUCHAR, 2);
+                                                   ARRAY_TNUCHAR, 3);
+
+                    if (!pixels) {
+                        t_print_error("Array specified for elevation imagery is incompatible.\n");
+                        abort();
+                    }
+
+                    if (pixels->size[2] != 3) {
+                        t_print_error("Elevation imagery data must be specified in RGB format.\n");
+                        abort();
+                    }
 
                     /* Create the texture object. */
 	
                     glGetError();
                     glBindTexture(GL_TEXTURE_2D, tiles->imagery[i]);
-	
+                    
                     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                    glPixelStorei(GL_UNPACK_ROW_LENGTH, pixels->size[1]);
-
+                    
                     glTexImage2D (GL_TEXTURE_2D, 0,
                                   GL_RGB,
                                   pixels->size[0], pixels->size[1], 0,
@@ -250,7 +272,8 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
                     glGenerateMipmap (GL_TEXTURE_2D);
 
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                                    GL_LINEAR);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                                     GL_LINEAR_MIPMAP_LINEAR);
 
@@ -258,13 +281,9 @@ static dReal heightfield_data_callback (void *data, int x, int z)
                                     GL_MIRRORED_REPEAT);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
                                     GL_MIRRORED_REPEAT);
-
-                    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-                    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
                 }
 
                 lua_pop (_L, 1);
-#endif    
             }
 
             lua_pop (_L, 1);
@@ -284,6 +303,19 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 }
 
 -(void) _set_shape
+{
+}
+
+-(int) _get_shader
+{
+    lua_pop (_L, 1);
+    lua_pushlightuserdata(_L, [ElevationShader class]);
+    lua_pushcclosure(_L, construct, 2);
+    
+    return 1;
+}
+
+-(void) _set_shader
 {
 }
 
@@ -330,6 +362,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
 -(void) init
 {
+    roam_Tileset *tiles;
     shape_Buffer *b;
     Elevation *mold;
 
@@ -340,9 +373,13 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
     
     [super initWithMode: GL_TRIANGLES];
-    
-    self->context.tileset = &mold->tileset;
+
+    tiles = &mold->tileset;
+    self->context.tileset = tiles;
     self->context.target = 5000;
+
+    self->ranges = (int *)calloc (tiles->size[0] * tiles->size[1],
+                                  sizeof (int));
 
     /* Create the vertex buffer. */
 
@@ -363,7 +400,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
     /* Link in the buffer. */
 	
-    t_single_link_at_head(b, &self->buffers);
+    self->buffer = b;
 
     /* Create the base mesh.  */
     
@@ -377,8 +414,35 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
     switch_to_context(&self->context);
     free_mesh();
+
+    free (self->ranges);
         
     [super free];
+}
+
+-(void) meetParent: (Shader *)parent
+{
+    shape_Buffer *b;
+    int i;
+
+    if (![parent isKindOf: [Shader class]]) {
+	t_print_warning("%s node has no shader parent.\n",
+			[self name]);
+	
+	return;
+    }
+
+    b = self->buffer;
+    i = glGetAttribLocation(parent->name, b->key);
+
+    /* Bind the VBO into the VAO. */
+    
+    glBindVertexArray(self->name);
+    glVertexAttribPointer(i, b->size, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glEnableVertexAttribArray(i);
+
+    self->locations.scale = glGetUniformLocation(parent->name, "scale");
+    self->locations.offset = glGetUniformLocation(parent->name, "offset");
 }
 
 -(int) _get_target
@@ -429,7 +493,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
     /* Update the vertex buffer size. */
 
-    b = self->buffers;
+    b = self->buffer;
     b->length = 9 * self->context.target * sizeof(float);
 
     glBindBuffer (GL_ARRAY_BUFFER, b->name);
@@ -443,8 +507,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 {
     shape_Buffer *b;
     roam_Tileset *tiles;
-
-    /* [super draw]; */
+    int i, j;
     
     tiles = self->context.tileset;
 
@@ -452,18 +515,12 @@ static dReal heightfield_data_callback (void *data, int x, int z)
         float M[16] = {tiles->resolution[0], 0, 0, 0,
                        0, tiles->resolution[1], 0, 0,
                        0, 0, 1, 0,
-                       0, 0, 0, 1};
-    
-        float T[16] = {1, 0, 0, 0,
-                       0, 1, 0, 0,
-                       0, 0, 1, 0,
-                       -(1 << (tiles->depth - 1)) * tiles->size[0],
-                       -(1 << (tiles->depth - 1)) * tiles->size[1],
+                       -(1 << (tiles->depth - 1)) * tiles->size[0] * tiles->resolution[0],
+                       -(1 << (tiles->depth - 1)) * tiles->size[1] * tiles->resolution[1],
                        0, 1};
     
         t_push_modelview (self->matrix, T_MULTIPLY);
         t_load_modelview (M, T_MULTIPLY);
-        t_load_modelview (T, T_MULTIPLY);
     }
     
     /* glPolygonMode (GL_FRONT_AND_BACK, GL_LINE); */
@@ -471,17 +528,38 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     switch_to_context(&self->context);
     optimize_geometry();
 
-    draw_geometry(self->vertices);
+    draw_geometry(self->vertices, self->ranges);
 
-    b = self->buffers;
+    /* Update the vertex buffer object. */
+    
+    b = self->buffer;
+    
     glBindBuffer (GL_ARRAY_BUFFER, b->name);
     glBufferData (GL_ARRAY_BUFFER, b->length, NULL, GL_STREAM_DRAW);
     glBufferData (GL_ARRAY_BUFFER, b->length, self->vertices, GL_STREAM_DRAW);
 
+    /* Prepare to draw. */
+    
     glBindVertexArray(self->name);
-    glDrawArrays (self->mode, 0, 9 * self->context.drawn);
+    glUniform1f(self->locations.scale, ldexpf(1, -tiles->depth));
+    glActiveTexture(GL_TEXTURE0);
+    
+    for (i = 0 ; i < tiles->size[0] ; i += 1) {    
+	for (j = 0 ; j < tiles->size[1] ; j += 1) {
+	    int l, k = i * tiles->size[1] + j;
+
+            glUniform2f(self->locations.offset, j, i);
+            glBindTexture(GL_TEXTURE_2D, tiles->imagery[k]);
+
+            l = k > 0 ? self->ranges[k - 1] : 0;
+            
+            glDrawArrays (self->mode, 3 * l, 3 * (self->ranges[k] - l));
+        }
+    }
     
     t_pop_modelview ();
+    
+    [super draw];
 }
 
 @end
@@ -589,6 +667,56 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     R[11] = 0;
 
     dGeomSetRotation (self->geom, R);
+}
+
+@end
+
+@implementation ElevationShader
+
+-(void) init
+{
+#include "glsl/elevation_vertex.h"	
+#include "glsl/elevation_fragment.h"	
+    
+    Elevation *mold;
+    
+    /* Make a reference to the mold to make sure it's not
+     * collected. */
+
+    mold = t_tonode (_L, -1);
+    self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+
+    /* If this is the first instance create the program. */
+
+    if (!shader) {
+	shader = [Shader alloc];
+        
+        [shader init];
+
+	[shader addSource: glsl_elevation_vertex for: VERTEX_STAGE];
+	[shader addSource: glsl_elevation_fragment for: FRAGMENT_STAGE];
+	[shader link];
+
+	reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+    }
+    
+    [super initFrom: shader];
+
+    self->tileset = &mold->tileset;
+
+    assert (self->samplers_n == 1);
+    self->samplers[0].texture = 0;
+}
+
+-(void) draw
+{
+    glEnable (GL_CULL_FACE);
+    glEnable (GL_DEPTH_TEST);
+    
+    [super draw];
+
+    glDisable (GL_DEPTH_TEST);
+    glDisable (GL_CULL_FACE);
 }
 
 @end

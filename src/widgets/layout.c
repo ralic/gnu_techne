@@ -413,7 +413,7 @@ static int reference;
 	reference = luaL_ref (_L, LUA_REGISTRYINDEX);
     }
     
-    [self initFrom: mold];
+    [super initFrom: mold];
 
     assert (self->samplers_n == 1);
     self->samplers[0].texture = texture;

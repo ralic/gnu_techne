@@ -640,7 +640,8 @@ static int uniforms_iterator(lua_State *L)
             /* Count active samplers, which (according to convention)
              * are the only uniforms allowed in the default block. */
             
-	    if (indices[i] == GL_INVALID_INDEX) {
+	    if (indices[i] == GL_INVALID_INDEX &&
+                types[i] == GL_SAMPLER_2D) {
                 list[n] = i;
                 n += 1;
 	    }

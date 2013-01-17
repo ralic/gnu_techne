@@ -12,8 +12,9 @@ bin_SCRIPTS = techne
 
 # Support programs
 
-BUILT_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h	\
-		glsl/layout_vertex.h glsl/layout_fragment.h	\
+BUILT_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h			\
+		glsl/layout_vertex.h glsl/layout_fragment.h		\
+		glsl/elevation_vertex.h glsl/elevation_fragment.h	\
 		glsl/transform_block.h glsl/preamble.h gl.h glx.h
 SUFFIXES = .glsl.c
 $(BUILT_SOURCES): glsl/stringify

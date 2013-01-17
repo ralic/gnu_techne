@@ -134,7 +134,7 @@ typedef struct triangle roam_Triangle;
 typedef struct diamond roam_Diamond;
 
 void look_up_sample(roam_Tileset *tiles, int i, int j, double *h, double *e);
-void draw_geometry(float *buffer);
+void draw_geometry(float *buffer, int *ranges);
 void optimize_geometry();
 void free_mesh();
 void *allocate_mesh();

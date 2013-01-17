@@ -24,6 +24,7 @@
 #include "roam.h"
 #include "shape.h"
 #include "body.h"
+#include "shader.h"
 
 @interface Elevation: Node {
 @public
@@ -39,9 +40,14 @@
 
 @interface ElevationShape: Shape {
 @public
+    struct {
+        unsigned int scale, offset;
+    } locations;
+
     roam_Context context;
+    shape_Buffer *buffer;
     float *vertices;
-    int reference;
+    int reference, *ranges;
 }
 
 -(int) _get_target;
@@ -55,6 +61,14 @@
 @public
     roam_Tileset *tileset;
     dHeightfieldDataID data;
+    int reference;
+}
+
+@end
+
+@interface ElevationShader: Shader {
+@public
+    roam_Tileset *tileset;
     int reference;
 }
 

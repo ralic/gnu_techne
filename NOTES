@@ -41,5 +41,6 @@ TODO (ASAP):
 * Replace state getters in all nodes that have them with individual read-only
   attributes.
 * Adapt the Racetrack node to the mold node approach.
-* Add an ElevationShading node.
-* Figure out how to handle drawing of the ElevationShape node.
+* Consider adapting the Shader node to the mold node approach.
+* Consider making the tiles Lua table 2D instead of explicit size specification.
+* Consider getting rid of switch_to_context().

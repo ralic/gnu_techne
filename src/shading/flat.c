@@ -48,7 +48,7 @@ static int reference;
 	reference = luaL_ref (_L, LUA_REGISTRYINDEX);
     }
     
-    [self initFrom: mold];
+    [super initFrom: mold];
 }
 
 -(void) draw

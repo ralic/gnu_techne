@@ -515,15 +515,6 @@ static int respond (void *cls,
 	    lua_gettable (_L, -2);
 	    lua_replace (_L, -2);
 
-	    if (lua_istable(_L, -1)) {
-		lua_rawgeti (_L, -1, 1);
-		lua_rawgeti (_L, -2, 2);
-		lua_remove (_L, -3);
-	    } else {
-		lua_pushliteral (_L, "text/html");
-		lua_insert (_L, -2);
-	    }
-
 	    if (lua_isfunction (_L, -1)) {
 		/* Call the supplied function passing method, url,
 		 * query parameters, unparseable post data and HTTP
@@ -537,10 +528,16 @@ static int respond (void *cls,
     
 		lua_pcall(_L, 5, 1, 0);
 
-		if (lua_type (_L, -1) != LUA_TSTRING) {
+		if (lua_isnil (_L, -1)) {
 		    lua_settop (_L, h_0);
 		    return MHD_YES;
 		}
+	    }
+
+	    if (lua_istable(_L, -1)) {
+		lua_rawgeti (_L, -1, 1);
+		lua_rawgeti (_L, -2, 2);
+		lua_remove (_L, -3);
 	    }
 	}
 

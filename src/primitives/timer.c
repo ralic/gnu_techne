@@ -98,14 +98,16 @@
     return 1;
 }
 
--(int) _get_state
+-(int) _get_count
 {
-    lua_newtable (_L);
-
     lua_pushnumber (_L, self->count);
-    lua_rawseti (_L, -2, 1);
+
+    return 1;
+}
+
+-(int) _get_elapsed
+{
     lua_pushnumber (_L, self->elapsed);
-    lua_rawseti (_L, -2, 2);
 
     return 1;
 }
@@ -121,7 +123,12 @@
     self->tick = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 
--(void) _set_state
+-(void) _set_count
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_elapsed
 {
     T_WARN_READONLY;
 }

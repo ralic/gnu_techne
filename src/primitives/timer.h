@@ -32,10 +32,16 @@
 
 -(int) _get_period;
 -(int) _get_tick;
--(int) _get_state;
+
 -(void) _set_period;
 -(void) _set_tick;
--(void) _set_state;
+
+-(int) _get_count;
+-(int) _get_elapsed;
+
+-(void) _set_count;
+-(void) _set_elapsed;
+
 @end
 
 #endif

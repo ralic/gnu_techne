@@ -166,20 +166,41 @@
     return 1;
 }
 
--(int) _get_state
+-(int) _get_angles
 {
-    dReal state[4];
+    dReal state[2];
     int j;
     
     if (self->joint) {
 	state[0] = dJointGetUniversalAngle1 (self->joint);
 	state[1] = dJointGetUniversalAngle2 (self->joint);
-	state[2] = dJointGetUniversalAngle1Rate (self->joint);
-	state[3] = dJointGetUniversalAngle2Rate (self->joint);
 
 	lua_newtable (_L);
         
-	for(j = 0 ; j < 4 ; j += 1) {
+	for(j = 0 ; j < 2 ; j += 1) {
+	    lua_pushnumber (_L, state[j]);
+		
+	    lua_rawseti (_L, -2, j + 1);
+	}
+    } else {
+	lua_pushnil (_L);
+    }
+
+    return 1;
+}
+
+-(int) _get_rates
+{
+    dReal state[2];
+    int j;
+    
+    if (self->joint) {
+	state[0] = dJointGetUniversalAngle1Rate (self->joint);
+	state[1] = dJointGetUniversalAngle2Rate (self->joint);
+
+	lua_newtable (_L);
+        
+	for(j = 0 ; j < 2 ; j += 1) {
 	    lua_pushnumber (_L, state[j]);
 		
 	    lua_rawseti (_L, -2, j + 1);
@@ -366,7 +387,12 @@
     }
 }
 
--(void) _set_state
+-(void) _set_angles
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_rates
 {
     T_WARN_READONLY;
 }

@@ -32,14 +32,18 @@
 -(int) _get_motor;
 -(int) _get_stops;
 -(int) _get_tolerance;
--(int) _get_state;
 
 -(void) _set_axis;
 -(void) _set_anchor;
 -(void) _set_motor;
 -(void) _set_stops;
 -(void) _set_tolerance;
--(void) _set_state;
+
+-(int) _get_rate;
+-(int) _get_angle;
+
+-(void) _set_angle;
+-(void) _set_rate;
 
 @end
 

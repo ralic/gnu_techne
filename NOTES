@@ -37,5 +37,3 @@ TODO (ASAP):
 
 * Fix the chain node to properly reflect the velocity when the run changes.
 * Add a Lua texture object wrapper.
-* Replace lua_rawgeti and lua_istable in all places accepting table data with
-  lua_gettable and !lua_isnil.

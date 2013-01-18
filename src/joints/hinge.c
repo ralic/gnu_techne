@@ -135,21 +135,21 @@
     return 1;
 }
 
--(int) _get_state
+-(int) _get_angle
 {
-    dReal state[2];
-    int i;
-    
     if (self->joint) {
-	state[0] = dJointGetHingeAngle (self->joint);
-	state[1] = dJointGetHingeAngleRate (self->joint);
+        lua_pushnumber (_L, dJointGetHingeAngle (self->joint));
+    } else {
+	lua_pushnil (_L);
+    }
 
-	lua_newtable (_L);
-        
-	for(i = 0 ; i < 2 ; i += 1) {
-	    lua_pushnumber (_L, state[i]);
-	    lua_rawseti (_L, -2, i + 1);
-	}
+    return 1;
+}
+
+-(int) _get_rate
+{
+    if (self->joint) {
+        lua_pushnumber (_L, dJointGetHingeAngleRate (self->joint));
     } else {
 	lua_pushnil (_L);
     }
@@ -272,7 +272,12 @@
     dJointSetHingeParam (self->joint, dParamCFM, self->tolerance);
 }
 
--(void) _set_state
+-(void) _set_angle
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_rate
 {
     T_WARN_READONLY;
 }

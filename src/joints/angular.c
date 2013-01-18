@@ -183,7 +183,7 @@
     return 1;
 }
 
--(int) _get_state
+-(int) _get_angles
 {
     int j;
     
@@ -192,9 +192,20 @@
     for(j = 0 ; j < self->degrees ; j += 1) {
 	lua_pushnumber (_L, dJointGetAMotorAngle (self->joint, j));
 	lua_rawseti (_L, -2, j + 1);
-	    
-	lua_pushnumber (_L, 0/* dJointGetAMotorAngleRate (self->joint, j) */);
-	lua_rawseti (_L, -2, j + self->degrees + 1);
+    }
+
+    return 1;
+}
+
+-(int) _get_rates
+{
+    int j;
+    
+    lua_newtable (_L);
+
+    for(j = 0 ; j < self->degrees ; j += 1) {
+	lua_pushnumber (_L, dJointGetAMotorAngleRate (self->joint, j));
+	lua_rawseti (_L, -2, j + 1);
     }
 
     return 1;
@@ -376,7 +387,12 @@
     }
 }
 
--(void) _set_state
+-(void) _set_angles
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_rates
 {
     T_WARN_READONLY;
 }

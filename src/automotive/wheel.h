@@ -70,7 +70,6 @@ int dWheelClass;
 -(int) _get_moment;
 -(int) _get_relaxation;
 -(int) _get_resistance;
--(int) _get_state;
 -(int) _get_scaling;
 
 -(void) _set_elasticity;
@@ -81,8 +80,17 @@ int dWheelClass;
 -(void) _set_load;
 -(void) _set_relaxation;
 -(void) _set_resistance;
--(void) _set_state;
 -(void) _set_scaling;
+
+-(int) _get_camber;
+-(int) _get_slip;
+-(int) _get_sideslip;
+-(int) _get_dynamic;
+
+-(void) _set_camber;
+-(void) _set_slip;
+-(void) _set_sideslip;
+-(void) _set_dynamic;
 
 @end
 

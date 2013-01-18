@@ -45,7 +45,6 @@
 -(int) _get_thermal;
 -(int) _get_friction;
 -(int) _get_exchange;
--(int) _get_state;
 
 -(void) _set_axis;
 -(void) _set_anchor;
@@ -54,12 +53,17 @@
 -(void) _set_throttle;
 -(void) _set_displacement;
 -(void) _set_cylinders;
--(void) _set_state;
 -(void) _set_intake;
 -(void) _set_volumetric;
 -(void) _set_thermal;
 -(void) _set_friction;
 -(void) _set_exchange;
+
+-(int) _get_rate;
+-(int) _get_angle;
+
+-(void) _set_angle;
+-(void) _set_rate;
 
 @end
 

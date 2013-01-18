@@ -725,39 +725,38 @@ static dColliderFn * getCollider (int num)
     return 1;
 }
 
--(int) _get_state
+-(int) _get_camber
 {
-    lua_newtable (_L);
-
     lua_pushnumber (_L, self->gamma);
-    lua_rawseti (_L, -2, 1);
 
+    return 1;
+}
+
+-(int) _get_slip
+{
     lua_pushnumber (_L, self->kappa);
-    lua_rawseti (_L, -2, 2);
 
+    return 1;
+}
+
+-(int) _get_sideslip
+{
     lua_pushnumber (_L, self->beta_1);
-    lua_rawseti (_L, -2, 3);
- 
-    lua_pushnumber (_L, self->F_z);
-    lua_rawseti (_L, -2, 4);
- 
+
+    return 1;
+}
+
+-(int) _get_dynamic
+{
+    lua_createtable (_L, 4, 0);
     lua_pushnumber (_L, self->F_x);
-    lua_rawseti (_L, -2, 5);
- 
+    lua_rawseti (_L, -2, 1);
     lua_pushnumber (_L, self->F_y);
-    lua_rawseti (_L, -2, 6);
- 
+    lua_rawseti (_L, -2, 2);
+    lua_pushnumber (_L, self->F_z);
+    lua_rawseti (_L, -2, 3);
     lua_pushnumber (_L, self->M_z);
-    lua_rawseti (_L, -2, 7);
- 
-    lua_pushnumber (_L, self->F_x0);
-    lua_rawseti (_L, -2, 8);
- 
-    lua_pushnumber (_L, self->F_y0);
-    lua_rawseti (_L, -2, 9);
- 
-    lua_pushnumber (_L, self->M_z0);
-    lua_rawseti (_L, -2, 10);
+    lua_rawseti (_L, -2, 4);
 
     return 1;
 }
@@ -1075,29 +1074,6 @@ static dColliderFn * getCollider (int num)
     self->resistance = lua_tonumber (_L, 3);
 }
 
--(void) _set_state
-{
-    double one[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-	
-    lua_pushinteger(_L, 1);
-    lua_gettable (_L, 3);
-    self->gamma = lua_tonumber (_L, -1);
-	
-    lua_pushinteger(_L, 2);
-    lua_gettable (_L, 3);
-    self->kappa = lua_tonumber (_L, -1);
-	
-    lua_pushinteger(_L, 3);
-    lua_gettable (_L, 3);
-    self->beta = lua_tonumber (_L, -1);
-	
-    lua_pushinteger(_L, 4);
-    lua_gettable (_L, 3);
-    self->F_z = lua_tonumber (_L, -1);
-
-    [self evaluateWithStep: 0 andFactors: one];
-}
-
 -(void) _set_scaling
 {
     int i;
@@ -1111,6 +1087,43 @@ static dColliderFn * getCollider (int num)
 	lua_gettable (_L, 3);
 	data->lambda[i] = lua_tonumber (_L, -1);
 	lua_pop (_L, 1);
+    }
+}
+
+-(void) _set_camber
+{
+    double one[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+	
+    self->gamma = lua_tonumber (_L, 3);
+    [self evaluateWithStep: 0 andFactors: one];
+}
+
+-(void) _set_slip
+{
+    double one[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+	
+    self->kappa = lua_tonumber (_L, 3);
+    [self evaluateWithStep: 0 andFactors: one];
+}
+
+-(void) _set_sideslip
+{
+    double one[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+	
+    self->beta = lua_tonumber (_L, 3);
+    [self evaluateWithStep: 0 andFactors: one];
+}
+ 
+-(void) _set_dynamic
+{
+    double one[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+    if (!lua_isnil (_L, 3)) {
+        lua_rawgeti (_L, 3, 3);
+        self->F_z = lua_tonumber (_L, -1);
+        lua_pop (_L, 1);
+        
+        [self evaluateWithStep: 0 andFactors: one];
     }
 }
 

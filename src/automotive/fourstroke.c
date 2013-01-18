@@ -315,20 +315,21 @@
     return 1;
 }
 
--(int) _get_state
+-(int) _get_angle
 {
-    int i;
-    
     if (self->joint) {
-	self->state[0] = dJointGetHingeAngle (self->joint);
-	self->state[1] = dJointGetHingeAngleRate (self->joint);
+        lua_pushnumber (_L, dJointGetHingeAngle (self->joint));
+    } else {
+	lua_pushnil (_L);
+    }
 
-	lua_newtable (_L);
-        
-	for(i = 0 ; i < 9 ; i += 1) {
-	    lua_pushnumber (_L, self->state[i]);
-	    lua_rawseti (_L, -2, i + 1);
-	}
+    return 1;
+}
+
+-(int) _get_rate
+{
+    if (self->joint) {
+        lua_pushnumber (_L, dJointGetHingeAngleRate (self->joint));
     } else {
 	lua_pushnil (_L);
     }
@@ -410,13 +411,15 @@
     self->cylinders = lua_tointeger (_L, 3);
 }
 
--(void) _set_state
+-(void) _set_angle
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_rate
 {
     if (!lua_isnil (_L, 3)) {
-	lua_pushinteger (_L, 2);
-	lua_gettable (_L, 3);
-	self->benchspeed = lua_tonumber (_L, -1);
-	lua_pop(_L, 1);
+	self->benchspeed = lua_tonumber (_L, 3);
 	    
 	[self cycle];
     }

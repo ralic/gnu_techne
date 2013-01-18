@@ -32,14 +32,18 @@
 -(int) _get_stops;
 -(int) _get_tolerance;
 -(int) _get_fudge;
--(int) _get_state;
 
 -(void) _set_axis;
 -(void) _set_motor;
 -(void) _set_stops;
 -(void) _set_fudge;
 -(void) _set_tolerance;
--(void) _set_state;
+
+-(int) _get_position;
+-(int) _get_rate;
+
+-(void) _set_position;
+-(void) _set_rate;
 
 @end
 

@@ -589,9 +589,8 @@ static void draw (Node *root)
 
 	/* Register the transform uniform block. */
 	
-	buffer = [Shader addUniformBlockNamed: "__transform_block"
-                                     forStage: VERTEX_STAGE
-                                   withSource: glsl_transform_block];
+	buffer = t_add_global_block ("__transform_block", glsl_transform_block,
+                                     VERTEX_STAGE);
 
 	/* Create the global shading context buffer object. */
     

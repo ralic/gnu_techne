@@ -14,16 +14,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _FLAT_H_
-#define _FLAT_H_
+#ifndef _TEXTURE_H_
+#define _TEXTURE_H_
 
-#include <lua.h>
-#include "shader.h"
+#include "gl.h"
+#include "node.h"
 
-@interface Flat: Shader {
+@interface Texture: Node {
 @public
+    unsigned int name;
+    GLenum target;
 }
 
+-(void)initWithTarget: (GLenum)target andName: (unsigned int)name;
+-(void)initWithTarget: (GLenum)target;
+
+-(int) _get_texels;
+-(void) _set_texels;
+
 @end
+
+Texture *t_testtexture (lua_State *L, int index, GLenum target);
 
 #endif

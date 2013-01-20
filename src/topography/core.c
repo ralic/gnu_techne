@@ -19,10 +19,11 @@
 
 #include "techne.h"
 #include "elevation.h"
+#include "splat.h"
 
 int luaopen_topography_core (lua_State *L)
 {
-    Class classes[] = {[Elevation class], NULL};
+    Class classes[] = {[Elevation class], [Splat class], NULL};
 
     t_exportnodes (L, classes);
 

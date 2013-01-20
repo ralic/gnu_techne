@@ -30,8 +30,6 @@
 #include "elevation.h"
 #include "roam.h"
 
-static Shader *shader;
-
 static int construct(lua_State *L)
 {
     Class class;
@@ -303,19 +301,6 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 }
 
 -(void) _set_shape
-{
-}
-
--(int) _get_shader
-{
-    lua_pop (_L, 1);
-    lua_pushlightuserdata(_L, [ElevationShader class]);
-    lua_pushcclosure(_L, construct, 2);
-    
-    return 1;
-}
-
--(void) _set_shader
 {
 }
 
@@ -667,56 +652,6 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     R[11] = 0;
 
     dGeomSetRotation (self->geom, R);
-}
-
-@end
-
-@implementation ElevationShader
-
--(void) init
-{
-#include "glsl/elevation_vertex.h"	
-#include "glsl/elevation_fragment.h"	
-    
-    Elevation *mold;
-    
-    /* Make a reference to the mold to make sure it's not
-     * collected. */
-
-    mold = t_tonode (_L, -1);
-    self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
-
-    /* If this is the first instance create the program. */
-
-    if (!shader) {
-	shader = [Shader alloc];
-        
-        [shader init];
-
-	[shader addSource: glsl_elevation_vertex for: VERTEX_STAGE];
-	[shader addSource: glsl_elevation_fragment for: FRAGMENT_STAGE];
-	[shader link];
-
-	reference = luaL_ref (_L, LUA_REGISTRYINDEX);
-    }
-    
-    [super initFrom: shader];
-
-    self->tileset = &mold->tileset;
-
-    assert (self->samplers_n == 1);
-    self->samplers[0].texture = 0;
-}
-
--(void) draw
-{
-    glEnable (GL_CULL_FACE);
-    glEnable (GL_DEPTH_TEST);
-    
-    [super draw];
-
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_CULL_FACE);
 }
 
 @end

@@ -67,6 +67,9 @@
 
 -(void) free
 {
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->references[0]);
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->references[1]);
+    
     dGeomTriMeshDataDestroy (self->data);
 }
 
@@ -86,16 +89,23 @@
     
     array = array_testarray (_L, 3);
 
-    if (array &&
-	(array->type == ARRAY_TFLOAT || array->type == ARRAY_TDOUBLE) &&
-	array->rank == 2 && array->size[1] == 3) {
+    if (array) {
+	if (array->type != ARRAY_TFLOAT && array->type != ARRAY_TDOUBLE) {
+            t_print_error("Array specified for vertex data is of "
+                          "unsuitable type.\n");
+            abort();
+        }
+
+        if (array->rank != 2 || array->size[1] == 3) {
+            t_print_error("Array specified for vertex data is of "
+                          "unsuitable rank or size.\n");
+            abort();
+        }
+        
 	self->vertices = array;
 
 	[self update];
     } else if (!lua_isnil (_L, 3)) {
-	/* If array was incompatible push nil for the reference
-	 * below. */
-	
 	lua_pushnil (_L);
     }
 
@@ -116,13 +126,15 @@
     luaL_unref (_L, LUA_REGISTRYINDEX, self->references[1]);
     self->indices = NULL;
     
-    array = array_testcompatible (_L, 3,
-                                  ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-                                  ARRAY_TYPE, ARRAY_TINT);
+    array = array_testcompatible (_L, 3, ARRAY_TYPE, ARRAY_TINT);
 
-    if (array &&
-	(array->type == ARRAY_TINT) &&
-	array->rank == 2 && array->size[1] == 3) {
+    if (array) {
+	if (array->rank != 2 || array->size[1] != 3) {
+            t_print_error("Array specified for index data is of "
+                          "unsuitable rank or size.\n");
+            abort();
+        }
+    
 	self->indices = array;
 
 	[self update];

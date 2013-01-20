@@ -23,14 +23,14 @@
 #include "shader.h"
 
 @interface LayoutShader: Shader {
-@public    
+@public
+    int location, texture, reference_1;
 }
-
--(void)initWithTexture: (unsigned int) texture;
 
 @end
 
 @interface Layout: Widget {
+@public
     PangoLayout *layout;
 
     const char *text;

@@ -14,16 +14,55 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _FLAT_H_
-#define _FLAT_H_
+#include <stdlib.h>
 
 #include <lua.h>
+#include <lauxlib.h>
+
+#include "gl.h"
+
+#include "techne.h"
+#include "texture.h"
+#include "textured.h"
 #include "shader.h"
 
-@interface Flat: Shader {
-@public
+static ShaderMold *handle;
+
+@implementation Textured
+-(void)init
+{
+#include "glsl/textured_vertex.h"	
+#include "glsl/textured_fragment.h"	
+    
+    /* If this is the first instance create the program. */
+
+    if (!handle) {
+        ShaderMold *shader;
+        
+	shader = [ShaderMold alloc];
+        
+        [shader initWithHandle: &handle];
+	[shader addSource: glsl_textured_vertex for: VERTEX_STAGE];
+	[shader addSource: glsl_textured_fragment for: FRAGMENT_STAGE];
+	[shader link];
+    } else {
+        t_pushuserdata(_L, 1, handle);
+    }
+    
+    [super init];
+}
+
+-(void) draw
+{
+    glEnable (GL_CULL_FACE);
+    glEnable (GL_DEPTH_TEST);
+    
+    glUseProgram(self->name);
+    
+    [super draw];
+
+    glDisable (GL_DEPTH_TEST);
+    glDisable (GL_CULL_FACE);
 }
 
 @end
-
-#endif

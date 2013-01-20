@@ -68,8 +68,6 @@
 
 @interface ElevationShader: Shader {
 @public
-    roam_Tileset *tileset;
-    int reference;
 }
 
 @end

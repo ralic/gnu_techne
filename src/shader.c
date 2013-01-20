@@ -24,6 +24,7 @@
 
 #include "array/array.h"
 #include "techne.h"
+#include "texture.h"
 #include "shader.h"
 
 #include "glsl/preamble.h"
@@ -354,7 +355,7 @@ static int globals_n;
 
 #define DO_UNIFORM(uniform)						\
     {									\
-	shader_Uniform *u;						\
+	shader_Basic *u;						\
 									\
 	u = uniform;							\
 	glBindBuffer(GL_UNIFORM_BUFFER, self->blocks[u->block]);	\
@@ -445,21 +446,8 @@ static int uniforms_iterator(lua_State *L)
     return 3;
 }
 
-@implementation Shader
-
-+(void)initialize
-{
-    if(self == [Shader class]) {
-	/* Export the uniforms iterator. */
-	
-	lua_pushcfunction (_L, uniforms_iterator);
-	lua_setglobal (_L, "uniforms");	
-    }
-}
-
-+(int) addUniformBlockNamed: (const char *)name
-                   forStage: (shader_Stage)stage
-                 withSource: (const char *)declaration
+int t_add_global_block (const char *name, const char *declaration,
+                        shader_Stage stage)
 {
     unsigned int i;
     int l;
@@ -490,11 +478,16 @@ static int uniforms_iterator(lua_State *L)
     return i;
 }
 
--(void) init
+@implementation ShaderMold
+
++(void)initialize
 {
-    [super init];
-    self->name = glCreateProgram();
-    self->ismold = 1;
+    if(self == [ShaderMold class]) {
+	/* Export the uniforms iterator. */
+	
+	lua_pushcfunction (_L, uniforms_iterator);
+	lua_setglobal (_L, "uniforms");	
+    }
 }
 
 -(void) addSource: (const char *) source for: (shader_Stage)stage
@@ -523,9 +516,49 @@ static int uniforms_iterator(lua_State *L)
 
 	glShaderSource(shader, 2, sources, NULL);
     }
+    
     glCompileShader(shader);
     glAttachShader(self->name, shader);
     glDeleteShader(shader);
+}
+
+-(void) initWithHandle: (ShaderMold **)handle
+{
+    [super init];
+
+    self->name = glCreateProgram();
+    self->private = NULL;
+    self->private_n = 0;
+    self->handle = handle;
+    *(self->handle) = self;
+}
+
+-(void) free
+{
+    /* Free the uniform buffer object table. */
+
+    if (self->blocks_n > 0) {
+	free(self->blocks);
+    }
+    
+    /* Free the uniform information and delete the program. */
+
+    if (self->uniforms_n > 0) {
+        free(self->uniforms);
+    }
+    
+    glDeleteProgram (self->name);
+
+    *(self->handle) = NULL;
+    /* _TRACE ("Deleting %s program and associated shaders.\n", [self name]); */
+
+    [super free];
+}
+
+-(void) declare: (int) n privateUniforms: (const char **)names
+{
+    self->private = names;
+    self->private_n = n;
 }
 
 -(void) link
@@ -610,12 +643,17 @@ static int uniforms_iterator(lua_State *L)
     glGetProgramiv (self->name, GL_ACTIVE_UNIFORMS, &u);
     
     if (u > 0) {
-	unsigned int list[u];
+	unsigned int list[u], skiplist[u];
 	int types[u], sizes[u], offsets[u];
 	int arraystrides[u], matrixstrides[u], indices[u];
-	int i, n, l;
+	int i, l;
 
+        self->uniforms_n = u;
 	self->uniforms = malloc (u * sizeof (shader_Uniform));
+
+        glGetProgramiv(self->name, GL_ACTIVE_UNIFORM_MAX_LENGTH, &l);
+        glGetUniformIndices (self->name, self->private_n, self->private,
+                             skiplist);
 
 	for (i = 0 ; i < u ; i += 1) {
 	    list[i] = i;
@@ -637,53 +675,61 @@ static int uniforms_iterator(lua_State *L)
 			      GL_UNIFORM_MATRIX_STRIDE, matrixstrides);
         
 	for (i = 0, n = 0 ; i < u ; i += 1) {
-            /* Count active samplers, which (according to convention)
-             * are the only uniforms allowed in the default block. */
-            
-	    if (indices[i] == GL_INVALID_INDEX &&
-                types[i] == GL_SAMPLER_2D) {
-                list[n] = i;
-                n += 1;
-	    }
-	    
-	    self->uniforms[i].block = indices[i];
-	    self->uniforms[i].type = types[i];
-	    self->uniforms[i].size = sizes[i];
-	    self->uniforms[i].offset = offsets[i];
-	    self->uniforms[i].arraystride = arraystrides[i];
-	    self->uniforms[i].matrixstride = matrixstrides[i];
-	}	
+            shader_Uniform *uniform;
+            int j, skip;
 
-        /* Initialize the common part of the samplers table. */
-        
-        self->samplers_n = n;
-        self->samplers = malloc (self->samplers_n * sizeof (shader_Sampler));
-
-        glGetProgramiv(self->name, GL_ACTIVE_UNIFORM_MAX_LENGTH, &l);
-        
-	for (i = 0 ; i < n ; i += 1) {
-            int size;
-            GLenum type;
-            char buffer[l];
-
-            /* Cache the sampler location. */
-            
-            glGetActiveUniform(self->name, list[i], l, NULL,
-                               &size, &type, buffer);
-            
-            self->samplers[i].location =
-                glGetUniformLocation (self->name, buffer);
-
-            /* Map sampler type to texture target. */
-            
-            switch (type) {
-            case GL_SAMPLER_2D:
-                self->samplers[i].target = GL_TEXTURE_2D;
-                break;
-            default:
-                t_print_error("Unknown sampler type.\n");
-                abort();
+            for (j = 0, skip = 0 ; j < self->private_n ; j += 1) {
+                if (i == skiplist[j]) {
+                    skip = 1;
+                    break;
+                }
             }
+
+            uniform = &self->uniforms[i];
+            
+            if (skip) {
+                uniform->kind = PRIVATE_UNIFORM;
+            } else if (types[i] >= GL_SAMPLER_1D &&
+                       types[i] <= GL_SAMPLER_3D) {
+                int size;
+                GLenum type;
+                char buffer[l];
+
+                uniform->sampler.kind = SAMPLER_UNIFORM;
+                
+                /* Cache the sampler location. */
+            
+                glGetActiveUniform(self->name, list[i], l, NULL,
+                                   &size, &type, buffer);
+            
+                uniform->sampler.location = glGetUniformLocation (self->name, buffer);
+
+                /* Map sampler type to texture target. */
+            
+                switch (type) {
+                case GL_SAMPLER_1D:
+                    uniform->sampler.target = GL_TEXTURE_1D;
+                    break;
+                case GL_SAMPLER_2D:
+                    uniform->sampler.target = GL_TEXTURE_2D;
+                    break;
+                case GL_SAMPLER_3D:
+                    uniform->sampler.target = GL_TEXTURE_3D;
+                    break;
+                default:
+                    t_print_error("Unknown sampler type.\n");
+                    abort();
+                }
+            } else {
+                uniform->basic.kind = BASIC_UNIFORM;
+                
+                uniform->basic.block = indices[i];
+                uniform->basic.type = types[i];
+                uniform->basic.size = sizes[i];
+                uniform->basic.offset = offsets[i];
+                uniform->basic.arraystride = arraystrides[i];
+                uniform->basic.matrixstride = matrixstrides[i];
+            }	
         }
     } else {
 	self->uniforms = NULL;
@@ -728,32 +774,42 @@ static int uniforms_iterator(lua_State *L)
 	}
     } else {
 	self->blocks = NULL;
-    }    
+    }
 }
 
--(void)initFrom: (Shader *) mold
+@end
+
+@implementation Shader
+
+-(void)init
 {
+    ShaderMold *mold;
     int i;
 
-    assert (mold->ismold);
+    /* Make a reference to the mold to make sure it's not
+     * collected. */
 
+    mold = t_tonode (_L, -1);
+    self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+    
     [super init];
 
-    self->ismold = 0;
     self->name = mold->name;    
-    self->uniforms = mold->uniforms;
-    self->samplers_n = mold->samplers_n;
+    self->uniforms_n = mold->uniforms_n;
     self->blocks_n = mold->blocks_n;
     
-    /* Allocate and initialize the samplers table. */
+    /* Allocate initialize the uniforms table. */
 
-    self->samplers = malloc (self->samplers_n * sizeof (shader_Sampler));
-    memcpy (self->samplers, mold->samplers,
-            self->samplers_n * sizeof (shader_Sampler));
+    self->uniforms = malloc (self->uniforms_n * sizeof (shader_Uniform));
+    memcpy (self->uniforms, mold->uniforms,
+            self->uniforms_n * sizeof (shader_Uniform));
 
-    for (i = 0 ; i < self->samplers_n ; i += 1) {
-        self->samplers[i].unit = i;
-        self->samplers[i].texture = 0;
+    for (i = 0 ; i < self->uniforms_n ; i += 1) {
+        if (self->uniforms[i].kind == SAMPLER_UNIFORM) {
+            self->uniforms[i].sampler.unit = i;
+            self->uniforms[i].sampler.texture = 0;
+            self->uniforms[i].sampler.reference = LUA_REFNIL;
+        }
     }
 
     /* Allocate the uniform buffer objects. */
@@ -804,21 +860,20 @@ static int uniforms_iterator(lua_State *L)
 	free(self->blocks);
     }
 
-    /* Free the samplers table. */
+    /* Free the uniforms table. */
 
-    if (self->blocks_n > 0) {
-        free(self->samplers);
+    if (self->uniforms_n > 0) {
+        for (i = 0 ; i < self->uniforms_n ; i += 1) {
+            if (self->uniforms[i].kind == SAMPLER_UNIFORM) {
+                luaL_unref(_L, LUA_REGISTRYINDEX,
+                           self->uniforms[i].sampler.reference);
+            }
+        }
+        
+        free(self->uniforms);
     }
-    
-    if (self->ismold) {
-	/* Free the uniform information and delete the program if this is
-	 * a mold. */
 
-	free(self->uniforms);
-	glDeleteProgram (self->name);
-	
-	/* _TRACE ("Deleting %s program and associated shaders.\n", [self name]); */
-    }
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->reference);
 
     [super free];
 }
@@ -842,14 +897,20 @@ static int uniforms_iterator(lua_State *L)
     glGetUniformIndices(self->name, 1, &k, &i);
     
     if (i != GL_INVALID_INDEX) {
+        if (self->uniforms[i].kind == BASIC_UNIFORM) {
 #define DO_VALUE READ_VALUE
-	DO_UNIFORM (&self->uniforms[i]);
+            DO_UNIFORM (&self->uniforms[i].basic);
 #undef DO_VALUE
 
-	return 1;
-    } else {
-	return [super _get_];
+            return 1;
+        } else if (self->uniforms[i].kind == SAMPLER_UNIFORM) {
+            lua_rawgeti (_L, LUA_REGISTRYINDEX, self->uniforms[i].sampler.reference);            
+
+            return 1;
+        }
     }
+
+    return [super _get_];
 }
 
 -(int) _set_
@@ -871,14 +932,34 @@ static int uniforms_iterator(lua_State *L)
     glGetUniformIndices(self->name, 1, &k, &i);
 
     if (i != GL_INVALID_INDEX) {
+        if (self->uniforms[i].kind == BASIC_UNIFORM) {
 #define DO_VALUE UPDATE_VALUE
-	DO_UNIFORM (&self->uniforms[i]);
+            DO_UNIFORM (&self->uniforms[i].basic);
 #undef DO_VALUE
-	
-	return 1;
-    } else {
-	return [super _set_];
+            
+            return 1;
+        } else if (self->uniforms[i].kind == SAMPLER_UNIFORM) {
+            Texture *texture;
+            shader_Sampler *sampler;
+
+            sampler = &self->uniforms[i].sampler;
+            texture = t_testtexture(_L, 3, sampler->target);
+            /* _TRACE ("%p\n", texture); */
+    
+            if (!texture) {
+                sampler->texture = 0;
+            } else {
+                /* _TRACE ("%d\n", texture->name); */
+                sampler->texture = texture->name;
+            }
+
+            sampler->reference = luaL_ref (_L, LUA_REGISTRYINDEX);            
+
+            return 1;
+        }
     }
+
+    return [super _set_];
 }
 
 -(void) draw
@@ -894,22 +975,22 @@ static int uniforms_iterator(lua_State *L)
     /* Bind the program and all uniform buffers and proceed to draw
      * the meshes. */
     
-    glUseProgram(self->name);
-    
     for (i = 0 ; i < self->blocks_n ; i += 1) {
 	if (self->blocks[i] != GL_INVALID_INDEX) {
 	    glBindBufferBase(GL_UNIFORM_BUFFER, i, self->blocks[i]);
 	}
     }
 
-    for (i = 0 ; i < self->samplers_n ; i += 1) {
-        shader_Sampler *sampler;
+    for (i = 0 ; i < self->uniforms_n ; i += 1) {
+        if (self->uniforms[i].kind == SAMPLER_UNIFORM) {
+            shader_Sampler *sampler;
 
-        sampler = self->samplers + i;
+            sampler = &self->uniforms[i].sampler;
         
-        glActiveTexture(GL_TEXTURE0 + sampler->unit);
-        glBindTexture (sampler->target, sampler->texture);
-        glUniform1i (sampler->location, sampler->unit);
+            glActiveTexture(GL_TEXTURE0 + sampler->unit);
+            glBindTexture (sampler->target, sampler->texture);
+            glUniform1i (sampler->location, sampler->unit);
+        }
     }
     
     [super draw];

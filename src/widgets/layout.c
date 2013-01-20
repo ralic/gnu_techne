@@ -24,9 +24,7 @@
 #include "layout.h"
 
 static PangoContext *context;
-
-static Shader *mold;
-static int reference;
+static ShaderMold *handle;
 
 @implementation Layout
 
@@ -64,8 +62,9 @@ static int reference;
     /* Create the shader node. */
 
     lua_pushstring(_L, "shader");
+    lua_pushvalue (_L, -2);
     self->shader = [LayoutShader alloc];
-    [self->shader initWithTexture: self->texture];
+    [self->shader init];
 
     /* Create the shape node. */
     
@@ -185,8 +184,7 @@ static int reference;
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, self->texture);
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, self->texels[0]);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                     GL_LINEAR_MIPMAP_LINEAR);
@@ -204,9 +202,6 @@ static int reference;
     glGenerateMipmap(GL_TEXTURE_2D);
 	
     /* Clean up. */
-	
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	
     cairo_destroy (cairo);
     cairo_surface_destroy (surface);
@@ -394,29 +389,51 @@ static int reference;
 
 @implementation LayoutShader
 
--(void)initWithTexture: (unsigned int) texture
+-(void)init
 {
 #include "glsl/layout_vertex.h"	
 #include "glsl/layout_fragment.h"	
+
+    const char *private[1] = {"texture"};
+    Layout *layout;
+    int i;
+
+    /* Make a reference to the mold to make sure it's not
+     * collected. */
+
+    layout = t_tonode (_L, -1);
+    self->reference_1 = luaL_ref (_L, LUA_REGISTRYINDEX);    
     
     /* If this is the first instance create the program. */
 
-    if (!mold) {
-	mold = [Shader alloc];
+    if (!handle) {
+        ShaderMold *shader;
         
-        [mold init];
-
-	[mold addSource: glsl_layout_vertex for: VERTEX_STAGE];
-	[mold addSource: glsl_layout_fragment for: FRAGMENT_STAGE];
-	[mold link];
-
-	reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+	shader = [ShaderMold alloc];
+        
+        [shader initWithHandle: &handle];
+        [shader declare: 1 privateUniforms: private];
+	[shader addSource: glsl_layout_vertex for: VERTEX_STAGE];
+	[shader addSource: glsl_layout_fragment for: FRAGMENT_STAGE];
+	[shader link];
+    } else {
+        t_pushuserdata(_L, 1, handle);
     }
     
-    [super initFrom: mold];
+    [super init];
 
-    assert (self->samplers_n == 1);
-    self->samplers[0].texture = texture;
+    self->texture = layout->texture;
+    i = glGetUniformLocation (self->name, "texture");
+
+    glUseProgram (self->name);
+    glUniform1i (i, 0);
+}
+
+-(void) free
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->reference_1);
+        
+    [super free];
 }
 
 -(void) draw
@@ -424,6 +441,10 @@ static int reference;
     glDepthMask (GL_FALSE);
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+    
+    glUseProgram (self->name);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture (GL_TEXTURE_2D, self->texture);
     
     [super draw];
 

@@ -14,13 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _FLAT_H_
-#define _FLAT_H_
+#ifndef _TEXTURED_H_
+#define _TEXTURED_H_
 
 #include <lua.h>
 #include "shader.h"
 
-@interface Flat: Shader {
+@interface Textured: Shader {
 @public
 }
 

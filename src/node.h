@@ -35,9 +35,14 @@
 #define SET_ELEMENT_LENGTH (sizeof (SET_ELEMENT) - 1)
 
 #define T_WARN_READONLY							\
-	t_print_warning ("Property '%s' of '%s' nodes cannot be set.\n", \
-			 sel_getName(_cmd) + SET_PREFIX_LENGTH,		\
-			 [self name]);
+    t_print_warning ("Property '%s' of '%s' nodes cannot be set.\n",    \
+                     sel_getName(_cmd) + SET_PREFIX_LENGTH,		\
+                     [self name]);
+
+#define T_WARN_WRITEONLY                                                \
+    t_print_warning ("Property '%s' of '%s' nodes cannot be queried.\n", \
+                     sel_getName(_cmd) + SET_PREFIX_LENGTH,		\
+                     [self name]);
 
 struct protocol {
     Class class;

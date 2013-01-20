@@ -22,10 +22,12 @@
 #include "overlay.h"
 #include "program.h"
 #include "flat.h"
+#include "textured.h"
 
 int luaopen_shading_core (lua_State *L)
 {
-    Class classes[] = {[Program class], [Overlay class], [Flat class], NULL};
+    Class classes[] = {[Program class], [Overlay class], [Flat class],
+                       [Textured class], NULL};
 
     t_exportnodes (L, classes);
     

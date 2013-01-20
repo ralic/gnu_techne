@@ -14,13 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _FLAT_H_
-#define _FLAT_H_
+#ifndef _SPLAT_H_
+#define _SPLAT_H_
 
-#include <lua.h>
 #include "shader.h"
 
-@interface Flat: Shader {
+@interface Splat: Shader {
 @public
 }
 

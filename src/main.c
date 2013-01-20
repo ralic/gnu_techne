@@ -569,7 +569,8 @@ int main(int argc, char **argv)
                 "resources", "array", "arraymath", 
                 "joints", "primitives", "bodies", 
                 "shading", "shapes", "automotive", 
-                "widgets", "console", "controllers"
+                "widgets", "console", "controllers",
+                "textures", "topography"
             };
             int i, n;
 

@@ -100,6 +100,11 @@ function shapes.rectangle(parameters)
 		  {-a_2, -b_2, 0}, {a_2, -b_2, 0}, {-a_2, b_2, 0},
 		  {-a_2, b_2, 0}, {a_2, -b_2, 0}, {a_2, b_2, 0},
 	       }
+
+	       self.mapping = array.floats {
+		  {0, 0}, {1, 0}, {0, 1},
+		  {0, 1}, {1, 0}, {1, 1},
+	       }
 	    end
    })
    

@@ -101,6 +101,8 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     lua_gettable(_L, 1);
 
     if (!lua_isnil (_L, -1)) {
+        int j, k;
+        
         /* Figure out the tileset size. */
         
         lua_len(_L, -1);
@@ -139,143 +141,151 @@ static dReal heightfield_data_callback (void *data, int x, int z)
             self->references[i] = LUA_REFNIL;
         }
 
-        for (i = 0 ; i < tiles->size[0] * tiles->size[1] ; i += 1) {
+        for (i = 0 ; i < tiles->size[0] ; i += 1) {
             lua_rawgeti(_L, -1, i + 1);
-        
-            if (lua_istable (_L, -1)) {
-                array_Array *heights, *errors, *pixels;
-                double c, delta;
+            
+            for (j = 0 ; j < tiles->size[1] ; j += 1) {
+                lua_rawgeti(_L, -1, j + 1);
+                
+                if (!lua_isnil (_L, -1)) {
+                    array_Array *heights, *errors, *pixels;
+                    double c, delta;
 
-                /* The height samples. */
+                    k = i * tiles->size[1] + j;
+                    
+                    /* The height samples. */
 	    
-                lua_rawgeti (_L, -1, 1);
-
-                heights = array_testcompatible (_L, -1,
-                                                ARRAY_TYPE | ARRAY_RANK,
-                                                ARRAY_TUSHORT, 2);
-
-                if (!heights) {
-                    t_print_error("Array specified for elevation data is incompatible.\n");
-                    abort();
-                }
-
-                if (heights->size[0] != heights->size[1]) {
-                    t_print_error("Elevation tiles must be rectangular.\n");
-                    abort();
-                }
-
-                self->references[2 * i] = luaL_ref(_L, LUA_REGISTRYINDEX);
-
-                /* The error bounds. */
-	    
-                lua_rawgeti (_L, -1, 2);
-
-                errors = array_testcompatible (_L, -1,
-                                               ARRAY_TYPE | ARRAY_RANK,
-                                               ARRAY_TUSHORT, 2);
-
-                if (!errors) {
-                    t_print_error("Array specified for elevation error bounds is incompatible.\n");
-                    abort();
-                }
-
-                if (errors->size[0] != errors->size[1]) {
-                    t_print_error("Elevation tiles must be rectangular.\n");
-                    abort();
-                }
-
-                self->references[2 * i + 1] = luaL_ref(_L, LUA_REGISTRYINDEX);
-
-                if (heights->size[0] != errors->size[0]) {
-                    t_print_error("Elevation and error bound tiles don't match.\n");
-                    abort();
-                }
-
-                /* The vertical scale. */
-
-                lua_rawgeti (_L, -1, 4);
-
-                if (lua_istable (_L, -1)) {
                     lua_rawgeti (_L, -1, 1);
 
-                    if (lua_isnumber (_L, -1)) {
-                        c = lua_tonumber (_L, -1);
-                    } else {
-                        c = 1;
-                    }
-    
-                    lua_pop (_L, 1);
+                    heights = array_testcompatible (_L, -1,
+                                                    ARRAY_TYPE | ARRAY_RANK,
+                                                    ARRAY_TUSHORT, 2);
 
-                    /* The vertical offset. */
+                    if (!heights) {
+                        t_print_error("Array specified for elevation data is incompatible.\n");
+                        abort();
+                    }
+
+                    if (heights->size[0] != heights->size[1]) {
+                        t_print_error("Elevation tiles must be rectangular.\n");
+                        abort();
+                    }
+
+                    self->references[2 * k] = luaL_ref(_L, LUA_REGISTRYINDEX);
+
+                    /* The error bounds. */
 	    
                     lua_rawgeti (_L, -1, 2);
 
-                    if (lua_isnumber (_L, -1)) {
-                        delta = lua_tonumber (_L, -1);
+                    errors = array_testcompatible (_L, -1,
+                                                   ARRAY_TYPE | ARRAY_RANK,
+                                                   ARRAY_TUSHORT, 2);
+
+                    if (!errors) {
+                        t_print_error("Array specified for elevation error bounds is incompatible.\n");
+                        abort();
+                    }
+
+                    if (errors->size[0] != errors->size[1]) {
+                        t_print_error("Elevation tiles must be rectangular.\n");
+                        abort();
+                    }
+
+                    self->references[2 * k + 1] = luaL_ref(_L, LUA_REGISTRYINDEX);
+
+                    if (heights->size[0] != errors->size[0]) {
+                        t_print_error("Elevation and error bound tiles don't match.\n");
+                        abort();
+                    }
+
+                    /* The vertical scale. */
+
+                    lua_rawgeti (_L, -1, 4);
+
+                    if (lua_istable (_L, -1)) {
+                        lua_rawgeti (_L, -1, 1);
+
+                        if (lua_isnumber (_L, -1)) {
+                            c = lua_tonumber (_L, -1);
+                        } else {
+                            c = 1;
+                        }
+    
+                        lua_pop (_L, 1);
+
+                        /* The vertical offset. */
+	    
+                        lua_rawgeti (_L, -1, 2);
+
+                        if (lua_isnumber (_L, -1)) {
+                            delta = lua_tonumber (_L, -1);
+                        } else {
+                            delta = 0;
+                        }
+    
+                        lua_pop (_L, 1);
                     } else {
+                        c = 1;
                         delta = 0;
                     }
-    
+
                     lua_pop (_L, 1);
-                } else {
-                    c = 1;
-                    delta = 0;
-                }
 
-                lua_pop (_L, 1);
-
-                /* Load the elevation tile. */
+                    /* Load the elevation tile. */
             
-                tiles->samples[i] = heights->values.ushorts;
-                tiles->bounds[i] = errors->values.ushorts;
-                tiles->orders[i] = (int)(log(heights->size[0] - 1) / log(2));
-                tiles->scales[i] = c / USHRT_MAX;
-                tiles->offsets[i] = delta;
+                    tiles->samples[k] = heights->values.ushorts;
+                    tiles->bounds[k] = errors->values.ushorts;
+                    tiles->orders[k] = (int)(log(heights->size[0] - 1) / log(2));
+                    tiles->scales[k] = c / USHRT_MAX;
+                    tiles->offsets[k] = delta;
 
-                /* The imagery. */
+                    /* The imagery. */
 
-                lua_rawgeti (_L, -1, 3);
+                    lua_rawgeti (_L, -1, 3);
 
-                if (!lua_isnil (_L, -1)) {
-                    pixels = array_testcompatible (_L, -1,
-                                                   ARRAY_TYPE | ARRAY_RANK,
-                                                   ARRAY_TNUCHAR, 3);
+                    if (!lua_isnil (_L, -1)) {
+                        pixels = array_testcompatible (_L, -1,
+                                                       ARRAY_TYPE | ARRAY_RANK,
+                                                       ARRAY_TNUCHAR, 3);
 
-                    if (!pixels) {
-                        t_print_error("Array specified for elevation imagery is incompatible.\n");
-                        abort();
-                    }
+                        if (!pixels) {
+                            t_print_error("Array specified for elevation imagery is incompatible.\n");
+                            abort();
+                        }
 
-                    if (pixels->size[2] != 3) {
-                        t_print_error("Elevation imagery data must be specified in RGB format.\n");
-                        abort();
-                    }
+                        if (pixels->size[2] != 3) {
+                            t_print_error("Elevation imagery data must be specified in RGB format.\n");
+                            abort();
+                        }
 
-                    /* Create the texture object. */
+                        /* Create the texture object. */
 	
-                    glGetError();
-                    glBindTexture(GL_TEXTURE_2D, tiles->imagery[i]);
+                        glGetError();
+                        glBindTexture(GL_TEXTURE_2D, tiles->imagery[k]);
                     
-                    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
                     
-                    glTexImage2D (GL_TEXTURE_2D, 0,
-                                  GL_RGB,
-                                  pixels->size[0], pixels->size[1], 0,
-                                  GL_RGB,
-                                  GL_UNSIGNED_BYTE,
-                                  pixels->values.uchars);
+                        glTexImage2D (GL_TEXTURE_2D, 0,
+                                      GL_RGB,
+                                      pixels->size[0], pixels->size[1], 0,
+                                      GL_RGB,
+                                      GL_UNSIGNED_BYTE,
+                                      pixels->values.uchars);
 
-                    glGenerateMipmap (GL_TEXTURE_2D);
+                        glGenerateMipmap (GL_TEXTURE_2D);
 
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                                    GL_LINEAR);
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                                    GL_LINEAR_MIPMAP_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                                        GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                                        GL_LINEAR_MIPMAP_LINEAR);
 
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                                    GL_MIRRORED_REPEAT);
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
-                                    GL_MIRRORED_REPEAT);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                                        GL_MIRRORED_REPEAT);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
+                                        GL_MIRRORED_REPEAT);
+                    }
+
+                    lua_pop (_L, 1);
                 }
 
                 lua_pop (_L, 1);

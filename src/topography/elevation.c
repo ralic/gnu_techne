@@ -72,21 +72,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
     tiles = &self->tileset;
     
-    /* Read in resolution and size data. */
-    
-    lua_pushstring(_L, "size");
-    lua_gettable(_L, 1);
-
-    if(lua_istable(_L, 1)) {
-        for(i = 0 ; i < 2 ; i += 1) {
-            lua_rawgeti(_L, -1, i + 1);
-            tiles->size[i] = lua_tonumber(_L, -1);
-                
-            lua_pop(_L, 1);
-        }
-    }
-    
-    lua_pop(_L, 1);
+    /* Read in resolution data. */
 
     lua_pushstring(_L, "depth");
     lua_gettable(_L, 1);
@@ -109,39 +95,50 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     
     lua_pop(_L, 1);
 
-    /* Allocate the tile tables. */
-    
-    self->references = (int *)calloc (tiles->size[0] *
-                                      tiles->size[1] * 2,
-                                      sizeof (int));
-    
-    tiles->samples = (unsigned short **)calloc (tiles->size[0] *
-                                                tiles->size[1],
-                                                sizeof (unsigned short *));
-    tiles->bounds = (unsigned short **)calloc (tiles->size[0] *
-                                               tiles->size[1],
-                                               sizeof (unsigned short *));
-    tiles->orders = (int *)calloc (tiles->size[0] * tiles->size[1],
-                                   sizeof (int));
-    tiles->imagery = (unsigned int *)calloc (tiles->size[0] * tiles->size[1],
-                                             sizeof (unsigned int));
-    tiles->scales = (double *)calloc (tiles->size[0] * tiles->size[1],
-                                     sizeof (double));
-    tiles->offsets = (double *)calloc (tiles->size[0] * tiles->size[1],
-                                      sizeof (double));
-
-    glGenTextures(tiles->size[0] * tiles->size[1], tiles->imagery);
-    
-    for (i = 0 ; i < 2 * tiles->size[0] * tiles->size[1] ; i += 1) {
-        self->references[i] = LUA_REFNIL;
-    }
-
     /* Read in the tiles. */
     
     lua_pushstring(_L, "tiles");
     lua_gettable(_L, 1);
 
-    if (lua_istable (_L, -1)) {
+    if (!lua_isnil (_L, -1)) {
+        /* Figure out the tileset size. */
+        
+        lua_len(_L, -1);
+        tiles->size[0] = lua_tointeger(_L, -1);
+        lua_pop (_L, 1);
+        
+        lua_rawgeti(_L, -1, 1);
+        lua_len(_L, -1);
+        tiles->size[1] = lua_tointeger(_L, -1);
+        lua_pop (_L, 2);
+        
+        /* Allocate the tile tables. */
+    
+        self->references = (int *)calloc (tiles->size[0] *
+                                          tiles->size[1] * 2,
+                                          sizeof (int));
+    
+        tiles->samples = (unsigned short **)calloc (tiles->size[0] *
+                                                    tiles->size[1],
+                                                    sizeof (unsigned short *));
+        tiles->bounds = (unsigned short **)calloc (tiles->size[0] *
+                                                   tiles->size[1],
+                                                   sizeof (unsigned short *));
+        tiles->orders = (int *)calloc (tiles->size[0] * tiles->size[1],
+                                       sizeof (int));
+        tiles->imagery = (unsigned int *)calloc (tiles->size[0] * tiles->size[1],
+                                                 sizeof (unsigned int));
+        tiles->scales = (double *)calloc (tiles->size[0] * tiles->size[1],
+                                          sizeof (double));
+        tiles->offsets = (double *)calloc (tiles->size[0] * tiles->size[1],
+                                           sizeof (double));
+
+        glGenTextures(tiles->size[0] * tiles->size[1], tiles->imagery);
+    
+        for (i = 0 ; i < 2 * tiles->size[0] * tiles->size[1] ; i += 1) {
+            self->references[i] = LUA_REFNIL;
+        }
+
         for (i = 0 ; i < tiles->size[0] * tiles->size[1] ; i += 1) {
             lua_rawgeti(_L, -1, i + 1);
         

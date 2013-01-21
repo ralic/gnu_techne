@@ -1004,13 +1004,43 @@ static void traverse_quadtree(roam_Triangle *n, roam_Triangle *m, int l)
 
 #endif
 
-void optimize_geometry()
+static void draw_subtree(roam_Triangle *n)
+{
+    if(!is_out(n)) {
+	if(!is_leaf(n)) {
+	    draw_subtree(n->children[0]);
+	    draw_subtree(n->children[1]);
+	} else {
+	    roam_Triangle *p;
+	    roam_Diamond *d, *e;
+            float *b;
+	    int i, k;
+
+	    p = n->parent;
+	    d = n->diamond;
+	    e = p->diamond;
+	    i = is_primary(n);
+
+            b = context->buffer;
+            k = context->drawn;
+            
+            memcpy (b + 9 * k, d->vertices[!i], 3 * sizeof(float));
+            memcpy (b + 9 * k + 3, d->vertices[i], 3 * sizeof(float));
+            memcpy (b + 9 * k + 6, e->center, 3 * sizeof(float));
+
+	    context->drawn += 1;
+	}
+    }
+}
+
+void optimize_geometry(roam_Context *new, float *buffer, int *ranges)
 {
     roam_Tileset *tiles;
     roam_Diamond *d = NULL, *d_0;
     const float *M, *P;
     int i, j, delta, overlap;
 
+    context = new;
     tiles = context->tileset;
     
     /* Update the book. */
@@ -1089,44 +1119,8 @@ void optimize_geometry()
     /* 	test_subtree(context->roots[i][0]); */
     /* 	test_subtree(context->roots[i][1]); */
     /* } */
-}
 
-static void draw_subtree(roam_Triangle *n)
-{
-    if(!is_out(n)) {
-	if(!is_leaf(n)) {
-	    draw_subtree(n->children[0]);
-	    draw_subtree(n->children[1]);
-	} else {
-	    roam_Triangle *p;
-	    roam_Diamond *d, *e;
-            float *b;
-	    int i, k;
-
-	    p = n->parent;
-	    d = n->diamond;
-	    e = p->diamond;
-	    i = is_primary(n);
-
-            b = context->buffer;
-            k = context->drawn;
-            
-            memcpy (b + 9 * k, d->vertices[!i], 3 * sizeof(float));
-            memcpy (b + 9 * k + 3, d->vertices[i], 3 * sizeof(float));
-            memcpy (b + 9 * k + 6, e->center, 3 * sizeof(float));
-
-	    context->drawn += 1;
-	}
-    }
-}
-    
-void draw_geometry(float *buffer, int *ranges)
-{
-    roam_Tileset *tiles;
-    int i, j;
-
-    tiles = context->tileset;
-
+    /* Draw the geometry into the provided buffers. */
     context->buffer = buffer;
     context->drawn = 0;
 
@@ -1151,13 +1145,15 @@ void draw_geometry(float *buffer, int *ranges)
 #endif
 }       
 
-void *allocate_mesh()
+void *allocate_mesh(roam_Context *new)
 {
     roam_Tileset *tiles;
     roam_Triangle *(*T)[4];
     roam_Diamond *(*D)[3];
     int i, j, d, s, t;
 
+    context = new;
+    
     tiles = context->tileset;
     
     context->triangles = 0;
@@ -1319,11 +1315,13 @@ void *allocate_mesh()
     return (void *)context;
 }
 
-void free_mesh()
+void free_mesh(roam_Context *new)
 {
     roam_Block *block, *next;
     int i;
 
+    context = new;
+    
     /* Free all allocated blocks. */
     
     for (i = 0 ; i < 2 ; i += 1) {

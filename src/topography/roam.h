@@ -134,10 +134,8 @@ typedef struct triangle roam_Triangle;
 typedef struct diamond roam_Diamond;
 
 void look_up_sample(roam_Tileset *tiles, int i, int j, double *h, double *e);
-void draw_geometry(float *buffer, int *ranges);
-void optimize_geometry();
-void free_mesh();
-void *allocate_mesh();
-void switch_to_context(roam_Context *new);
+void optimize_geometry(roam_Context *new, float *buffer, int *ranges);
+void free_mesh(roam_Context *new);
+void *allocate_mesh(roam_Context *new);
 
 #endif

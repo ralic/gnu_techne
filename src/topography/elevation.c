@@ -379,24 +379,18 @@ static dReal heightfield_data_callback (void *data, int x, int z)
                   GL_STREAM_DRAW);
 
     self->vertices = malloc(b->length);
-
-    /* Link in the buffer. */
-	
     self->buffer = b;
 
     /* Create the base mesh.  */
     
-    switch_to_context(&self->context);
-    allocate_mesh ();
+    allocate_mesh (&self->context);
 }
 
 -(void) free
 {
     luaL_unref (_L, LUA_REGISTRYINDEX, self->reference);
 
-    switch_to_context(&self->context);
-    free_mesh();
-
+    free_mesh(&self->context);
     free (self->ranges);
         
     [super free];
@@ -507,10 +501,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     
     /* glPolygonMode (GL_FRONT_AND_BACK, GL_LINE); */
 
-    switch_to_context(&self->context);
-    optimize_geometry();
-
-    draw_geometry(self->vertices, self->ranges);
+    optimize_geometry(&self->context, self->vertices, self->ranges);
 
     /* Update the vertex buffer object. */
     

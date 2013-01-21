@@ -41,6 +41,5 @@ TODO (ASAP):
 * Replace state getters in all nodes that have them with individual read-only
   attributes.
 * Adapt the Racetrack node to the mold node approach.
-* Consider getting rid of switch_to_context().
 * Consider getting rid of layout_*.glsl.c and use textured_*.glsl.c instead.
 * Add support for setting clamp and filtering modes to the Texture Node.

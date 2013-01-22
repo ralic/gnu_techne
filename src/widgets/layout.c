@@ -404,6 +404,8 @@ static ShaderMold *handle;
     layout = t_tonode (_L, -1);
     self->reference_1 = luaL_ref (_L, LUA_REGISTRYINDEX);    
     
+    [super init];
+    
     /* If this is the first instance create the program. */
 
     if (!handle) {
@@ -420,7 +422,7 @@ static ShaderMold *handle;
         t_pushuserdata(_L, 1, handle);
     }
     
-    [super init];
+    [self load];
 
     self->texture = layout->texture;
     i = glGetUniformLocation (self->name, "texture");

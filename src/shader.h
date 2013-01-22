@@ -69,6 +69,8 @@ typedef enum {
 
 -(void) initWithHandle: (ShaderMold **)handle;
 -(void) declare: (int) n privateUniforms: (const char **)names;
+-(void) add: (const int) n sourceStrings: (const char **) strings
+        for: (shader_Stage)stage;
 -(void) addSource: (const char *) source for: (shader_Stage)stage;
 -(void) link;
 
@@ -80,6 +82,9 @@ typedef enum {
     shader_Uniform *uniforms;
     int blocks_n, uniforms_n, reference;
 }
+
+-(void)load;
+-(void)unload;
 
 @end
 

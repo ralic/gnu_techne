@@ -34,6 +34,8 @@ static ShaderMold *handle;
 #include "glsl/textured_vertex.h"	
 #include "glsl/textured_fragment.h"	
     
+    [super init];
+    
     /* If this is the first instance create the program. */
 
     if (!handle) {
@@ -48,8 +50,8 @@ static ShaderMold *handle;
     } else {
         t_pushuserdata(_L, 1, handle);
     }
-    
-    [super init];
+
+    [self load];
 }
 
 -(void) draw

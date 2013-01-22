@@ -33,6 +33,8 @@ static ShaderMold *handle;
 #include "glsl/flat_vertex.h"	
 #include "glsl/flat_fragment.h"	
     
+    [super init];
+    
     /* If this is the first instance create the program. */
 
     if (!handle) {
@@ -47,8 +49,8 @@ static ShaderMold *handle;
     } else {
         t_pushuserdata(_L, 1, handle);
     }
-    
-    [super init];
+
+    [self load];
 }
 
 -(void) draw

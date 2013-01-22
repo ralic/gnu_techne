@@ -19,9 +19,32 @@
 
 #include "shader.h"
 
+typedef struct {
+    unsigned int texture;
+    double values[8];
+    int reference;
+} splat_Pigment;
+
 @interface Splat: Shader {
 @public
+    double albedo, separation;
+
+    splat_Pigment *pigments;
+    int pigments_n;
+
+    struct {
+        unsigned int base, detail, power, matrices;
+        /* unsigned int turbidity, sunDirection, sunColor, eccentricity; */
+        /* unsigned int rayleigh, mie, factor; */
+    } locations;
 }
+
+-(int) _get_albedo;
+-(int) _get_separation;
+-(void) _set_albedo;
+-(void) _set_separation;
+-(int) _get_palette;
+-(void) _set_palette;
 
 @end
 

@@ -490,9 +490,11 @@ int t_add_global_block (const char *name, const char *declaration,
     }
 }
 
--(void) addSource: (const char *) source for: (shader_Stage)stage
+-(void) add: (const int) n sourceStrings: (const char **) strings
+        for: (shader_Stage)stage
 {
     unsigned int shader;
+    int i;
 
     switch(stage) {
     case VERTEX_STAGE:
@@ -506,20 +508,36 @@ int t_add_global_block (const char *name, const char *declaration,
     }
     
     if (declarations[stage]) {
-	const char *sources[3] = {glsl_preamble,
-				  declarations[stage],
-				  source};
+	const char *source[n + 2];
 
-	glShaderSource(shader, 3, sources, NULL);
+        source[0] = glsl_preamble;
+        source[1] = declarations[stage];
+
+        for (i = 0 ; i < n ; i += 1) {
+            source[i + 2] = strings[i];
+        }
+
+	glShaderSource(shader, n + 2, source, NULL);
     } else {
-	const char *sources[2] = {glsl_preamble, source};
+	const char *source[n + 1];
 
-	glShaderSource(shader, 2, sources, NULL);
+        source[0] = glsl_preamble;
+
+        for (i = 0 ; i < n ; i += 1) {
+            source[i + 1] = strings[i];
+        }
+
+	glShaderSource(shader, n + 1, source, NULL);
     }
     
     glCompileShader(shader);
     glAttachShader(self->name, shader);
     glDeleteShader(shader);
+}
+
+-(void) addSource: (const char *) source for: (shader_Stage)stage
+{
+    [self add: 1 sourceStrings: &source for: stage];
 }
 
 -(void) initWithHandle: (ShaderMold **)handle
@@ -530,7 +548,10 @@ int t_add_global_block (const char *name, const char *declaration,
     self->private = NULL;
     self->private_n = 0;
     self->handle = handle;
-    *(self->handle) = self;
+
+    if (self->handle) {
+        *(self->handle) = self;
+    }
 }
 
 -(void) free
@@ -549,7 +570,10 @@ int t_add_global_block (const char *name, const char *declaration,
     
     glDeleteProgram (self->name);
 
-    *(self->handle) = NULL;
+    if (self->handle) {
+        *(self->handle) = NULL;
+    }
+    
     /* _TRACE ("Deleting %s program and associated shaders.\n", [self name]); */
 
     [super free];
@@ -691,22 +715,18 @@ int t_add_global_block (const char *name, const char *declaration,
                 uniform->kind = PRIVATE_UNIFORM;
             } else if (types[i] >= GL_SAMPLER_1D &&
                        types[i] <= GL_SAMPLER_3D) {
-                int size;
-                GLenum type;
                 char buffer[l];
 
                 uniform->sampler.kind = SAMPLER_UNIFORM;
                 
                 /* Cache the sampler location. */
             
-                glGetActiveUniform(self->name, list[i], l, NULL,
-                                   &size, &type, buffer);
-            
+                glGetActiveUniformName (self->name, list[i], l, NULL, buffer);
                 uniform->sampler.location = glGetUniformLocation (self->name, buffer);
 
                 /* Map sampler type to texture target. */
             
-                switch (type) {
+                switch (types[i]) {
                 case GL_SAMPLER_1D:
                     uniform->sampler.target = GL_TEXTURE_1D;
                     break;
@@ -783,6 +803,20 @@ int t_add_global_block (const char *name, const char *declaration,
 
 -(void)init
 {
+    [super init];
+
+    self->reference = LUA_REFNIL;
+
+    self->name = 0;    
+    self->uniforms_n = 0;
+    self->blocks_n = 0;
+
+    self->uniforms = NULL;
+    self->blocks = NULL;
+}
+
+-(void) load
+{
     ShaderMold *mold;
     int i;
 
@@ -791,25 +825,27 @@ int t_add_global_block (const char *name, const char *declaration,
 
     mold = t_tonode (_L, -1);
     self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
-    
-    [super init];
 
     self->name = mold->name;    
     self->uniforms_n = mold->uniforms_n;
     self->blocks_n = mold->blocks_n;
     
-    /* Allocate initialize the uniforms table. */
+    /* Allocate and initialize the uniforms table. */
 
-    self->uniforms = malloc (self->uniforms_n * sizeof (shader_Uniform));
-    memcpy (self->uniforms, mold->uniforms,
-            self->uniforms_n * sizeof (shader_Uniform));
+    if (self->uniforms_n > 0) {
+        self->uniforms = malloc (self->uniforms_n * sizeof (shader_Uniform));
+        memcpy (self->uniforms, mold->uniforms,
+                self->uniforms_n * sizeof (shader_Uniform));
 
-    for (i = 0 ; i < self->uniforms_n ; i += 1) {
-        if (self->uniforms[i].kind == SAMPLER_UNIFORM) {
-            self->uniforms[i].sampler.unit = i;
-            self->uniforms[i].sampler.texture = 0;
-            self->uniforms[i].sampler.reference = LUA_REFNIL;
+        for (i = 0 ; i < self->uniforms_n ; i += 1) {
+            if (self->uniforms[i].kind == SAMPLER_UNIFORM) {
+                self->uniforms[i].sampler.unit = i;
+                self->uniforms[i].sampler.texture = 0;
+                self->uniforms[i].sampler.reference = LUA_REFNIL;
+            }
         }
+    } else {
+	self->uniforms = NULL;
     }
 
     /* Allocate the uniform buffer objects. */
@@ -838,7 +874,7 @@ int t_add_global_block (const char *name, const char *declaration,
     }
 }
 
--(void) free
+-(void) unload
 {
     int i, j;
     
@@ -874,7 +910,11 @@ int t_add_global_block (const char *name, const char *declaration,
     }
 
     luaL_unref (_L, LUA_REGISTRYINDEX, self->reference);
+}
 
+-(void) free
+{
+    [self unload];
     [super free];
 }
 

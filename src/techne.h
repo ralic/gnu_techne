@@ -31,6 +31,10 @@
 typedef enum {
     T_LOAD,
     T_MULTIPLY,
+    
+    T_VERTEX_STAGE,
+    T_GEOMETRY_STAGE,
+    T_FRAGMENT_STAGE,
 } t_Enumerated;
 
 lua_State *_L;
@@ -52,12 +56,12 @@ void t_reset_pool (void *p);
 void t_load_projection (float *matrix);
 void t_push_projection (float *matrix);
 void t_pop_projection ();
-const float *t_get_projection();
+void t_copy_projection(float *matrix);
 
 void t_load_modelview (float *matrix, t_Enumerated mode);
 void t_push_modelview (float *matrix, t_Enumerated mode);
 void t_pop_modelview ();
-const float *t_get_modelview();
+void t_copy_modelview(float *matrix);
 
 int luaopen_moremath (lua_State *L);
 

@@ -35,6 +35,12 @@ static struct {
     unsigned int index;
 } *globals;
 
+enum {
+    PRIVATE_UNIFORM,
+    BASIC_UNIFORM,
+    SAMPLER_UNIFORM
+} shader_UniformKind;
+
 static int globals_n;
 
 #define TYPE_ERROR()							\
@@ -447,7 +453,7 @@ static int uniforms_iterator(lua_State *L)
 }
 
 int t_add_global_block (const char *name, const char *declaration,
-                        shader_Stage stage)
+                        t_Enumerated stage)
 {
     unsigned int i;
     int l;
@@ -491,17 +497,17 @@ int t_add_global_block (const char *name, const char *declaration,
 }
 
 -(void) add: (const int) n sourceStrings: (const char **) strings
-        for: (shader_Stage)stage
+        for: (t_Enumerated)stage
 {
     unsigned int shader;
     int i;
 
     switch(stage) {
-    case VERTEX_STAGE:
+    case T_VERTEX_STAGE:
 	shader = glCreateShader(GL_VERTEX_SHADER);break;
-    case GEOMETRY_STAGE:
+    case T_GEOMETRY_STAGE:
 	shader = glCreateShader(GL_GEOMETRY_SHADER);break;
-    case FRAGMENT_STAGE:
+    case T_FRAGMENT_STAGE:
 	shader = glCreateShader(GL_FRAGMENT_SHADER);break;
     default:
 	assert(0);
@@ -535,7 +541,7 @@ int t_add_global_block (const char *name, const char *declaration,
     glDeleteShader(shader);
 }
 
--(void) addSource: (const char *) source for: (shader_Stage)stage
+-(void) addSource: (const char *) source for: (t_Enumerated)stage
 {
     [self add: 1 sourceStrings: &source for: stage];
 }

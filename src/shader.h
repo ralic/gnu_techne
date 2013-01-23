@@ -19,6 +19,7 @@
 
 #include <lua.h>
 #include "gl.h"
+#include "techne.h"
 #include "graphic.h"
 
 typedef struct {
@@ -43,18 +44,6 @@ typedef union {
     shader_Sampler sampler;
 } shader_Uniform;
 
-typedef enum {
-    VERTEX_STAGE,
-    GEOMETRY_STAGE,
-    FRAGMENT_STAGE
-} shader_Stage;
-
-typedef enum {
-    PRIVATE_UNIFORM,
-    BASIC_UNIFORM,
-    SAMPLER_UNIFORM
-} shader_UniformKind;
-
 @interface ShaderMold: Node {
 @public
     ShaderMold **handle;
@@ -70,8 +59,8 @@ typedef enum {
 -(void) initWithHandle: (ShaderMold **)handle;
 -(void) declare: (int) n privateUniforms: (const char **)names;
 -(void) add: (const int) n sourceStrings: (const char **) strings
-        for: (shader_Stage)stage;
--(void) addSource: (const char *) source for: (shader_Stage)stage;
+        for: (t_Enumerated)stage;
+-(void) addSource: (const char *) source for: (t_Enumerated)stage;
 -(void) link;
 
 @end
@@ -89,6 +78,6 @@ typedef enum {
 @end
 
 int t_add_global_block (const char *name, const char *declaration,
-                        shader_Stage stage);
+                        t_Enumerated stage);
 
 #endif

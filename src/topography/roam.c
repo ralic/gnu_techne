@@ -1037,7 +1037,7 @@ void optimize_geometry(roam_Context *new, float *buffer, int *ranges)
 {
     roam_Tileset *tiles;
     roam_Diamond *d = NULL, *d_0;
-    const float *M, *P;
+    float M[16], P[16];
     int i, j, delta, overlap;
 
     context = new;
@@ -1051,8 +1051,8 @@ void optimize_geometry(roam_Context *new, float *buffer, int *ranges)
 
     /* Combine the modelview and projection matrices. */
 
-    M = t_get_modelview();
-    P = t_get_projection();
+    t_copy_modelview(M);
+    t_copy_projection(P);
     t_concatenate_4T(transform, P, M);
     
     calculate_view_frustum();

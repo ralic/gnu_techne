@@ -94,6 +94,8 @@ console_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
 topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
 			     topography/elevation.h 			\
 			     topography/roam.h topography/roam.c	\
+			     topography/atmosphere.h 			\
+			     topography/atmosphere.c			\
 			     topography/splat.h topography/splat.c
 topography_core_la_CFLAGS = ${AM_CFLAGS}
 topography_core_la_LDFLAGS = -module -avoid-version -no-undefined

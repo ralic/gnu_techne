@@ -217,9 +217,9 @@ void t_pop_projection ()
     SET_PROJECTION(projections[projections_n]);
 }
 
-const float *t_get_projection()
+void t_copy_projection(float *matrix)
 {
-    return projections[projections_n];
+    memcpy(projections + projections_n, matrix, 16 * sizeof(float));
 }
 
 #define SET_MODELVIEW(matrix)						\
@@ -276,9 +276,9 @@ void t_pop_modelview ()
     SET_MODELVIEW(modelviews[modelviews_n]);
 }
 
-const float *t_get_modelview()
+void t_copy_modelview(float *matrix)
 {
-    return modelviews[modelviews_n];
+    memcpy(modelviews + modelviews_n, matrix, 16 * sizeof(float));
 }
 
 static void draw (Node *root)
@@ -590,7 +590,7 @@ static void draw (Node *root)
 	/* Register the transform uniform block. */
 	
 	buffer = t_add_global_block ("__transform_block", glsl_transform_block,
-                                     VERTEX_STAGE);
+                                     T_VERTEX_STAGE);
 
 	/* Create the global shading context buffer object. */
     

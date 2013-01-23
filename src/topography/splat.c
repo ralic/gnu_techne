@@ -235,8 +235,8 @@
         
         [shader initWithHandle: NULL];
         [shader declare: 6 privateUniforms: private];
-	[shader addSource: glsl_elevation_vertex for: VERTEX_STAGE];
-	[shader add: 2 sourceStrings: (const GLchar *[2]){header, glsl_elevation_fragment} for: FRAGMENT_STAGE];
+	[shader addSource: glsl_elevation_vertex for: T_VERTEX_STAGE];
+	[shader add: 2 sourceStrings: (const GLchar *[2]){header, glsl_elevation_fragment} for: T_FRAGMENT_STAGE];
 	[shader link];
 
         [self load];

@@ -43,8 +43,8 @@ static ShaderMold *handle;
 	shader = [ShaderMold alloc];
         
         [shader initWithHandle: &handle];
-	[shader addSource: glsl_flat_vertex for: VERTEX_STAGE];
-	[shader addSource: glsl_flat_fragment for: FRAGMENT_STAGE];
+	[shader addSource: glsl_flat_vertex for: T_VERTEX_STAGE];
+	[shader addSource: glsl_flat_fragment for: T_FRAGMENT_STAGE];
 	[shader link];
     } else {
         t_pushuserdata(_L, 1, handle);

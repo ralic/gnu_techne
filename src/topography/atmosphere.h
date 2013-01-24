@@ -14,20 +14,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <lua.h>
-#include <lauxlib.h>
+#ifndef _ATMOSPHERE_H_
+#define _ATMOSPHERE_H_
 
-#include "techne.h"
-#include "atmosphere.h"
-#include "elevation.h"
-#include "splat.h"
+#include "shader.h"
+#include "shape.h"
 
-int luaopen_topography_core (lua_State *L)
-{
-    Class classes[] = {[Elevation class], [Splat class], [Atmosphere class],
-                       NULL};
-
-    t_exportnodes (L, classes);
-
-    return 1;
+@interface Atmosphere: Shader {
+    unsigned int skylight;
+    
+    int size[2], explicit, dirty;
+    float azimuth, elevation, turbidity, sunlight[3], direction[3];
+    float rayleigh[3], mie;
 }
+
+@end
+
+@interface AtmosphereShape: Shape {
+    unsigned int positions, mapping;
+    double radius;
+}
+
+@end
+
+#endif

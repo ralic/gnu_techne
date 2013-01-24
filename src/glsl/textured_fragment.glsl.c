@@ -1,9 +1,9 @@
 uniform sampler2D texture;
 
-out vec4 output;
+out vec4 fragment;
 in vec2 uv;
 
 void main()
 {
-    output = texture2D(texture, uv);
+    fragment = texture2D(texture, uv);
 }

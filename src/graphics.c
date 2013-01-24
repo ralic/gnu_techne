@@ -219,7 +219,7 @@ void t_pop_projection ()
 
 void t_copy_projection(float *matrix)
 {
-    memcpy(projections + projections_n, matrix, 16 * sizeof(float));
+    memcpy(matrix, projections + projections_n, 16 * sizeof(float));
 }
 
 #define SET_MODELVIEW(matrix)						\
@@ -278,7 +278,7 @@ void t_pop_modelview ()
 
 void t_copy_modelview(float *matrix)
 {
-    memcpy(modelviews + modelviews_n, matrix, 16 * sizeof(float));
+    memcpy(matrix, modelviews + modelviews_n, 16 * sizeof(float));
 }
 
 static void draw (Node *root)

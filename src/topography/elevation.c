@@ -355,8 +355,8 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 -(void) init
 {
     roam_Tileset *tiles;
-    shape_Buffer *b;
     Elevation *mold;
+    int l;
 
     /* Make a reference to the mold to make sure it's not
      * collected. */
@@ -375,21 +375,13 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
     /* Create the vertex buffer. */
 
-    b = malloc (sizeof (shape_Buffer));
-    b->key = strdup("positions");
-
-    glGenBuffers(1, &b->name);
+    glGenBuffers(1, &self->buffer);
+    l = 9 * self->context.target * sizeof(float);
     
-    b->type = ARRAY_TFLOAT;
-    b->size = 3;
-    b->length = 9 * self->context.target * sizeof(float);
+    glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
+    glBufferData (GL_ARRAY_BUFFER, l, NULL, GL_STREAM_DRAW);
 
-    glBindBuffer (GL_ARRAY_BUFFER, b->name);
-    glBufferData (GL_ARRAY_BUFFER, b->length, NULL,
-                  GL_STREAM_DRAW);
-
-    self->vertices = malloc(b->length);
-    self->buffer = b;
+    self->vertices = malloc(l);
 
     /* Create the base mesh.  */
     
@@ -408,7 +400,6 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
 -(void) meetParent: (Shader *)parent
 {
-    shape_Buffer *b;
     int i;
 
     if (![parent isKindOf: [Shader class]]) {
@@ -418,13 +409,13 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 	return;
     }
 
-    b = self->buffer;
-    i = glGetAttribLocation(parent->name, b->key);
+    i = glGetAttribLocation(parent->name, "positions");
 
     /* Bind the VBO into the VAO. */
     
+    glBindBuffer(GL_ARRAY_BUFFER, self->buffer);
     glBindVertexArray(self->name);
-    glVertexAttribPointer(i, b->size, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
     glEnableVertexAttribArray(i);
 
     self->locations.scale = glGetUniformLocation(parent->name, "scale");
@@ -473,27 +464,24 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
 -(void) _set_target
 {
-    shape_Buffer *b;
+    int l;
 
     self->context.target = lua_tonumber (_L, 3);
 
     /* Update the vertex buffer size. */
 
-    b = self->buffer;
-    b->length = 9 * self->context.target * sizeof(float);
+    l = 9 * self->context.target * sizeof(float);
 
-    glBindBuffer (GL_ARRAY_BUFFER, b->name);
-    glBufferData (GL_ARRAY_BUFFER, b->length, NULL,
-                  GL_STREAM_DRAW);
+    glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
+    glBufferData (GL_ARRAY_BUFFER, l, NULL, GL_STREAM_DRAW);
 
-    self->vertices = realloc(self->vertices, b->length);
+    self->vertices = realloc(self->vertices, l);
 }
 
 -(void) draw
 {
-    shape_Buffer *b;
     roam_Tileset *tiles;
-    int i, j;
+    int i, j, l;
     
     tiles = self->context.tileset;
 
@@ -515,11 +503,11 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
     /* Update the vertex buffer object. */
     
-    b = self->buffer;
+    l = 9 * self->context.target * sizeof(float);
     
-    glBindBuffer (GL_ARRAY_BUFFER, b->name);
-    glBufferData (GL_ARRAY_BUFFER, b->length, NULL, GL_STREAM_DRAW);
-    glBufferData (GL_ARRAY_BUFFER, b->length, self->vertices, GL_STREAM_DRAW);
+    glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
+    glBufferData (GL_ARRAY_BUFFER, l, NULL, GL_STREAM_DRAW);
+    glBufferData (GL_ARRAY_BUFFER, l, self->vertices, GL_STREAM_DRAW);
 
     /* Prepare to draw. */
     

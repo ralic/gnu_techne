@@ -45,7 +45,7 @@
     } locations;
 
     roam_Context context;
-    shape_Buffer *buffer;
+    unsigned int buffer;
     float *vertices;
     int reference, *ranges;
 }

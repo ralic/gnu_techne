@@ -29,12 +29,12 @@
 #include "builtin.h"
 
 typedef enum {
-    T_LOAD,
-    T_MULTIPLY,
+    T_LOAD = 0,
+    T_MULTIPLY = 1,
     
-    T_VERTEX_STAGE,
-    T_GEOMETRY_STAGE,
-    T_FRAGMENT_STAGE,
+    T_VERTEX_STAGE = 0,
+    T_GEOMETRY_STAGE = 1,
+    T_FRAGMENT_STAGE = 2,
 } t_Enumerated;
 
 lua_State *_L;

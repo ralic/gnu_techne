@@ -535,7 +535,7 @@ static void calculate_sky_color(double azimuth, double elevation,
     
     glUseProgram(self->name);
 
-    /* glPolygonMode (GL_FRONT_AND_BACK, GL_LINE); */
+    glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
 
     glStencilMask(0);
     glDepthMask(GL_FALSE);
@@ -555,7 +555,7 @@ static void calculate_sky_color(double azimuth, double elevation,
     glDepthMask(GL_TRUE);
     glStencilMask(~0);
 
-/*     glPolygonMode (GL_FRONT_AND_BACK, GL_FILL); */
+    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 }
 
 @end
@@ -614,16 +614,24 @@ static void calculate_sky_color(double azimuth, double elevation,
     
     glGenBuffers(1, &self->positions);
     glBindBuffer (GL_ARRAY_BUFFER, self->positions);
-    glBufferData (GL_ARRAY_BUFFER, 3 * l, vertices, GL_STREAM_DRAW);
+    glBufferData (GL_ARRAY_BUFFER, 3 * l, vertices, GL_STATIC_DRAW);
 
     /* Texture coordinates. */
     
     glGenBuffers(1, &self->mapping);
     glBindBuffer (GL_ARRAY_BUFFER, self->mapping);
-    glBufferData (GL_ARRAY_BUFFER, 2 * l, uv, GL_STREAM_DRAW);
+    glBufferData (GL_ARRAY_BUFFER, 2 * l, uv, GL_STATIC_DRAW);
 
     free (vertices);
     free (uv);
+}
+
+-(void) free
+{
+    glDeleteBuffers (1, &self->positions);
+    glDeleteBuffers (1, &self->mapping);
+
+    [super free];
 }
 
 -(void) meetParent: (Shader *)parent
@@ -657,6 +665,8 @@ static void calculate_sky_color(double azimuth, double elevation,
     float M[16], P[16];
     double rho;
     
+    [super draw];
+    
     t_copy_projection (P);
     rho = 0.9 * P[14] / (P[10] + 1.0);
 
@@ -673,8 +683,6 @@ static void calculate_sky_color(double azimuth, double elevation,
 
     glBindVertexArray(self->name);
     glMultiDrawArrays (self->mode, first, count, 32);
-    
-    [super draw];
 
     t_pop_modelview ();
 }

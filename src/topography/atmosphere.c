@@ -638,13 +638,8 @@ static void calculate_sky_color(double azimuth, double elevation,
 {
     int i;
 
-    if (![parent isKindOf: [Shader class]]) {
-	t_print_warning("%s node has no shader parent.\n",
-			[self name]);
-	
-	return;
-    }
-    
+    [super meetParent: parent];
+
     /* Bind the VBOs into the VAO. */
     
     glBindVertexArray(self->name);

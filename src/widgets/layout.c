@@ -63,22 +63,12 @@ static ShaderMold *handle;
 
     lua_pushstring(_L, "shader");
     lua_pushvalue (_L, -2);
-    self->shader = [LayoutShader alloc];
-    [self->shader init];
+    [[LayoutShader alloc] init];
 
     /* Create the shape node. */
     
     lua_pushstring(_L, "shape");
-    self->shape = [Shape alloc];
-    [self->shape initWithMode: GL_TRIANGLE_FAN];
-
-    {
-        float t[4 * 2] = {0, 0,  1, 0,  1, 1,  0, 1};
-
-        lua_pushliteral (_L, "mapping");
-        array_createarray(_L, ARRAY_TFLOAT, t, 2, 4, 2);
-        lua_settable (_L, -3);
-    }
+    [[LayoutShape alloc] init];
 
     lua_settable (_L, -3);
     lua_settable (_L, -3);
@@ -106,26 +96,6 @@ static ShaderMold *handle;
 	self->content[0] = (double)self->texels[0] / v[3];
 	self->content[1] = (double)self->texels[1] / v[3];
     }
-
-    [self redraw];
-}
-
--(void) redraw
-{
-    float t[4 * 2] = {
-        -0.5 * self->content[0], -0.5 * self->content[1], 
-        0.5 * self->content[0], -0.5 * self->content[1], 
-        0.5 * self->content[0], 0.5 * self->content[1], 
-        -0.5 * self->content[0], 0.5 * self->content[1]
-    };
-
-    /* Update the shape. */
-
-    t_pushuserdata (_L, 1, self->shape);
-    lua_pushliteral (_L, "positions");
-    array_createarray(_L, ARRAY_TFLOAT, t, 2, 4, 2);
-    lua_settable (_L, -3);
-    lua_pop (_L, 1);
 }
 
 -(void) update
@@ -391,17 +361,15 @@ static ShaderMold *handle;
 
 -(void)init
 {
-#include "glsl/layout_vertex.h"	
-#include "glsl/layout_fragment.h"	
+#include "glsl/textured_vertex.h"	
+#include "glsl/textured_fragment.h"	
 
     const char *private[1] = {"texture"};
-    Layout *layout;
-    int i;
 
     /* Make a reference to the mold to make sure it's not
      * collected. */
 
-    layout = t_tonode (_L, -1);
+    self->layout = t_tonode (_L, -1);
     self->reference_1 = luaL_ref (_L, LUA_REGISTRYINDEX);    
     
     [super init];
@@ -415,8 +383,8 @@ static ShaderMold *handle;
         
         [shader initWithHandle: &handle];
         [shader declare: 1 privateUniforms: private];
-	[shader addSource: glsl_layout_vertex for: T_VERTEX_STAGE];
-	[shader addSource: glsl_layout_fragment for: T_FRAGMENT_STAGE];
+	[shader addSource: glsl_textured_vertex for: T_VERTEX_STAGE];
+	[shader addSource: glsl_textured_fragment for: T_FRAGMENT_STAGE];
 	[shader link];
     } else {
         t_pushuserdata(_L, 1, handle);
@@ -424,11 +392,10 @@ static ShaderMold *handle;
     
     [self load];
 
-    self->texture = layout->texture;
-    i = glGetUniformLocation (self->name, "texture");
+    self->location = glGetUniformLocation (self->name, "texture");
 
     glUseProgram (self->name);
-    glUniform1i (i, 0);
+    glUniform1i (self->location, 0);
 }
 
 -(void) free
@@ -446,7 +413,7 @@ static ShaderMold *handle;
     
     glUseProgram (self->name);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture (GL_TEXTURE_2D, self->texture);
+    glBindTexture (GL_TEXTURE_2D, self->layout->texture);
     
     [super draw];
 
@@ -454,4 +421,88 @@ static ShaderMold *handle;
     glDepthMask (GL_TRUE);
 }
 
+@end
+
+@implementation LayoutShape
+
+-(void)init
+{
+    float uv[4 * 2] = {0, 0,  1, 0,  1, 1,  0, 1};
+    float vertices[4 * 2] = {-0.5, -0.5,  0.5, -0.5,  0.5, 0.5,  -0.5, 0.5};
+
+    /* Make a reference to the mold to make sure it's not
+     * collected. */
+
+    self->layout = t_tonode (_L, -1);
+    self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);    
+    
+    [super initWithMode: GL_TRIANGLE_STRIP];
+
+    /* Create the VBOs.  Positions. */
+    
+    glGenBuffers(1, &self->positions);
+    glBindBuffer (GL_ARRAY_BUFFER, self->positions);
+    glBufferData (GL_ARRAY_BUFFER, 2 * 4 * sizeof(float),
+                  vertices, GL_STATIC_DRAW);
+
+    /* Texture coordinates. */
+    
+    glGenBuffers(1, &self->mapping);
+    glBindBuffer (GL_ARRAY_BUFFER, self->mapping);
+    glBufferData (GL_ARRAY_BUFFER, 2 * 4 * sizeof(float),
+                  uv, GL_STATIC_DRAW);
+}
+
+-(void) free
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->reference);
+        
+    glDeleteBuffers (1, &self->positions);
+    glDeleteBuffers (1, &self->mapping);
+
+    [super free];
+}
+
+-(void) meetParent: (Shader *)parent
+{
+    int i;
+
+    [super meetParent: parent];
+
+    /* Bind the VBOs into the VAO. */
+    
+    glBindVertexArray(self->name);
+
+    i = glGetAttribLocation(parent->name, "positions");
+    glBindBuffer(GL_ARRAY_BUFFER, self->positions);
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glEnableVertexAttribArray(i);
+
+    i = glGetAttribLocation(parent->name, "mapping");
+    glBindBuffer(GL_ARRAY_BUFFER, self->mapping);
+    glVertexAttribPointer(i, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glEnableVertexAttribArray(i);
+}
+
+-(void) draw
+{
+    float M[16];
+    
+    [super draw];
+
+    t_push_modelview (self->matrix, T_MULTIPLY);
+    t_copy_modelview (M);
+
+    /* Stretch the vertices as needed. */
+
+    M[0] *= self->layout->content[0];
+    M[5] *= self->layout->content[1];
+    
+    t_load_modelview (M, T_LOAD);
+
+    glBindVertexArray(self->name);
+    glDrawArrays (self->mode, 0, 4);
+
+    t_pop_modelview ();
+}
 @end

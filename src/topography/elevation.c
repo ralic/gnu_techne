@@ -401,13 +401,8 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 -(void) meetParent: (Shader *)parent
 {
     int i;
-
-    if (![parent isKindOf: [Shader class]]) {
-	t_print_warning("%s node has no shader parent.\n",
-			[self name]);
-	
-	return;
-    }
+    
+    [super meetParent: parent];
 
     i = glGetAttribLocation(parent->name, "positions");
 

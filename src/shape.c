@@ -588,6 +588,8 @@ static void match_attribute_to_buffer (unsigned int program,
     }
 
     glBindVertexArray(0);
+
+    [super meetParent: parent];
 }
 
 -(void) draw

@@ -20,6 +20,7 @@
 #include "graphic.h"
 
 @interface Widget: Graphic {
+@public
     double padding[4], allocation[2], content[2], align[2], offset[2];
     int debug;
 }

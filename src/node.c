@@ -100,6 +100,35 @@ void t_configurenode (lua_State *L, int index)
      * contained in the table at index. */
     
     if(lua_istable(L, index)) {
+        Node *node;
+
+        /* First initialize the properties specified in the
+         * initialization list if there is one. */
+        
+        node = *(Node **)lua_touserdata (L, -1);
+
+        if (node->prerequisites_n > 0) {
+            int i;
+
+            for (i = 0 ; i < node->prerequisites_n ; i += 1) {
+                /* Set the value. */
+                
+                lua_pushstring(L, node->prerequisites[i]);
+                lua_pushvalue(L, -1);
+                lua_gettable (L, index);
+                lua_settable(L, -3);
+
+                /* Then remove from the table to prevent from being
+                 * set twice. */
+                
+                lua_pushstring(L, node->prerequisites[i]);
+                lua_pushnil(L);
+                lua_settable(L, index);
+            }
+        }
+
+        /* Now proceed with the rest of the table. */
+        
 	lua_pushnil(L);
 
 	while(lua_next(L, index)) {
@@ -1166,6 +1195,12 @@ static void unlink_node (Node *node)
 -(void) setOrphansList: (Node **)list
 {
     self->orphans = list;
+}
+
+-(void) set: (int) n prerequisites: (const char **)list
+{
+    self->prerequisites = list;
+    self->prerequisites_n = n;
 }
 
 -(void) init

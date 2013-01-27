@@ -56,8 +56,12 @@ struct protocol {
 @interface Node: Object {
 @public
     Node *left, *right, *up, *down, **orphans;
+
     const struct protocol *protocol;
 
+    const char **prerequisites;
+    int prerequisites_n;
+    
     struct {
 	long long int beginnings[2], intervals[2];
     } profile;
@@ -81,6 +85,7 @@ struct protocol {
 +(const struct protocol *) introspect;
 
 -(void) setOrphansList: (Node **)list;
+-(void) set: (int) n prerequisites: (const char **)list;
 
 -(void) meetSibling: (Node *)sibling;
 -(void) missSibling: (Node *)sibling;

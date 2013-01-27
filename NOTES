@@ -51,4 +51,5 @@ TODO (ASAP):
 * Add support for setting clamp and filtering modes to the Texture Node.
 * Fix the Atmosphere node - figure out a way to draw it after the terrain and
   other nodes requiring aerial perspective shading.
-* Figure out a way for the Splat node to always have a valid program name.
+* Consider converting modled Nodes like the Racetrack and Elevation nodes to
+  the prerequisite approach.

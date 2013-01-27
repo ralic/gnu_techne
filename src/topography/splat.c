@@ -30,7 +30,10 @@
 
 -(void) init
 {
+    static const char *list[1] = {"palette"};
+    
     [super init];
+    [self set: 1 prerequisites: list];
 
     self->albedo = 1;
     self->separation = 1;

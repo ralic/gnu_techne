@@ -23,6 +23,7 @@
 
 #include "techne.h"
 #include "texture.h"
+#include "atmosphere.h"
 #include "splat.h"
 
 @implementation Splat
@@ -226,8 +227,8 @@
         char *header;
         ShaderMold *shader;
         
-#include "glsl/elevation_vertex.h"	
-#include "glsl/elevation_fragment.h"	
+#include "glsl/splat_vertex.h"	
+#include "glsl/splat_fragment.h"	
 
         asprintf (&header, "const int N = %d;\n", self->pigments_n);
         
@@ -235,8 +236,8 @@
         
         [shader initWithHandle: NULL];
         [shader declare: 6 privateUniforms: private];
-	[shader addSource: glsl_elevation_vertex for: T_VERTEX_STAGE];
-	[shader add: 2 sourceStrings: (const GLchar *[2]){header, glsl_elevation_fragment} for: T_FRAGMENT_STAGE];
+	[shader addSource: glsl_splat_vertex for: T_VERTEX_STAGE];
+	[shader add: 2 sourceStrings: (const GLchar *[2]){header, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
 	[shader link];
 
         [self load];
@@ -248,6 +249,13 @@
         self->locations.power = glGetUniformLocation (self->name, "power");
         self->locations.matrices = glGetUniformLocation (self->name, "matrices");
 
+        self->locations.turbidity = glGetUniformLocation (self->name, "turbidity");
+        self->locations.factor = glGetUniformLocation (self->name, "factor");
+        self->locations.beta_p = glGetUniformLocation (self->name, "beta_p");
+        self->locations.beta_r = glGetUniformLocation (self->name, "beta_r");
+        self->locations.direction = glGetUniformLocation (self->name, "direction");
+        self->locations.intensity = glGetUniformLocation (self->name, "intensity");
+        
         /* _TRACE ("%d, %d, %d, %d\n", self->locations.base, self->locations.detail, self->locations.power, self->locations.matrices); */
         
         /* Splatting-related uniforms will remain constant as the
@@ -296,7 +304,10 @@
 
 -(void) draw
 {
+    Atmosphere *atmosphere;
     int i;
+
+    atmosphere = [Atmosphere instance];
     
     glEnable (GL_CULL_FACE);
     glEnable (GL_DEPTH_TEST);
@@ -305,6 +316,16 @@
     
     glUseProgram(self->name);
 
+    glUniform1f (self->locations.factor, self->albedo);
+    
+    if (atmosphere) {
+        glUniform3fv (self->locations.direction, 1, atmosphere->direction);
+        glUniform3fv (self->locations.intensity, 1, atmosphere->intensity);
+        glUniform3fv (self->locations.beta_r, 1, atmosphere->rayleigh);
+        glUniform1f (self->locations.beta_p, atmosphere->mie);
+        glUniform1f (self->locations.turbidity, atmosphere->turbidity);
+    }
+    
     for (i = 0 ; i < self->pigments_n ; i += 1) {
         glActiveTexture(GL_TEXTURE1 + i);
         glBindTexture(GL_TEXTURE_2D, self->pigments[i].texture);

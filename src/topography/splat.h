@@ -34,8 +34,8 @@ typedef struct {
 
     struct {
         unsigned int base, detail, power, matrices;
-        /* unsigned int turbidity, sunDirection, sunColor, eccentricity; */
-        /* unsigned int rayleigh, mie, factor; */
+        unsigned int turbidity, factor, beta_p;
+        unsigned int direction, intensity, beta_r;
     } locations;
 }
 

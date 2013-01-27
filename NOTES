@@ -25,6 +25,13 @@ Nodes with static data
 
 Nodes that need to have part of their configuration set beforehand and not subject to change must do so through a mold node.  This should read in a table with the static configuration on init and provide constructor functions like a regular module.  On free all static data should be freed.  Every node constructed by the moold should expect to find a the userdata of the mold node at the top of the stach from which it can copy the static configuration and to which it should make a reference so as to prevent its premature collection.
 
+Singleton nodes
+===============
+
+Singleton nodes, that is nodes which should only have one active
+(either allocated or linked) instance should define a class method
+named 'instance' returning it (or NULL if none exists).
+
 TODO (eventually):
 ==================
 

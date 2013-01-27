@@ -740,6 +740,7 @@ static void draw (Node *root)
 	    break;
 	case GDK_NOTHING:
 	case GDK_MAP:
+	case GDK_UNMAP:
 	case GDK_WINDOW_STATE:
 	case GDK_VISIBILITY_NOTIFY:
 	    break;

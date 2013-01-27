@@ -560,15 +560,6 @@ static void match_attribute_to_buffer (unsigned int program,
 	     b && strcmp(b->key, attribute);
 	     b = b->next);
 
-        /* The shader defines a vertex attribute but the shape
-         * doesn't. */
-        
-	if (!b) {
-	    t_print_warning("%s node does not specify vertex attribute "
-			    "'%s'.\n",
-			    [self name], attribute);
-	}
-
 	if (b) {
 	    match_attribute_to_buffer (parent->name, j, b);
 	    b->flag = 1;

@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
 #include <math.h>
 
 #include <lua.h>
@@ -25,6 +26,7 @@
 #include "shader.h"
 #include "atmosphere.h"
 
+static Atmosphere *instance;
 static ShaderMold *handle;
 static int first[32], count[32];
 
@@ -255,6 +257,11 @@ static void calculate_sky_color(double azimuth, double elevation,
 
 @implementation Atmosphere
 
++(Atmosphere *) instance
+{
+    return instance;
+}
+
 -(void) init
 {
 #include "glsl/textured_vertex.h"	
@@ -316,6 +323,25 @@ static void calculate_sky_color(double azimuth, double elevation,
     lua_settable (_L, -3);
 }
 
+-(void) toggle
+{
+
+    [super toggle];
+
+    if (self->linked) {
+        if (instance) {
+            t_print_error ("Only one Atmosphere node should be linked to "
+                           "the scene.\n");
+            abort();
+        }
+
+        instance = self;
+    } else {
+        assert (instance == self);
+        instance = NULL;
+    }
+}
+
 -(int) _get_sun
 {
     lua_newtable(_L);
@@ -336,7 +362,7 @@ static void calculate_sky_color(double azimuth, double elevation,
     lua_newtable(_L);
         
     for(i = 0; i < 3; i += 1) {
-        lua_pushnumber(_L, self->sunlight[i]);
+        lua_pushnumber(_L, self->intensity[i]);
         lua_rawseti(_L, -2, i + 1);
     }	
 
@@ -407,7 +433,7 @@ static void calculate_sky_color(double azimuth, double elevation,
     if (lua_istable(_L, 3)) {
         for(i = 0 ; i < 3 ; i += 1) {
             lua_rawgeti(_L, 3, i + 1);
-            self->sunlight[i] = lua_tonumber(_L, -1);
+            self->intensity[i] = lua_tonumber(_L, -1);
                 
             lua_pop(_L, 1);
         }
@@ -486,7 +512,7 @@ static void calculate_sky_color(double azimuth, double elevation,
                             self->turbidity, self->size[0], self->size[1], pixels);
 
         if (!self->explicit) {
-            calculate_sun_color(self->elevation, self->turbidity, self->sunlight);
+            calculate_sun_color(self->elevation, self->turbidity, self->intensity);
         }
 
         /* Load the texture.*/
@@ -535,7 +561,7 @@ static void calculate_sky_color(double azimuth, double elevation,
     
     glUseProgram(self->name);
 
-    glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
+    /* glPolygonMode (GL_FRONT_AND_BACK, GL_LINE); */
 
     glStencilMask(0);
     glDepthMask(GL_FALSE);
@@ -555,7 +581,7 @@ static void calculate_sky_color(double azimuth, double elevation,
     glDepthMask(GL_TRUE);
     glStencilMask(~0);
 
-    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+    /* glPolygonMode (GL_FRONT_AND_BACK, GL_FILL); */
 }
 
 @end
@@ -670,9 +696,9 @@ static void calculate_sky_color(double azimuth, double elevation,
 
     /* Make sure the sky dome is centered at {0, 0, 0}. */
 
-    M[0] *= rho;
-    M[5] *= rho;
-    M[10] *= rho;
+    M[0] *= rho; M[1] *= rho; M[2] *= rho;
+    M[4] *= rho; M[5] *= rho; M[7] *= rho;
+    M[8] *= rho; M[9] *= rho; M[10] *= rho;
     M[12] = M[13] = M[14] = 0.0;
     t_load_modelview (M, T_LOAD);
 

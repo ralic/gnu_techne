@@ -21,12 +21,15 @@
 #include "shape.h"
 
 @interface Atmosphere: Shader {
+@public    
     unsigned int skylight;
     
     int size[2], explicit, dirty;
-    float azimuth, elevation, turbidity, sunlight[3], direction[3];
+    float azimuth, elevation, turbidity, intensity[3], direction[3];
     float rayleigh[3], mie;
 }
+
++(Atmosphere *) instance;
 
 @end
 

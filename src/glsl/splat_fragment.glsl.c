@@ -5,8 +5,8 @@ in vec2 uv;
 uniform sampler2D base, detail[N];
 uniform float power;
 uniform mat3 matrices[N];
-/* uniform float turbidity, factor, beta_p; */
-/* uniform vec3 sunDirection, sunColor, beta_r; */
+uniform float turbidity, factor, beta_p;
+uniform vec3 direction, intensity, beta_r;
 
 void main()
 {
@@ -48,17 +48,17 @@ void main()
                        texture2D(detail[i], matrices[i][2].st * uv).rgb;
     }
 
-    /* cosine = dot(normalize(eye), sunDirection); */
-    /* phase_r = 0.059683 * (1.0 + cosine * cosine); */
-    /* tau = exp(beta_r * eye.z); */
-    /* rho = exp((0.6544 * turbidity - 0.6510) * beta_p * eye.z); */
+    cosine = dot(normalize(eye), direction);
+    phase_r = 0.059683 * (1.0 + cosine * cosine);
+    tau = exp(beta_r * eye.z);
+    rho = exp((0.6544 * turbidity - 0.6510) * beta_p * eye.z);
 
-    /* texel = (texel.r + texel.g + texel.b) / 3.0 * sum; */
+    texel = (texel.r + texel.g + texel.b) / 3.0 * sum;
 
-    /* fragment = vec4(sunColor * mix(50.0 * vec3(phase_r), */
-    /*                                    factor * texel, */
-    /*                                    tau), rho); */
+    fragment = vec4(intensity * mix(50.0 * vec3(phase_r),
+                                    factor * texel,
+                                    tau), rho);
 
-    fragment = vec4(vec3(sum), 1.0);
+    /* fragment = vec4(vec3(factor), 1.0); */
     //fragment = vec4(vec3(C), 1.0);
 }

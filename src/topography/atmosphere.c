@@ -327,7 +327,6 @@ static void calculate_sky_color(double azimuth, double elevation,
 
 -(void) toggle
 {
-
     [super toggle];
 
     if (self->linked) {

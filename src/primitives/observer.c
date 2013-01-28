@@ -24,7 +24,32 @@
 #include "algebra.h"
 #include "observer.h"
 
+static Observer *instance;
+
 @implementation Observer
+
++(Observer *) instance
+{
+    return instance;
+}
+
+-(void) toggle
+{
+    [super toggle];
+
+    if (self->linked) {
+        if (instance) {
+            t_print_error ("Only one Observer node should be linked to "
+                           "the scene.\n");
+            abort();
+        }
+
+        instance = self;
+    } else {
+        assert (instance == self);
+        instance = NULL;
+    }
+}
 
 -(void) transform
 {

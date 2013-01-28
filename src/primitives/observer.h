@@ -22,6 +22,9 @@
 
 @interface Observer: Transform {
 }
+
++(Observer *) instance;
+
 @end
 
 #endif

@@ -291,6 +291,8 @@ static void calculate_sky_color(double azimuth, double elevation,
     [self load];
 
     /* Initialize the object. */
+
+    self->index = 1;
     
     self->size[0] = 0;
     self->size[1] = 0;
@@ -556,6 +558,8 @@ static void calculate_sky_color(double azimuth, double elevation,
 
     t_pop_modelview ();
 
+    /* Bind resources and draw. */
+    
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, self->skylight);    
     
@@ -570,9 +574,6 @@ static void calculate_sky_color(double azimuth, double elevation,
     glEnable(GL_CULL_FACE);
     glEnable (GL_BLEND);
 
-    /* Paint the world beforehand since the sky uses
-       destination alpha blending. */
-    
     [super draw];
 
     glDisable(GL_CULL_FACE);

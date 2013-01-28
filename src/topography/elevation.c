@@ -424,39 +424,6 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     return 1;
 }
 
--(int) _get_state
-{
-    lua_newtable (_L);
-
-    lua_pushnumber (_L, self->context.triangles);
-    lua_rawseti (_L, -2, 1);
-
-    lua_pushnumber (_L, self->context.visible);
-    lua_rawseti (_L, -2, 2);
-
-    lua_pushnumber (_L, self->context.diamonds);
-    lua_rawseti (_L, -2, 3);
-
-    lua_pushnumber (_L, self->context.queued[0]);
-    lua_rawseti (_L, -2, 4);
-
-    lua_pushnumber (_L, self->context.queued[1]);
-    lua_rawseti (_L, -2, 5);
-
-    lua_pushnumber (_L, self->context.minimum);
-    lua_rawseti (_L, -2, 6);
-
-    lua_pushnumber (_L, self->context.maximum);
-    lua_rawseti (_L, -2, 7);
-
-    return 1;
-}
-
--(void) _set_state
-{
-    T_WARN_READONLY;
-}
-
 -(void) _set_target
 {
     int l;

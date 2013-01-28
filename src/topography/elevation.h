@@ -52,8 +52,6 @@
 
 -(int) _get_target;
 -(void) _set_target;
--(int) _get_state;
--(void) _set_state;
 
 @end
 

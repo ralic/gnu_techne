@@ -22,15 +22,8 @@
 #include "shape.h"
 #include "shader.h"
 
-@interface LayoutShader: Shader {
-@public    
-}
-
--(void)initWithTexture: (unsigned int) texture;
-
-@end
-
 @interface Layout: Widget {
+@public
     PangoLayout *layout;
 
     const char *text;
@@ -39,10 +32,8 @@
     int wrap, justify, gravity, indent, spacing, texels[2];
 
     Shape *shape;
-    LayoutShader *shader;
 }
 
--(void) redraw;
 -(void) update;
 
 -(int) _get_text;
@@ -63,6 +54,22 @@
 -(void) _set_tabs;
 -(void) _set_scale;
 
+@end
+
+@interface LayoutShader: Shader {
+@public
+    Layout *layout;
+    int location, reference_1;
+}
+
+@end
+
+@interface LayoutShape: Shape {
+@public
+    Layout *layout;
+    unsigned int positions, mapping;
+    int reference;
+}
 @end
 
 #endif

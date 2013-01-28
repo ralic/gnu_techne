@@ -33,7 +33,7 @@
 			       GL_INVALID_INDEX,
 			       GL_INVALID_INDEX};
 
-    glGetAttachedShaders(self->program, 3, &n, shaders);
+    glGetAttachedShaders(self->name, 3, &n, shaders);
 
     lua_newtable(_L);
     
@@ -67,21 +67,21 @@
     lua_rawgeti (_L, 3, 1);
     if (lua_type (_L, -1) == LUA_TSTRING) {
 	source = lua_tostring(_L, -1);
-	[self addSource: source for: VERTEX_STAGE];
+	[self addSource: source for: T_VERTEX_STAGE];
     }
     lua_pop(_L, 1);
 
     lua_rawgeti (_L, 3, 2);
     if (lua_type (_L, -1) == LUA_TSTRING) {
 	source = lua_tostring(_L, -1);
-	[self addSource: source for: GEOMETRY_STAGE];
+	[self addSource: source for: T_GEOMETRY_STAGE];
     }
     lua_pop(_L, 1);
 
     lua_rawgeti (_L, 3, 3);
     if (lua_type (_L, -1) == LUA_TSTRING) {
 	source = lua_tostring(_L, -1);
-	[self addSource: source for: FRAGMENT_STAGE];
+	[self addSource: source for: T_FRAGMENT_STAGE];
     }
     lua_pop(_L, 1);
 
@@ -90,10 +90,28 @@
 
 -(int) call
 {
-    [[Shader alloc] initFrom: (Shader *)self];
+    lua_pushvalue (_L, 1);
+    [[ProgramShader alloc] init];
     t_configurenode(_L, 2);
     
     return 1;
+}
+
+@end
+
+@implementation ProgramShader
+
+-(void) draw
+{
+    glEnable (GL_CULL_FACE);
+    glEnable (GL_DEPTH_TEST);
+    
+    glUseProgram(self->name);
+    
+    [super draw];
+
+    glDisable (GL_DEPTH_TEST);
+    glDisable (GL_CULL_FACE);
 }
 
 @end

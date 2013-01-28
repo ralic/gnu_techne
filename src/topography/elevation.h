@@ -14,72 +14,59 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _RACETRACK_H_
-#define _RACETRACK_H_
+#ifndef _ELEVATION_H_
+#define _ELEVATION_H_
 
-#include "body.h"
+#include <lua.h>
+#include <GL/gl.h>
+#include <ode/ode.h>
+
+#include "roam.h"
 #include "shape.h"
-#include "topography/roam.h"
+#include "body.h"
+#include "shader.h"
 
-struct trackdata {
-    /* Tarmac. */
-
-    double *segments, tolerance;
-    int segments_n, last;
-
-    /* Terrain. */
-
-    dGeomID field;
-    roam_Tileset *tileset;
-};
-
-int dTrackClass;
-
-@interface Racetrack: Node {
+@interface Elevation: Node {
 @public
-    double *segments, tolerance;
-    int segments_n;
+    roam_Tileset tileset;
+
+    int *references;
 }
-
--(int) _get_segments;	
--(void) _set_segments;
-
--(int) _get_tolerance;
--(void) _set_tolerance;
-
--(int) _get_body;
--(void) _set_body;
 
 -(int) _get_shape;
 -(void) _set_shape;
 
 @end
 
-@interface RacetrackShape: Shape {
-    double *segments, tolerance;
-    int segments_n;
-    
-    double tessellation[2], scale[2];
-    int dirty;
+@interface ElevationShape: Shape {
+@public
+    struct {
+        unsigned int scale, offset;
+    } locations;
+
+    roam_Context context;
+    unsigned int buffer;
+    float *vertices;
+    int reference, *ranges;
 }
 
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
-
--(int) _get_scale;
--(int) _get_tessellation;
-
--(void) _set_scale;
--(void) _set_tessellation;
+-(int) _get_target;
+-(void) _set_target;
 
 @end
 
-@interface RacetrackBody: Body {
+@interface ElevationBody: Body {
+@public
+    roam_Tileset *tileset;
+    dHeightfieldDataID data;
+    int reference;
 }
 
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
+@end
 
--(int) _get_sampler;
--(void) _set_sampler;
+@interface ElevationShader: Shader {
+@public
+}
 
 @end
 

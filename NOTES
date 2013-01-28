@@ -20,6 +20,35 @@ Techne can be configured for cross-compiling like this:
 
 LUA_CFLAGS='-I/usr/local/mingw/include' LUA_LIBS='-L/usr/local/mingw/lib -llua -lm' MHD_CFLAGS='-I/usr/local/mingw/include' MHD_LIBS='-L/usr/local/mingw/lib -lmicrohttpd' ./configure --build=x86_64-linux-gnu --host=i686-pc-mingw32
 
+Nodes with static data
+======================
+
+Nodes that need to have part of their configuration set beforehand can
+do so in one of two fashions:
+
+If the prerequisite coniguration must not be subject to change and if
+the nodes have subnodes, for instance a Shape and a Shader subnode
+then the node itself must be a mold node.  This should read in a table
+with the static configuration on init and provide constructor
+functions like a regular module.  On free all static data should be
+freed.  Every node constructed by the mold should expect to find a
+the userdata of the mold node at the top of the stack from which it
+can copy the static configuration and to which it should make a
+reference so as to prevent its premature collection.
+
+If the node must not provide many subnodes which can be linked
+independently then it must be created as a normal Node with the
+prerequisite configuration marked as such.  In that case the
+configuration in question will be set first and its further mutability
+is governed by the node itself.
+
+Singleton nodes
+===============
+
+Singleton nodes, that is nodes which should only have one active
+(either allocated or linked) instance should define a class method
+named 'instance' returning it (or NULL if none exists).
+
 TODO (eventually):
 ==================
 
@@ -30,9 +59,7 @@ TODO (eventually):
 TODO (ASAP):
 ============
 
-* Need debug meshes for the following items (remeber to delete traverse methods):
-  - Plane
-  - Racetrack
-
 * Fix the chain node to properly reflect the velocity when the run changes.
-* Add a Lua texture object wrapper.
+* Adapt the Racetrack node to the mold node or prerequisite configuration
+  approach.
+* Add support for setting clamp and filtering modes to the Texture Node.

@@ -20,13 +20,18 @@
 #include <lua.h>
 #include "shader.h"
 
-@interface Program: Shader {
+@interface Program: ShaderMold {
 @public
-    unsigned int program;
 }
 
 -(int) _get_sources;
 -(void) _set_sources;
+
+@end
+
+@interface ProgramShader: Shader {
+@public
+}
 
 @end
 

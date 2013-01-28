@@ -19,41 +19,65 @@
 
 #include <lua.h>
 #include "gl.h"
+#include "techne.h"
 #include "graphic.h"
 
 typedef struct {
+    int kind;
+    
     unsigned int block;
     int type, size, offset, arraystride, matrixstride;
-} shader_Uniform;
+} shader_Basic;
 
 typedef struct {
+    int kind;
+    
     unsigned int texture, unit;
-    int location;
+    int location, reference;
     GLenum target;
-} shader_Sampler;
+} shader_Sampler; 
 
-typedef enum {
-    VERTEX_STAGE,
-    GEOMETRY_STAGE,
-    FRAGMENT_STAGE
-}  shader_Stage;
+typedef union {
+    int kind;
+    
+    shader_Basic basic;
+    shader_Sampler sampler;
+} shader_Uniform;
+
+@interface ShaderMold: Node {
+@public
+    ShaderMold **handle;
+
+    unsigned int *blocks, name;
+    shader_Uniform *uniforms;
+    int blocks_n, uniforms_n;
+
+    const char **private;
+    int private_n;
+}
+
+-(void) initWithHandle: (ShaderMold **)handle;
+-(void) declare: (int) n privateUniforms: (const char **)names;
+-(void) add: (const int) n sourceStrings: (const char **) strings
+        for: (t_Enumerated)stage;
+-(void) addSource: (const char *) source for: (t_Enumerated)stage;
+-(void) link;
+
+@end
 
 @interface Shader: Graphic {
 @public
     unsigned int *blocks, name;
     shader_Uniform *uniforms;
-    shader_Sampler *samplers;
-    int blocks_n, samplers_n, ismold;
+    int blocks_n, uniforms_n, reference;
 }
 
-
-+(int) addUniformBlockNamed: (const char *)name
-                   forStage: (shader_Stage)stage
-                 withSource: (const char *)declaration;
--(void) addSource: (const char *) source for: (shader_Stage)stage;
--(void) link;
--(void)initFrom: (Shader *) mold;
+-(void)load;
+-(void)unload;
 
 @end
+
+int t_add_global_block (const char *name, const char *declaration,
+                        t_Enumerated stage);
 
 #endif

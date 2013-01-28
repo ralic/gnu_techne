@@ -5,15 +5,17 @@ AM_CPPFLAGS = -x objective-c \
 	      -D_GNU_SOURCE -DGL_GLEXT_PROTOTYPES -DARRAYMATH_COLUMN_MAJOR\
 	      -DPKGDATADIR='"$(pkgdatadir)"' -DPKGLIBDIR='"$(pkglibdir)"' \
 	      -include common.h
-AM_CFLAGS = -Wall -Wno-div-by-zero -I$(top_srcdir) -I$(srcdir) ${LUA_CFLAGS}
+AM_CFLAGS = -Wall -Wno-shadow -Wno-div-by-zero -I$(top_srcdir)	\
+	    -I$(srcdir) ${LUA_CFLAGS}
 AM_LDADD = -lobjc -lm
 
 bin_SCRIPTS = techne
 
 # Support programs
 
-BUILT_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h	\
-		glsl/layout_vertex.h glsl/layout_fragment.h	\
+BUILT_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h			\
+		glsl/layout_vertex.h glsl/textured_fragment.h		\
+		glsl/splat_vertex.h glsl/splat_fragment.h		\
 		glsl/transform_block.h glsl/preamble.h gl.h glx.h
 SUFFIXES = .glsl.c
 $(BUILT_SOURCES): glsl/stringify
@@ -48,7 +50,7 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     memory.c network.c network.h proxy.c proxy.h	\
 		     input.c input.h structures.h math.h root.c root.h	\
 		     builtin.c builtin.h dynamic.c dynamic.h graphic.c  \
-		     graphic.h
+		     graphic.h texture.c texture.h
 
 EXTRA_techne_bin_SOURCES = compat/asprintf.h
 
@@ -67,7 +69,8 @@ nobase_pkglib_LTLIBRARIES = array/core.la arraymath/core.la		\
 			    joints/core.la bodies/core.la		\
 			    primitives/core.la controllers/core.la	\
 			    shapes/core.la widgets/core.la		\
-			    automotive/core.la shading/core.la
+			    automotive/core.la shading/core.la 		\
+			    topography/core.la textures/core.la
 
 pkglib_LTLIBRARIES = misc/physics.la
 
@@ -77,8 +80,19 @@ dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    misc/bindings.lua misc/units.lua			\
 		    misc/resources.lua automotive/automotive.lua	\
 		    widgets/widgets.lua misc/serialize.lua		\
-		    shading/shading.lua controllers/controllers.lua     \
-		     misc/rubberband.lua
+		    shading/shading.lua controllers/controllers.lua 	\
+		    misc/rubberband.lua topography/topography.lua 	\
+		    textures/textures.lua
+
+topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
+			     topography/elevation.h 			\
+			     topography/roam.h topography/roam.c	\
+			     topography/atmosphere.h 			\
+			     topography/atmosphere.c			\
+			     topography/splat.h topography/splat.c
+topography_core_la_CFLAGS = ${AM_CFLAGS}
+topography_core_la_LDFLAGS = -module -avoid-version -no-undefined
+topography_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}
 
 controllers_core_la_SOURCES = controllers/core.c controllers/controller.c \
 			      controllers/controller.h 			  \
@@ -140,7 +154,8 @@ primitives_core_la_LIBADD = ${GDK_LIBS} ${AM_LDADD}
 shading_core_la_SOURCES = shading/core.c shading/program.c	\
 			  shading/overlay.h shading/overlay.c	\
 			  shading/program.h shading/flat.c	\
-			  shading/flat.h
+			  shading/flat.h shading/textured.c	\
+			  shading/textured.h
 shading_core_la_CFLAGS = ${AM_CFLAGS} ${GL_CFLAGS}
 shading_core_la_LDFLAGS = -module -avoid-version -no-undefined
 shading_core_la_LIBADD = ${GL_LIBS} ${AM_LDADD}
@@ -156,6 +171,11 @@ shapes_core_la_SOURCES = shapes/core.c
 shapes_core_la_CFLAGS = ${AM_CFLAGS} ${GL_CFLAGS}
 shapes_core_la_LDFLAGS = -module -avoid-version -no-undefined
 shapes_core_la_LIBADD = ${GL_LIBS} ${AM_LDADD}
+
+textures_core_la_SOURCES = textures/core.c
+textures_core_la_CFLAGS = ${AM_CFLAGS} ${GL_CFLAGS}
+textures_core_la_LDFLAGS = -module -avoid-version -no-undefined
+textures_core_la_LIBADD = ${GL_LIBS} ${AM_LDADD}
 
 widgets_core_la_SOURCES = widgets/core.c widgets/display.c	\
 			  widgets/display.h widgets/widget.c	\
@@ -175,7 +195,10 @@ automotive_core_la_SOURCES = automotive/core.c automotive/chain.c	\
 		  	     automotive/wheel.c automotive/wheel.h	\
 		  	     automotive/racetrack.c			\
 		  	     automotive/racetrack.h			\
-		  	     automotive/ground.c automotive/ground.h
+                             topography/elevation.c			\
+			     topography/elevation.h 			\
+			     topography/roam.c topography/roam.h
+
 automotive_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 automotive_core_la_LDFLAGS = -module -avoid-version -no-undefined
 automotive_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}

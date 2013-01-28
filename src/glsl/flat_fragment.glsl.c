@@ -1,7 +1,7 @@
-out vec4 outputColor;
+out vec4 output;
 in vec4 colors;
 
 void main()
 {
-    outputColor = colors;
+    output = colors;
 }

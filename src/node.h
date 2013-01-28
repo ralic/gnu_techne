@@ -35,9 +35,14 @@
 #define SET_ELEMENT_LENGTH (sizeof (SET_ELEMENT) - 1)
 
 #define T_WARN_READONLY							\
-	t_print_warning ("Property '%s' of '%s' nodes cannot be set.\n", \
-			 sel_getName(_cmd) + SET_PREFIX_LENGTH,		\
-			 [self name]);
+    t_print_warning ("Property '%s' of '%s' nodes cannot be set.\n",    \
+                     sel_getName(_cmd) + SET_PREFIX_LENGTH,		\
+                     [self name]);
+
+#define T_WARN_WRITEONLY                                                \
+    t_print_warning ("Property '%s' of '%s' nodes cannot be queried.\n", \
+                     sel_getName(_cmd) + SET_PREFIX_LENGTH,		\
+                     [self name]);
 
 struct protocol {
     Class class;
@@ -51,8 +56,12 @@ struct protocol {
 @interface Node: Object {
 @public
     Node *left, *right, *up, *down, **orphans;
+
     const struct protocol *protocol;
 
+    const char **prerequisites;
+    int prerequisites_n;
+    
     struct {
 	long long int beginnings[2], intervals[2];
     } profile;
@@ -76,6 +85,7 @@ struct protocol {
 +(const struct protocol *) introspect;
 
 -(void) setOrphansList: (Node **)list;
+-(void) set: (int) n prerequisites: (const char **)list;
 
 -(void) meetSibling: (Node *)sibling;
 -(void) missSibling: (Node *)sibling;

@@ -14,72 +14,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _RACETRACK_H_
-#define _RACETRACK_H_
+#ifndef _SPLAT_H_
+#define _SPLAT_H_
 
-#include "body.h"
-#include "shape.h"
-#include "topography/roam.h"
+#include "shader.h"
 
-struct trackdata {
-    /* Tarmac. */
+typedef struct {
+    unsigned int texture;
+    double values[8];
+    int reference;
+} splat_Pigment;
 
-    double *segments, tolerance;
-    int segments_n, last;
-
-    /* Terrain. */
-
-    dGeomID field;
-    roam_Tileset *tileset;
-};
-
-int dTrackClass;
-
-@interface Racetrack: Node {
+@interface Splat: Shader {
 @public
-    double *segments, tolerance;
-    int segments_n;
+    double albedo, separation;
+
+    splat_Pigment *pigments;
+    int pigments_n;
+
+    struct {
+        unsigned int base, detail, power, matrices;
+        unsigned int turbidity, factor, beta_p;
+        unsigned int direction, intensity, beta_r;
+    } locations;
 }
 
--(int) _get_segments;	
--(void) _set_segments;
-
--(int) _get_tolerance;
--(void) _set_tolerance;
-
--(int) _get_body;
--(void) _set_body;
-
--(int) _get_shape;
--(void) _set_shape;
-
-@end
-
-@interface RacetrackShape: Shape {
-    double *segments, tolerance;
-    int segments_n;
-    
-    double tessellation[2], scale[2];
-    int dirty;
-}
-
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
-
--(int) _get_scale;
--(int) _get_tessellation;
-
--(void) _set_scale;
--(void) _set_tessellation;
-
-@end
-
-@interface RacetrackBody: Body {
-}
-
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
-
--(int) _get_sampler;
--(void) _set_sampler;
+-(int) _get_albedo;
+-(int) _get_separation;
+-(void) _set_albedo;
+-(void) _set_separation;
+-(int) _get_palette;
+-(void) _set_palette;
 
 @end
 

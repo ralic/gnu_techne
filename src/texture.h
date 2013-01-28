@@ -14,27 +14,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _GROUND_H_
-#define _GROUND_H_
+#ifndef _TEXTURE_H_
+#define _TEXTURE_H_
 
-#include <lua.h>
 #include "gl.h"
-#include <ode/ode.h>
+#include "node.h"
 
-/* #include "elevation.h" */
-#include "body.h"
-
-@interface Ground: Body {
+@interface Texture: Node {
 @public
-    dHeightfieldDataID data;
-    double resolution[2];
-    void (*sampler)(int, int, double *, double *);
-    int size[2], depth;
+    unsigned int name;
+    GLenum target;
 }
 
-/* -(Ground *) initFromElevation: (Elevation *)object; */
--(void) freeObject;
+-(void)initWithTarget: (GLenum)target andName: (unsigned int)name;
+-(void)initWithTarget: (GLenum)target;
+
+-(int) _get_texels;
+-(void) _set_texels;
 
 @end
+
+Texture *t_testtexture (lua_State *L, int index, GLenum target);
 
 #endif

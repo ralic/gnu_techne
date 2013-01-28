@@ -14,73 +14,57 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _RACETRACK_H_
-#define _RACETRACK_H_
+#include <stdlib.h>
 
-#include "body.h"
-#include "shape.h"
-#include "topography/roam.h"
+#include <lua.h>
+#include <lauxlib.h>
 
-struct trackdata {
-    /* Tarmac. */
+#include "gl.h"
 
-    double *segments, tolerance;
-    int segments_n, last;
+#include "techne.h"
+#include "texture.h"
+#include "textured.h"
+#include "shader.h"
 
-    /* Terrain. */
+static ShaderMold *handle;
 
-    dGeomID field;
-    roam_Tileset *tileset;
-};
-
-int dTrackClass;
-
-@interface Racetrack: Node {
-@public
-    double *segments, tolerance;
-    int segments_n;
-}
-
--(int) _get_segments;	
--(void) _set_segments;
-
--(int) _get_tolerance;
--(void) _set_tolerance;
-
--(int) _get_body;
--(void) _set_body;
-
--(int) _get_shape;
--(void) _set_shape;
-
-@end
-
-@interface RacetrackShape: Shape {
-    double *segments, tolerance;
-    int segments_n;
+@implementation Textured
+-(void)init
+{
+#include "glsl/textured_vertex.h"	
+#include "glsl/textured_fragment.h"	
     
-    double tessellation[2], scale[2];
-    int dirty;
+    [super init];
+    
+    /* If this is the first instance create the program. */
+
+    if (!handle) {
+        ShaderMold *shader;
+        
+	shader = [ShaderMold alloc];
+        
+        [shader initWithHandle: &handle];
+	[shader addSource: glsl_textured_vertex for: T_VERTEX_STAGE];
+	[shader addSource: glsl_textured_fragment for: T_FRAGMENT_STAGE];
+	[shader link];
+    } else {
+        t_pushuserdata(_L, 1, handle);
+    }
+
+    [self load];
 }
 
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
+-(void) draw
+{
+    glEnable (GL_CULL_FACE);
+    glEnable (GL_DEPTH_TEST);
+    
+    glUseProgram(self->name);
+    
+    [super draw];
 
--(int) _get_scale;
--(int) _get_tessellation;
-
--(void) _set_scale;
--(void) _set_tessellation;
-
-@end
-
-@interface RacetrackBody: Body {
+    glDisable (GL_DEPTH_TEST);
+    glDisable (GL_CULL_FACE);
 }
 
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
-
--(int) _get_sampler;
--(void) _set_sampler;
-
 @end
-
-#endif

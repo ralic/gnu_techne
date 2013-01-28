@@ -217,6 +217,11 @@ void t_pop_projection ()
     SET_PROJECTION(projections[projections_n]);
 }
 
+void t_copy_projection(float *matrix)
+{
+    memcpy(matrix, projections + projections_n, 16 * sizeof(float));
+}
+
 #define SET_MODELVIEW(matrix)						\
     {									\
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
@@ -269,6 +274,11 @@ void t_pop_modelview ()
     modelviews_n -= 1;
 
     SET_MODELVIEW(modelviews[modelviews_n]);
+}
+
+void t_copy_modelview(float *matrix)
+{
+    memcpy(matrix, modelviews + modelviews_n, 16 * sizeof(float));
 }
 
 static void draw (Node *root)
@@ -579,9 +589,8 @@ static void draw (Node *root)
 
 	/* Register the transform uniform block. */
 	
-	buffer = [Shader addUniformBlockNamed: "__transform_block"
-                                     forStage: VERTEX_STAGE
-                                   withSource: glsl_transform_block];
+	buffer = t_add_global_block ("__transform_block", glsl_transform_block,
+                                     T_VERTEX_STAGE);
 
 	/* Create the global shading context buffer object. */
     
@@ -731,6 +740,7 @@ static void draw (Node *root)
 	    break;
 	case GDK_NOTHING:
 	case GDK_MAP:
+	case GDK_UNMAP:
 	case GDK_WINDOW_STATE:
 	case GDK_VISIBILITY_NOTIFY:
 	    break;

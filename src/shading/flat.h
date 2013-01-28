@@ -21,7 +21,7 @@
 #include "shader.h"
 
 @interface Flat: Shader {
-@public    
+@public
 }
 
 @end

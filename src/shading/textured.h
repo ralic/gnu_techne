@@ -14,72 +14,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _RACETRACK_H_
-#define _RACETRACK_H_
+#ifndef _TEXTURED_H_
+#define _TEXTURED_H_
 
-#include "body.h"
-#include "shape.h"
-#include "topography/roam.h"
+#include <lua.h>
+#include "shader.h"
 
-struct trackdata {
-    /* Tarmac. */
-
-    double *segments, tolerance;
-    int segments_n, last;
-
-    /* Terrain. */
-
-    dGeomID field;
-    roam_Tileset *tileset;
-};
-
-int dTrackClass;
-
-@interface Racetrack: Node {
+@interface Textured: Shader {
 @public
-    double *segments, tolerance;
-    int segments_n;
 }
-
--(int) _get_segments;	
--(void) _set_segments;
-
--(int) _get_tolerance;
--(void) _set_tolerance;
-
--(int) _get_body;
--(void) _set_body;
-
--(int) _get_shape;
--(void) _set_shape;
-
-@end
-
-@interface RacetrackShape: Shape {
-    double *segments, tolerance;
-    int segments_n;
-    
-    double tessellation[2], scale[2];
-    int dirty;
-}
-
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
-
--(int) _get_scale;
--(int) _get_tessellation;
-
--(void) _set_scale;
--(void) _set_tessellation;
-
-@end
-
-@interface RacetrackBody: Body {
-}
-
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
-
--(int) _get_sampler;
--(void) _set_sampler;
 
 @end
 

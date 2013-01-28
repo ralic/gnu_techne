@@ -40,7 +40,7 @@
 -(void) initWithDevice: (const char *)name
 {
     unsigned int bits[MAX_EVENT_WORDS];
-    struct input_event ie;
+    struct input_event event;
     
     [super init];
 
@@ -70,20 +70,21 @@
             self->force[1] = 0;
 
             memset (&self->effect, 0, sizeof(self->effect));
+            memset (&event, 0, sizeof(event));
         
-            ie.type = EV_FF;
-            ie.code = FF_AUTOCENTER;
-            ie.value = 0;
+            event.type = EV_FF;
+            event.code = FF_AUTOCENTER;
+            event.value = 0;
             
-            if (write(self->device, &ie, sizeof(ie)) < 0) {
+            if (write(self->device, &event, sizeof(event)) < 0) {
                 t_print_warning("Could not disable auto-center for input device %s", name);
             }
             
-            ie.type = EV_FF;
-            ie.code = FF_GAIN;
-            ie.value = 0xFFFFUL;
+            event.type = EV_FF;
+            event.code = FF_GAIN;
+            event.value = 0xFFFFUL;
 
-            if (write(self->device, &ie, sizeof(ie)) < 0) {
+            if (write(self->device, &event, sizeof(event)) < 0) {
                 t_print_warning("Could not set gain for input device %s", name);
             }
 
@@ -92,11 +93,11 @@
 
             ioctl(self->device, EVIOCSFF, &self->effect);
 
-            ie.type = EV_FF;
-            ie.code = effect.id;
-            ie.value = 1;
+            event.type = EV_FF;
+            event.code = effect.id;
+            event.value = 1;
 
-            if (write(self->device, (const void*) &ie, sizeof(ie)) < 0) {
+            if (write(self->device, (const void*) &event, sizeof(event)) < 0) {
                 t_print_warning("Could not start force rendering for input device %", name);
             }
         } else {

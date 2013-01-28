@@ -297,7 +297,7 @@ static void dump (lua_State *L, int index, array_Array *array,
     }
 }
 
-static array_Array *construct (lua_State *L, array_Array *array, int reference)
+static array_Array *construct (lua_State *L, array_Array *array)
 {
     array_Array *new;
 
@@ -306,11 +306,6 @@ static array_Array *construct (lua_State *L, array_Array *array, int reference)
 
     if (metatable == LUA_REFNIL) {
 	lua_newtable (L);
-    
-	if (reference > 0) {
-	    lua_pushvalue(L, reference);
-	    lua_rawseti(L, -2, 1);
-	}
     
 	lua_pushstring(L, "__ipairs");
 	lua_pushcfunction(L, (lua_CFunction)__ipairs);
@@ -453,7 +448,15 @@ static int __index (lua_State *L)
 	    subarray.size = &array->size[1];
 	    subarray.values.any = reference_element(array, (i - 1) * d);
 
-	    construct (L, &subarray, 1);
+	    construct (L, &subarray);
+
+            /* Make a reference to the superarray since we're pointing
+             * to its data. */
+            
+            lua_createtable(L, 1, 0);
+            lua_pushvalue(L, 1);
+            lua_rawseti(L, -2, 1);
+            lua_setuservalue(L, -2);
 	}
     } else {
 	lua_pushnil (L);
@@ -623,7 +626,7 @@ static int fromtable (lua_State *L, int index, array_Array *array)
     array->values.any = malloc (array->length);
 
     dump (L, index, array, 0, 0);
-    construct (L, array, 0);
+    construct (L, array);
 
     return 1;
 }
@@ -633,8 +636,8 @@ static void fromstring (lua_State *L, int index, array_Array *array)
     int i, l;
 
     for (i = 0, l = 1 ; i < array->rank ; l *= array->size[i], i += 1);
+
     l *= sizeof_element (array->type);
-    
     array->free = FREE_SIZE;
     array->length = lua_rawlen (L, index);
     array->values.any = (void *)lua_tostring (L, index);
@@ -644,7 +647,7 @@ static void fromstring (lua_State *L, int index, array_Array *array)
 	lua_error (L);
     }
 
-    construct (L, array, lua_gettop(L));
+    construct (L, array);
 }
 
 static void fromuserdata (lua_State *L, int index, array_Array *array)
@@ -653,7 +656,7 @@ static void fromuserdata (lua_State *L, int index, array_Array *array)
     array->length = lua_rawlen(L, index);
     array->values.any = (void *)lua_touserdata (L, index);
 
-    construct (L, array, lua_gettop(L));
+    construct (L, array);
 }
 
 static void fromzeros (lua_State *L, array_Array *array)
@@ -667,7 +670,7 @@ static void fromzeros (lua_State *L, array_Array *array)
     array->values.any = malloc (array->length);
 
     zero_elements (array, 0, l);
-    construct (L, array, 0);
+    construct (L, array);
 }
 
 static int typeerror (lua_State *L, int narg, const char *tname) {
@@ -842,7 +845,7 @@ array_Array *array_testcompatible (lua_State *L, int index, int what, ...)
 
 array_Array *array_pusharray (lua_State *L, array_Array *array)
 {
-    return construct (L, array, 0);
+    return construct (L, array);
 }
 
 void array_initializev (array_Array *array, array_Type type,
@@ -886,12 +889,12 @@ void array_initialize (array_Array *array, array_Type type, void *values,
 }
 
 array_Array *array_createarrayv (lua_State *L, array_Type type,
-                                  void *values, int rank, int *size)
+                                 void *values, int rank, int *size)
 {
     array_Array array;
 
     array_initializev (&array, type, values, rank, size);
-    return construct (L, &array, 0);
+    return construct (L, &array);
 }
 
 array_Array *array_createarray (lua_State *L, array_Type type,
@@ -957,10 +960,26 @@ void array_toarrayv (lua_State *L, int index, array_Type type,
 
     if (lua_type(L, index) == LUA_TSTRING) {
 	fromstring (L, index, &array);
+
+        /* Make a reference to the string since we're pointing
+         * into its memory. */
+            
+        lua_createtable(L, 1, 0);
+        lua_pushvalue(L, index);
+        lua_rawseti(L, -2, 1);
+        lua_setuservalue(L, -2);
     } else if (lua_type(L, index) == LUA_TTABLE) {
 	fromtable (L, index, &array);
     } else if (lua_type(L, index) == LUA_TUSERDATA) {
 	fromuserdata (L, index, &array);
+
+        /* Make a reference to the userdata since we're pointing
+         * into its memory. */
+            
+        lua_createtable(L, 1, 0);
+        lua_pushvalue(L, index);
+        lua_rawseti(L, -2, 1);
+        lua_setuservalue(L, -2);
     } else {
 	fromzeros (L, &array);
     }
@@ -1009,8 +1028,16 @@ void array_castv (lua_State *L, int index, int rank, int *size)
     cast.rank = rank;
     cast.values.any = array->values.any;
     cast.free = FREE_SIZE;
+    
+    /* Make a reference to the original array since we're pointing
+     * into its memory. */
+            
+    lua_createtable(L, 1, 0);
+    lua_pushvalue(L, index);
+    lua_rawseti(L, -2, 1);
+    lua_setuservalue(L, -2);
 
-    construct (L, &cast, index);
+    construct (L, &cast);
 }
 
 void array_cast (lua_State *L, int index, int rank, ...)
@@ -1051,7 +1078,7 @@ void array_copy (lua_State *L, int index)
     copy.values.any = malloc (copy.length);
     copy_elements(&copy, array, 0, 0, d);
 
-    construct (L, &copy, 0);
+    construct (L, &copy);
 }
 
 void array_set (lua_State *L, int index, lua_Number c)
@@ -1143,12 +1170,12 @@ void array_slicev (lua_State *L, int index, int *slices)
     slice.values.any = malloc (slice.length);
 
     cut (array, &slice, 0, 0, l, m, 0, slices);
-    
+
     slice.type = array->type;
     slice.rank = array->rank;
-    slice.free = FREE_SIZE;
+    slice.free = FREE_BOTH;
 
-    construct (L, &slice, index);
+    construct (L, &slice);
 }
 
 static void adjust(array_Array *source, array_Array *sink, void *defaults,
@@ -1203,7 +1230,7 @@ array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, i
     }
 
     /* Initialize the adjusted array. */
-    
+
     sink.type = source->type;
     sink.rank = rank;
     sink.size = malloc (rank * sizeof(int));
@@ -1223,7 +1250,7 @@ array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, i
 
     adjust (source, &sink, defaults, 0, m, 0, l, 0, 0);
 
-    array = construct (L, &sink, 0);
+    array = construct (L, &sink);
     lua_replace (L, index);
     
     return array;

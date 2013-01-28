@@ -524,7 +524,8 @@ int main(int argc, char **argv)
                 "resources", "array", "arraymath", 
                 "joints", "primitives", "bodies", 
                 "shading", "shapes", "automotive", 
-                "widgets", "controllers"
+                "widgets", "controllers", "textures",
+                "topography"
             };
             int i, n;
 
@@ -667,8 +668,8 @@ int main(int argc, char **argv)
 	t_print_message ("No input files provided.\n");
     }
 
-    /* t_print_message ("Spent %f CPU seconds initializing.\n", */
-    /* 		     (double)t_get_cpu_time() / 1e9); */
+    t_print_message ("Spent %.1f CPU seconds initializing.\n",
+    		     (double)t_get_cpu_time() / 1e9);
 
     if (interactive) {
 	t_print_message ("Dropping to a shell.  Press ctrl-d to continue.\n");

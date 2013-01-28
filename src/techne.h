@@ -29,8 +29,12 @@
 #include "builtin.h"
 
 typedef enum {
-    T_LOAD,
-    T_MULTIPLY,
+    T_LOAD = 0,
+    T_MULTIPLY = 1,
+    
+    T_VERTEX_STAGE = 0,
+    T_GEOMETRY_STAGE = 1,
+    T_FRAGMENT_STAGE = 2,
 } t_Enumerated;
 
 lua_State *_L;
@@ -52,10 +56,12 @@ void t_reset_pool (void *p);
 void t_load_projection (float *matrix);
 void t_push_projection (float *matrix);
 void t_pop_projection ();
+void t_copy_projection(float *matrix);
 
 void t_load_modelview (float *matrix, t_Enumerated mode);
 void t_push_modelview (float *matrix, t_Enumerated mode);
 void t_pop_modelview ();
+void t_copy_modelview(float *matrix);
 
 int luaopen_moremath (lua_State *L);
 int luaopen_morebase (lua_State *L);

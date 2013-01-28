@@ -25,8 +25,7 @@
 #include "flat.h"
 #include "shader.h"
 
-static Shader *mold;
-static int reference;
+static ShaderMold *handle;
 
 @implementation Flat
 -(void)init
@@ -34,29 +33,36 @@ static int reference;
 #include "glsl/flat_vertex.h"	
 #include "glsl/flat_fragment.h"	
     
+    [super init];
+    
     /* If this is the first instance create the program. */
 
-    if (!mold) {
-	mold = [Shader alloc];
+    if (!handle) {
+        ShaderMold *shader;
         
-        [mold init];
-
-	[mold addSource: glsl_flat_vertex for: VERTEX_STAGE];
-	[mold addSource: glsl_flat_fragment for: FRAGMENT_STAGE];
-	[mold link];
-
-	reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+	shader = [ShaderMold alloc];
+        
+        [shader initWithHandle: &handle];
+	[shader addSource: glsl_flat_vertex for: T_VERTEX_STAGE];
+	[shader addSource: glsl_flat_fragment for: T_FRAGMENT_STAGE];
+	[shader link];
+    } else {
+        t_pushuserdata(_L, 1, handle);
     }
-    
-    [self initFrom: mold];
+
+    [self load];
 }
 
 -(void) draw
 {
     glEnable (GL_CULL_FACE);
+    glEnable (GL_DEPTH_TEST);
+    
+    glUseProgram(self->name);
     
     [super draw];
 
+    glDisable (GL_DEPTH_TEST);
     glDisable (GL_CULL_FACE);
 }
 

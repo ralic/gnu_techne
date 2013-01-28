@@ -54,7 +54,7 @@ return {
 		     c = self.gain or 1 / 628
 
 		     a = hinge.anchor
-		     e = arraymath.combine(a, hinge.axis, 1, d + c * hinge.state[2])
+		     e = arraymath.combine(a, hinge.axis, 1, d + c * hinge.rate)
 
 		     self.lines.positions = array.doubles {a, e}
 		     self.points.positions = array.doubles {a, e}
@@ -120,7 +120,7 @@ return {
 	    	  a = pair[1] and pair[1].position
 	    	  b = pair[2] and pair[2].position
 	    	  x = slider.axis
-	    	  d = slider.state[1]
+	    	  d = slider.position
 
 	    	  if a and b then
 		     l, h = slider.stops[1][1], slider.stops[1][2]
@@ -181,16 +181,16 @@ return {
 	    color = yellowgreen,
 
 	    draw = function (self)
-	       local a, d, c, e, x, y
+	       local a, d, c, e, f, x, y
 
 	       d = self.bias or 0.1
 	       c = self.gain or 1 / 628
 
 	       a = universal.anchor
 	       x, y = table.unpack(universal.axes)
-	       e = arraymath.combine(a, x, 1, d + c * universal.state[3])
+	       e = arraymath.combine(a, x, 1, d + c * universal.rates[1])
 
-	       f = arraymath.combine(a, y, 1, d + c * universal.state[4])
+	       f = arraymath.combine(a, y, 1, d + c * universal.rates[2])
 
 	       self.lines.positions = array.doubles {f, a, e}
 	       self.points.positions = array.doubles {f, a, e}

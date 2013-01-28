@@ -68,8 +68,8 @@ static ShaderMold *handle;
     /* Create the shape node. */
     
     lua_pushstring(_L, "shape");
+    lua_pushvalue (_L, -4);
     [[LayoutShape alloc] init];
-
     lua_settable (_L, -3);
     lua_settable (_L, -3);
 }
@@ -427,8 +427,8 @@ static ShaderMold *handle;
 
 -(void)init
 {
-    float uv[4 * 2] = {0, 0,  1, 0,  1, 1,  0, 1};
-    float vertices[4 * 2] = {-0.5, -0.5,  0.5, -0.5,  0.5, 0.5,  -0.5, 0.5};
+    float uv[4 * 2] = {1, 0,  1, 1,  0, 0,  0, 1};
+    float vertices[4 * 2] = {0.5, -0.5,  0.5, 0.5,  -0.5, -0.5,  -0.5, 0.5};
 
     /* Make a reference to the mold to make sure it's not
      * collected. */
@@ -475,7 +475,7 @@ static ShaderMold *handle;
 
     i = glGetAttribLocation(parent->name, "positions");
     glBindBuffer(GL_ARRAY_BUFFER, self->positions);
-    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glVertexAttribPointer(i, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
     glEnableVertexAttribArray(i);
 
     i = glGetAttribLocation(parent->name, "mapping");
@@ -494,9 +494,14 @@ static ShaderMold *handle;
     t_copy_modelview (M);
 
     /* Stretch the vertices as needed. */
-
+    
     M[0] *= self->layout->content[0];
+    M[4] *= self->layout->content[0];
+    M[8] *= self->layout->content[0];
+
+    M[1] *= self->layout->content[1];
     M[5] *= self->layout->content[1];
+    M[9] *= self->layout->content[1];
     
     t_load_modelview (M, T_LOAD);
 

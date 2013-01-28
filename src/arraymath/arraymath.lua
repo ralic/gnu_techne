@@ -27,9 +27,9 @@ function arraymath.euler(theta, phi, psi)
 end
 
 function arraymath.relue(theta, phi, psi)
-   return arraymath.concatenate(arraymath.rotation(theta, 3),
+   return arraymath.concatenate(arraymath.rotation(psi, 3),
 				arraymath.rotation(phi, 2),
-				arraymath.rotation(psi, 1))
+				arraymath.rotation(theta, 1))
 end
 
 function arraymath.mapaxis(u, v)

@@ -79,7 +79,7 @@ return {
 
 		  a = fourstroke.anchor
 		  e = arraymath.combine(a, fourstroke.axis,
-                                        1, d + c * fourstroke.state[2])
+                                        1, d + c * fourstroke.rate)
 
 		  self.lines.positions = array.doubles {a, e}
 		  self.points.positions = array.doubles {a, e}

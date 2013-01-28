@@ -178,9 +178,9 @@
     self->state[3] = eta_v;
     self->state[4] = eta_t;
     self->state[5] = M_ind;
-    self->state[6] = p_me0g * z * self->displacement / (4 * M_PI);
-    self->state[7] = p_me0f * z * self->displacement / (4 * M_PI);
-    self->state[8] = M;
+    self->state[6] = M;
+    self->state[7] = p_me0g * z * self->displacement / (4 * M_PI);
+    self->state[8] = p_me0f * z * self->displacement / (4 * M_PI);
 
 /*   printf ("%f, %f, %f, %f;\n", */
 /* 	  omega / 2 / M_PI * 60, */
@@ -193,6 +193,75 @@
 {
     [self cycle];
     [super stepBy: h at: t];
+}
+
+-(int) _get_pressure
+{
+    lua_pushnumber (_L, self->state[2]);
+
+    return 1;
+}
+
+-(int) _get_efficiency
+{
+    int i;
+    
+    lua_newtable (_L);
+        
+    for(i = 0; i < 2; i += 1) {
+	lua_pushnumber (_L, self->state[i + 3]);
+	lua_rawseti (_L, -2, i + 1);
+    }      
+
+    return 1;
+}
+
+-(int) _get_output
+{
+    int i;
+    
+    lua_newtable (_L);
+        
+    for(i = 0; i < 2; i += 1) {
+	lua_pushnumber (_L, self->state[i + 5]);
+	lua_rawseti (_L, -2, i + 1);
+    }      
+
+    return 1;
+}
+
+-(int) _get_losses
+{
+    int i;
+    
+    lua_newtable (_L);
+        
+    for(i = 0; i < 2; i += 1) {
+	lua_pushnumber (_L, self->state[i + 7]);
+	lua_rawseti (_L, -2, i + 1);
+    }      
+
+    return 1;
+}
+
+-(void) _set_pressure
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_efficiency
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_output
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_losses
+{
+    T_WARN_READONLY;
 }
 
 -(int) _get_anchor

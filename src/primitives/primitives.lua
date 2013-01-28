@@ -57,7 +57,7 @@ function primitives.switch (parameters)
 		  oldmeta.__newindex(self, key, value)
 	       end
 	    end
-   }
+   })
    
    for key, value in pairs (parameters) do
       node[key] = value
@@ -69,12 +69,13 @@ end
 function primitives.gimbal (parameters)
    local node
 
-   node = primitives.node {
+   node = primitives.transform {
       machinery = primitives.transform {
          transform = function (self)
             self.parent.orientation = arraymath.transpose(self.ancestors[2].orientation)
          end,
-   }
+                                       }
+                          }
       
    for key, value in pairs (parameters) do
       node[key] = value

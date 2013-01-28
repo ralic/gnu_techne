@@ -525,7 +525,7 @@ int main(int argc, char **argv)
                 "joints", "primitives", "bodies", 
                 "shading", "shapes", "automotive", 
                 "widgets", "controllers", "textures",
-                "topography"
+                "topography", "physics"
             };
             int i, n;
 

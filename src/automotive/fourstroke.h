@@ -65,6 +65,15 @@
 -(void) _set_angle;
 -(void) _set_rate;
 
+-(int) _get_pressure;
+-(int) _get_efficiency;
+-(int) _get_output;
+-(int) _get_losses;
+-(void) _set_pressure;
+-(void) _set_efficiency;
+-(void) _set_output;
+-(void) _set_losses;
+
 @end
 
 #endif

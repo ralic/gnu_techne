@@ -26,7 +26,7 @@ local rubberband = {
    anchor = {0.5, 0.75},
 }
 
-foo = primitives.root {
+_G[rubberband] = primitives.root {
    shading.overlay {
       normalized = false,
 

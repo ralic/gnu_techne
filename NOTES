@@ -49,6 +49,15 @@ Singleton nodes, that is nodes which should only have one active
 (either allocated or linked) instance should define a class method
 named 'instance' returning it (or NULL if none exists).
 
+Nodes implemented in Lua code
+=============================
+
+Nodes that are implemented in Lua code must return a primitive Node
+with a replaced metatable setting and getting any custom properties.
+If any other nodes are required they should be linked under the
+returned primitive and any hooks that need to be set (for instance to
+link/unlink events) must be set on those internal nodes.
+
 TODO (eventually):
 ==================
 

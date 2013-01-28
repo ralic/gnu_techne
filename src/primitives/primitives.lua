@@ -20,18 +20,21 @@ function primitives.switch (parameters)
    local node, contacts, setting
 
    contacts = {}
-   node = primitives.node {
-      get = function (self, key)
+   node = primitives.node {}
+
+   oldmeta = getmetatable(node)
+   replacemetatable(node, {
+      __index = function (self, key)
 	       if key == "setting" then
 		  return setting
 	       elseif type(key) == 'number' then
 		  return contacts[key]
 	       else
-		  return self[key]
+		  return oldmeta.__index(self, key)
 	       end
 	    end,
 
-      set = function (self, key, value)
+      __newindex = function (self, key, value)
 	       local v
 	       
 	       if key == "setting" then
@@ -51,7 +54,7 @@ function primitives.switch (parameters)
 	       elseif type(key) == 'number' then
 		  contacts[key] = value
 	       else
-		  self[key] = value
+		  oldmeta.__newindex(self, key, value)
 	       end
 	    end
    }
@@ -66,12 +69,13 @@ end
 function primitives.gimbal (parameters)
    local node
 
-   node = primitives.transform {
-      transform = function (self)
-		     self.orientation = arraymath.transpose(self.parent.orientation)
-		  end,
+   node = primitives.node {
+      machinery = primitives.transform {
+         transform = function (self)
+            self.parent.orientation = arraymath.transpose(self.ancestors[2].orientation)
+         end,
    }
-   
+      
    for key, value in pairs (parameters) do
       node[key] = value
    end

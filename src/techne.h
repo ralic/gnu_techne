@@ -63,6 +63,8 @@ void t_push_modelview (float *matrix, t_Enumerated mode);
 void t_pop_modelview ();
 void t_copy_modelview(float *matrix);
 
+void t_convert_spring(double k_s, double k_d, double *erp, double *cfm);
+
 int luaopen_moremath (lua_State *L);
 int luaopen_morebase (lua_State *L);
 

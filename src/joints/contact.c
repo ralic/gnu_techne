@@ -209,10 +209,10 @@
     if (self->contact.surface.mode & dContactSoftCFM) {
 	lua_newtable (_L);
 		
-	lua_pushnumber (_L, self->contact.surface.soft_cfm);
+	lua_pushnumber (_L, self->elasticity[0]);
 	lua_rawseti (_L, -2, 1);
 		
-	lua_pushnumber (_L, self->contact.surface.soft_erp);
+	lua_pushnumber (_L, self->elasticity[1]);
 	lua_rawseti (_L, -2, 2);
     } else {
 	lua_pushnil (_L);
@@ -354,10 +354,14 @@
 	self->contact.surface.mode |= dContactSoftCFM;
 
 	lua_rawgeti (_L, 3, 1);
-	self->contact.surface.soft_cfm = lua_tonumber (_L, -1);
+	self->elasticity[0] = lua_tonumber (_L, -1);
 
 	lua_rawgeti (_L, 3, 2);
-	self->contact.surface.soft_erp = lua_tonumber (_L, -1);
+	self->elasticity[1] = lua_tonumber (_L, -1);
+
+        t_convert_spring(self->elasticity[0], self->elasticity[1],
+                         &self->contact.surface.soft_erp,
+                         &self->contact.surface.soft_cfm);
 
 	lua_pop (_L, 2);
     } else {

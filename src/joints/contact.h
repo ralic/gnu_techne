@@ -23,6 +23,7 @@
 
 @interface Contact: Joint {
     dContact contact;
+    double elasticity[2];
     int internal, dirty;
 }
 

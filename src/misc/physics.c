@@ -361,136 +361,6 @@ static int cylindermass (lua_State *L)
     return 1;
 }
 
-static int spring (lua_State *L)
-{
-    dReal k_d, k_s, h;
-
-    k_s = (dReal)luaL_checknumber (L, 1);
-    k_d = (dReal)luaL_checknumber (L, 2);
-
-    [(Dynamics *)[Dynamics instance] _get_stepsize];
-    h = (dReal)lua_tonumber (L, -1);
-    lua_pop(_L, 1);
-
-    lua_newtable (L);
-    lua_pushnumber (L, 1.0 / (h * k_s + k_d));
-    lua_rawseti (L, -2, 1);
-    lua_pushnumber (L, h * k_s / (h * k_s + k_d));
-    lua_rawseti (L, -2, 2);
-
-    return 1;
-}
-
-static int contact (lua_State *L)
-{
-    dContact contact;
-    dJointID j;
-    Body *a, *b;
-    dReal mu, depth, epsilon, sigma, tau;
-    array_Array *pos, *normal;
-    int i, simple;
-
-    simple = lua_toboolean (L, lua_upvalueindex (1));
-
-    a = t_checknode (L, 1, [Body class]);
-    b = t_checknode (L, 2, [Body class]);
-    pos = array_checkcompatible (L, 3,
-                                 ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-                                 ARRAY_TDOUBLE, 1, 3);
-    normal = array_checkcompatible (L, 4,
-                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-                                    ARRAY_TDOUBLE, 1, 3);
-
-    depth = (dReal)luaL_checknumber (L, 5);
-    mu = (dReal)luaL_optnumber (L, 6, 0);
-    epsilon = (dReal)luaL_optnumber (L, 7, 0);
-    sigma = (dReal)luaL_optnumber (L, 8, 0);
-    tau = (dReal)luaL_optnumber (L, 9, 1);
-
-    /* Set surface parameters. */
-    
-    contact.surface.mode = 0;
-		    
-    if (mu > 0) {
-	if (!simple) {
-	    contact.surface.mode |= dContactApprox1;
-	}
-	
-	contact.surface.mode |= dContactFDir1;
-	contact.surface.mu = mu;
-    }
-
-    if (epsilon > 0) {
-	contact.surface.mode |= dContactBounce;
-	contact.surface.bounce = epsilon;
-	contact.surface.bounce_vel = 0.01;
-    }
-
-    if (sigma > 0) {
-	contact.surface.mode |= dContactSoftCFM;
-	contact.surface.soft_cfm = sigma;
-    }
-
-    if (tau < 1) {
-	contact.surface.mode |= dContactSoftERP;
-	contact.surface.soft_erp = tau;
-    }
-
-    for (i = 0 ; i < 3; i += 1) {
-	contact.geom.pos[i] = pos->values.doubles[i];
-	contact.geom.normal[i] = normal->values.doubles[i];
-    }
-
-    dSafeNormalize3 (contact.geom.normal);
-
-    {
-	dBodyID p, q;
-	dVector3 u, v, delta;
-	dReal *r, *n, ndotdelta;
-
-	r = pos->values.doubles;
-	n = normal->values.doubles;
-	p = a->body;
-	q = b->body;
-		
-	if (p) {
-	    dBodyGetPointVel (p, r[0], r[1], r[2], u);
-	} else {
-	    dSetZero (u, 3);
-	}
-		
-	if (q) {
-	    dBodyGetPointVel (q, r[0], r[1], r[2], v);
-	} else {
-	    dSetZero (v, 3);
-	}	
-
-	dOP (delta, -, u, v);		
-	ndotdelta = dDOT(n, delta);
-
-	/* Only consider this contact if the
-	   relative velocity points inward. */
-
-	if (simple || ndotdelta <= 0) {
-	    contact.fdir1[0] = delta[0] - ndotdelta * n[0];
-	    contact.fdir1[1] = delta[1] - ndotdelta * n[1];
-	    contact.fdir1[2] = delta[2] - ndotdelta * n[2];
-
-	    dSafeNormalize3(contact.fdir1);
-    
-	    contact.geom.depth = depth;
-	    contact.geom.g1 = a->geom;
-	    contact.geom.g2 = b->geom;
-
-	    j = dJointCreateContact (_WORLD, _GROUP, &contact);
-
-	    dJointAttach (j, a->body, b->body);
-	}
-    }
-
-    return 0;
-}
-
 static int joined (lua_State *L)
 {
     Body *a, *b;
@@ -701,7 +571,6 @@ int luaopen_physics (lua_State *L)
 	{"boxmass", boxmass},
 	{"capsulemass", capsulemass},
 	{"cylindermass", cylindermass},
-	{"spring", spring},
 	{"joined", joined},
 	{"pointfrombody", pointfrombody},
 	{"pointtobody", pointtobody},
@@ -714,16 +583,6 @@ int luaopen_physics (lua_State *L)
 
     lua_newtable (L);
     luaL_setfuncs (L, physics, 0);
-
-    lua_pushstring (L, "addcontact");
-    lua_pushboolean (L, 0);
-    lua_pushcclosure (L, contact, 1);
-    lua_settable (L, -3);
-
-    lua_pushstring (L, "addsimplecontact");
-    lua_pushboolean (L, 1);
-    lua_pushcclosure (L, contact, 1);
-    lua_settable (L, -3);
 
     return 1;
 }

@@ -192,6 +192,8 @@
     dJointSetSliderParam (self->joint, dParamHiStop, dInfinity);
 	
     if(lua_istable (_L, 3)) {
+        double erp, cfm;        
+        
 	lua_rawgeti (_L, 3, 1);
 	for(i = 0 ; i < 2 ; i += 1) {
 	    lua_rawgeti (_L, -1, i + 1);
@@ -220,10 +222,16 @@
 			      self->stops[0]);
 	dJointSetSliderParam (self->joint, dParamHiStop,
 			      self->stops[1]);
+
+        t_convert_spring(self->hardness[0],
+                         self->hardness[1],
+                         &erp, &cfm);
+  
 	dJointSetSliderParam (self->joint, dParamStopCFM,
 			      self->hardness[0]);
 	dJointSetSliderParam (self->joint, dParamStopERP,
 			      self->hardness[1]);
+        
 	dJointSetSliderParam (self->joint, dParamBounce, self->bounce);
     }
 }

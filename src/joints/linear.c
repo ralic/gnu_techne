@@ -290,6 +290,8 @@
 	
     if(lua_istable (_L, 3)) {
 	for(j = 0 ; j < 3 ; j += 1) {
+            double erp, cfm;
+            
 	    lua_rawgeti (_L, 3, j + 1);
 		
 	    if(lua_istable (_L, -1)) {
@@ -311,6 +313,7 @@
 			
 		    lua_pop (_L, 1);
 		}
+                
 		lua_pop (_L, 1);
 	
 		lua_rawgeti (_L, -1, 3);
@@ -326,13 +329,17 @@
 				      dParamHiStop + dParamGroup * j,
 				      self->stops[j][1]);
 
+                t_convert_spring(self->hardness[j][0],
+                                 self->hardness[j][1],
+                                 &erp, &cfm);
+
 		dJointSetLMotorParam (self->joint,
 				      dParamStopCFM + dParamGroup * j,
-				      self->hardness[j][0]);
+				      cfm);
 
 		dJointSetLMotorParam (self->joint,
 				      dParamStopERP + dParamGroup * j,
-				      self->hardness[j][1]);
+				      erp);
 
 		dJointSetLMotorParam (self->joint,
 				      dParamBounce + dParamGroup * j,

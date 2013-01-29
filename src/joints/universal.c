@@ -319,6 +319,8 @@
 	    lua_rawgeti (_L, 3, j + 1);
 		
 	    if(lua_istable (_L, -1)) {
+                double erp, cfm;
+                
 		lua_rawgeti (_L, -1, 1);
 		for(i = 0 ; i < 2 ; i += 1) {
 		    lua_rawgeti (_L, -1, i + 1);
@@ -351,13 +353,17 @@
 					 dParamHiStop + dParamGroup * j,
 					 self->stops[j][1]);
 
+                t_convert_spring(self->hardness[j][0],
+                                 self->hardness[j][1],
+                                 &erp, &cfm);
+                
 		dJointSetUniversalParam (self->joint,
 					 dParamStopCFM + dParamGroup * j,
-					 self->hardness[j][0]);
+					 cfm);
 
 		dJointSetUniversalParam (self->joint,
 					 dParamStopERP + dParamGroup * j,
-					 self->hardness[j][1]);
+					 erp);
 
 		dJointSetUniversalParam (self->joint,
 					 dParamBounce + dParamGroup * j,

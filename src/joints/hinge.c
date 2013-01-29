@@ -227,6 +227,8 @@
     dJointSetHingeParam (self->joint, dParamHiStop, dInfinity);
 
     if(lua_istable (_L, 3)) {
+        double erp, cfm;        
+        
 	lua_rawgeti (_L, 3, 1);
 	for(i = 0 ; i < 2 ; i += 1) {
 	    lua_rawgeti (_L, -1, i + 1);
@@ -256,10 +258,14 @@
 	dJointSetHingeParam (self->joint, dParamHiStop,
 			     self->stops[1]);
 
+        t_convert_spring(self->hardness[0],
+                         self->hardness[1],
+                         &erp, &cfm);
+  
 	dJointSetHingeParam (self->joint, dParamStopCFM,
-			     self->hardness[0]);
+			     cfm);
 	dJointSetHingeParam (self->joint, dParamStopERP,
-			     self->hardness[1]);
+			     erp);
 
 	dJointSetHingeParam (self->joint, dParamBounce, self->bounce);
     }

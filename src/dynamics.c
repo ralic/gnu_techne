@@ -136,6 +136,7 @@ static void callback (void *data, dGeomID a, dGeomID b)
 		/* Create a collision event. */
 
 		if (collision != LUA_REFNIL) {
+                    double k_s, k_d;
 		    int h;
 		    
 		    h = lua_gettop (_L);
@@ -183,16 +184,18 @@ static void callback (void *data, dGeomID a, dGeomID b)
 			}
 		    }
 
-		    /* The CFM. */
+		    /* The CFM & ERP. */
 
 		    if (lua_type (_L, h + 5) == LUA_TNUMBER) {
-			sigma = lua_tonumber (_L, h + 5);
-		    }
-
-		    /* The ERP. */
+			k_s = lua_tonumber (_L, h + 5);
 			
-		    if (lua_type (_L, h + 6) == LUA_TNUMBER) {
-			tau = lua_tonumber (_L, h + 6);
+                        if (lua_type (_L, h + 6) == LUA_TNUMBER) {
+                            k_d = lua_tonumber (_L, h + 6);
+                        } else {
+                            k_d = 0;
+                        }
+
+                        t_convert_spring(k_s, k_d, &tau, &sigma);
 		    }
 		    
 		    lua_settop (_L, h);
@@ -330,6 +333,12 @@ static void step (Node *root, double h, double t)
     }
     
     t_end_interval (root);
+}
+
+void t_convert_spring(double k_s, double k_d, double *erp, double *cfm)
+{
+    *cfm = 1.0 / (stepsize * k_s + k_d);
+    *erp = stepsize * k_s / (stepsize * k_s + k_d);
 }
 
 @implementation Dynamics

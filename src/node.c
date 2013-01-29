@@ -151,6 +151,26 @@ static int constructnode (lua_State *L)
     return lua_gettop(_L) - 1;
 }
 
+static void pushname (lua_State *L, Class class)
+{
+    const char *name;
+    char *lower;
+    int i, n;
+
+    name = [class name];
+
+    /* Make a temporary copy of the name and down-case it. */
+
+    n = strlen(name);
+    lower = strcpy(alloca(n + 1), name);
+
+    for (i = 0 ; i < n ; i += 1) {
+        lower[i] = tolower(lower[i]);
+    }
+
+    lua_pushstring (L, lower);
+}
+
 void t_exportnodes (lua_State *L, Class *classes)
 {
     int i;
@@ -158,19 +178,10 @@ void t_exportnodes (lua_State *L, Class *classes)
     lua_newtable (L);
 
     for (i = 0 ; classes[i] ; i += 1) {
-	const char *name;
-	char *lower;
-
-	name = [classes[i] name];
-
-	/* Make a temporary copy of the name and down-case it. */
-	    
-	lower = strcpy(alloca(strlen(name) + 1), name);
-	lower[0] = tolower(lower[0]);
-
+        pushname (L, classes[i]);
 	lua_pushlightuserdata (L, classes[i]);
 	lua_pushcclosure (L, constructnode, 1);
-	lua_setfield(L, -2, lower);
+	lua_settable(L, -3);
     }	
 }
 
@@ -1393,6 +1404,18 @@ static void unlink_node (Node *node)
 	t_pushuserdata (_L, 1, self);
     	t_callhook (_L, self->unlink, 1, 0);
     }
+}
+
+-(int) _get_type
+{
+    pushname(_L, [self class]);
+    
+    return 1;
+}
+ 
+-(void) _set_type
+{
+    T_WARN_READONLY;
 }
 
 -(int) _get_tag

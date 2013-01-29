@@ -121,6 +121,9 @@ struct protocol {
 -(void) _set_set;
 -(void) _set_index;
 
+-(int) _get_type;
+-(void) _set_type;
+
 @end
 
 void t_begin_interval (Node *);

@@ -185,7 +185,7 @@
 {
     int i;
 
-    /* Resetting the self->stops makes sure that lo remains
+    /* Resetting the stops makes sure that lo remains
        smaller than hi between calls. */
 
     dJointSetSliderParam (self->joint, dParamLoStop, -dInfinity);
@@ -228,9 +228,9 @@
                          &erp, &cfm);
   
 	dJointSetSliderParam (self->joint, dParamStopCFM,
-			      self->hardness[0]);
+			      cfm);
 	dJointSetSliderParam (self->joint, dParamStopERP,
-			      self->hardness[1]);
+			      erp);
         
 	dJointSetSliderParam (self->joint, dParamBounce, self->bounce);
     }

@@ -40,10 +40,13 @@ for i = 1, 2 do
          anchor = {0, -1, -0.75 + 0.5 * i},
                          },
 
-      spring = joints.torsion {
-         stiffness = {3, 3, 3},
-         damping = {0.1, 0.1, 0.1},
-                     },
+      spring = joints.euler {
+         stops = {
+            {{0, 0}, {3, 0.1}, 0},
+            {{0, 0}, {3, 0.1}, 0},
+            {{0, 0}, {3, 0.1}, 0},
+         }
+                            },
       
       bar = a[i + 1],
 
@@ -80,18 +83,17 @@ for i = 1, 3 do
 end
 
 for i = 1, 2 do
-   b[i].foo = joints.spring {
-      stiffness = 10,
-      damping = 0.1,
-
+   b[i].foo = joints.slider {
+      stops = {{0, 0}, {50, 1}, 0},
       bar = b[i + 1]
-                                   }
+                            }
 end
 
 root.environment[2] = b[1]
 
 root.timer = primitives.timer {
-   period = 1,
+   period = 3,
+
    tick = function()
       physics.addforce(a[3], {100 * math.random() - 50,
                               100 * math.random() - 50,

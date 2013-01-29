@@ -210,12 +210,12 @@ static void tomass (lua_State *L, int t, dMass *mass)
     if(lua_istable (L, t)) {
 	/* Mass. */
 	
-	lua_rawgeti (L, 3, 1);
+	lua_rawgeti (L, t, 1);
 	m = lua_tonumber (L, -1);
 
 	/* Center of mass. */
 	
-	lua_rawgeti (L, 3, 2);	
+	lua_rawgeti (L, t, 2);	
 	array = array_checkcompatible (L, -1,
                                        ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                        ARRAY_TDOUBLE, 1, 3);
@@ -223,7 +223,7 @@ static void tomass (lua_State *L, int t, dMass *mass)
 
 	/* Inertia. */
 	
-	lua_rawgeti (L, 3, 3);
+	lua_rawgeti (L, t, 3);
 	array = array_checkcompatible (L, -1,
                                        ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                        ARRAY_TDOUBLE, 2, 3, 3);

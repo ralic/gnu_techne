@@ -315,7 +315,9 @@
     }
 	
     if(lua_istable (_L, 3)) {
-	for(j = 0 ; j < 3 ; j += 1) {
+        self->degrees = lua_rawlen(_L, 3);
+        
+	for(j = 0 ; j < self->degrees ; j += 1) {
 	    lua_rawgeti (_L, 3, j + 1);
 		
 	    if(lua_istable (_L, -1)) {

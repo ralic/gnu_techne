@@ -34,7 +34,11 @@
 
     self->explicit = 0;
     self->inverted = 0;
+    self->objects[0] = NULL;
+    self->objects[1] = NULL;
     self->attach = LUA_REFNIL;
+    self->references[0] = LUA_REFNIL;
+    self->references[1] = LUA_REFNIL;
 
     if (self->joint) {
 	dJointSetFeedback (self->joint, &self->feedback);
@@ -49,7 +53,9 @@
     }
 
     luaL_unref (_L, LUA_REGISTRYINDEX, self->attach);
-    
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->references[0]);
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->references[1]);
+
     [super free];
 }
 
@@ -60,56 +66,54 @@
 
 	a = self->up;
 	
-	/* Resolve the parent body if a body hasn't been referenced
-	 * explicitly. */
-
 	if (self->explicit < 2) {
+            /* Attach to the parent body if only one body has been
+             * referenced explicitly. */
+
 	    if (a && [a isKindOf: [Body class]]) {
-		self->bodies[0] = ((Body *)a)->body;
+		self->objects[0] = (Body *)a;
 	    } else {
-		self->bodies[0] = NULL;
+		self->objects[0] = NULL;
 	    }
 	} else {
-	    b = dBodyGetData (self->bodies[0]);
+            assert (self->objects[0]);
 	}
 
-	/* Resolve the child body. Look for a suitable child body if a
-	 * body hasn't been referenced explicitly. */
-
+        self->bodies[0] = self->objects[0] ? self->objects[0]->body : NULL;
+        
 	if (self->explicit < 1) {
+            /* Attach to a child body if no body has been referenced
+             * explicitly. */
+
 	    for (b = self->down;
 		 b && ![b isKindOf: [Body class]];
 		 b = b->right);
     
 	    if (b) {
-		self->bodies[1] = ((Body *)b)->body;
+		self->objects[1] = (Body *)b;
 	    } else {
-		self->bodies[1] = NULL;
+		self->objects[1] = NULL;
 	    }
 	} else {
-	    b = dBodyGetData (self->bodies[1]);
+            assert (self->objects[1]);
 	}
+        
+        self->bodies[1] = self->objects[1] ? self->objects[1]->body : NULL;
+        
+        if (self->inverted) {
+            if (self->joint) {
+		dJointAttach (self->joint, self->bodies[1], self->bodies[0]);
+            }
 
-	if (self->joint) {
-	    if (self->inverted) {
-		dJointAttach (self->joint,
-			      self->bodies[1], self->bodies[0]);
-		t_pushuserdata (_L, 3, self,
-				self->bodies[1] ? 
-				dBodyGetData(self->bodies[1]) : NULL,
-				self->bodies[0] ? 
-				dBodyGetData(self->bodies[0]) : NULL);
-		t_callhook (_L, self->attach, 3, 0);
-	    } else {
-		dJointAttach (self->joint,
-			      self->bodies[0], self->bodies[1]);
-		t_pushuserdata (_L, 3, self,
-				self->bodies[0] ? 
-				dBodyGetData(self->bodies[0]) : NULL,
-				self->bodies[1] ? 
-				dBodyGetData(self->bodies[1]) : NULL);
-		t_callhook (_L, self->attach, 3, 0);
-	    }
+            t_pushuserdata (_L, 3, self, self->objects[1], self->objects[0]);
+            t_callhook (_L, self->attach, 3, 0);
+        } else {
+            if (self->joint) {
+                dJointAttach (self->joint, self->bodies[0], self->bodies[1]);
+            }
+            
+            t_pushuserdata (_L, 3, self, self->objects[0], self->objects[1]);
+            t_callhook (_L, self->attach, 3, 0);
 	}
     } else {
 	if (self->joint) {
@@ -228,20 +232,12 @@
 -(int) _get_pair
 {
     if (self->bodies[0] ||  self->bodies[1]) {
-	lua_newtable (_L);
+	lua_createtable (_L, 2, 0);
 
 	if (self->inverted) {
-	    t_pushuserdata (_L, 2,
-			    self->bodies[1] ? 
-			    dBodyGetData(self->bodies[1]) : NULL,
-			    self->bodies[0] ? 
-			    dBodyGetData(self->bodies[0]) : NULL);
+	    t_pushuserdata (_L, 2, self->objects[1], self->objects[0]);
 	} else {
-	    t_pushuserdata (_L, 2,
-			    self->bodies[0] ? 
-			    dBodyGetData(self->bodies[0]) : NULL,
-			    self->bodies[1] ? 
-			    dBodyGetData(self->bodies[1]) : NULL);
+	    t_pushuserdata (_L, 2, self->objects[0], self->objects[1]);
 	}
 
 	lua_rawseti (_L, 3, 2);
@@ -256,12 +252,13 @@
 -(int) _get_bodies
 {
     if (self->explicit == 1) {
-	t_pushuserdata (_L, 1, dBodyGetData(self->bodies[1]));
+	lua_rawgeti(_L, LUA_REGISTRYINDEX, self->references[1]);
     } else if (self->explicit == 2) {
-	lua_newtable (_L);
-	t_pushuserdata (_L, 2, dBodyGetData(self->bodies[1]), dBodyGetData(self->bodies[0]));
-	lua_rawseti (_L, -2, 2);
+	lua_createtable (_L, 2, 0);
+	lua_rawgeti(_L, LUA_REGISTRYINDEX, self->references[0]);
 	lua_rawseti (_L, -2, 1);
+	lua_rawgeti(_L, LUA_REGISTRYINDEX, self->references[1]);
+	lua_rawseti (_L, -2, 2);
     } else {
 	lua_pushnil (_L);
     }
@@ -285,26 +282,31 @@
 
 -(void) _set_bodies
 {
-    Body *object;
     int i;
-    
+
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->references[0]);
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->references[1]);
+
     if (lua_isnil (_L, 3)) {
-	self->bodies[0] = NULL;
-	self->bodies[1] = NULL;
+	self->objects[0] = NULL;
+	self->objects[1] = NULL;
+        
 	self->explicit = 0;
     } else if(lua_istable(_L, 3)) {
 	for (i = 0 ; i < 2 ; i += 1) {
 	    lua_rawgeti (_L, 3, i + 1);
-	    object = t_checknode (_L, -1, [Body class]);
-	    self->bodies[i] = object->body;
+            
+            self->objects[i] = t_checknode (_L, -1, [Body class]);
+            self->references[i] = luaL_ref(_L, LUA_REGISTRYINDEX);
 	}
 
-	lua_pop (_L, 2);
 	self->explicit = 2;
     } else {
-	object = t_checknode (_L, 3, [Body class]);
-	    
-	self->bodies[1] = object->body;
+	self->objects[0] = NULL;
+	self->objects[1] = t_checknode (_L, 3, [Body class]);	    
+        self->references[1] = luaL_ref(_L, LUA_REGISTRYINDEX);
+        self->references[0] = LUA_REFNIL;
+        
 	self->explicit = 1;
     }
 

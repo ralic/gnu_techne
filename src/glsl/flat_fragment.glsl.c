@@ -1,7 +1,7 @@
-out vec4 output;
+out vec4 fragment;
 in vec4 colors;
 
 void main()
 {
-    output = colors;
+    fragment = colors;
 }

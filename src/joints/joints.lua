@@ -237,7 +237,46 @@ return {
       return universal
    end,
 
-  spherical = core.spherical,
+  spherical = function (parameters)
+      local spherical
+
+      spherical = core.spherical (parameters)
+
+      spherical.schematic = primitives.node {
+	 arms = shading.flat {
+	    color = darkseagreen,
+
+	    draw = function (self) 
+	       local a, b, pair
+
+	       pair = spherical.pair
+
+	       if pair then
+		  local positions
+
+		  a = pair[1] and pair[1].position
+		  b = pair[2] and pair[2].position
+
+		  if a and b then
+		     positions = array.doubles{a, spherical.anchor, b}
+		  elseif a then
+		     positions = array.doubles{spherical.anchor, a}
+		  elseif b then
+		     positions = array.doubles{spherical.anchor, b}
+		  end
+
+                  self.lines.positions = positions
+                  self.points.positions = positions
+	       end
+	    end,
+
+	    lines = shapes.line {},
+	    points = shapes.points {},
+			     }
+					    }
+      return spherical
+  end,
+
   angular = core.angular,
   planar = core.planar,
   clamp = core.clamp,
@@ -247,4 +286,174 @@ return {
   doublehinge = core.doublehinge,
   doubleball = core.doubleball,
   linear = core.linear,
+
+  spring = function (parameters)
+     local oldmeta, self
+     local stiffness, damping, preload = 100, 10, 0
+
+     self = joints.slider {
+        stops = {{0, 0}, physics.spring(100, 10), 0},
+
+        attach = function (self, a, b)
+           if a and b then
+              self.axis = arraymath.normalize(arraymath.subtract(a.position,
+                                                                 b.position))
+           end
+        end,
+                          }
+     
+     oldmeta = getmetatable (self)
+
+     replacemetatable (self, {
+                          __index = function (self, key)
+                             local meta = getmetatable(self)
+
+                             if key == "stiffness" then
+                                return stiffness
+                             elseif key == "damping" then
+                                return damping
+                             elseif key == "preload" then
+                                return preload
+                             else
+                                return oldmeta.__index (self, key)
+                             end
+                          end,
+
+                          __newindex = function (self, key, value)
+                             local meta = getmetatable(self)
+
+                             if key == "stiffness" then
+                                stiffness = value
+                             elseif key == "damping" then
+                                damping = value
+                             elseif key == "preload" then
+                                preload = value
+                             else
+                                oldmeta.__newindex(self, key, value)
+                             end
+
+                             if key == "stiffness" or
+                                key == "damping" then
+                                local stops = self.stops
+
+                                stops[2] = physics.spring (stiffness, damping)
+                                self.stops = stops
+                             end
+
+                             if key == "preload" then
+                                local stops = self.stops
+
+                                stops[1] = {preload, preload}
+                                self.stops = stops
+                             end
+                          end,
+
+                          __tostring = function(self)
+                             return "Spring"
+                          end
+                             })
+
+     self.stiffness = 100
+     self.damping = 10
+     self.preload = 0
+
+     for key, value in pairs(parameters) do
+        self[key] = value
+     end
+
+     return self
+  end,
+
+  torsion = function (parameters)
+     local oldmeta, self
+     local stiffness = {100, 100, 100}
+     local damping = {10, 10, 10}
+     local preload = {0, 0, 0}
+
+     self = joints.euler {
+        stops = {
+           {{0, 0}, physics.spring(100, 10), 0},
+           {{0, 0}, physics.spring(100, 10), 0},
+           {{0, 0}, physics.spring(100, 10), 0},
+        }
+                         }
+
+     oldmeta = getmetatable (self)
+
+     replacemetatable (self, {
+                          __index = function (self, key)
+                             local meta = getmetatable(self)
+
+                             if key == "stiffness" then
+                                return stiffness
+                             elseif key == "damping" then
+                                return damping
+                             elseif key == "preload" then
+                                return preload
+                             else
+                                return oldmeta.__index (self, key)
+                             end
+                          end,
+
+                          __newindex = function (self, key, value)
+                             local meta = getmetatable(self)
+
+                             if key == "stiffness" then
+                                stiffness = value
+                             elseif key == "damping" then
+                                damping = value
+                             elseif key == "preload" then
+                                preload = value
+                             else
+                                oldmeta.__newindex(self, key, value)
+                             end
+
+                             if key == "stiffness" or
+                                key == "damping" then
+                                local k_s = stiffness
+                                local k_d = damping
+                                local stops = self.stops
+
+                                if type(k_s) == "number" then
+                                   k_s = {k_s, k_s, k_s}
+                                end
+
+                                if type(k_d) == "number" then
+                                   k_d = {k_d, k_d, k_d}
+                                end
+
+                                for i = 1, 3 do
+                                   stops[i][2] = physics.spring (k_s[i], k_d[i])
+                                end
+
+                                self.stops = stops
+                             end
+
+                             if key == "preload" then
+                                local stops = self.stops
+                                local delta = {
+                                   preload[1],
+                                   preload[2],
+                                   preload[3]
+                                }
+
+                                for i = 1, 3 do
+                                   stops[i][1] = {delta[i], delta[i]}
+                                end
+
+                                self.stops = stops
+                             end
+                          end,
+
+                          __tostring = function(self)
+                             return "Torsion"
+                          end
+                             })
+     
+     for key, value in pairs(parameters) do
+        self[key] = value
+     end
+
+     return self
+  end
 }

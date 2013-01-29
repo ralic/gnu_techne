@@ -72,3 +72,6 @@ TODO (ASAP):
 * Adapt the Racetrack node to the mold node or prerequisite configuration
   approach.
 * Add support for setting clamp and filtering modes to the Texture Node.
+* Support implementing a "type" property for the base Node class exporting
+  the class name and use that to write an abstract compound joint node.
+* Think up proper names for the spring joints.

@@ -284,39 +284,43 @@ static void call_poststep_hook (dBodyID body)
     double *I, *c;
     int i, j;
 
-    dBodyGetMass (self->body, &self->mass);
+    if (self->body) {
+        dBodyGetMass (self->body, &self->mass);
 
-    lua_newtable (_L);
+        lua_newtable (_L);
 
-    /* Mass. */
+        /* Mass. */
 	
-    lua_pushnumber (_L, self->mass.mass);
-    lua_rawseti (_L, -2, 1);
+        lua_pushnumber (_L, self->mass.mass);
+        lua_rawseti (_L, -2, 1);
     
-    /* Center of mass. */
+        /* Center of mass. */
 	
-    array = array_createarray (_L, ARRAY_TDOUBLE, NULL, 1, 3);
-    c = array->values.doubles;
+        array = array_createarray (_L, ARRAY_TDOUBLE, NULL, 1, 3);
+        c = array->values.doubles;
 
-    for(i = 0 ; i < 3 ; i += 1) {
-	c[i] = self->mass.c[i];
-    }
+        for(i = 0 ; i < 3 ; i += 1) {
+            c[i] = self->mass.c[i];
+        }
 
-    lua_rawseti (_L, -2, 2);
+        lua_rawseti (_L, -2, 2);
 
-    /* Inertia. */
+        /* Inertia. */
 
-    array = array_createarray (_L, ARRAY_TDOUBLE, NULL, 2, 3, 3);
-    I = array->values.doubles;
+        array = array_createarray (_L, ARRAY_TDOUBLE, NULL, 2, 3, 3);
+        I = array->values.doubles;
 
-    for(i = 0 ; i < 3 ; i += 1) {
-	for(j = 0 ; j < 3 ; j += 1) {
-	    I[i * 3 + j] = self->mass.I[i * 4 + j];
-	}
+        for(i = 0 ; i < 3 ; i += 1) {
+            for(j = 0 ; j < 3 ; j += 1) {
+                I[i * 3 + j] = self->mass.I[i * 4 + j];
+            }
+        }
+    
+        lua_rawseti (_L, -2, 3);
+    } else {
+        lua_pushnil (_L);
     }
     
-    lua_rawseti (_L, -2, 3);
-
     return 1;
 }
 

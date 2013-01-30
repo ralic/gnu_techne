@@ -30,7 +30,6 @@
 -(int) _get_decorate;
 -(int) _get_grabinput;
 -(int) _get_cursor;
--(int) _get_pointer;
 -(int) _get_perspective;
 -(int) _get_orthographic;	
 -(int) _get_canvas;
@@ -47,7 +46,6 @@
 -(void) _set_decorate;
 -(void) _set_grabinput;
 -(void) _set_cursor;
--(void) _set_pointer;
 -(void) _set_perspective;
 -(void) _set_orthographic;
 -(void) _set_canvas;

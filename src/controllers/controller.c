@@ -285,7 +285,7 @@
                 }
                 
                 lua_pushinteger(_L, k);
-                lua_pushboolean(_L, info.value);
+                lua_pushnumber(_L, info.value);
                 lua_settable(_L, -3);
             }
         }

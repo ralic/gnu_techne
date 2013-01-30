@@ -82,7 +82,7 @@ dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    widgets/widgets.lua misc/serialize.lua		\
 		    shading/shading.lua controllers/controllers.lua 	\
 		    misc/rubberband.lua topography/topography.lua 	\
-		    textures/textures.lua
+		    textures/textures.lua staging/staging.lua
 
 topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
 			     topography/elevation.h 			\

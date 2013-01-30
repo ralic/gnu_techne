@@ -23,79 +23,99 @@ local shapes = require "shapes"
 local bindings = require "bindings"
 
 local rubberband = {
-   anchor = {0.5, 0.75},
+   button = 2,
 }
 
-_G[rubberband] = primitives.root {
-   shading.overlay {
-      normalized = false,
+local overlay = shading.overlay {
+   normalized = false,
 
-      -- The actual mouse cursor.
+   -- The actual mouse cursor.
 
-      cursor = shading.flat {
-         color = {1, 0.7, 0, 0.9},
-         
-         shape = shapes.points {},
-                            },
-
-      -- The rest of the rubber-band.
+   cursor = shading.flat {
+      color = {1, 0.7, 0, 0.9},
       
-      knob = shading.flat {
-         color = {1, 0.7, 0, 0.9},
-         
-         shape = shapes.points {},
-                          },
+      shape = shapes.points {},
+                         },
+
+   -- The rest of the rubber-band.
+   
+   knob = shading.flat {
+      color = {1, 0.7, 0, 0.9},
       
-      vector = shading.flat {
-         shape = shapes.lines {},
-                            },
+      shape = shapes.points {},
+                       },
+   
+   vector = shading.flat {
+      shape = shapes.lines {},
+                         },
 
-      link = function (self)
-         local O, P
-         
-         O = array.floats {
-            graphics.window[1] * rubberband.anchor[1],
-            graphics.window[2] * rubberband.anchor[2]
-         }
+   pointer = controllers['Core pointer'] {
+                                        },
 
-         P = array.copy (O)
+   link = function (self)
+      local a, O, P, binding
 
-         graphics.grabinput = true
-         graphics.pointer = {O[1], O[2]}
+      a = rubberband.anchor or self.pointer.axes
+      O = array.floats (a)
+      P = array.copy (O)
 
-         local function update(i, x)
-            P[i] = x
+      graphics.grabinput = true
+      self.pointer.axes = a
 
-            self.cursor.shape.positions = array.floats {P}
-            self.knob.shape.positions = array.floats {O}
-            self.vector.shape.positions = array.floats {O, P}
+      local function update(i, x)
+         P[i + 1] = x
 
-            self.vector.color = P[2] > O[2] and
-               {1, 0, 0, 0.8} or {0.1607, 0.9763, 0, 0.8}
+         self.cursor.shape.positions = array.floats {P}
+         self.knob.shape.positions = array.floats {O}
+         self.vector.shape.positions = array.floats {O, P}
+
+         self.vector.color = P[2] > O[2] and
+            {1, 0, 0, 0.8} or {0.1607, 0.9763, 0, 0.8}
+      end
+      
+      self.pointer.absolute = function (self, axis, value)
+         local sequence = '[Rubberband]absolute-axis-' .. tostring(axis)
+         local binding = bindings[sequence]
+
+         update(axis, value)
+
+         if binding then
+            binding (sequence, value - O[axis + 1])
          end
-         
-         bindings['axis-0'] = function (sequence, x)
-            local binding = bindings['[Rubberband]axis-0']
+      end
+   end,
+                                }
 
-            update(1, x)
+local engaged = false
+local root = primitives.root {}
 
-            if binding then
-               binding ('[Rubberband]axis-0', x - O[2])
-            end
-         end
-         
-         bindings['axis-1'] = function (sequence, y)
-            local binding = bindings['[Rubberband]axis-1']
+_G[rubberband] = root
 
-            update(2, y)
+setmetatable(rubberband, {
+                __index = function (self, key)
+                   if key == "engaged" then
+                      return engaged
+                   else
+                      return rawget (self, key)
+                   end
+                end,
 
-            if binding then
-               binding ('[Rubberband]axis-1', O[2] - y)
-            end
-         end
-      end,
-                   }
-                      }
+                __newindex = function (self, key, value)
+                   if key == "engaged" then
+                      if engaged ~= value then
+                         if value then
+                            root.overlay = overlay
+                         else
+                            root.overlay = nil
+                         end
+                         
+                         engaged = value
+                      end
+                   else
+                      rawset (self, key, value)
+                   end
+                end
+                         })
 
 return rubberband
 

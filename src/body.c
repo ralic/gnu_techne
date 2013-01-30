@@ -207,7 +207,7 @@ static void call_poststep_hook (dBodyID body)
     } else if (self->body) {
 	r = (dReal *)dBodyGetPosition (self->body);
     } else {
-	assert (0);
+	[super _get_position];
     }
     
     for(i = 0 ; i < 3 ; i += 1) {
@@ -230,7 +230,7 @@ static void call_poststep_hook (dBodyID body)
     } else if (self->body) {
 	R = (dReal *)dBodyGetRotation (self->body);
     } else {
-	assert (0);
+	[super _get_orientation];
     }
     
     for(i = 0 ; i < 3 ; i += 1) {

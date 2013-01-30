@@ -75,12 +75,8 @@
 	    } else {
 		self->objects[0] = NULL;
 	    }
-	} else {
-            assert (self->objects[0]);
 	}
 
-        self->bodies[0] = self->objects[0] ? self->objects[0]->body : NULL;
-        
 	if (self->explicit < 1) {
             /* Attach to a child body if no body has been referenced
              * explicitly. */
@@ -94,10 +90,9 @@
 	    } else {
 		self->objects[1] = NULL;
 	    }
-	} else {
-            assert (self->objects[1]);
 	}
         
+        self->bodies[0] = self->objects[0] ? self->objects[0]->body : NULL;
         self->bodies[1] = self->objects[1] ? self->objects[1]->body : NULL;
         
         if (self->inverted) {
@@ -296,7 +291,7 @@
 	for (i = 0 ; i < 2 ; i += 1) {
 	    lua_rawgeti (_L, 3, i + 1);
             
-            self->objects[i] = t_checknode (_L, -1, [Body class]);
+            self->objects[i] = t_testnode (_L, -1, [Body class]);
             self->references[i] = luaL_ref(_L, LUA_REGISTRYINDEX);
 	}
 

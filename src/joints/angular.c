@@ -226,16 +226,21 @@
 	for(j = 0 ; j < self->degrees ; j += 1) {
 	    lua_pushinteger (_L, j + 1);
 	    lua_gettable (_L, 3);
-	    arrays[j] = array_checkcompatible (_L, -1,
-                                               ARRAY_TYPE | ARRAY_RANK |
-                                               ARRAY_SIZE,
-                                               ARRAY_TDOUBLE, 1, 3);
-	    dSafeNormalize3 (arrays[j]->values.doubles);
-	    lua_pop (_L, 1);
 
-	    for (i = 0 ; i < 3 ; i += 1) {
-		self->axes[j][i] = arrays[j]->values.doubles[i];
-	    }	    
+            if (!lua_isnil (_L, -1)) {
+                arrays[j] = array_checkcompatible (_L, -1,
+                                                   ARRAY_TYPE | ARRAY_RANK |
+                                                   ARRAY_SIZE,
+                                                   ARRAY_TDOUBLE, 1, 3);
+                dSafeNormalize3 (arrays[j]->values.doubles);
+
+                for (i = 0 ; i < 3 ; i += 1) {
+                    self->axes[j][i] = arrays[j]->values.doubles[i];
+                }	    
+
+            }
+
+            lua_pop (_L, 1);
 	}
 
 	/* Setup joint axes. */

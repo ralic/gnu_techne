@@ -281,6 +281,22 @@ void t_copy_modelview(float *matrix)
     memcpy(matrix, modelviews + modelviews_n, 16 * sizeof(float));
 }
 
+void t_get_pointer (int *x, int *y)
+{
+    GdkModifierType mask;
+    
+    gdk_window_get_pointer (window, x, y, &mask);
+}
+
+void t_warp_pointer (int x, int y)
+{
+    int x_w, y_w;
+
+    gdk_window_get_origin (window, &x_w, &y_w);
+    gdk_display_warp_pointer (display, screen, x + x_w, y + y_w);
+    gdk_flush();
+}
+
 static void draw (Node *root)
 {
     Node *child, *next;
@@ -832,15 +848,6 @@ static void draw (Node *root)
     return 1;
 }
 
--(int) _get_pointer
-{
-    /* Implement this if needed. */
-
-    lua_pushnil(_L);
-    
-    return 1;
-}
-
 -(int) _get_perspective
 {
     int i;
@@ -1062,24 +1069,6 @@ static void draw (Node *root)
     new = gdk_cursor_new (cursor ? GDK_ARROW : GDK_BLANK_CURSOR);
     gdk_window_set_cursor (window, new);
     gdk_cursor_destroy(new);
-}
-
--(void) _set_pointer
-{
-    int x_w, y_w, x_p, y_p;
-	
-    lua_pushinteger (_L, 1);
-    lua_gettable (_L, 3);
-    x_p = lua_tointeger (_L, -1);
-	
-    lua_pushinteger (_L, 2);
-    lua_gettable (_L, 3);
-    y_p = lua_tointeger (_L, -1);
-
-    lua_pop (_L, 2);
-    gdk_window_get_origin (window, &x_w, &y_w);
-
-    gdk_display_warp_pointer (display, screen, x_p + x_w, y_p + y_w);
 }
 
 -(void) _set_perspective

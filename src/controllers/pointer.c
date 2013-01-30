@@ -95,4 +95,33 @@
     [super input];
 }
 
+-(int) _get_axes
+{
+    int i, pointer[2];
+
+    t_get_pointer (&pointer[0], &pointer[1]);
+    
+    lua_createtable (_L, 2, 0);
+
+    for (i = 0 ; i < 2 ; i += 1) {
+        lua_pushinteger (_L, pointer[i]);
+        lua_rawseti (_L, -2, i + 1);
+    }
+
+    return 1;
+}
+
+-(void) _set_axes
+{
+    int i, pointer[2];
+    
+    for (i = 0 ; i < 2 ; i += 1) {
+        lua_rawgeti (_L, 3, i + 1);
+        pointer[i] = lua_tointeger (_L, -1);
+        lua_pop (_L, 1);
+    }
+    
+    t_warp_pointer (pointer[0], pointer[1]);
+}
+
 @end

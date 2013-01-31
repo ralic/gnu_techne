@@ -16,6 +16,7 @@ bin_SCRIPTS = techne
 BUILT_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h			\
 		glsl/layout_vertex.h glsl/textured_fragment.h		\
 		glsl/splat_vertex.h glsl/splat_fragment.h		\
+		glsl/grass_vertex.h glsl/grass_fragment.h		\
 		glsl/transform_block.h glsl/preamble.h gl.h glx.h
 SUFFIXES = .glsl.c
 $(BUILT_SOURCES): glsl/stringify
@@ -89,7 +90,8 @@ topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
 			     topography/roam.h topography/roam.c	\
 			     topography/atmosphere.h 			\
 			     topography/atmosphere.c			\
-			     topography/splat.h topography/splat.c
+			     topography/splat.h topography/splat.c	\
+			     topography/grass.h topography/grass.c
 topography_core_la_CFLAGS = ${AM_CFLAGS}
 topography_core_la_LDFLAGS = -module -avoid-version -no-undefined
 topography_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}

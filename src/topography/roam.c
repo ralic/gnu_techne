@@ -1121,6 +1121,7 @@ void optimize_geometry(roam_Context *new, float *buffer, int *ranges)
     /* } */
 
     /* Draw the geometry into the provided buffers. */
+    
     context->buffer = buffer;
     context->drawn = 0;
 
@@ -1144,6 +1145,62 @@ void optimize_geometry(roam_Context *new, float *buffer, int *ranges)
            context->queued[0], context->queued[1]);
 #endif
 }       
+
+static void seed_triangle(float *a, float *b_0, float *b_1, int level)
+{
+    float c[2];
+    
+    if (level < TREE_HEIGHT - 1) {
+        c[0] = 0.5 * (b_0[0] + b_1[0]);
+        c[1] = 0.5 * (b_0[1] + b_1[1]);
+
+        seed_triangle(c, a, b_0, level + 1);
+        seed_triangle(c, b_1, a, level + 1);
+    } else {
+        glVertex2f((a[0] + b_0[0] + b_1[0]) / 3.0,
+                   (a[1] + b_0[1] + b_1[1]) / 3.0);
+    }
+}
+
+static void seed_subtree(roam_Triangle *n)
+{
+    if(!is_out(n)) {
+	if(!is_leaf(n)) {
+	    seed_subtree(n->children[0]);
+	    seed_subtree(n->children[1]);
+	} else {
+	    roam_Triangle *p;
+	    roam_Diamond *d, *e;
+	    int i;
+
+	    p = n->parent;
+	    d = n->diamond;
+	    e = p->diamond;
+	    i = is_primary(n);
+
+            seed_triangle (e->center, d->vertices[!i], d->vertices[i],
+                           d->level);
+	}
+    }
+}
+
+void seed_vegetation(roam_Context *new)
+{
+    roam_Tileset *tiles;
+    int i, j;
+
+    context = new;
+    tiles = context->tileset;
+
+    for (i = 0 ; i < tiles->size[0] ; i += 1) {    
+	for (j = 0 ; j < tiles->size[1] ; j += 1) {
+	    int k = i * tiles->size[1] + j;
+
+	    seed_subtree(context->roots[k][0]);
+	    seed_subtree(context->roots[k][1]);
+	}
+    }
+}
 
 void *allocate_mesh(roam_Context *new)
 {

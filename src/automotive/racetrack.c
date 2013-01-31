@@ -1528,7 +1528,7 @@ static int sampler_index(lua_State *L)
     }    
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
     if (self->dirty) {
         float *vertices, *normals, *uv;
@@ -1561,7 +1561,7 @@ static int sampler_index(lua_State *L)
         self->dirty = 0;
     }
 
-    [super draw];
+    [super draw: frame];
 }
 
 @end

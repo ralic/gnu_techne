@@ -24,7 +24,7 @@
     int draw;
 }
 
--(void) draw;
+-(void) draw: (int)frame;
 -(int) _get_draw;
 -(void) _set_draw;
 

@@ -101,14 +101,14 @@
 
 @implementation ProgramShader
 
--(void) draw
+-(void) draw: (int)frame
 {
     glEnable (GL_CULL_FACE);
     glEnable (GL_DEPTH_TEST);
     
     glUseProgram(self->name);
     
-    [super draw];
+    [super draw: frame];
 
     glDisable (GL_DEPTH_TEST);
     glDisable (GL_CULL_FACE);

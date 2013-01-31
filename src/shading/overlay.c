@@ -33,7 +33,7 @@
     self->normalized = 0;
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
     float M[16];
     int v[4];
@@ -60,7 +60,7 @@
     t_load_identity_4 (M);
     t_push_modelview (M, T_LOAD);
 	
-    [super draw];
+    [super draw: frame];
 	
     t_pop_modelview();
     t_pop_projection();

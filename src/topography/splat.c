@@ -305,7 +305,7 @@
     }
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
     Atmosphere *atmosphere;
     int i;
@@ -334,7 +334,7 @@
         glBindTexture(GL_TEXTURE_2D, self->pigments[i].texture);
     }
     
-    [super draw];
+    [super draw: frame];
 
     glDisable (GL_DEPTH_TEST);
     glDisable (GL_CULL_FACE);

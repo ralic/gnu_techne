@@ -405,7 +405,7 @@ static ShaderMold *handle;
     [super free];
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
     glDepthMask (GL_FALSE);
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -415,7 +415,7 @@ static ShaderMold *handle;
     glActiveTexture(GL_TEXTURE0);
     glBindTexture (GL_TEXTURE_2D, self->layout->texture);
     
-    [super draw];
+    [super draw: frame];
 
     glDisable(GL_BLEND);
     glDepthMask (GL_TRUE);
@@ -484,11 +484,11 @@ static ShaderMold *handle;
     glEnableVertexAttribArray(i);
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
     float M[16];
     
-    [super draw];
+    [super draw: frame];
 
     t_push_modelview (self->matrix, T_MULTIPLY);
     t_copy_modelview (M);

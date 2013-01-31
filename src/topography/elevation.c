@@ -440,7 +440,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     self->vertices = realloc(self->vertices, l);
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
     roam_Tileset *tiles;
     int i, j, l;
@@ -492,7 +492,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     
     t_pop_modelview ();
     
-    [super draw];
+    [super draw: frame];
 }
 
 @end

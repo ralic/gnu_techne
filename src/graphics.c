@@ -58,6 +58,7 @@ static float matrix[16];
 
 static int width = 640, height = 480;
 static int hide = 1, cursor = 1, decorate = 1;
+static int frames;
 static double planes[6], frustum[3];
 static int focus = LUA_REFNIL, defocus = LUA_REFNIL;
 static int configure = LUA_REFNIL, delete = LUA_REFNIL;
@@ -304,7 +305,7 @@ static void draw (Node *root)
     t_begin_interval (root);
 
     if ([root isKindOf: [Graphic class]]) {
-	[(Graphic *)root draw];
+	[(Graphic *)root draw: frames];
     } else {
 	for (child = root->down ; child ; child = next) {
 	    next = child->right;	    
@@ -779,6 +780,8 @@ static void draw (Node *root)
 	    GL_STENCIL_BUFFER_BIT);
 
     t_end_interval(self);
+
+    frames += 1;
     
     for (root = [Root nodes] ; root ; root = (Root *)root->right) {
 	draw (root);    

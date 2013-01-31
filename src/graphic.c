@@ -20,18 +20,18 @@
 #include "graphic.h"
 #include "techne.h"
 
-static void recurse (Node *root)
+static void recurse (Node *root, int frame)
 {
     Node *child, *next;
 
     t_begin_interval (root);
 
     if ([root isKindOf: [Graphic class]]) {
-	[(Graphic *)root draw];
+	[(Graphic *)root draw: frame];
     } else {
 	for (child = root->down ; child ; child = next) {
 	    next = child->right;	    
-	    recurse (child);
+	    recurse (child, frame);
 	}
     }
     
@@ -40,16 +40,17 @@ static void recurse (Node *root)
 
 @implementation Graphic
 
--(void) draw
+-(void) draw: (int)frame
 {
     Node *child, *sister;
     
     t_pushuserdata (_L, 1, self);
-    t_callhook (_L, self->draw, 1, 0);
+    lua_pushinteger (_L, frame);
+    t_callhook (_L, self->draw, 2, 0);
     
     for (child = self->down ; child ; child = sister) {
 	sister = child->right;
-	recurse (child);
+	recurse (child, frame);
     }
 }
 

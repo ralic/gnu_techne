@@ -186,7 +186,7 @@ static void recurse (Node *root)
     T_WARN_READONLY;
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
     double *d, *m, *p, *a, *A;
     float M[16];
@@ -206,7 +206,7 @@ static void recurse (Node *root)
 
     t_push_modelview(M, T_MULTIPLY);
 
-    [super draw];
+    [super draw: frame];
 
     t_pop_modelview();
 }

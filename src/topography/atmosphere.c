@@ -496,7 +496,7 @@ static void calculate_sky_color(double azimuth, double elevation,
     [super free];
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
     float M[16];
     float phi, theta_0, x, y, z;
@@ -573,7 +573,7 @@ static void calculate_sky_color(double azimuth, double elevation,
     glEnable(GL_CULL_FACE);
     glEnable (GL_BLEND);
 
-    [super draw];
+    [super draw: frame];
 
     glDisable(GL_CULL_FACE);
     glDisable (GL_BLEND);
@@ -681,12 +681,12 @@ static void calculate_sky_color(double azimuth, double elevation,
     glEnableVertexAttribArray(i);
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
     float M[16], P[16];
     double rho;
     
-    [super draw];
+    [super draw: frame];
     
     t_copy_projection (P);
     rho = 0.9 * P[14] / (P[10] + 1.0);

@@ -1008,7 +1008,7 @@ int t_add_global_block (const char *name, const char *declaration,
     return [super _set_];
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
     int i;
 
@@ -1039,7 +1039,7 @@ int t_add_global_block (const char *name, const char *declaration,
         }
     }
     
-    [super draw];
+    [super draw: frame];
 }
 
 @end

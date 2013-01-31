@@ -60,7 +60,7 @@
     [super arrange];
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
     int v[4];
     float M[16];
@@ -76,7 +76,7 @@
 
     t_push_projection(M);
 
-    [super draw];
+    [super draw: frame];
     
     t_pop_projection();
 }

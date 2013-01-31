@@ -583,9 +583,9 @@ static void match_attribute_to_buffer (unsigned int program,
     [super meetParent: parent];
 }
 
--(void) draw
+-(void) draw: (int)frame
 {
-    [super draw];
+    [super draw: frame];
     
     /* Set the transform. */
 

@@ -156,10 +156,11 @@ primitives_core_la_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS}
 primitives_core_la_LDFLAGS = -module -avoid-version -no-undefined
 primitives_core_la_LIBADD = ${GDK_LIBS} ${AM_LDADD}
 
-shading_core_la_SOURCES = shading/core.c shading/program.c	\
-			  shading/overlay.h shading/overlay.c	\
-			  shading/program.h shading/flat.c	\
-			  shading/flat.h shading/textured.c	\
+shading_core_la_SOURCES = shading/core.c shading/program.c		\
+			  shading/overlay.h shading/overlay.c		\
+			  shading/wireframe.h shading/wireframe.c	\
+			  shading/program.h shading/flat.c		\
+			  shading/flat.h shading/textured.c		\
 			  shading/textured.h
 shading_core_la_CFLAGS = ${AM_CFLAGS} ${GL_CFLAGS}
 shading_core_la_LDFLAGS = -module -avoid-version -no-undefined

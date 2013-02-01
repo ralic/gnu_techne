@@ -14,23 +14,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include <lua.h>
 #include <lauxlib.h>
 
+#include "gl.h"
+
+#include "algebra.h"
 #include "techne.h"
-#include "shape.h"
-#include "overlay.h"
 #include "wireframe.h"
-#include "program.h"
-#include "flat.h"
-#include "textured.h"
 
-int luaopen_shading_core (lua_State *L)
+@implementation Wireframe
+
+-(void) draw: (int)frame
 {
-    Class classes[] = {[Program class], [Overlay class], [Wireframe class],
-                       [Flat class], [Textured class], NULL};
-
-    t_exportnodes (L, classes);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	
+    [super draw: frame];
     
-    return 1;
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
+
+@end

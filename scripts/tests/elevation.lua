@@ -39,11 +39,13 @@ elevation = topography.elevation {
 }
 
 root = primitives.root {
-   shading.flat {
-      color = {1, 1, 0, 1},
+   wireframe = shading.wireframe {
+      shader = shading.flat {
+         color = {1, 1, 0, 1},
 
-      elevation.shape {
-         target = 5000,
-                      }
-                }
+         shape = elevation.shape {
+            target = 5000,
+                                 }
+                            }
+                                 }
                        }

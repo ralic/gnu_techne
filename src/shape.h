@@ -40,13 +40,10 @@ typedef struct shape_Buffer {
 @public
     shape_Buffer *buffers, *indices;
     unsigned int name;
-    int wireframe;
     GLenum mode;
 }
 
 -(void)initWithMode: (GLenum) mode;
--(int) _get_wireframe;
--(void) _set_wireframe;
 
 @end
 

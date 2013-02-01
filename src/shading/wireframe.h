@@ -14,23 +14,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <lua.h>
-#include <lauxlib.h>
+#ifndef _WIREFRAME_H_
+#define _WIREFRAME_H_
 
-#include "techne.h"
-#include "shape.h"
-#include "overlay.h"
-#include "wireframe.h"
-#include "program.h"
-#include "flat.h"
-#include "textured.h"
+#include "graphic.h"
 
-int luaopen_shading_core (lua_State *L)
-{
-    Class classes[] = {[Program class], [Overlay class], [Wireframe class],
-                       [Flat class], [Textured class], NULL};
-
-    t_exportnodes (L, classes);
-    
-    return 1;
+@interface Wireframe: Graphic {
 }
+
+@end
+
+#endif

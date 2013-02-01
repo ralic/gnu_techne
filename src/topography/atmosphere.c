@@ -564,8 +564,6 @@ static void calculate_sky_color(double azimuth, double elevation,
     
     glUseProgram(self->name);
 
-    /* glPolygonMode (GL_FRONT_AND_BACK, GL_LINE); */
-
     glStencilMask(0);
     glDepthMask(GL_FALSE);
     glBlendFunc (GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA);
@@ -580,8 +578,6 @@ static void calculate_sky_color(double azimuth, double elevation,
 
     glDepthMask(GL_TRUE);
     glStencilMask(~0);
-
-    /* glPolygonMode (GL_FRONT_AND_BACK, GL_FILL); */
 }
 
 @end

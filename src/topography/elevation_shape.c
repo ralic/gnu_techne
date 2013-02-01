@@ -124,8 +124,6 @@
         t_load_modelview (M, T_MULTIPLY);
     }
     
-    /* glPolygonMode (GL_FRONT_AND_BACK, GL_LINE); */
-
     optimize_geometry(self->context, frame);
     draw_geometry(self->context, self->vertices, self->ranges);
 
@@ -142,8 +140,6 @@
     glBindVertexArray(self->name);
     glUniform1f(self->locations.scale, ldexpf(1, -tiles->depth));
     glActiveTexture(GL_TEXTURE0);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {

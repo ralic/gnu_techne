@@ -34,6 +34,10 @@
 
 -(int) _get_shape;
 -(void) _set_shape;
+-(int) _get_vegetation;
+-(void) _set_vegetation;
+-(int) _get_body;
+-(void) _set_body;
 
 @end
 
@@ -66,6 +70,14 @@
 
 @interface ElevationShader: Shader {
 @public
+}
+
+@end
+
+@interface Vegetation: Shape {
+@public
+    roam_Context *context;
+    int reference;
 }
 
 @end

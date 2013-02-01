@@ -47,5 +47,13 @@ root = primitives.root {
             target = 5000,
                                  }
                             }
-                                 }
+                                 },
+
+   grass = shading.flat {
+      color = {0, 1, 0, 1},
+      
+      shape = elevation.vegetation {
+         tag = "vegetation",
+                                   }
+                        }
                        }

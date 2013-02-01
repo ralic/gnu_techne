@@ -334,6 +334,19 @@ static int construct(lua_State *L)
 {
 }
 
+-(int) _get_vegetation
+{
+    lua_pop (_L, 1);
+    lua_pushlightuserdata(_L, [Vegetation class]);
+    lua_pushcclosure(_L, construct, 2);
+    
+    return 1;
+}
+
+-(void) _set_vegetation
+{
+}
+
 -(void) free
 {
     roam_Tileset *tiles;

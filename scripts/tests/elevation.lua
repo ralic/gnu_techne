@@ -13,16 +13,37 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-techne.iterate = true
+resources.dofile "common.lua"
+resources.dofile "orbit.lua"
 
-graphics.window = {800, 600}
-graphics.title = 'Foo'
-graphics.hide = false
+graphics.perspective = {units.degrees(90), 0.1, 10000}
 
-bindings['escape'] = function ()
-			techne.iterate = false
-		     end
+local heights = {}
 
-bindings['q'] = function ()
-		   techne.iterate = false
-		end
+for i = 1, 513 do
+   heights[i] = {}
+   for j = 1, 513 do
+      heights[i][j] = (i > 256 and 0.5 or 0) + (j > 256 and 0.5 or 0)
+   end
+end
+
+elevation = topography.elevation {
+   depth = 9,
+   resolution = {3 / 512, 3 / 512},
+
+   tiles = {
+      {
+         {array.nushorts(heights), nil, nil}
+      }
+   }
+}
+
+root = primitives.root {
+   shading.flat {
+      color = {1, 1, 0, 1},
+
+      elevation.shape {
+         target = 5000,
+                      }
+                }
+                       }

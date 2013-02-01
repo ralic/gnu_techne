@@ -28,8 +28,7 @@
 
 @interface Elevation: Node {
 @public
-    roam_Tileset tileset;
-
+    roam_Context context;
     int *references;
 }
 
@@ -40,11 +39,12 @@
 
 @interface ElevationShape: Shape {
 @public
+    roam_Context *context;
+
     struct {
         unsigned int scale, offset;
     } locations;
 
-    roam_Context context;
     unsigned int buffer;
     float *vertices;
     int reference, *ranges;

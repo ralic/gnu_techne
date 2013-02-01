@@ -22,7 +22,7 @@
 #define DIAMOND_POOL (1)
 
 #define QUEUE_SIZE (65536)
-#define TREE_HEIGHT ((context->tileset->depth << 1) + 1)
+#define TREE_HEIGHT ((context->tileset.depth << 1) + 1)
 
 /* Triangle cull flags */
 
@@ -44,7 +44,7 @@
 #define FLIPPED     (1 << 0)
 
 #define is_locked(n) ((n)->diamond->level >=                \
-                      (context->tileset->orders[(n)->index] << 1))
+                      (context->tileset.orders[(n)->index] << 1))
 
 #define is_leaf(n) (!(n)->children[0])
 #define is_out(n) ((n)->cullbits & OUT)
@@ -84,7 +84,7 @@ typedef struct {
 } roam_Tileset;
 
 typedef struct {
-    roam_Tileset *tileset;
+    roam_Tileset tileset;
 
     struct block *pools[2];
     
@@ -97,7 +97,7 @@ typedef struct {
     int triangles, diamonds, culled, visible, drawn;
     int minimum, maximum;
 
-    int target;
+    int target, frame;
 } roam_Context;
 
 struct block {
@@ -134,9 +134,12 @@ typedef struct triangle roam_Triangle;
 typedef struct diamond roam_Diamond;
 
 void look_up_sample(roam_Tileset *tiles, int i, int j, double *h, double *e);
-void optimize_geometry(roam_Context *new, float *buffer, int *ranges);
+void optimize_geometry(roam_Context *new, int frame);
+void draw_geometry(roam_Context *new, float *buffer, int *ranges);
 void seed_vegetation(roam_Context *new);
 void free_mesh(roam_Context *new);
 void *allocate_mesh(roam_Context *new);
+void calculate_tile_bounds(unsigned short *heights, unsigned short *bounds,
+                           int size);
 
 #endif

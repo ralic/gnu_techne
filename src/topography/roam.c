@@ -256,7 +256,7 @@ static void initialize_diamond(roam_Diamond *d, roam_Triangle *n,
 	c[0] = (v0[0] + v1[0]) * 0.5;
 	c[1] = (v0[1] + v1[1]) * 0.5;
 
-	look_up_sample (context->tileset, (int)c[0], (int)c[1], &c[2], &e);
+	look_up_sample (&context->tileset, (int)c[0], (int)c[1], &c[2], &e);
 
 	assert((nearbyint(c[0]) == c[0] && nearbyint(c[1]) == c[1]));
     } else {
@@ -1033,7 +1033,7 @@ static void draw_subtree(roam_Triangle *n)
     }
 }
 
-void optimize_geometry(roam_Context *new, float *buffer, int *ranges)
+void optimize_geometry(roam_Context *new, int frame)
 {
     roam_Tileset *tiles;
     roam_Diamond *d = NULL, *d_0;
@@ -1041,7 +1041,15 @@ void optimize_geometry(roam_Context *new, float *buffer, int *ranges)
     int i, j, delta, overlap;
 
     context = new;
-    tiles = context->tileset;
+
+    /* Don't optimize more than once per frame. */
+
+    assert(context->frame <= frame);
+    if (context->frame == frame) {
+        return;
+    }
+    
+    tiles = &context->tileset;
     
     /* Update the book. */
 
@@ -1115,11 +1123,31 @@ void optimize_geometry(roam_Context *new, float *buffer, int *ranges)
         merge_triangle_pair(d->triangle);
     }
 
+    context->frame = frame;
+    
     /* for (i = 0 ; i < context->size[0] * context->size[1] ; i += 1) { */
     /* 	test_subtree(context->roots[i][0]); */
     /* 	test_subtree(context->roots[i][1]); */
     /* } */
+    
+#if 0
+    printf("%d triangles, %d diamonds, %d culled, %d visible, %d drawn\n"
+           "Qs_max = %d, Qm_min = %d, |Qs| = %d, |Qm| = %d\n",
+           context->triangles, context->diamonds,
+	   context->culled, context->visible, context->drawn,
+           context->maximum, context->minimum,
+           context->queued[0], context->queued[1]);
+#endif
+}
 
+void draw_geometry(roam_Context *new, float *buffer, int *ranges)
+{
+    roam_Tileset *tiles;
+    int i, j;
+
+    context = new;
+    tiles = &context->tileset;
+    
     /* Draw the geometry into the provided buffers. */
     
     context->buffer = buffer;
@@ -1135,15 +1163,6 @@ void optimize_geometry(roam_Context *new, float *buffer, int *ranges)
             ranges[k] = context->drawn;
 	}
     }
-    
-#if 0
-    printf("%d triangles, %d diamonds, %d culled, %d visible, %d drawn\n"
-           "Qs_max = %d, Qm_min = %d, |Qs| = %d, |Qm| = %d\n",
-           context->triangles, context->diamonds,
-	   context->culled, context->visible, context->drawn,
-           context->maximum, context->minimum,
-           context->queued[0], context->queued[1]);
-#endif
 }       
 
 static void seed_triangle(float *a, float *b_0, float *b_1, int level)
@@ -1190,7 +1209,7 @@ void seed_vegetation(roam_Context *new)
     int i, j;
 
     context = new;
-    tiles = context->tileset;
+    tiles = &context->tileset;
 
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {
@@ -1211,8 +1230,9 @@ void *allocate_mesh(roam_Context *new)
 
     context = new;
     
-    tiles = context->tileset;
-    
+    tiles = &context->tileset;
+
+    context->frame = 0;
     context->triangles = 0;
     context->diamonds = 0;
     context->culled = 0;
@@ -1231,8 +1251,8 @@ void *allocate_mesh(roam_Context *new)
     context->chunks[0] = 0;
     context->chunks[1] = 0;
 
-    context->roots = (roam_Triangle *(*)[2])calloc(context->tileset->size[0] *
-                                                   context->tileset->size[1],
+    context->roots = (roam_Triangle *(*)[2])calloc(context->tileset.size[0] *
+                                                   context->tileset.size[1],
                                                    sizeof(roam_Triangle *[2]));
 
     /* The base mesh consists of a 5 by 5 lattice of diamonds.  Only

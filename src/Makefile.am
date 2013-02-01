@@ -86,8 +86,11 @@ dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    textures/textures.lua staging/staging.lua
 
 topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
+			     topography/elevation_body.c 		\
+			     topography/elevation_shape.c 		\
 			     topography/elevation.h 			\
 			     topography/roam.h topography/roam.c	\
+			     topography/bounds.c			\
 			     topography/atmosphere.h 			\
 			     topography/atmosphere.c			\
 			     topography/splat.h topography/splat.c	\
@@ -197,8 +200,8 @@ automotive_core_la_SOURCES = automotive/core.c automotive/chain.c	\
 		  	     automotive/wheel.c automotive/wheel.h	\
 		  	     automotive/racetrack.c			\
 		  	     automotive/racetrack.h			\
-                             topography/elevation.c			\
-			     topography/elevation.h 			\
+			     topography/elevation_body.c 		\
+			     topography/elevation.h			\
 			     topography/roam.c topography/roam.h
 
 automotive_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}

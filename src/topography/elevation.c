@@ -43,24 +43,6 @@ static int construct(lua_State *L)
     return 1;
 }
 
-static dReal heightfield_data_callback (void *data, int x, int z)
-{
-    roam_Tileset *tiles;
-    ElevationBody *self = data;
-    double h;
-
-    /* The sign of the x coordinate needs to be flipped.
-       See comment about heightfield frames in ODE and
-       Techne below. */
-
-    tiles = self->tileset;
-    look_up_sample (tiles, (1 << tiles->depth) * tiles->size[0] - x, z, &h, NULL);
-    
-    /* printf ("%d, %d => %f\n", x, z, h); */
-    
-    return h;
-}
-
 @implementation Elevation
 
 -(void) init
@@ -70,7 +52,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
     [super init];
 
-    tiles = &self->tileset;
+    tiles = &self->context.tileset;
     
     /* Read in resolution data. */
 
@@ -157,12 +139,20 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 	    
                     lua_rawgeti (_L, -1, 1);
 
-                    heights = array_testcompatible (_L, -1,
-                                                    ARRAY_TYPE | ARRAY_RANK,
-                                                    ARRAY_TUSHORT, 2);
+                    heights = array_testarray (_L, -1);
 
                     if (!heights) {
-                        t_print_error("Array specified for elevation data is incompatible.\n");
+                        t_print_error("No elevation data specified for tile %d.\n");
+                        abort();
+                    }
+
+                    if (heights->rank != 2) {
+                        t_print_error("Elevation array is of unsuitable rank.\n");
+                        abort();
+                    }
+
+                    if (abs(heights->type) != ARRAY_TUSHORT) {
+                        t_print_error("Elevation array is of unsuitable type.\n");
                         abort();
                     }
 
@@ -177,6 +167,19 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 	    
                     lua_rawgeti (_L, -1, 2);
 
+                    if (lua_isnil(_L, -1)) {
+                        /* If no precalculated bounds have been specified,
+                           calculate them now. */
+                        
+                        lua_pop(_L, 1);
+                        errors = array_createarrayv(_L, ARRAY_TUSHORT, NULL, 2,
+                                                    heights->size);
+                        
+                        calculate_tile_bounds (heights->values.ushorts,
+                                               errors->values.ushorts,
+                                               heights->size[0]);
+                    }
+                    
                     errors = array_testcompatible (_L, -1,
                                                    ARRAY_TYPE | ARRAY_RANK,
                                                    ARRAY_TUSHORT, 2);
@@ -293,6 +296,13 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 
             lua_pop (_L, 1);
         }
+
+        t_print_message ("Loaded a %d by %d tileset.\n",
+                         tiles->size[0], tiles->size[1]);
+        
+        /* Create the base mesh.  */
+
+        allocate_mesh (&self->context);
     }
 
     lua_pop (_L, 1);
@@ -329,7 +339,7 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     roam_Tileset *tiles;
     int i;
 
-    tiles = &self->tileset;
+    tiles = &self->context.tileset;
 
     glDeleteTextures (tiles->size[0] * tiles->size[1], tiles->imagery);
     
@@ -337,6 +347,8 @@ static dReal heightfield_data_callback (void *data, int x, int z)
         luaL_unref (_L, LUA_REGISTRYINDEX, self->references[i]);
     }
 
+    free_mesh(&self->context);
+    
     free (self->references);
     free (tiles->samples);
     free (tiles->bounds);
@@ -344,262 +356,9 @@ static dReal heightfield_data_callback (void *data, int x, int z)
     free (tiles->orders);
     free (tiles->scales);
     free (tiles->offsets);
+
     
     [super free];
-}
-
-@end
-
-@implementation ElevationShape
-
--(void) init
-{
-    roam_Tileset *tiles;
-    Elevation *mold;
-    int l;
-
-    /* Make a reference to the mold to make sure it's not
-     * collected. */
-
-    mold = t_tonode (_L, -1);
-    self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
-    
-    [super initWithMode: GL_TRIANGLES];
-
-    tiles = &mold->tileset;
-    self->context.tileset = tiles;
-    self->context.target = 5000;
-
-    self->ranges = (int *)calloc (tiles->size[0] * tiles->size[1],
-                                  sizeof (int));
-
-    /* Create the vertex buffer. */
-
-    glGenBuffers(1, &self->buffer);
-    l = 9 * self->context.target * sizeof(float);
-    
-    glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
-    glBufferData (GL_ARRAY_BUFFER, l, NULL, GL_STREAM_DRAW);
-
-    self->vertices = malloc(l);
-
-    /* Create the base mesh.  */
-    
-    allocate_mesh (&self->context);
-}
-
--(void) free
-{
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->reference);
-
-    free_mesh(&self->context);
-    free (self->ranges);
-        
-    [super free];
-}
-
--(void) meetParent: (Shader *)parent
-{
-    int i;
-    
-    [super meetParent: parent];
-
-    i = glGetAttribLocation(parent->name, "positions");
-
-    /* Bind the VBO into the VAO. */
-    
-    glBindBuffer(GL_ARRAY_BUFFER, self->buffer);
-    glBindVertexArray(self->name);
-    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    glEnableVertexAttribArray(i);
-
-    self->locations.scale = glGetUniformLocation(parent->name, "scale");
-    self->locations.offset = glGetUniformLocation(parent->name, "offset");
-}
-
--(int) _get_target
-{
-    lua_pushnumber (_L, self->context.target);
-
-    return 1;
-}
-
--(void) _set_target
-{
-    int l;
-
-    self->context.target = lua_tonumber (_L, 3);
-
-    /* Update the vertex buffer size. */
-
-    l = 9 * self->context.target * sizeof(float);
-
-    glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
-    glBufferData (GL_ARRAY_BUFFER, l, NULL, GL_STREAM_DRAW);
-
-    self->vertices = realloc(self->vertices, l);
-}
-
--(void) draw: (int)frame
-{
-    roam_Tileset *tiles;
-    int i, j, l;
-    
-    tiles = self->context.tileset;
-
-    {
-        float M[16] = {tiles->resolution[0], 0, 0, 0,
-                       0, tiles->resolution[1], 0, 0,
-                       0, 0, 1, 0,
-                       -(1 << (tiles->depth - 1)) * tiles->size[0] * tiles->resolution[0],
-                       -(1 << (tiles->depth - 1)) * tiles->size[1] * tiles->resolution[1],
-                       0, 1};
-    
-        t_push_modelview (self->matrix, T_MULTIPLY);
-        t_load_modelview (M, T_MULTIPLY);
-    }
-    
-    /* glPolygonMode (GL_FRONT_AND_BACK, GL_LINE); */
-
-    optimize_geometry(&self->context, self->vertices, self->ranges);
-
-    /* Update the vertex buffer object. */
-    
-    l = 9 * self->context.target * sizeof(float);
-    
-    glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
-    glBufferData (GL_ARRAY_BUFFER, l, NULL, GL_STREAM_DRAW);
-    glBufferData (GL_ARRAY_BUFFER, l, self->vertices, GL_STREAM_DRAW);
-
-    /* Prepare to draw. */
-    
-    glBindVertexArray(self->name);
-    glUniform1f(self->locations.scale, ldexpf(1, -tiles->depth));
-    glActiveTexture(GL_TEXTURE0);
-    
-    for (i = 0 ; i < tiles->size[0] ; i += 1) {    
-	for (j = 0 ; j < tiles->size[1] ; j += 1) {
-	    int l, k = i * tiles->size[1] + j;
-
-            glUniform2f(self->locations.offset, j, i);
-            glBindTexture(GL_TEXTURE_2D, tiles->imagery[k]);
-
-            l = k > 0 ? self->ranges[k - 1] : 0;
-            
-            glDrawArrays (self->mode, 3 * l, 3 * (self->ranges[k] - l));
-        }
-    }
-    
-    t_pop_modelview ();
-    
-    [super draw: frame];
-}
-
-@end
-
-@implementation ElevationBody
-
--(void) init
-{
-    roam_Tileset *tiles;
-    Elevation *mold;
-
-    /* Make a reference to the mold to make sure it's not
-     * collected. */
-
-    mold = t_tonode (_L, -1);
-    self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
-    
-    [super init];
-    
-    tiles = self->tileset = &mold->tileset;
-    self->data = dGeomHeightfieldDataCreate();
-    
-    dGeomHeightfieldDataBuildCallback (self->data,
-				       self,
-				       heightfield_data_callback,
-				       (1 << tiles->depth) *
-				       tiles->size[0] * tiles->resolution[0],
-				       (1 << tiles->depth) *
-				       tiles->size[1] * tiles->resolution[1],
-				       (1 << tiles->depth) *
-				       tiles->size[0] + 1,
-				       (1 << tiles->depth) *
-				       tiles->size[1] + 1,
-				       1, 0, 100, 0);
-    
-    dGeomHeightfieldDataSetBounds (self->data, 0, dInfinity);    
-    
-    /* Create the geom itself. */
-
-    self->geom = dCreateHeightfield(NULL, self->data, 1);
-
-    dGeomSetData (self->geom, self);
-
-    {
-	/* ODE assumes that heighfield are oriented with the
-	   y-axis pointing upwards, while Techne thinks the
-	   z-axis does.  In order to align the two frames we
-	   need to apply a transform to the geom but in the
-	   process the x-axis has to be negated to keep the
-	   handedness of both frames the same. */
-	
-	dMatrix3 R = {-self->orientation[0],
-		      self->orientation[2],
-		      self->orientation[1],
-		      0,
-	
-		      -self->orientation[3],
-		      self->orientation[5],
-		      self->orientation[4],
-		      0,
-
-		      -self->orientation[6],
-		      self->orientation[8],
-		      self->orientation[7],
-		      0};
-	
-	dGeomSetRotation (self->geom, R);
-	dGeomSetPosition (self->geom,
-			  self->position[0],
-			  self->position[1],
-			  self->position[2]);
-    }
-}
-
--(void) free
-{
-    luaL_unref (_L, LUA_REGISTRYINDEX, self->reference);
-    dGeomHeightfieldDataDestroy(self->data);
-        
-    [super free];
-}
-
--(void) _set_orientation
-{    
-    dMatrix3 R;
-	
-    [super _set_orientation];
-
-    /* See comment about heightfield frames
-       in ODE and Techne above. */
-	    
-    R[0] = -self->orientation[0];
-    R[1] = self->orientation[2];
-    R[2] = self->orientation[1];
-    R[3] = 0;
-	
-    R[4] = -self->orientation[3];
-    R[5] = self->orientation[5];
-    R[6] = self->orientation[4];
-    R[7] = 0;
-
-    R[8] = -self->orientation[6];
-    R[9] = self->orientation[8];
-    R[10] = self->orientation[7];
-    R[11] = 0;
-
-    dGeomSetRotation (self->geom, R);
 }
 
 @end

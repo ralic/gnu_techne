@@ -206,6 +206,8 @@ static int construct(lua_State *L)
                     lua_rawgeti (_L, -1, 4);
 
                     if (lua_istable (_L, -1)) {
+                        /* Scale. */
+	    
                         lua_rawgeti (_L, -1, 1);
 
                         if (lua_isnumber (_L, -1)) {
@@ -216,7 +218,7 @@ static int construct(lua_State *L)
     
                         lua_pop (_L, 1);
 
-                        /* The vertical offset. */
+                        /* Offset. */
 	    
                         lua_rawgeti (_L, -1, 2);
 
@@ -306,6 +308,20 @@ static int construct(lua_State *L)
     }
 
     lua_pop (_L, 1);
+
+    /* Remove the set values from the initialization table. */
+    
+    lua_pushstring(_L, "tiles");
+    lua_pushnil(_L);
+    lua_settable (_L, 1);
+    
+    lua_pushstring(_L, "resolution");
+    lua_pushnil(_L);
+    lua_settable (_L, 1);
+
+    lua_pushstring(_L, "depth");
+    lua_pushnil(_L);
+    lua_settable (_L, 1);
 }
 
 -(int) _get_shape

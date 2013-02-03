@@ -1,7 +1,7 @@
-in vec4 positions;
+layout(location=0) in vec4 positions;
 
 void main()
 {
-    gl_Position = projection * modelview * gl_Vertex;
+    gl_Position = projection * modelview * positions;
     gl_PointSize = 1;
 }

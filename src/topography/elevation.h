@@ -51,11 +51,14 @@
 
     unsigned int buffer;
     float *vertices;
-    int reference, *ranges;
+    int reference, optimize, *ranges;
 }
 
 -(int) _get_target;
 -(void) _set_target;
+
+-(int) _get_optimize;
+-(void) _set_optimize;
 
 @end
 

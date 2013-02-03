@@ -59,8 +59,7 @@ end
 function resources.dofile (name, ...)
    print ("  " .. name)
 
-   local args = ... and unpack(...) or nil
-   return assert(loadfile(resolve(name)))(args)
+   return assert(loadfile(resolve(name)))(...)
 end
 
 return resources

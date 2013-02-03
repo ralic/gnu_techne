@@ -18,75 +18,71 @@ arraymath = require "arraymath"
 local staging = {}
 
 function staging.orbit (values)
-   local self
+   local orbit
    local command, rest
 
    rest = values.command
    command = values.command
    values.command = nil
 
-   self = primitives.joint {
-      link = function (self)
-         local p, R
+   orbit = primitives.joint {
+      dummy = primitives.node {
+         link = function (self)
+            local p, R
 
-         p = self.parent.position or {0, 0, 0}
-         R = arraymath.euler (0, rest[2], rest[3])
+            p = orbit.parent.position or {0, 0, 0}
+            R = arraymath.euler (0, rest[2], rest[3])
 
-         -- Configure the rig.
+            -- Configure the rig.
 
-         self.ball = joints.spherical {
-            anchor = p,
+            orbit.ball = joints.spherical {
+               anchor = p,
+                                         }
+
+            orbit.spring = joints.euler {
+               axes = {
+                  R[2], R[3], {0, 0, 0}
+               },
+
+               stops = {
+                  {{0, 0}, {3000, 1000}, 0},
+                  {{0, 0}, {3000, 1000}, 0},
+                  {{0, 0}, {3000, 1000}, 0},
+               }
+                                       }
+
+            orbit.attach = function (self)
+               local pair = self.pair
+
+               self.ball.bodies = self.pair
+               self.spring.bodies = self.pair
+            end
+            
+            orbit.torso = bodies.point {
+               position = p,
+               mass = physics.spheremass (0.01, 0.1),
+
+               neck = joints.slider {
+                  stops = {{0, 0}, {3000, 1000}, 0},
+                  axis = R[3],
+
+                  head = bodies.point {
+                     position = arraymath.matrixmultiplyadd (R, {0, 0, -rest[1]}, p),
+
+                     orientation = R,
+
+                     mass = physics.spheremass (0.01, 0.1),
+                     eye = primitives.observer {}
+                                      },
+                                    },
                                       }
-
-         self.spring = joints.euler {
-            stops = {
-               {{0, 0}, {3000, 1000}, 0},
-               {{0, 0}, {3000, 1000}, 0},
-               {{0, 0}, {3000, 1000}, 0},
-            }
-                                    }
-
-         self.attach = function (self)
-            local pair = self.pair
-
-            self.ball.bodies = self.pair
-            self.spring.bodies = self.pair
-         end
-         
-         self.torso = bodies.point {
-            position = p,
-            mass = physics.spheremass (1, 0.1),
-
-            neck = joints.slider {
-               stops = {{0, 0}, {3000, 1000}, 0},
-               axis = arraymath.transpose(R)[3],
-
-               head = bodies.point {
-                  position = arraymath.add (p,
-                           {
-                              rest[1] *
-                                 math.cos (rest[3]) *
-                                 math.sin (rest[2]),
-                              rest[1] *
-                                 math.sin (rest[3]) *
-                                 math.sin (rest[2]),
-                              rest[1] *
-                                 math.cos (rest[2])
-                           }),
-
-                  orientation = R,
-
-                  mass = physics.spheremass (1, 0.1),
-                  eye = primitives.observer {}
-                                   },
-                                 },
-                                   }
-      end,
+         end,
+                              }
                            }
 
-   oldmeta = getmetatable(self)
+   oldmeta = getmetatable(orbit)
 
-   replacemetatable (self, {
+   replacemetatable (orbit, {
                         __index = function(self, key)
                            if key == "command" then
                               return command
@@ -100,7 +96,7 @@ function staging.orbit (values)
                               local stops
 
                               command = {
-                                 math.clamp (value[1], 0, 1 / 0),
+                                 value[1],
                                  math.clamp (value[2],
                                              -math.pi + rest[2],
                                              math.pi + rest[2]),
@@ -127,8 +123,8 @@ function staging.orbit (values)
                               b = math.clamp (command[3] - rest[3],
                                               -math.pi, math.pi)
 
-                              stops[3][1] = {a, a}
-                              stops[1][1] = {b, b}
+                              stops[1][1] = {a, a}
+                              stops[3][1] = {b, b}
 
                               self.spring.stops = stops
                            else
@@ -138,10 +134,10 @@ function staging.orbit (values)
                            })
    
    for key, value in pairs(values) do
-      self[key] = value
+      orbit[key] = value
    end
 
-   return self
+   return orbit
 end
 
 return staging

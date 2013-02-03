@@ -36,6 +36,8 @@
     
     [super initWithMode: GL_TRIANGLES];
 
+    self->optimize = 1;
+    
     self->context = &mold->context;
     self->context->target = 5000;
 
@@ -105,6 +107,18 @@
     self->vertices = realloc(self->vertices, l);
 }
 
+-(int) _get_optimize
+{
+    lua_pushboolean (_L, self->optimize);
+
+    return 1;
+}
+
+-(void) _set_optimize
+{
+    self->optimize = lua_toboolean (_L, 3);
+}
+
 -(void) draw: (int)frame
 {
     roam_Tileset *tiles;
@@ -124,7 +138,10 @@
         t_load_modelview (M, T_MULTIPLY);
     }
     
-    optimize_geometry(self->context, frame);
+    if (self->optimize) {
+        optimize_geometry(self->context, frame);
+    }
+    
     draw_geometry(self->context, self->vertices, self->ranges);
 
     /* Update the vertex buffer object. */

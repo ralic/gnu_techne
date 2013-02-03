@@ -17,16 +17,38 @@ local staging = require "staging"
 local rubberband = require "rubberband"
 local current
 
-rubberband.momentary = true
+local orbit = staging.orbit {
+   command = {...},
 
-orbit = primitives.root {
-   rig = staging.orbit {
-      command = {3, units.degrees(0), units.degrees(0)},
-                       },
+   link = function (self)
+      rubberband.momentary = true
+
+      bindings['[Rubberband]absolute-axis-0'] = function(sequence, value)
+         local command = self.command
+
+         if not rubberband.zoom then
+            command[3] = current[3] - units.degrees(value) * 0.4
+
+            self.command = command
+         end
+      end
+
+      bindings['[Rubberband]absolute-axis-1'] = function(sequence, value)
+         local command = self.command
+
+         if rubberband.zoom then
+            command[1] = current[1] - value * 1
+         else
+            command[2] = current[2] - units.degrees(value) * 0.4
+         end
+
+         self.command = command
+      end
+   end,
 
    pointer = controllers['Core pointer'] {
       buttonrelease = function (self, button)
-         if button == 1 then
+         if button == 1 or button == 3 then
             rubberband.engaged = false
          end         
       end,
@@ -34,21 +56,15 @@ orbit = primitives.root {
       buttonpress = function (self, button)
          if button == 1 then
             rubberband.engaged = true
-            current = self.parent.rig.command
+            rubberband.zoom = false
+            current = self.parent.command
+         elseif button == 3 then
+            rubberband.engaged = true
+            rubberband.zoom = true
+            current = self.parent.command
          end         
       end
                                          }
-                        }
+                      }
 
-bindings['[Rubberband]absolute-axis-0'] = function(sequence, value)
-   local command = orbit.rig.command
-   command[3] = current[3] - units.degrees(value) * 0.4
-   orbit.rig.command = command
-end
-
-bindings['[Rubberband]absolute-axis-1'] = function(sequence, value)
-   local command = orbit.rig.command
-   command[2] = current[2] - units.degrees(value) * 0.4
-   orbit.rig.command = command
-end
-
+return orbit

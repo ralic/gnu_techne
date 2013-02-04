@@ -160,14 +160,15 @@ void t_end_interval (Node *node)
     t_end_interval(self);
 
     runtime = t_get_cpu_time() - zero;
+    c = 1e-6 / iterations;
     
     /* Output statistics for profiled nodes. */
     
     t_print_message("Ran a total of %d iterations in %.1f seconds at "
-                    "%.1f ms per iteration.\n",
-		    iterations, runtime * 1e-9, runtime / (iterations * 1e6));
+                    "%.1f ms per iteration (%.1f Hz).\n",
+		    iterations, runtime * 1e-9,
+                    runtime * c, iterations * 1e9 / runtime);
     
-    c = 100.0 / runtime;
     h = lua_gettop(_L);
 
     /* Gather all profiled nodes. */
@@ -235,7 +236,7 @@ void t_end_interval (Node *node)
 
     t_print_message(
 	"+------------------------------------------------------+------------------------+\n"
-	"|                                 cummulative          |   self                 |\n"
+	"|                                 cummulative (ms)     |   self (ms)            |\n"
 	"|node                             core    user   total |   core    user   total |\n"
 	"+------------------------------------------------------+------------------------+\n"
 	);
@@ -275,24 +276,23 @@ void t_end_interval (Node *node)
         luaL_callmeta (_L, j, "__tostring");
         
 	t_print_message(
-	    "|%-30s %5.1f%%  %5.1f%%  %5.1f%% | %5.1f%%  %5.1f%%  %5.1f%% |\n",
+	    "|%-30s %6.1f  %6.1f  %6.1f | %6.1f  %6.1f  %6.1f |\n",
 	    lua_tostring (_L, -1),
-	    c * (intervals[0] - intervals[1]),
-	    c * intervals[1], c * intervals[0],
-	    c * (node->profile.intervals[0] -
-		 node->profile.intervals[1]),
-	    c * node->profile.intervals[1],
-	    c * node->profile.intervals[0]);
+	    (intervals[0] - intervals[1]) * c,
+	    intervals[1] * c, intervals[0] * c,
+	    (node->profile.intervals[0] - node->profile.intervals[1]) * c,
+	    node->profile.intervals[1] * c,
+	    node->profile.intervals[0] * c);
 
         lua_pop (_L, 1);
     }
 
     t_print_message(
 	"+------------------------------------------------------+------------------------+\n"
-	"|total                          %5.1f%%  %5.1f%%  %5.1f%% | %5.1f%%  %5.1f%%  %5.1f%% |\n"
+	"|total                          %6.1f  %6.1f  %6.1f | %6.1f  %6.1f  %6.1f |\n"
 	"+------------------------------------------------------+------------------------+\n",
-	c * (totals[0] - totals[1]), c * totals[1], c * totals[0],
-	c * (totals[2] - totals[3]), c * totals[3], c * totals[2]);
+	(totals[0] - totals[1]) * c, totals[1] * c, totals[0] * c,
+	(totals[2] - totals[3]) * c, totals[3] * c, totals[2] * c);
 
     lua_settop(_L, h);
 }

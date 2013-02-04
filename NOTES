@@ -72,6 +72,4 @@ TODO (ASAP):
 * Adapt the Racetrack node to the mold node or prerequisite configuration
   approach.
 * Add support for setting clamp and filtering modes to the Texture Node.
-* Add absolute run-time in ms to the profiling table printed on exit.
-* Double-check profiling code correctness.
 * Implement simple fractal terrain in Lua.

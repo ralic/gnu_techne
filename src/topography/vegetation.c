@@ -63,10 +63,11 @@
         t_load_modelview (M, T_MULTIPLY);
     }
 
+    optimize_geometry(self->context, frame);
+
     glPointSize(1);
     glBegin(GL_POINTS);
     
-    optimize_geometry(self->context, frame);
     seed_vegetation (self->context);
     
     glEnd();

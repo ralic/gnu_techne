@@ -72,4 +72,3 @@ TODO (ASAP):
 * Adapt the Racetrack node to the mold node or prerequisite configuration
   approach.
 * Add support for setting clamp and filtering modes to the Texture Node.
-* Implement simple fractal terrain in Lua.

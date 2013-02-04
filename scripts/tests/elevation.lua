@@ -14,17 +14,9 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 resources.dofile "common.lua"
+local heights = resources.dofile ("diamondsquare.lua", 512, 0.0012)
 
-graphics.perspective = {units.degrees(90), 0.1, 10000}
-
-local heights = {}
-
-for i = 1, 513 do
-   heights[i] = {}
-   for j = 1, 513 do
-      heights[i][j] = (i > 256 and 0.5 or 0) + (j > 256 and 0.5 or 0)
-   end
-end
+graphics.perspective = {units.degrees(50), 0.1, 10000}
 
 elevation = topography.elevation {
    depth = 9,
@@ -32,7 +24,7 @@ elevation = topography.elevation {
 
    tiles = {
       {
-         {array.nushorts(heights), nil, nil, {100, 0}}
+         {array.nushorts(heights), nil, nil, {500, 0}}
       }
    }
 }
@@ -45,7 +37,7 @@ root = primitives.root {
          color = {1, 1, 0, 1},
 
          shape = elevation.shape {
-            target = 5000,
+            target = 15000,
                                  }
                             }
                                  },
@@ -62,7 +54,7 @@ root = primitives.root {
       period = 1,
       
       tick = function(self, ticks)
-         local command = {-1000, units.degrees(80),
+         local command = {-1000, units.degrees(62),
                           (ticks % 2 > 0 and 1 or -1) * units.degrees(90)}
 
          self.parent.orbit.command = command

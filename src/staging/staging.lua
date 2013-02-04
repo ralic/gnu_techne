@@ -60,7 +60,7 @@ function staging.orbit (values)
             
             orbit.torso = bodies.point {
                position = p,
-               mass = physics.spheremass (0.01, 0.1),
+               mass = physics.spheremass (0.0001, 0.1),
 
                neck = joints.slider {
                   stops = {{0, 0}, {3000, 1000}, 0},
@@ -71,7 +71,7 @@ function staging.orbit (values)
 
                      orientation = R,
 
-                     mass = physics.spheremass (0.01, 0.1),
+                     mass = physics.spheremass (0.0001, 0.1),
                      eye = primitives.observer {}
                                       },
                                     },

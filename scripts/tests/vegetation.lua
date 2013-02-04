@@ -14,9 +14,31 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 resources.dofile "common.lua"
-local heights = resources.dofile ("diamondsquare.lua", 512, 0.0012)
 
 graphics.perspective = {units.degrees(50), 0.1, 10000}
+
+local heights = resources.dofile ("diamondsquare.lua", 512, 0.0012)
+local base = {}
+
+for i = 1, 128 do
+   base[i] = {}
+
+   for j = 1, 128 do
+      base[i][j] = {
+         (j >= 0 and j < 43) and 1 or 0,
+         (j >= 44 and j < 88) and 1 or 0,
+         (j >= 89 and j < 129) and 1 or 0
+      }
+   end
+end
+
+local red = textures.planar {
+   texels = array.nuchars {{{1, 0, 0}}}
+                            }
+
+local green = textures.planar {
+   texels = array.nuchars {{{0, 1, 0}}}
+                              }
 
 elevation = topography.elevation {
    depth = 9,
@@ -24,7 +46,7 @@ elevation = topography.elevation {
 
    tiles = {
       {
-         {array.nushorts(heights), nil, nil, {500, 0}}
+         {array.nushorts(heights), nil, array.nuchars(base), {500, 0}}
       }
    }
 }
@@ -32,21 +54,44 @@ elevation = topography.elevation {
 root = primitives.root {
    orbit = resources.dofile ("orbit.lua", -1000, 0, 0),
 
-   wireframe = shading.wireframe {
-      shader = shading.flat {
-         color = {1, 1, 0, 1},
+   atmosphere = topography.atmosphere {
+      size = {1024, 512},
 
-         shape = elevation.shape {
-            target = 15000,
-                                 }
-                            }
-                                 },
+      turbidity = 3,
+
+      rayleigh = {6.95e-06, 1.18e-05, 2.44e-05},
+      mie = 7e-5,
+
+      sun = {1.74, units.degrees(45)},
+                                      },
+
+   shader = topography.splat {
+      albedo = 1.5,
+      separation = 1,
+
+      palette = {
+         {red, {1, 1}, {0, .99, .99}},
+         {green, {1, 1}, {120 / 360, .99, .99}},
+      },
+
+      shape = elevation.shape {
+         target = 15000,
+                              }
+                             },
+
+   grass = topography.grass {
+      color = {0, 1, 0, 1},
+      
+      shape = elevation.vegetation {
+         tag = "vegetation",
+                                   }
+                            },
 
    cameraman = options.timed and primitives.timer {
       period = 1,
       
       tick = function(self, ticks)
-         local command = {-1000, units.degrees(62),
+         local command = {-1000, units.degrees(65),
                           (ticks % 2 > 0 and 1 or -1) * units.degrees(90)}
 
          self.parent.orbit.command = command

@@ -165,8 +165,9 @@
     }
 
     if (self->name == 0) {
-        const char *private[7] = {"base", "colors", "offset", "scale",
-                                  "power", "references", "weights"};
+        const char *private[8] = {"base", "colors", "offset", "scale",
+                                  "power", "references", "weights",
+                                  "normal"};
         char *header;
         ShaderMold *shader;
         
@@ -180,7 +181,7 @@
 	shader = [ShaderMold alloc];
         
         [shader initWithHandle: NULL];
-        [shader declare: 7 privateUniforms: private];
+        [shader declare: 8 privateUniforms: private];
 	[shader add: 3 sourceStrings: (const GLchar *[3]){header, glsl_splat_common, glsl_grass_vertex} for: T_VERTEX_STAGE];
 	[shader add: 2 sourceStrings: (const GLchar *[2]){header, glsl_grass_geometry} for: T_GEOMETRY_STAGE];
 	[shader addSource: glsl_grass_fragment for: T_FRAGMENT_STAGE];
@@ -224,7 +225,7 @@
 -(void) draw: (int)frame
 {
     glEnable (GL_CULL_FACE);
-    glEnable (GL_DEPTH_TEST);
+    /* glEnable (GL_DEPTH_TEST); */
     
     glUseProgram(self->name);
     

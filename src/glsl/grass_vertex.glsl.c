@@ -1,4 +1,5 @@
-layout(location=0) in vec4 positions;
+layout(location=0) in vec3 positions;
+layout(location=1) in vec3 normals;
 
 uniform sampler2D base;
 uniform vec3 references[N], weights[N];
@@ -7,7 +8,11 @@ uniform float power;
 uniform float scale;
 uniform vec2 offset;
 
-out int counts[N];
+out cluster_attributes {
+    vec3 center, normal;
+    float size;
+    int counts[N];
+} cluster;
 
 void main()
 {
@@ -32,9 +37,10 @@ void main()
         c = round(c_0);
         r = c - c_0;
 
-        counts[i] = int(c);
+        cluster.counts[i] = int(c);
     }
     
-    gl_Position = projection * modelview * positions;
-    gl_PointSize = 1;
+    cluster.center = positions;
+    cluster.normal = normals;
+    cluster.size = 3;
 }

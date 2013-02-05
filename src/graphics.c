@@ -606,8 +606,7 @@ static void draw (Node *root)
 
 	/* Register the transform uniform block. */
 	
-	buffer = t_add_global_block ("__transform_block", glsl_transform_block,
-                                     T_VERTEX_STAGE);
+	buffer = t_add_global_block ("__transform_block", glsl_transform_block);
 
 	/* Create the global shading context buffer object. */
     

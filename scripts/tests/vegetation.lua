@@ -17,7 +17,7 @@ resources.dofile "common.lua"
 
 graphics.perspective = {units.degrees(50), 0.1, 10000}
 
-local heights = resources.dofile ("diamondsquare.lua", 512, 0.0012)
+local heights = resources.dofile ("diamondsquare.lua", 512, 0.000512)
 local base = {}
 
 for i = 1, 128 do

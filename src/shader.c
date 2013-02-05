@@ -29,7 +29,7 @@
 
 #include "glsl/preamble.h"
 
-static char *declarations[3];
+static char *declarations;
 static struct {
     const char *name;
     unsigned int index;
@@ -452,8 +452,7 @@ static int uniforms_iterator(lua_State *L)
     return 3;
 }
 
-int t_add_global_block (const char *name, const char *declaration,
-                        t_Enumerated stage)
+int t_add_global_block (const char *name, const char *declaration)
 {
     unsigned int i;
     int l;
@@ -471,14 +470,14 @@ int t_add_global_block (const char *name, const char *declaration,
     /* Add the declaration for the global block to the declaractions
        string for the stage. */
     
-    if (declarations[stage]) {
-	l = strlen(declarations[stage]) + strlen(declaration) + 1;
-	declarations[stage] = realloc(declarations[stage], l * sizeof (char));
-	strcat(declarations[stage], declaration);
+    if (declarations) {
+	l = strlen(declarations) + strlen(declaration) + 1;
+	declarations = realloc(declarations, l * sizeof (char));
+	strcat(declarations, declaration);
     } else {
 	l = strlen(declaration) + 1;
-	declarations[stage] = malloc(l * sizeof (char));
-	strcpy(declarations[stage], declaration);
+	declarations = malloc(l * sizeof (char));
+	strcpy(declarations, declaration);
     }
 
     return i;
@@ -513,11 +512,11 @@ int t_add_global_block (const char *name, const char *declaration,
 	assert(0);
     }
     
-    if (declarations[stage]) {
+    if (declarations) {
 	const char *source[n + 2];
 
         source[0] = glsl_preamble;
-        source[1] = declarations[stage];
+        source[1] = declarations;
 
         for (i = 0 ; i < n ; i += 1) {
             source[i + 2] = strings[i];

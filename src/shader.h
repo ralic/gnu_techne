@@ -77,7 +77,6 @@ typedef union {
 
 @end
 
-int t_add_global_block (const char *name, const char *declaration,
-                        t_Enumerated stage);
+int t_add_global_block (const char *name, const char *declaration);
 
 #endif

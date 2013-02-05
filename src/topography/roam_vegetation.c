@@ -100,6 +100,7 @@ static void seed_subtree(roam_Triangle *n)
 	    roam_Triangle *p;
 	    roam_Diamond *d, *e;
             float *a, *b_0, *b_1, z_a, z_0, z_1;
+            float u[3], v[3], w[3];
 	    int i;
 
 	    p = n->parent;
@@ -111,6 +112,19 @@ static void seed_subtree(roam_Triangle *n)
             b_0 = d->vertices[!i];
             b_1 = d->vertices[i];
             
+            u[0] = b_0[0] - a[0];
+            u[1] = b_0[1] - a[1];
+            u[2] = b_0[2] - a[2];
+
+            v[0] = b_1[0] - a[0];
+            v[1] = b_1[1] - a[1];
+            v[2] = b_1[2] - a[2];
+
+            t_cross (w, u, v);
+            t_normalize_3 (w);
+
+            glVertexAttrib3fv(1, w);
+
             z_a = modelview[2] * a[0] +
                 modelview[6] * a[1] +
                 modelview[10] * a[2] +

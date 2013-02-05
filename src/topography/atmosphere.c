@@ -530,7 +530,7 @@ static void calculate_sky_color(double azimuth, double elevation,
                      pixels);
 	
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
@@ -693,7 +693,7 @@ static void calculate_sky_color(double azimuth, double elevation,
     /* Make sure the sky dome is centered at {0, 0, 0}. */
 
     M[0] *= rho; M[1] *= rho; M[2] *= rho;
-    M[4] *= rho; M[5] *= rho; M[7] *= rho;
+    M[4] *= rho; M[5] *= rho; M[6] *= rho;
     M[8] *= rho; M[9] *= rho; M[10] *= rho;
     M[12] = M[13] = M[14] = 0.0;
     t_load_modelview (M, T_LOAD);

@@ -131,7 +131,7 @@ static void seed_subtree(roam_Triangle *n)
     }
 }
 
-void seed_vegetation(roam_Context *new)
+void seed_vegetation(roam_Context *new, unsigned int _ls, unsigned int _lo)
 {
     roam_Tileset *tiles;
     int i, j;
@@ -142,12 +142,22 @@ void seed_vegetation(roam_Context *new)
     
     t_copy_modelview (modelview);
 
+    glUniform1f(_ls, ldexpf(1, -tiles->depth));
+    glActiveTexture(GL_TEXTURE0);
+    
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {
 	    int k = i * tiles->size[1] + j;
 
+            glUniform2f(_lo, j, i);
+            glBindTexture(GL_TEXTURE_2D, tiles->imagery[k]);
+
+            glBegin(GL_POINTS);
+            
 	    seed_subtree(context->roots[k][0]);
 	    seed_subtree(context->roots[k][1]);
+    
+            glEnd();
 	}
     }
 

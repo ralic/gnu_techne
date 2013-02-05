@@ -21,7 +21,7 @@
 
 typedef struct {
     unsigned int texture;
-    double values[8];
+    float values[8];
     int reference;
 } splat_Pigment;
 
@@ -33,7 +33,7 @@ typedef struct {
     int pigments_n;
 
     struct {
-        unsigned int base, detail, power, matrices;
+        unsigned int base, detail, power, references, weights, resolutions;
         unsigned int turbidity, factor, beta_p;
         unsigned int direction, intensity, beta_r;
     } locations;

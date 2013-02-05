@@ -16,6 +16,7 @@ bin_SCRIPTS = techne
 BUILT_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h			\
 		glsl/layout_vertex.h glsl/textured_fragment.h		\
 		glsl/splat_vertex.h glsl/splat_fragment.h		\
+		glsl/splat_common.h glsl/grass_geometry.h		\
 		glsl/grass_vertex.h glsl/grass_fragment.h		\
 		glsl/transform_block.h glsl/preamble.h gl.h glx.h
 SUFFIXES = .glsl.c

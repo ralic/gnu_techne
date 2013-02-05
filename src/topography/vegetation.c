@@ -45,6 +45,14 @@
     [super free];
 }
 
+-(void) meetParent: (Shader *)parent
+{
+    [super meetParent: parent];
+
+    self->locations.scale = glGetUniformLocation(parent->name, "scale");
+    self->locations.offset = glGetUniformLocation(parent->name, "offset");
+}
+
 -(void) draw: (int)frame
 {
     roam_Tileset *tiles;
@@ -65,12 +73,8 @@
 
     optimize_geometry(self->context, frame);
 
-    glPointSize(1);
-    glBegin(GL_POINTS);
-    
-    seed_vegetation (self->context);
-    
-    glEnd();
+    seed_vegetation (self->context,
+                     self->locations.scale, self->locations.offset);
 
     t_pop_modelview ();
     

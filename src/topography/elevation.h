@@ -80,6 +80,11 @@
 @interface Vegetation: Shape {
 @public
     roam_Context *context;
+
+    struct {
+        unsigned int scale, offset;
+    } locations;
+
     int reference;
 }
 

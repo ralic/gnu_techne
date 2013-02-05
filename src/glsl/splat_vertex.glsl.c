@@ -1,6 +1,3 @@
-/* uniform elevation_vertex { */
-/* }; */
-
 in vec4 positions;
 out vec3 eye;
 out vec2 uv;

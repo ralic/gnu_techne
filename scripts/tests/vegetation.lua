@@ -33,11 +33,17 @@ for i = 1, 128 do
 end
 
 local red = textures.planar {
-   texels = array.nuchars {{{1, 0, 0}}}
+   texels = array.nuchars {
+      {{1, 0, 0},{1, 0, 0}},
+      {{1, 0, 0},{1, 0, 0}}
+                          }
                             }
 
 local green = textures.planar {
-   texels = array.nuchars {{{0, 1, 0}}}
+   texels = array.nuchars {
+      {{0, 1, 0},{0, 1, 0}},
+      {{0, 1, 0},{0, 1, 0}}
+                          }
                               }
 
 elevation = topography.elevation {
@@ -66,6 +72,9 @@ root = primitives.root {
                                       },
 
    shader = topography.splat {
+      tag = "elevation",
+
+      index = -1,
       albedo = 1.5,
       separation = 1,
 
@@ -80,10 +89,16 @@ root = primitives.root {
                              },
 
    grass = topography.grass {
-      color = {0, 1, 0, 1},
+      tag = "vegetation",
+
+      separation = 1,
+
+      palette = {
+         {{1, 1, 0}, {0, .99, .99}},
+         {{0, 1, 1}, {120 / 360, .99, .99}},
+      },
       
       shape = elevation.vegetation {
-         tag = "vegetation",
                                    }
                             },
 

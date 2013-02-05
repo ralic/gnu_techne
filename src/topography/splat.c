@@ -225,11 +225,13 @@
     }
 
     if (self->name == 0) {
-        const char *private[6] = {"base", "detail", "offset", "scale",
-                                  "power", "matrices"};
+        const char *private[8] = {"base", "detail", "offset", "scale",
+                                  "power", "references", "weights",
+                                  "resolutions"};
         char *header;
         ShaderMold *shader;
         
+#include "glsl/splat_common.h"	
 #include "glsl/splat_vertex.h"	
 #include "glsl/splat_fragment.h"	
 
@@ -238,9 +240,9 @@
 	shader = [ShaderMold alloc];
         
         [shader initWithHandle: NULL];
-        [shader declare: 6 privateUniforms: private];
+        [shader declare: 8 privateUniforms: private];
 	[shader addSource: glsl_splat_vertex for: T_VERTEX_STAGE];
-	[shader add: 2 sourceStrings: (const GLchar *[2]){header, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
+	[shader add: 3 sourceStrings: (const GLchar *[3]){header, glsl_splat_common, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
 	[shader link];
 
         [self load];
@@ -250,7 +252,9 @@
         self->locations.base = glGetUniformLocation (self->name, "base");
         self->locations.detail = glGetUniformLocation (self->name, "detail");
         self->locations.power = glGetUniformLocation (self->name, "power");
-        self->locations.matrices = glGetUniformLocation (self->name, "matrices");
+        self->locations.references = glGetUniformLocation (self->name, "references");
+        self->locations.weights = glGetUniformLocation (self->name, "weights");
+        self->locations.resolutions = glGetUniformLocation (self->name, "resolutions");
 
         self->locations.turbidity = glGetUniformLocation (self->name, "turbidity");
         self->locations.factor = glGetUniformLocation (self->name, "factor");
@@ -280,27 +284,12 @@
              * base texture. */
             
             glUniform1i(self->locations.detail + i, i + 1);
-
-            /* Load the coeffcient matrix for the pigment. */
-            
-            {
-                float M[9] = {
-                    pigment->values[2], 
-                    pigment->values[3],
-                    pigment->values[4],
-
-                    pigment->values[5],
-                    pigment->values[6],
-                    pigment->values[7],
-
-                    0.625 / pigment->values[0],
-                    0.625 / pigment->values[1],
-                    0
-                };
-
-                glUniformMatrix3fv (self->locations.matrices + i, 1,
-                                    GL_FALSE, M);
-            }
+            glUniform2fv (self->locations.resolutions + i, 1,
+                          &pigment->values[0]);
+            glUniform3fv (self->locations.references + i, 1,
+                          &pigment->values[2]);
+            glUniform3fv (self->locations.weights + i, 1,
+                          &pigment->values[5]);
         }        
     }
 }

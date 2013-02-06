@@ -27,7 +27,7 @@ void main()
     hsv = rgb_to_hsv(texel);
     
     for (i = 0, D = 0 ; i < N ; i += 1) {
-        distances[i] = distance (hsv, references[i], weights[i], power);
+        distances[i] = hsv_distance (hsv, references[i], weights[i], power);
         D += distances[i];
     }
 

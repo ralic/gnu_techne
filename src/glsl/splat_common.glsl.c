@@ -21,7 +21,7 @@ vec3 rgb_to_hsv (vec3 rgb)
     return vec3(H, C / M, M);
 }
 
-float distance (vec3 sample, vec3 reference, vec3 weights, float exponent)
+float hsv_distance (vec3 sample, vec3 reference, vec3 weights, float exponent)
 {
     vec3 v;
 

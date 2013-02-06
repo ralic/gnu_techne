@@ -66,7 +66,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
         z = fmin((z_0 + z_1 + z_a) / 3.0, 0);
         n = (int)(-5000 / (z - 1));
-        r = sqrt(0.5 / (n * M_PI));
+        r = sqrt(1 / (8.0 * n));
         
         for (i = 0 ; i < n ; i += 1) {
             double r_1, r_2, sqrtr_1, k[3];

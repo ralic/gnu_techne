@@ -22,7 +22,7 @@ void main()
     /* Calculate the distance to each pigment. */
     
     for (i = 0, C = 0.0 ; i < N ; i += 1) {
-        distances[i] = distance (hsv, references[i], weights[i], power);
+        distances[i] = hsv_distance (hsv, references[i], weights[i], power);
         C += distances[i];
     }
 

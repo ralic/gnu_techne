@@ -47,7 +47,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             seed_triangle(b_c, b_1, a, z_c, z_1, z_a, level + 1);
         }
     } else {
-        float z;
+        float z, r;
         int i, n;
 
         /* { */
@@ -64,9 +64,10 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         /* assert (a[0] >= 0 && a[1] >= 0); */
         srand48((long int)(0.5 * (a[0] + a[1]) * (a[0] + a[1] + 1) + a[1]));
 
-        z = fmin(z_0 + z_1 + z_a, 0);
-        n = (int)(200 * expf(0.01 * z));
-
+        z = fmin((z_0 + z_1 + z_a) / 3.0, 0);
+        n = (int)(-5000 / (z - 1));
+        r = sqrt(0.5 / (n * M_PI));
+        
         for (i = 0 ; i < n ; i += 1) {
             double r_1, r_2, sqrtr_1, k[3];
             float c[3];
@@ -79,11 +80,13 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             k[1] = sqrtr_1 * (1 - r_2);
             k[2] = sqrtr_1 * r_2;
             
-            c[0] = k[2] * a[0] + k[0] * b_0[0] + k[1] * b_1[0];
-            c[1] = k[2] * a[1] + k[0] * b_0[1] + k[1] * b_1[1];
-            c[2] = k[2] * a[2] + k[0] * b_0[2] + k[1] * b_1[2];
+            c[0] = k[0] * a[0] + k[1] * b_0[0] + k[2] * b_1[0];
+            c[1] = k[0] * a[1] + k[1] * b_0[1] + k[2] * b_1[1];
+            c[2] = k[0] * a[2] + k[1] * b_0[2] + k[2] * b_1[2];
             
             glVertexAttrib3fv(0, c);
+            /* _TRACE ("%f\n", sqrt(0.5 / (n * M_PI))); */
+            glVertexAttrib1f(2, r);
             
             seeds_n += 1;
         }
@@ -165,7 +168,8 @@ void seed_vegetation(roam_Context *new, unsigned int _ls, unsigned int _lo)
 
             glUniform2f(_lo, j, i);
             glBindTexture(GL_TEXTURE_2D, tiles->imagery[k]);
-
+            glPointSize(1);
+            
             glBegin(GL_POINTS);
             
 	    seed_subtree(context->roots[k][0]);

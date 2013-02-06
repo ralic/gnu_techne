@@ -1,5 +1,6 @@
 layout(location=0) in vec3 positions;
 layout(location=1) in vec3 normals;
+layout(location=2) in float radius;
 
 uniform sampler2D base;
 uniform vec3 references[N], weights[N];
@@ -42,5 +43,5 @@ void main()
     
     cluster.center = positions;
     cluster.normal = normals;
-    cluster.size = 3;
+    cluster.size = radius;
 }

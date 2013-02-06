@@ -27,7 +27,7 @@ local orbit = staging.orbit {
          local command = self.command
 
          if not rubberband.zoom then
-            command[3] = current[3] - units.degrees(value) * 0.4
+            command[3] = current[3] - units.degrees(value) * 0.1
 
             self.command = command
          end
@@ -39,7 +39,7 @@ local orbit = staging.orbit {
          if rubberband.zoom then
             command[1] = current[1] - value * 1
          else
-            command[2] = current[2] - units.degrees(value) * 0.4
+            command[2] = current[2] - units.degrees(value) * 0.1
          end
 
          self.command = command

@@ -32,7 +32,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 {    
     if (level < TREE_HEIGHT - 1) {
         if ((z_a < 0 || z_0 < 0 || z_1 < 0) &&
-            (z_a > -500 || z_0 > -500 || z_1 > -500)) {
+            (z_a > -70 || z_0 > -70 || z_1 > -70)) {
             float b_c[3], z_c;
     
             b_c[0] = 0.5 * (b_0[0] + b_1[0]);
@@ -64,9 +64,9 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         /* assert (a[0] >= 0 && a[1] >= 0); */
         srand48((long int)(0.5 * (a[0] + a[1]) * (a[0] + a[1] + 1) + a[1]));
 
-        z = fmin((z_0 + z_1 + z_a) / 3.0, 0);
-        n = (int)(-5000 / (z - 1));
-        r = sqrt(1 / (8.0 * n));
+        z = fmin((z_0 + z_1 + z_a) / 3.0, -0.1);
+        n = (int)(fmin(5000.0 / z / z, 300));
+        r = sqrt(0.5 / (4 * n));
         
         for (i = 0 ; i < n ; i += 1) {
             double r_1, r_2, sqrtr_1, k[3];

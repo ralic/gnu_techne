@@ -17,7 +17,19 @@ resources.dofile "common.lua"
 
 graphics.perspective = {units.degrees(50), 0.1, 10000}
 
-local heights = resources.dofile ("diamondsquare.lua", 512, 0.00112)
+local file = not options.generate and io.open ("heightmap.bin")
+local heights
+
+if not file then
+   heights = array.nushorts(resources.dofile ("diamondsquare.lua", 4096, 0.000125))
+   file = io.open ("heightmap.bin", "w")
+   file:write (array.dump(heights))
+else
+   heights = array.nushorts(4097, 4097, file:read("*a"))
+end
+
+file:close()
+
 local base = {}
 
 for i = 1, 128 do
@@ -47,12 +59,12 @@ local green = textures.planar {
                               }
 
 elevation = topography.elevation {
-   depth = 9,
-   resolution = {3000 / 512, 3000 / 512},
+   depth = 12,
+   resolution = {0.625, 0.625},
 
    tiles = {
       {
-         {array.nushorts(heights), nil, array.nuchars(base), {500, 0}}
+         {heights, nil, array.nuchars(base), {500, 0}}
       }
    }
 }
@@ -71,21 +83,25 @@ root = primitives.root {
       sun = {1.74, units.degrees(45)},
                                       },
 
-   shader = topography.splat {
-      tag = "elevation",
+   wireframe = shading.wireframe {
+      enabled = false,
 
-      index = -1,
-      albedo = 1.5,
-      separation = 1,
+      splat = topography.splat {
+         tag = "elevation",
 
-      palette = {
-         {red, {1, 1}, {0, .99, .99}},
-         {green, {1, 1}, {120 / 360, .99, .99}},
-      },
+         index = -1,
+         albedo = 1.5,
+         separation = 1,
 
-      shape = elevation.shape {
-         target = 15000,
-                              }
+         palette = {
+            {red, {1, 1}, {0, .99, .99}},
+            {green, {1, 1}, {120 / 360, .99, .99}},
+         },
+
+         shape = elevation.shape {
+            target = 15000,
+                                 }
+                       },
                              },
 
    grass = topography.grass {
@@ -95,7 +111,7 @@ root = primitives.root {
 
       palette = {
          {{1, 1, 0}, {0, .99, .99}},
-         {{0, 1, 1}, {120 / 360, .99, .99}},
+         {{1, 0.4, 0}, {120 / 360, .99, .99}},
       },
       
       shape = elevation.vegetation {
@@ -119,5 +135,9 @@ root = primitives.root {
                        }
 
 bindings['h'] = function()
-   root.wireframe.shader.shape.optimize = not root.wireframe.shader.shape.optimize
+   root.wireframe.shader.shape.optimize = not root.wireframe.splat.shape.optimize
+end
+
+bindings['w'] = function()
+   root.wireframe.enabled = not root.wireframe.enabled
 end

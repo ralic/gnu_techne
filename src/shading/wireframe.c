@@ -26,13 +26,36 @@
 
 @implementation Wireframe
 
+-(void) init
+{
+    [super init];
+
+    self->enabled = 1;
+}
+
 -(void) draw: (int)frame
 {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	
+    if (self->enabled) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+    
     [super draw: frame];
     
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    if (self->enabled) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+}
+
+-(int) _get_enabled
+{
+    lua_pushboolean (_L, self->enabled);
+    
+    return 1;
+}
+ 
+-(void) _set_enabled
+{
+    self->enabled = lua_toboolean (_L, 3);
 }
 
 @end

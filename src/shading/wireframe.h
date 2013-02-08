@@ -20,7 +20,12 @@
 #include "graphic.h"
 
 @interface Wireframe: Graphic {
+@public
+    int enabled;
 }
+
+-(int) _get_enabled;
+-(void) _set_enabled;
 
 @end
 

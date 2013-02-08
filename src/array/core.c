@@ -134,6 +134,16 @@ static int set (lua_State *L)
     return 1;
 }
 
+static int dump (lua_State *L)
+{
+    array_Array *array;
+
+    array = array_checkarray (L, 1);
+    lua_pushlstring (L, array->values.any, array->length);
+    
+    return 1;
+}
+
 static int adjust (lua_State *L)
 {
     array_Array *defaults;
@@ -181,6 +191,7 @@ int luaopen_array_core (lua_State *L)
     const luaL_Reg api[] = {    
 	{"copy", copy},
 	{"set", set},
+	{"dump", dump},
 	{"cast", cast},
 	{"slice", slice},
 	{"adjust", adjust},        

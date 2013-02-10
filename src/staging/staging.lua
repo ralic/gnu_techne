@@ -31,7 +31,8 @@ function staging.orbit (values)
             local p, R
 
             p = orbit.parent.position or {0, 0, 0}
-            R = arraymath.euler (0, rest[2], rest[3])
+            R = arraymath.relue (0, rest[3], rest[2])
+            RT = arraymath.transpose(R)
 
             -- Configure the rig.
 
@@ -41,7 +42,7 @@ function staging.orbit (values)
 
             orbit.spring = joints.euler {
                axes = {
-                  R[2], R[3], {0, 0, 0}
+                  RT[2], {0, 0, 1}, {0, 0, 0}
                },
 
                stops = {
@@ -64,10 +65,10 @@ function staging.orbit (values)
 
                neck = joints.slider {
                   stops = {{0, 0}, {3000, 1000}, 0},
-                  axis = R[3],
+                  axis = RT[3],
 
                   head = bodies.point {
-                     position = arraymath.matrixmultiplyadd (R, {0, 0, -rest[1]}, p),
+                     position = arraymath.matrixmultiplyadd (RT, {0, 0, -rest[1]}, p),
 
                      orientation = R,
 
@@ -123,8 +124,8 @@ function staging.orbit (values)
                               b = math.clamp (command[3] - rest[3],
                                               -math.pi, math.pi)
 
-                              stops[1][1] = {a, a}
-                              stops[3][1] = {b, b}
+                              stops[3][1] = {a, a}
+                              stops[1][1] = {b, b}
 
                               self.spring.stops = stops
                            else

@@ -25,6 +25,10 @@
 
 static roam_Context *context;
 static float modelview[16];
+static struct {
+    double density, bias;
+} parameters;
+
 static int seeds_n;
 
 static void seed_triangle(float *a, float *b_0, float *b_1,
@@ -56,17 +60,30 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         /*     c[1] = (a[1] + b_0[1] + b_1[1]) / 3.0; */
         /*     c[2] = (a[2] + b_0[2] + b_1[2]) / 3.0; */
             
+        /*     glVertexAttrib1f(2, 0); */
         /*     glVertexAttrib3fv(0, c); */
             
         /*     seeds_n += 1; */
         /* } */
 
         /* assert (a[0] >= 0 && a[1] >= 0); */
-        srand48((long int)(0.5 * (a[0] + a[1]) * (a[0] + a[1] + 1) + a[1]));
 
-        z = fmin((z_0 + z_1 + z_a) / 3.0, -0.1);
-        n = (int)(fmin(5000.0 / z / z, 300));
-        r = sqrt(0.5 / (4 * n));
+        /* { */
+        /*     srand48((long int)a); */
+        /* } */
+
+        /* If proper winding is observed then no two triangles can
+         * share the same base vertices (the left base vertex of one
+         * will be the right base vertex of the opposite and vice
+         * versa).  We can therefore transform the coordinates of the
+         * a vertex through a pairing function and use the result as a
+         * unique seed for the RNG. */
+        
+        srand48((long int)(0.5 * (b_0[0] + b_0[1]) * (b_0[0] + b_0[1] + 1) + b_0[1]));
+
+        z = fmin((z_0 + z_1 + z_a) / 3.0, -parameters.bias);
+        n = (int)(parameters.bias * parameters.density / z / z);
+        r = sqrt(1.0 / n);
         
         for (i = 0 ; i < n ; i += 1) {
             double r_1, r_2, sqrtr_1, k[3];
@@ -74,6 +91,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
             r_1 = drand48();
             r_2 = drand48();
+            
             sqrtr_1 = sqrt(r_1);
             
             k[0] = 1 - sqrtr_1;
@@ -83,9 +101,8 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             c[0] = k[0] * a[0] + k[1] * b_0[0] + k[2] * b_1[0];
             c[1] = k[0] * a[1] + k[1] * b_0[1] + k[2] * b_1[1];
             c[2] = k[0] * a[2] + k[1] * b_0[2] + k[2] * b_1[2];
-            
+
             glVertexAttrib3fv(0, c);
-            /* _TRACE ("%f\n", sqrt(0.5 / (n * M_PI))); */
             glVertexAttrib1f(2, r);
             
             seeds_n += 1;
@@ -114,6 +131,8 @@ static void seed_subtree(roam_Triangle *n)
             a = e->center;
             b_0 = d->vertices[!i];
             b_1 = d->vertices[i];
+
+            /* Calculate the triangle's normal. */
             
             u[0] = b_0[0] - a[0];
             u[1] = b_0[1] - a[1];
@@ -128,6 +147,8 @@ static void seed_subtree(roam_Triangle *n)
 
             glVertexAttrib3fv(1, w);
 
+            /* Calculate the distance from the eye to each vertex. */
+            
             z_a = modelview[2] * a[0] +
                 modelview[6] * a[1] +
                 modelview[10] * a[2] +
@@ -148,13 +169,16 @@ static void seed_subtree(roam_Triangle *n)
     }
 }
 
-void seed_vegetation(roam_Context *new, unsigned int _ls, unsigned int _lo)
+void seed_vegetation(roam_Context *new, double density, double bias,
+                     unsigned int _ls, unsigned int _lo)
 {
     roam_Tileset *tiles;
     int i, j;
 
     seeds_n = 0;
     context = new;
+    parameters.density = density;
+    parameters.bias = bias;
     tiles = &context->tileset;
     
     t_copy_modelview (modelview);

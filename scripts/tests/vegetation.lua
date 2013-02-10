@@ -70,7 +70,7 @@ elevation = topography.elevation {
 }
 
 root = primitives.root {
-   orbit = resources.dofile ("orbit.lua", -1000, 0, 0),
+   orbit = resources.dofile ("orbit.lua", -1000, 0, units.degrees(70)),
 
    atmosphere = topography.atmosphere {
       size = {1024, 512},
@@ -85,11 +85,11 @@ root = primitives.root {
 
    wireframe = shading.wireframe {
       enabled = false,
+      index = -1,
 
       splat = topography.splat {
          tag = "elevation",
 
-         index = -1,
          albedo = 1.5,
          separation = 1,
 
@@ -107,6 +107,7 @@ root = primitives.root {
    grass = topography.grass {
       tag = "vegetation",
 
+      amplification = 10,
       separation = 1,
 
       palette = {
@@ -115,15 +116,18 @@ root = primitives.root {
       },
       
       shape = elevation.vegetation {
+         bias = 3,
+         density = 1000,
                                    }
                             },
 
    cameraman = options.timed and primitives.timer {
-      period = 1,
+      period = 2,
       
       tick = function(self, ticks)
-         local command = {-1000, units.degrees(65),
-                          (ticks % 2 > 0 and 1 or -1) * units.degrees(90)}
+         local command = {-1000,
+                          (ticks % 2 > 0 and 1 or -1) * units.degrees(90),
+                          ticks % 2 > 0 and units.degrees(70.63) or units.degrees(69.35)}
 
          self.parent.orbit.command = command
 
@@ -140,4 +144,17 @@ end
 
 bindings['w'] = function()
    root.wireframe.enabled = not root.wireframe.enabled
+end
+
+bindings['f'] = function()
+   root.wireframe.splat = shading.flat {
+      color = {0, 1, 0, 1},
+      shape = root.wireframe.splat.shape
+                                       }
+end
+
+bindings['space'] = function()
+   root.grass.debug = not root.grass.debug
+
+   trace (root.grass.debug)
 end

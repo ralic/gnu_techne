@@ -133,7 +133,7 @@ static int globals_n;
     }
 
 #define UPDATE_VALUE(size_0, stride_0, size_1, stride_1, elements,	\
-		     ctype, arraytype, ismatrix)                        \
+		     ctype, gltype, arraytype, ismatrix)                \
     {									\
 	array_Array *array = NULL;                                      \
 	ctype n;							\
@@ -144,11 +144,20 @@ static int globals_n;
 	    if (elements == 1) {					\
                 /* A scalar. */                                         \
                                                                         \
-		if (lua_type (_L, 3) != LUA_TNUMBER ) {			\
-		    TYPE_ERROR();					\
-		}							\
+                if (gltype == GL_BOOL) {                                \
+                    if (lua_type (_L, 3) != LUA_TBOOLEAN) {             \
+                        TYPE_ERROR();					\
+                    }                                                   \
+                                                                        \
+                    n = (ctype)lua_toboolean (_L, 3);			\
+                } else {                                                \
+                    if (lua_type (_L, 3) != LUA_TNUMBER) {              \
+                        TYPE_ERROR();                                   \
+                    }                                                   \
+                                                                        \
+                    n = (ctype)lua_tonumber (_L, 3);			\
+                }                                                       \
 									\
-		n = (ctype)lua_tonumber (_L, 3);			\
 		UPDATE_SINGLE (&n, elements * sizeof(ctype));		\
 	    } else {							\
                 /* A vector. */                                         \
@@ -265,7 +274,7 @@ static int globals_n;
     }	    
 
 #define READ_VALUE(size_0, stride_0, size_1, stride_1, elements,	\
-                   ctype, arraytype, ismatrix)                          \
+                   ctype, gltype, arraytype, ismatrix)                  \
     {									\
 	array_Array *array;                                             \
         ctype n;                                                        \
@@ -277,7 +286,12 @@ static int globals_n;
                 /* A scalar. */                                         \
 									\
 		READ_SINGLE (&n, sizeof(ctype));                        \
-		lua_pushnumber (_L, n);                                 \
+                                                                        \
+                if (gltype == GL_BOOL) {                                \
+                    lua_pushboolean (_L, n);                            \
+                } else {                                                \
+                    lua_pushnumber (_L, n);                             \
+                }                                                       \
 	    } else {							\
                 /* A vector. */                                         \
                                                                         \
@@ -317,56 +331,57 @@ static int globals_n;
 #define CASE_BLOCK_S_V(ctype, gltype, arraytype)           \
     case gltype:                                           \
         DO_VALUE(u->size, u->arraystride, 1, 0, 1,     \
-                     ctype, arraytype, 0); break;          \
+                 ctype, gltype, arraytype, 0); break;              \
     case gltype##_VEC2:                                    \
 	DO_VALUE(u->size, u->arraystride, 1, 0, 2,	   \
-                     ctype, arraytype, 0); break;          \
+                     ctype, gltype, arraytype, 0); break;          \
     case gltype##_VEC3:					   \
 	DO_VALUE(u->size, u->arraystride, 1, 0, 3,	   \
-                     ctype, arraytype, 0); break;          \
+                     ctype, gltype, arraytype, 0); break;          \
     case gltype##_VEC4:					   \
 	DO_VALUE(u->size, u->arraystride, 1, 0, 4,	   \
-                     ctype, arraytype, 0); break;          \
+                     ctype, gltype, arraytype, 0); break;          \
 
 #define CASE_BLOCK_M(ctype, gltype, arraytype)				\
     case gltype##_MAT2:							\
     DO_VALUE(2, u->matrixstride, u->size, u->arraystride, 2,	\
-		 ctype, arraytype, 1); break;				\
+		 ctype, gltype, arraytype, 1); break;				\
     case gltype##_MAT3:							\
     DO_VALUE(3, u->matrixstride, u->size, u->arraystride, 3,	\
-		 ctype, arraytype, 1); break;				\
+		 ctype, gltype, arraytype, 1); break;				\
     case gltype##_MAT4:							\
     DO_VALUE(4, u->matrixstride, u->size, u->arraystride, 4,	\
-		 ctype, arraytype, 1); break;				\
+		 ctype, gltype, arraytype, 1); break;				\
     									\
     case gltype##_MAT2x3:						\
     DO_VALUE(2, u->matrixstride, u->size, u->arraystride, 3,	\
-		 ctype, arraytype, 1); break;				\
+		 ctype, gltype, arraytype, 1); break;				\
     case gltype##_MAT2x4:						\
     DO_VALUE(2, u->matrixstride, u->size, u->arraystride, 4,	\
-		 ctype, arraytype, 1); break;				\
+		 ctype, gltype, arraytype, 1); break;				\
     case gltype##_MAT3x2:						\
     DO_VALUE(3, u->matrixstride, u->size, u->arraystride, 2,	\
-		 ctype, arraytype, 1); break;				\
+		 ctype, gltype, arraytype, 1); break;				\
     case gltype##_MAT3x4:						\
     DO_VALUE(3, u->matrixstride, u->size, u->arraystride, 4,	\
-		 ctype, arraytype, 1); break;				\
+		 ctype, gltype, arraytype, 1); break;				\
 									\
     case gltype##_MAT4x2:						\
     DO_VALUE(4, u->matrixstride, u->size, u->arraystride, 2,	\
-		 ctype, arraytype, 1); break;				\
+		 ctype, gltype, arraytype, 1); break;				\
     case gltype##_MAT4x3:						\
     DO_VALUE(4, u->matrixstride, u->size, u->arraystride, 3,	\
-		 ctype, arraytype, 1); break;				\
+		 ctype, gltype, arraytype, 1); break;				\
 
 #define DO_UNIFORM(uniform)						\
     {									\
 	shader_Basic *u;						\
 									\
 	u = uniform;							\
+                                                                        \
 	glBindBuffer(GL_UNIFORM_BUFFER, self->blocks[u->block]);	\
-									\
-	switch (u->type) {						\
+                                                                        \
+        switch (u->type) {						\
 	    CASE_BLOCK_S_V(double, GL_DOUBLE, ARRAY_TDOUBLE);		\
 	    CASE_BLOCK_M(double, GL_DOUBLE, ARRAY_TDOUBLE);		\
 									\
@@ -376,7 +391,7 @@ static int globals_n;
 	    CASE_BLOCK_S_V(int, GL_INT, ARRAY_TINT);			\
 	    CASE_BLOCK_S_V(unsigned int, GL_UNSIGNED_INT, ARRAY_TUINT);	\
 	    CASE_BLOCK_S_V(unsigned char, GL_BOOL, ARRAY_TUCHAR);	\
-	default: abort();						\
+	default: _TRACE ("%x\n", u->type);abort();                      \
 	}								\
     }
 
@@ -870,8 +885,13 @@ int t_add_global_block (const char *name, const char *declaration)
 
                 glGenBuffers(1, &self->blocks[i]);
                 glBindBuffer(GL_UNIFORM_BUFFER, self->blocks[i]);
-                glBufferData(GL_UNIFORM_BUFFER, s, NULL,
-                             GL_DYNAMIC_DRAW);
+
+                {
+                    char zero[s];
+
+                    memset (zero, 0, s * sizeof (char));
+                    glBufferData(GL_UNIFORM_BUFFER, s, zero, GL_DYNAMIC_DRAW);
+                }
             }
 	}
     } else {

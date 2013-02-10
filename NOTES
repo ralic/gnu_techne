@@ -72,3 +72,6 @@ TODO (ASAP):
 * Adapt the Racetrack node to the mold node or prerequisite configuration
   approach.
 * Add support for setting clamp and filtering modes to the Texture Node.
+* Euler joints should always have 3 dofs and need only two axes.
+* Add sensitivity control to the orbit node.
+* Add perhpas some sort of small robot to survey the world.

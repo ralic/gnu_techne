@@ -136,7 +136,8 @@ typedef struct diamond roam_Diamond;
 void look_up_sample(roam_Tileset *tiles, int i, int j, double *h, double *e);
 void optimize_geometry(roam_Context *new, int frame);
 void draw_geometry(roam_Context *new, float *buffer, int *ranges);
-void seed_vegetation(roam_Context *new, unsigned int _ls, unsigned int _lo);
+void seed_vegetation(roam_Context *new, double density, double bias,
+                     unsigned int _ls, unsigned int _lo);
 void free_mesh(roam_Context *new);
 void *allocate_mesh(roam_Context *new);
 void calculate_tile_bounds(unsigned short *heights, unsigned short *bounds,

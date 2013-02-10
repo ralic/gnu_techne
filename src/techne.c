@@ -159,142 +159,144 @@ void t_end_interval (Node *node)
 
     t_end_interval(self);
 
-    runtime = t_get_cpu_time() - zero;
-    c = 1e-6 / iterations;
+    if (iterations > 0) {
+        runtime = t_get_cpu_time() - zero;
+        c = 1e-6 / iterations;
     
-    /* Output statistics for profiled nodes. */
+        /* Output statistics for profiled nodes. */
     
-    t_print_message("Ran a total of %d iterations in %.1f seconds at "
-                    "%.1f ms per iteration (%.1f Hz).\n",
-		    iterations, runtime * 1e-9,
-                    runtime * c, iterations * 1e9 / runtime);
+        t_print_message("Ran a total of %d iterations in %.1f seconds at "
+                        "%.1f ms per iteration (%.1f Hz).\n",
+                        iterations, runtime * 1e-9,
+                        runtime * c, iterations * 1e9 / runtime);
     
-    h = lua_gettop(_L);
+        h = lua_gettop(_L);
 
-    /* Gather all profiled nodes. */
+        /* Gather all profiled nodes. */
     
-    lua_getglobal (_L, "options");
-    lua_getfield (_L, -1, "profile");
-    lua_replace (_L, -2);
+        lua_getglobal (_L, "options");
+        lua_getfield (_L, -1, "profile");
+        lua_replace (_L, -2);
 
-    if (lua_type(_L, -1) == LUA_TSTRING) {
-        lua_newtable(_L);
-        lua_insert(_L, -2);
-        lua_rawseti(_L, -2, 1);
-    }
+        if (lua_type(_L, -1) == LUA_TSTRING) {
+            lua_newtable(_L);
+            lua_insert(_L, -2);
+            lua_rawseti(_L, -2, 1);
+        }
 
-    if (lua_type(_L, h + 1) == LUA_TTABLE) {
-        int n;
+        if (lua_type(_L, h + 1) == LUA_TTABLE) {
+            int n;
 
-        n = lua_rawlen(_L, h + 1);
+            n = lua_rawlen(_L, h + 1);
 
-        for (j = 0 ; j < n ; j += 1) {
-            lua_pushstring (_L, "return ");
-            lua_rawgeti(_L, h + 1, j + 1);
-            lua_concat(_L, 2);
-
-            if (luaL_loadstring(_L, lua_tostring(_L, -1)) ||
-                lua_pcall(_L, 0, 1, 0)) {
+            for (j = 0 ; j < n ; j += 1) {
+                lua_pushstring (_L, "return ");
                 lua_rawgeti(_L, h + 1, j + 1);
+                lua_concat(_L, 2);
+
+                if (luaL_loadstring(_L, lua_tostring(_L, -1)) ||
+                    lua_pcall(_L, 0, 1, 0)) {
+                    lua_rawgeti(_L, h + 1, j + 1);
                 
-                t_print_warning ("Could not resolve node at '%s'\n",
-                                 lua_tostring(_L, -1));
-                lua_pop(_L, 3);
-            } else if (!t_isnode(_L, -1)) {
-                lua_rawgeti(_L, h + 1, j + 1);
+                    t_print_warning ("Could not resolve node at '%s'\n",
+                                     lua_tostring(_L, -1));
+                    lua_pop(_L, 3);
+                } else if (!t_isnode(_L, -1)) {
+                    lua_rawgeti(_L, h + 1, j + 1);
                 
-                t_print_warning ("Value at '%s' is not a node (it is a %s value).\n",
-                                 lua_tostring(_L, -1),
-                                 lua_typename(_L, lua_type(_L, -2)));
-                lua_pop(_L, 3);
-            } else {
-                lua_replace(_L, -2);
-            }
-        }
-    }
-
-    lua_remove(_L, h + 1);
-
-    /* If no profiled nodes have been specified just rerturn the
-     * profile of all builtins and roots. */
-    
-    if (lua_gettop(_L) == h) {
-	for (builtin = [Builtin nodes];
-	     builtin;
-	     builtin = (Builtin *)builtin->right) {
-            t_pushuserdata(_L, 1, builtin);
-        }
-        
-	for (root = [Root nodes];
-	     root;
-	     root = (Root *)root->right) {
-            t_pushuserdata(_L, 1, root);
-        }
-    }
-
-    memset (totals, 0, sizeof(totals));
-
-    t_print_message(
-	"+------------------------------------------------------+------------------------+\n"
-	"|                                 cummulative (ms)     |   self (ms)            |\n"
-	"|node                             core    user   total |   core    user   total |\n"
-	"+------------------------------------------------------+------------------------+\n"
-	);
-    
-    for (j = h + 1 ; j <= lua_gettop(_L) ; j += 1) {
-	Node *node, *other, *ancestor;
-        int i;
-	
-        memset (intervals, 0, sizeof(intervals));
-
-        assert (t_isnode(_L, j));
-        node = t_tonode(_L, j);
-        
-        accumulate (node, intervals);
-
-        for (i = h + 1 ; i <= lua_gettop(_L) ; i += 1) {
-            if (i == j) {
-                continue;
-            }
-            
-            other = t_tonode(_L, i);
-
-            for (ancestor = node ; ancestor ; ancestor = ancestor->up) {
-                if (ancestor == other) {
-                    goto skip;
+                    t_print_warning ("Value at '%s' is not a node (it is a %s value).\n",
+                                     lua_tostring(_L, -1),
+                                     lua_typename(_L, lua_type(_L, -2)));
+                    lua_pop(_L, 3);
+                } else {
+                    lua_replace(_L, -2);
                 }
             }
         }
-        
-	totals[0] += intervals[0];
-	totals[1] += intervals[1];
-	totals[2] += node->profile.intervals[0];
-	totals[3] += node->profile.intervals[1];
-        
-    skip:
-        
-        luaL_callmeta (_L, j, "__tostring");
-        
-	t_print_message(
-	    "|%-30s %6.1f  %6.1f  %6.1f | %6.1f  %6.1f  %6.1f |\n",
-	    lua_tostring (_L, -1),
-	    (intervals[0] - intervals[1]) * c,
-	    intervals[1] * c, intervals[0] * c,
-	    (node->profile.intervals[0] - node->profile.intervals[1]) * c,
-	    node->profile.intervals[1] * c,
-	    node->profile.intervals[0] * c);
 
-        lua_pop (_L, 1);
+        lua_remove(_L, h + 1);
+
+        /* If no profiled nodes have been specified just rerturn the
+         * profile of all builtins and roots. */
+    
+        if (lua_gettop(_L) == h) {
+            for (builtin = [Builtin nodes];
+                 builtin;
+                 builtin = (Builtin *)builtin->right) {
+                t_pushuserdata(_L, 1, builtin);
+            }
+        
+            for (root = [Root nodes];
+                 root;
+                 root = (Root *)root->right) {
+                t_pushuserdata(_L, 1, root);
+            }
+        }
+
+        memset (totals, 0, sizeof(totals));
+
+        t_print_message(
+            "+------------------------------------------------------+------------------------+\n"
+            "|                                 cummulative (ms)     |   self (ms)            |\n"
+            "|node                             core    user   total |   core    user   total |\n"
+            "+------------------------------------------------------+------------------------+\n"
+            );
+    
+        for (j = h + 1 ; j <= lua_gettop(_L) ; j += 1) {
+            Node *node, *other, *ancestor;
+            int i;
+	
+            memset (intervals, 0, sizeof(intervals));
+
+            assert (t_isnode(_L, j));
+            node = t_tonode(_L, j);
+        
+            accumulate (node, intervals);
+
+            for (i = h + 1 ; i <= lua_gettop(_L) ; i += 1) {
+                if (i == j) {
+                    continue;
+                }
+            
+                other = t_tonode(_L, i);
+
+                for (ancestor = node ; ancestor ; ancestor = ancestor->up) {
+                    if (ancestor == other) {
+                        goto skip;
+                    }
+                }
+            }
+        
+            totals[0] += intervals[0];
+            totals[1] += intervals[1];
+            totals[2] += node->profile.intervals[0];
+            totals[3] += node->profile.intervals[1];
+        
+        skip:
+        
+            luaL_callmeta (_L, j, "__tostring");
+        
+            t_print_message(
+                "|%-30s %6.1f  %6.1f  %6.1f | %6.1f  %6.1f  %6.1f |\n",
+                lua_tostring (_L, -1),
+                (intervals[0] - intervals[1]) * c,
+                intervals[1] * c, intervals[0] * c,
+                (node->profile.intervals[0] - node->profile.intervals[1]) * c,
+                node->profile.intervals[1] * c,
+                node->profile.intervals[0] * c);
+
+            lua_pop (_L, 1);
+        }
+
+        t_print_message(
+            "+------------------------------------------------------+------------------------+\n"
+            "|total                          %6.1f  %6.1f  %6.1f | %6.1f  %6.1f  %6.1f |\n"
+            "+------------------------------------------------------+------------------------+\n",
+            (totals[0] - totals[1]) * c, totals[1] * c, totals[0] * c,
+            (totals[2] - totals[3]) * c, totals[3] * c, totals[2] * c);
+
+        lua_settop(_L, h);
     }
-
-    t_print_message(
-	"+------------------------------------------------------+------------------------+\n"
-	"|total                          %6.1f  %6.1f  %6.1f | %6.1f  %6.1f  %6.1f |\n"
-	"+------------------------------------------------------+------------------------+\n",
-	(totals[0] - totals[1]) * c, totals[1] * c, totals[0] * c,
-	(totals[2] - totals[3]) * c, totals[3] * c, totals[2] * c);
-
-    lua_settop(_L, h);
 }
 
 -(int) _get_interactive

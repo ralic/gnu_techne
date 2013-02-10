@@ -73,12 +73,36 @@
 
     optimize_geometry(self->context, frame);
 
-    seed_vegetation (self->context,
+    seed_vegetation (self->context, self->density, self->bias,
                      self->locations.scale, self->locations.offset);
 
     t_pop_modelview ();
     
     [super draw: frame];
+}
+
+-(int) _get_density
+{
+    lua_pushnumber(_L, self->density);
+
+    return 1;
+}
+
+-(void) _set_density
+{
+    self->density = lua_tonumber(_L, 3);
+}
+
+-(int) _get_bias
+{
+    lua_pushnumber(_L, self->bias);
+
+    return 1;
+}
+
+-(void) _set_bias
+{
+    self->bias = lua_tonumber(_L, 3);
 }
 
 @end

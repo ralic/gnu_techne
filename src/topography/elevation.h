@@ -86,7 +86,15 @@
     } locations;
 
     int reference;
+
+    double density, bias;
 }
+
+-(int) _get_density;
+-(void) _set_density;
+
+-(int) _get_bias;
+-(void) _set_bias;
 
 @end
 

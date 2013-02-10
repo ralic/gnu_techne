@@ -927,14 +927,14 @@ static void link_node(Node *node)
 	/* Find where to insert the node.  Nodes are ordered according to
 	 * index in ascending order.  Nodes with no index are unordered
 	 * and come last in the list. */
-	
+
 	if (isnan(node->index)) {
 	    for (l = (*head)->left, r = *head;
 		 r && !isnan(r->index);
 		 l = r, r = r->right);
 	} else {
 	    for (l = (*head)->left, r = *head;
-		 r && r->index > node->index;
+		 r && r->index < node->index;
 		 l = r, r = r->right);
 	}
     
@@ -1197,9 +1197,6 @@ static void unlink_node (Node *node)
 
 	lua_pushcfunction (_L, ancestors_iterator);
 	lua_setglobal (_L, "ancestors");
-
-	lua_pushcfunction (_L, ancestor);
-	lua_setglobal (_L, "ancestor");
     }
 }
 
@@ -1575,6 +1572,26 @@ static void unlink_node (Node *node)
     return 1;
 }
 
+-(int) _get_descendants
+{
+    Node *child;
+    int i;
+    
+    lua_newtable (_L);
+
+    for (child = self->down, i = 0 ; child ; child = child->right, i += 1) {
+        t_pushuserdata (_L, 1, child);
+        lua_rawseti (_L, -2, i + 1);
+    }
+
+    return 1;
+}
+
+-(void) _set_descendants
+{
+    T_WARN_READONLY;
+}
+
 -(int) _get_ancestors
 {
     lua_newtable (_L);
@@ -1618,7 +1635,7 @@ static void unlink_node (Node *node)
 
 -(void) _set_ancestors
 {
-    /* Not supported for now. */
+    T_WARN_READONLY;
 }
 
 -(int) _get_index

@@ -1,6 +1,6 @@
 layout(location=0) in vec3 positions;
 layout(location=1) in vec3 normals;
-layout(location=2) in float radius;
+layout(location=2) in float sizes;
 
 uniform sampler2D base;
 uniform vec3 references[N], weights[N];
@@ -8,6 +8,10 @@ uniform float power;
 
 uniform float scale;
 uniform vec2 offset;
+
+uniform public_attributes {
+    int amplification;
+};
 
 out cluster_attributes {
     vec3 center, normal;
@@ -19,7 +23,7 @@ void main()
 {
     vec3 texel, hsv;
     vec2 uv;
-    float distances[N], D, r;
+    float distances[N], D, r, z;
     int i;
 
     uv = scale * positions.xy - offset;
@@ -31,10 +35,12 @@ void main()
         D += distances[i];
     }
 
+    z = min((modelview * vec4 (positions, 1)).z, -1);
+
     for (i = 0, r = 0 ; i < N ; i += 1) {
         float c_0, c;
 
-        c_0 = distances[i] / D * 5 + r;
+        c_0 = distances[i] / D * amplification + r;
         c = round(c_0);
         r = c - c_0;
 
@@ -43,5 +49,5 @@ void main()
     
     cluster.center = positions;
     cluster.normal = normals;
-    cluster.size = radius;
+    cluster.size = sizes;
 }

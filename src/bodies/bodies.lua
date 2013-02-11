@@ -104,10 +104,39 @@ return {
 	    return cylinder
 	 end,
 
+   ball = function (parameters)
+	    local ball, oldmeta
+
+	    ball = core.ball (parameters)
+
+	    ball.volume = shading.flat {
+	       color = {1, 0, 0, 1},
+
+	       shape = shapes.circle {
+		  wireframe = true,
+
+		  segments = 16,
+		  radius = ball.radius,
+	       },
+	    }
+
+	    oldmeta = getmetatable(ball)
+	    replacemetatable(ball, {
+				__newindex = function (self, key, value)
+						if key == "radius" then
+						   self.volume.shape.radius = value
+						end
+						
+						oldmeta.__newindex (self, key, value)
+					     end
+			     })
+
+	    return ball
+	 end,
+
    environment = core.environment,
    plane = core.plane,
    capsule = core.capsule,
    polyhedron = core.polyhedron,
-   ball = core.ball,
    system = core.system,
 } 

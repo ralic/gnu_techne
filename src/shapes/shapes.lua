@@ -351,4 +351,88 @@ function shapes.torus(parameters)
    return node
 end
 
+function shapes.sphere(parameters)
+   local node, oldmeta
+   local r, n, N = 1, 16, 32
+
+   node = shapes.triangles {}
+   oldmeta = getmetatable(node)
+
+   replacemetatable (node, {
+      __index = function (self, key)
+		   if key == "radius" then
+		      return r
+		   elseif key == "segments" then
+		      return {n, N}
+		   else
+		      return oldmeta.__index(self, key)
+		   end
+		end,
+
+      __newindex = function (self, key, value)
+		      if key == "radius" then
+			 r = value
+		      elseif key == "segments" then
+			 n, N = table.unpack(value)
+		      else
+			 oldmeta.__newindex(self, key, value)
+			 return
+		      end
+
+                      local vertices = {{0, 0, r}}
+                      local indices = {}
+
+                      -- Create the vertices.
+
+                      for i = 1, n - 1 do
+                         for j = 1, N do
+                            local phi = 2 * math.pi * (j - 1) / N
+                            local theta = math.pi * i / n
+                            local dr = math.sin(theta)
+
+                            vertices[#vertices + 1] = {r * dr * math.cos(phi),
+                                                       r * dr * math.sin(phi), 
+                                                       r * math.cos(theta)}
+                         end
+                      end
+
+                      vertices[#vertices + 1] = {0, 0, -r}
+
+                      -- Create the indices.  North cap.
+
+                      for j = 1, N do
+                         indices[j] = {0, j, j % N + 1}
+                      end
+
+                      -- -- Slices.
+
+                      for i = 1, n - 2 do
+                         local a = (i - 1) * N
+
+                         for j = 1, N do
+                            indices[N + 2 * (a + j) - 1] = {a + j, a + j + N, a + j % N + 1}
+                            indices[N + 2 * (a + j)] = {a + j % N + 1, a + j + N, a + j % N + N + 1}
+                         end
+                      end
+
+                      -- South cap.
+
+                      local a = (n - 2) * N
+
+                      for j = 1, N do
+                         indices[2 * a + N + j] = {a + N + 1, a + j % N + 1, a + j}
+                      end
+
+                      self.positions = array.floats(vertices)
+                      self.indices = array.ushorts(indices)
+		   end
+   })
+   
+   for key, value in pairs (parameters) do
+      node[key] = value
+   end
+
+   return node
+end
+
 return shapes

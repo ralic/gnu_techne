@@ -17,6 +17,18 @@ local staging = require "staging"
 local rubberband = require "rubberband"
 local current
 
+local sensitivity = 3
+
+local info = primitives.root {
+   display = widgets.display {
+      layout = widgets.layout {
+         align = {-1, -1},
+         color = {1, 1, 1},
+         padding = {0.01, 0, 0.01, 0},
+                              }
+                             }
+                       }
+
 local orbit = staging.orbit {
    command = {...},
 
@@ -27,7 +39,7 @@ local orbit = staging.orbit {
          local command = self.command
 
          if not rubberband.zoom then
-            command[2] = current[2] - units.degrees(value) * 0.05
+            command[2] = current[2] - math.ldexp(units.degrees(value), -sensitivity)
 
             self.command = command
          end
@@ -39,7 +51,7 @@ local orbit = staging.orbit {
          if rubberband.zoom then
             command[1] = current[1] - value * 1
          else
-            command[3] = current[3] - units.degrees(value) * 0.05
+            command[3] = current[3] - math.ldexp(units.degrees(value), -sensitivity)
          end
 
          self.command = command
@@ -47,6 +59,23 @@ local orbit = staging.orbit {
    end,
 
    pointer = controllers['Core pointer'] {
+      relative = function(self, axis, value)
+         sensitivity = math.clamp (sensitivity + value, 1, 10)
+
+         info.timer = primitives.timer {
+            period = 1,
+
+            link = function(self)
+               info.display.layout.text = string.format ('<span font="Sans 12" color="white">Orbit camera sensitivity: %d</span>',sensitivity)
+            end,
+
+            tick = function(self, tick)
+               info.display.layout.text = ""
+               self.period = nil
+            end
+                                       }
+      end,
+
       buttonrelease = function (self, button)
          if button == 1 or button == 3 then
             rubberband.engaged = false

@@ -11,7 +11,7 @@ uniform grass_debug {
 in cluster_attributes {
     vec3 center, normal;
     float size;
-    int counts[N], distances[N];
+    int counts[N];
 } cluster[1];
 
 out vec3 color;

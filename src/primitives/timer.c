@@ -26,6 +26,7 @@
 {
     [super init];
 
+    self->armed = 0;
     self->tick = LUA_REFNIL;    
     self->period = 1;
 }
@@ -35,10 +36,6 @@
     [super toggle];
 
     if (self->linked) {
-	clock_gettime (CLOCK_REALTIME, &self->checkpoint);
-	self->elapsed = 0;
-	self->delta = 0;
-	self->count = 0;
     }
 }
 
@@ -86,7 +83,11 @@
 
 -(int) _get_period
 {
-    lua_pushnumber (_L, self->period);
+    if (self->armed) {
+        lua_pushnumber (_L, self->period);
+    } else {
+        lua_pushnil (_L);
+    }
 
     return 1;
 }
@@ -114,7 +115,19 @@
 
 -(void) _set_period
 {
-    self->period = lua_tonumber (_L, 3);
+    if (lua_isnil (_L, 3)) {
+        self->armed = 0;
+    } else {
+        self->period = lua_tonumber (_L, 3);
+        
+        if (!self->armed) {
+            clock_gettime (CLOCK_REALTIME, &self->checkpoint);
+            self->elapsed = 0;
+            self->delta = 0;
+            self->count = 0;
+            self->armed = 1;
+        }
+    }
 }
 
 -(void) _set_tick

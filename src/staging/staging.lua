@@ -19,7 +19,7 @@ local staging = {}
 
 function staging.orbit (values)
    local orbit
-   local command, rest
+   local command, compliance, mass, rest
 
    rest = values.command
    command = values.command
@@ -87,7 +87,11 @@ function staging.orbit (values)
                         __index = function(self, key)
                            if key == "command" then
                               return command
-                           else
+                           elseif key == "compliance" then
+                              return compliance
+                           elseif key == "mass" then
+                              return mass
+                           else 
                               return oldmeta.__index(self, key)
                            end
                         end,
@@ -128,6 +132,27 @@ function staging.orbit (values)
                               stops[1][1] = {b, b}
 
                               self.spring.stops = stops
+                           elseif key == "compliance" then
+                              local stops
+
+                              compliance = value
+
+                              -- Reconfigure the slider.
+
+                              stops = self.torso.neck.stops
+                              stops[2] = value
+                              self.torso.neck.stops = stops
+
+                              -- Reconfigure the ball joint srping.
+
+                              self.spring.stops = stops
+                              stops[2] = value
+                              stops = self.spring.stops
+                           elseif key == "mass" then
+                              mass = value
+                              
+                              self.torso.mass = value
+                              self.torso.neck.head.mass = value
                            else
                               oldmeta.__newindex(self, key, value)
                            end

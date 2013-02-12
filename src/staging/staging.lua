@@ -21,50 +21,41 @@ function staging.orbit (values)
    local orbit
    local command, compliance, mass, rest
 
+   compliance = {3000, 400}
+   mass = physics.spheremass (0.0001, 0.1)
    rest = values.command
    command = values.command
    values.command = nil
 
-   orbit = primitives.joint {
+   orbit = joints.universal {
       dummy = primitives.node {
          link = function (self)
-            local p, R
+            local p, R, R_p, RT
 
-            p = orbit.parent.position or {0, 0, 0}
-            R = arraymath.relue (0, rest[3], rest[2])
+            p = self.ancestors[2].position or {0, 0, 0}
+            R_p = self.ancestors[2].orientation or arraymath.scaling(1)
+            R = arraymath.concatenate(R_p,
+                                      arraymath.relue (0, rest[3], rest[2]))
             RT = arraymath.transpose(R)
 
             -- Configure the rig.
 
-            orbit.ball = joints.spherical {
-               anchor = p,
-                                         }
+            self.parent.anchor = p
+            self.parent.axes = {
+               RT[3], RT[2], 
+            }
 
-            orbit.spring = joints.euler {
-               axes = {
-                  RT[2], {0, 0, 1}, {0, 0, 0}
-               },
-
-               stops = {
-                  {{0, 0}, {3000, 1000}, 0},
-                  {{0, 0}, {3000, 1000}, 0},
-                  {{0, 0}, {3000, 1000}, 0},
-               }
-                                       }
-
-            orbit.attach = function (self)
-               local pair = self.pair
-
-               self.ball.bodies = self.pair
-               self.spring.bodies = self.pair
-            end
+            self.parent.stops = {
+               {{0, 0}, compliance, 0},
+               {{0, 0}, compliance, 0},
+            }
             
-            orbit.torso = bodies.point {
+            self.parent.torso = bodies.point {
                position = p,
-               mass = physics.spheremass (0.0001, 0.1),
+               mass = mass,
 
                neck = joints.slider {
-                  stops = {{0, 0}, {3000, 1000}, 0},
+                  stops = {{0, 0}, compliance, 0},
                   axis = RT[3],
 
                   head = bodies.point {
@@ -72,11 +63,11 @@ function staging.orbit (values)
 
                      orientation = R,
 
-                     mass = physics.spheremass (0.0001, 0.1),
+                     mass = mass,
                      eye = primitives.observer {}
                                       },
                                     },
-                                      }
+                                             }
          end,
                               }
                            }
@@ -121,17 +112,17 @@ function staging.orbit (values)
 
                               -- Reconfigure the ball joint srping.
 
-                              stops = self.spring.stops
+                              stops = self.stops
 
                               a = math.clamp (command[2] - rest[2],
                                               -math.pi, math.pi)
                               b = math.clamp (command[3] - rest[3],
                                               -math.pi, math.pi)
 
-                              stops[3][1] = {a, a}
+                              stops[2][1] = {a, a}
                               stops[1][1] = {b, b}
 
-                              self.spring.stops = stops
+                              self.stops = stops
                            elseif key == "compliance" then
                               local stops
 
@@ -145,9 +136,9 @@ function staging.orbit (values)
 
                               -- Reconfigure the ball joint srping.
 
-                              self.spring.stops = stops
+                              self.stops = stops
                               stops[2] = value
-                              stops = self.spring.stops
+                              stops = self.stops
                            elseif key == "mass" then
                               mass = value
                               

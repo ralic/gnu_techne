@@ -135,7 +135,7 @@
     return 1;
 }
 
--(int) _get_angle
+-(int) _get_position
 {
     if (self->joint) {
         lua_pushnumber (_L, dJointGetHingeAngle (self->joint));
@@ -278,7 +278,7 @@
     dJointSetHingeParam (self->joint, dParamCFM, self->tolerance);
 }
 
--(void) _set_angle
+-(void) _set_position
 {
     T_WARN_READONLY;
 }

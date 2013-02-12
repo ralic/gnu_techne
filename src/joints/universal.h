@@ -40,9 +40,9 @@
 -(void) _set_tolerance;
 
 -(int) _get_rates;
--(int) _get_angles;
+-(int) _get_positions;
 
--(void) _set_angles;
+-(void) _set_positions;
 -(void) _set_rates;
 
 @end

@@ -128,9 +128,9 @@
                                        ARRAY_TDOUBLE, 1, 3);
 
 	dJointSetDBallAnchor2 (self->joint,
-				array->values.doubles[0],
-				array->values.doubles[1],
-				array->values.doubles[2]);
+                               array->values.doubles[0],
+                               array->values.doubles[1],
+                               array->values.doubles[2]);
 
 	for (i = 0 ; i < 3 ; i += 1) {
 	    self->anchors[1][i] = array->values.doubles[i];

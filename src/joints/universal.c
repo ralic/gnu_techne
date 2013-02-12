@@ -166,7 +166,7 @@
     return 1;
 }
 
--(int) _get_angles
+-(int) _get_positions
 {
     dReal state[2];
     int j;
@@ -223,9 +223,9 @@
                                        ARRAY_TDOUBLE, 1, 3);
 
 	dJointSetUniversalAnchor (self->joint,
-				  self->anchor[0],
-				  self->anchor[1],
-				  self->anchor[2]);
+				  array->values.doubles[0],
+				  array->values.doubles[1],
+				  array->values.doubles[2]);
 
 	for (i = 0 ; i < 3 ; i += 1) {
 	    self->anchor[i] = array->values.doubles[i];
@@ -393,7 +393,7 @@
     }
 }
 
--(void) _set_angles
+-(void) _set_positions
 {
     T_WARN_READONLY;
 }

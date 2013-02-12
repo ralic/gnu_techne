@@ -183,7 +183,7 @@
     return 1;
 }
 
--(int) _get_angles
+-(int) _get_positions
 {
     int j;
     
@@ -400,7 +400,7 @@
     }
 }
 
--(void) _set_angles
+-(void) _set_positions
 {
     T_WARN_READONLY;
 }

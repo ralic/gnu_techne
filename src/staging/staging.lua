@@ -30,10 +30,11 @@ function staging.orbit (values)
    orbit = joints.universal {
       dummy = primitives.node {
          link = function (self)
-            local p, R, R_p, RT
+            local p, R, R_p, RT, R_pT
 
             p = self.ancestors[2].position or {0, 0, 0}
             R_p = self.ancestors[2].orientation or arraymath.scaling(1)
+            R_pT = arraymath.transpose(R_p)
             R = arraymath.concatenate(R_p,
                                       arraymath.relue (0, rest[3], rest[2]))
             RT = arraymath.transpose(R)
@@ -42,7 +43,7 @@ function staging.orbit (values)
 
             self.parent.anchor = p
             self.parent.axes = {
-               RT[3], RT[2], 
+               R_pT[3], R_pT[2], 
             }
 
             self.parent.stops = {

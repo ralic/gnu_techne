@@ -39,137 +39,141 @@ local darkseagreen = {0.2319, 0.5084, 0.2559}
 
 return {
    hinge = function (parameters)
-	    local hinge
+      local hinge
 
-	    hinge = core.hinge (parameters)
+      hinge = core.hinge (parameters)
 
-	    hinge.schematic = primitives.node {
-	       shaft = shading.flat {
-		  color = lightgoldenrod,
+      hinge.schematic = primitives.node {
+         shaft = shading.flat {
+            color = lightgoldenrod,
 
-		  draw = function (self)
-		     local a, d, c, e
+            draw = function (self)
+               local a, d, c, e
 
-		     d = self.bias or 0.1
-		     c = self.gain or 1 / 628
+               d = self.bias or 0.1
+               c = self.gain or 1 / 628
 
-		     a = hinge.anchor
-		     e = arraymath.combine(a, hinge.axis, 1, d + c * hinge.rate)
+               a = hinge.anchor
+               e = arraymath.combine(a, hinge.axis, 1, d + c * hinge.rate)
 
-		     self.lines.positions = array.doubles {a, e}
-		     self.points.positions = array.doubles {a, e}
-		  end,
+               self.lines.positions = array.doubles {a, e}
+               self.points.positions = array.doubles {a, e}
+            end,
 
-		  lines = shapes.line {},
-		  points = shapes.points {},
-				    },
+            lines = shapes.line {},
+            points = shapes.points {},
+                              },
 
-	       arms = shading.flat {
-		  color = ivory3,
+         arms = shading.flat {
+            color = ivory3,
 
-		  draw = function (self) 
-		     local a, b, pair
+            draw = function (self) 
+               local a, b, pair
 
-		     pair = hinge.pair
-		     
-		     if pair then
-			local positions = {}
+               pair = hinge.pair
+               
+               if pair then
+                  local positions = {}
 
-			a = pair[1] and pair[1].position
-			b = pair[2] and pair[2].position
+                  a = pair[1] and pair[1].position
+                  b = pair[2] and pair[2].position
 
-			if a and b then
-			   self.lines.positions = array.doubles{a,
-								hinge.anchor,
-								b}
+                  if a and b then
+                     self.lines.positions = array.doubles{a,
+                                                          hinge.anchor,
+                                                          b}
 
-			   self.points.positions = array.doubles{a, b}
-			elseif a then
-			   self.lines.positions = array.doubles{hinge.anchor, a}
-			   self.points.positions = array.doubles{a}
-			elseif b then
-			   self.lines.positions = array.doubles{hinge.anchor, b}
-			   self.points.positions = array.doubles{b}
-			end
-		     end
-		  end,
+                     self.points.positions = array.doubles{a, b}
+                  elseif a then
+                     self.lines.positions = array.doubles{hinge.anchor, a}
+                     self.points.positions = array.doubles{a}
+                  elseif b then
+                     self.lines.positions = array.doubles{hinge.anchor, b}
+                     self.points.positions = array.doubles{b}
+                  end
+               end
+            end,
 
-		  lines = shapes.line {},
-		  points = shapes.points {},
-					 }
-					      }
-	    return hinge
-	 end,
+            lines = shapes.line {},
+            points = shapes.points {},
+                             }
+                                        }
+      return hinge
+   end,
 
    slider = function (parameters)
-	    local slider
+      local slider
 
-	    slider = core.slider (parameters)
+      slider = core.slider (parameters)
 
-	    slider.schematic = primitives.graphic {
-	       draw = function (self)
-	    	  local a, b, L, l, h, x, d, stops, pair
+      slider.schematic = primitives.graphic {
+         draw = function (self)
+            local a, b, L, l, h, x, d, stops, pair
 
-	    	  stops = slider.stops
-	    	  pair = slider.pair
+            stops = slider.stops
+            pair = slider.pair
 
-	    	  if not pair then
-	    	     return
-	    	  end
+            if not pair then
+               return
+            end
 
-	    	  a = pair[1] and pair[1].position
-	    	  b = pair[2] and pair[2].position
-	    	  x = slider.axis
-	    	  d = slider.position
+            a = pair[1] and pair[1].position
+            b = pair[2] and pair[2].position
+            x = slider.axis
+            d = slider.position
+            l, h = table.unpack(stops[1])
 
-	    	  if a and b then
-		     l, h = slider.stops[1][1], slider.stops[1][2]
+            if l ~= -1 / 0 or h ~= 1 / 0 then
+               if math.abs(d - l) < 1e-3 * (h - l) then
+                  self.tube.color = red
+               else
+                  self.tube.color = gold
+               end
 
-	    	     if l ~= -1 / 0 or h ~= 1 / 0 then
-			if math.abs(d - l) < 1e-3 * (h - l) then
-			   self.tube.color = red
-			else
-			   self.tube.color = gold
-			end
+               if math.abs(d - h) < 1e-3 * (h - l) then
+                  self.rod.color = red
+               else
+                  self.rod.color = white
+               end
+            end
 
-			if math.abs(d - h) < 1e-3 * (h - l) then
-			   self.rod.color = red
-			else
-			   self.rod.color = white
-			end
+            if a and b then
+               L = arraymath.dot (arraymath.subtract(b, a), x)
+               c = arraymath.combine (a, x, 1, L)
+               e = arraymath.combine(a, x, 1, -d)
+            
+               self.rod.lines.positions = array.doubles {a, e}
+               self.tube.lines.positions = array.doubles {e, c}
+            elseif a then
+               e = arraymath.combine(a, x, 1, -d)
 
-	    		d = d - l
-		     else
-			d = -0.5 * arraymath.dot (arraymath.subtract(b, a), x)
-	    	     end
-	    	  end
-		  
-		  self.tube.lines.positions = array.doubles {
-		     a, arraymath.combine(b, x, 1, d)
-							    }
-		  
-		  self.rod.lines.positions = array.doubles {
-		     b, arraymath.combine(b, x, 1, d)
-							   }
-	       end,
+               self.rod.lines.positions = array.doubles {a, e}
+               self.tube.lines.positions = nil
+            else
+               e = arraymath.combine(b, x, 1, d)
 
-	       rod = shading.flat {
-		  color = white,
+               self.rod.lines.positions = nil
+               self.tube.lines.positions = array.doubles {e, b}
+            end
+         end,
 
-	    	  lines = shapes.line {},
-	    	  points = shapes.points {},
-	    			  },
+         rod = shading.flat {
+            color = white,
 
-	       tube = shading.flat {
-		  color = gold,
+            lines = shapes.line {},
+            points = shapes.points {},
+                            },
 
-	    	  lines = shapes.line {},
-	    	  points = shapes.points {},
-	    			   }
-	    				       }
+         tube = shading.flat {
+            color = gold,
 
-	    return slider
-	 end,
+            lines = shapes.line {},
+            points = shapes.points {},
+                             }
+                                            }
+
+      return slider
+   end,
 
    universal = function (parameters)
       local universal
@@ -198,7 +202,7 @@ return {
 
 	    lines = shapes.line {},
 	    points = shapes.points {},
-			      },
+                               },
 
 	 arms = shading.flat {
 	    color = darkseagreen,
@@ -237,7 +241,7 @@ return {
       return universal
    end,
 
-  spherical = function (parameters)
+   spherical = function (parameters)
       local spherical
 
       spherical = core.spherical (parameters)
@@ -275,15 +279,15 @@ return {
 			     }
 					    }
       return spherical
-  end,
+   end,
 
-  angular = core.angular,
-  planar = core.planar,
-  clamp = core.clamp,
-  contact = core.contact,
-  euler = core.euler,
-  gearing = core.gearing,
-  doublehinge = core.doublehinge,
-  doubleball = core.doubleball,
-  linear = core.linear,
-}
+   angular = core.angular,
+   planar = core.planar,
+   clamp = core.clamp,
+   contact = core.contact,
+   euler = core.euler,
+   gearing = core.gearing,
+   doublehinge = core.doublehinge,
+   doubleball = core.doubleball,
+   linear = core.linear,
+       }

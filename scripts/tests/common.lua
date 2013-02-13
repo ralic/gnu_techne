@@ -26,3 +26,7 @@ bindings['escape'] = function ()
 bindings['q'] = function ()
 		   techne.iterate = false
 		end
+
+bindings['down-control_l c'] = function ()
+   techne.interactive = true
+end

@@ -103,13 +103,24 @@ setmetatable(rubberband, {
                 __newindex = function (self, key, value)
                    if key == "engaged" then
                       if engaged ~= value then
+                         local sequence, binding
+
                          if value then
+                            sequence = '[Rubberband]engage'
                             root.overlay = overlay
                          else
+                            sequence = '[Rubberband]disengage'
                             root.overlay = nil
                          end
                          
                          engaged = value
+
+                         -- Fire the binding.
+
+                         binding = bindings[sequence]
+                         if binding then
+                            binding (sequence)
+                         end                            
                       end
                    else
                       rawset (self, key, value)

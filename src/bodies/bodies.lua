@@ -28,15 +28,17 @@ return {
 
 	    point = core.point (parameters)
 
-	    point.volume = shading.flat {
-	       color = {1, 1, 0, 1},
+	    point.volume = shading.wireframe {
+               shading.flat {
+                  color = {1, 1, 0, 1},
 
-	       shape = shapes.points {
-		  positions = {{0, 0, 0}},
+                  shape = shapes.points {
+                     positions = {{0, 0, 0}},
 
-		  -- draw = function (self) print (self.vertices) end,
-	       },
-	    }
+                     -- draw = function (self) print (self.vertices) end,
+                                        },
+                            }
+                                             }
 
 	    return point
 	 end,
@@ -46,16 +48,18 @@ return {
 
 	    box = core.box (parameters)
 
-	    box.volume = shading.flat {
-	       color = {1, 0, 0, 1},
+	    box.volume = shading.wireframe {
+               shading.flat {
+                  color = {1, 0, 0, 1},
 
-	       shape = shapes.box {
-		  wireframe = true,
-		  size = box.size,
+                  shape = shapes.box {
+                     wireframe = true,
+                     size = box.size,
 
-		  -- draw = function (self) print (self) end,
-	       },
-	    }
+                     -- draw = function (self) print (self) end,
+                                     },
+                            }
+                                           }
 
 	    oldmeta = getmetatable(box)
 	    replacemetatable(box, {
@@ -76,17 +80,19 @@ return {
 
 	    cylinder = core.cylinder (parameters)
 
-	    cylinder.volume = shading.flat {
-	       color = {1, 0, 0, 1},
+	    cylinder.volume = shading.wireframe {
+               shading.flat {
+                  color = {1, 0, 0, 1},
 
-	       shape = shapes.cylinder {
-		  wireframe = true,
+                  shape = shapes.cylinder {
+                     wireframe = true,
 
-		  segments = 16,
-		  radius = cylinder.radius,
-		  length = cylinder.length,
-	       },
-	    }
+                     segments = 16,
+                     radius = cylinder.radius,
+                     length = cylinder.length,
+                                          },
+                            }
+                                                }
 
 	    oldmeta = getmetatable(cylinder)
 	    replacemetatable(cylinder, {
@@ -109,16 +115,18 @@ return {
 
 	    ball = core.ball (parameters)
 
-	    ball.volume = shading.flat {
-	       color = {1, 0, 0, 1},
+	    ball.volume = shading.wireframe {
+               shading.flat {
+                  color = {1, 0, 0, 1},
 
-	       shape = shapes.circle {
-		  wireframe = true,
+                  shape = shapes.circle {
+                     wireframe = true,
 
-		  segments = 16,
-		  radius = ball.radius,
-	       },
-	    }
+                     segments = 16,
+                     radius = ball.radius,
+                                        },
+                            }
+                                            }
 
 	    oldmeta = getmetatable(ball)
 	    replacemetatable(ball, {
@@ -134,8 +142,27 @@ return {
 	    return ball
 	 end,
 
+   plane = function (parameters)
+	    local plane, oldmeta
+
+	    plane = core.plane (parameters)
+
+	    plane.volume = shading.wireframe {
+               shading.flat {
+                  color = {1, 0, 0, 1},
+
+                  shape = shapes.rectangle {
+                     wireframe = true,
+
+                     size = {10, 10},
+                                           },
+                            }
+                                             }
+
+	    return plane
+	 end,
+
    environment = core.environment,
-   plane = core.plane,
    capsule = core.capsule,
    polyhedron = core.polyhedron,
    system = core.system,

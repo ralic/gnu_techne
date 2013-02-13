@@ -1277,6 +1277,13 @@ static void unlink_node (Node *node)
 
 -(void) free
 {
+    Node *child, *next;
+    
+    for (child = self->down ; child ; child = next) {
+        next = child->right;
+        [self renounce: child];
+    }   
+
     luaL_unref (_L, LUA_REGISTRYINDEX, self->children);
 
     luaL_unref (_L, LUA_REGISTRYINDEX, self->unlink);
@@ -1363,6 +1370,13 @@ static void unlink_node (Node *node)
 
     unlink_node(child);
     child->up = NULL;
+
+    /* Remove the key reference. */
+    
+    luaL_unref (_L, LUA_REGISTRYINDEX, child->key.reference);
+    child->key.reference = LUA_REFNIL;
+    child->key.number = NAN;
+    child->key.string = NULL;
 
     /* Link it into the orphans list. */
 
@@ -1682,11 +1696,11 @@ static void unlink_node (Node *node)
     
     /* Check if there's a node linked with the same key and if so free
      * it. */
-
+    
     lua_rawgeti (_L, LUA_REGISTRYINDEX, self->children);
     lua_pushvalue (_L, 2);
     lua_rawget (_L, -2);
- 
+
     if(t_isnode (_L, -1)) {
 	child = *(Node **)lua_touserdata (_L, -1);
 	lua_pop (_L, 1);
@@ -1696,11 +1710,6 @@ static void unlink_node (Node *node)
 	}
 		
 	[self renounce: child];
-
-	luaL_unref (_L, LUA_REGISTRYINDEX, child->key.reference);
-	child->key.reference = LUA_REFNIL;
-	child->key.number = NAN;
-	child->key.string = NULL;
 	
 	/* Remove the key->child entry. */
     
@@ -1736,11 +1745,6 @@ static void unlink_node (Node *node)
 	    /* Remove from the old parent and toggle if necessary. */
 	    
 	    [child->up renounce: child];
-	    
-	    luaL_unref (_L, LUA_REGISTRYINDEX, child->key.reference);
-	    child->key.reference = LUA_REFNIL;
-	    child->key.number = NAN;
-	    child->key.string = NULL;
 
 	    if (child->linked) {
 		[child toggle];

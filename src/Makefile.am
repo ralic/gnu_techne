@@ -141,6 +141,8 @@ joints_core_la_SOURCES = joints/core.c joints/clamp.c joints/clamp.h	\
 			 joints/doubleball.c joints/doubleball.h	\
 			 joints/spherical.c joints/spherical.h		\
 			 joints/slider.c joints/slider.h		\
+			 joints/sliderhinge.c joints/sliderhinge.h	\
+			 joints/slideruniversal.c joints/slideruniversal.h\
 			 joints/planar.c joints/planar.h		\
 			 joints/linear.c joints/linear.h		\
 			 joints/angular.c joints/angular.h		\

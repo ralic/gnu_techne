@@ -281,6 +281,117 @@ return {
       return spherical
    end,
 
+   sliderhinge = function (parameters)
+      local sliderhinge
+
+      sliderhinge = core.sliderhinge (parameters)
+
+      sliderhinge.schematic = primitives.graphic {
+         draw = function (self)
+            local a, b, c, e, L, l, h, x, d, stops, pair
+
+            stops = sliderhinge.stops[1]
+            pair = sliderhinge.pair
+
+            if not pair then
+               return
+            end
+
+            a = sliderhinge.anchor
+            b = pair[1] and pair[1].position
+            x = sliderhinge.axes[1]
+            d = sliderhinge.positions[1]
+            l, h = table.unpack(stops[1])
+            e = arraymath.combine(a, x, 1, d)
+
+            if l ~= -1 / 0 or h ~= 1 / 0 then
+               if math.abs(d - l) < 1e-3 * (h - l) then
+                  self.tube.color = red
+               else
+                  self.tube.color = gold
+               end
+
+               if math.abs(d - h) < 1e-3 * (h - l) then
+                  self.rod.color = red
+               else
+                  self.rod.color = white
+               end
+            end
+
+            self.rod.lines.positions = array.doubles {a, e}
+
+            if b then
+               L = arraymath.dot (arraymath.subtract(b, a), x)
+               c = arraymath.combine (a, x, 1, L)
+
+               self.tube.lines.positions = array.doubles {e, c}
+            else
+               self.tube.lines.positions = nil
+            end
+         end,
+
+         rod = shading.flat {
+            color = white,
+
+            lines = shapes.line {},
+            points = shapes.points {},
+                            },
+
+         tube = shading.flat {
+            color = gold,
+
+            lines = shapes.line {},
+            points = shapes.points {},
+                             },
+
+         shaft = shading.flat {
+            color = lightgoldenrod,
+
+            draw = function (self)
+               local a, d, c, e
+
+               d = self.bias or 0.1
+               c = self.gain or 1 / 628
+
+               a = sliderhinge.anchor
+               e = arraymath.combine(a, sliderhinge.axes[2],
+                                     1, d + c * sliderhinge.rates[2])
+
+               self.lines.positions = array.doubles {a, e}
+               self.points.positions = array.doubles {a, e}
+            end,
+
+            lines = shapes.line {},
+            points = shapes.points {},
+                              },
+
+         arms = shading.flat {
+            color = ivory3,
+
+            draw = function (self) 
+               local a
+
+               a = sliderhinge.pair and sliderhinge.pair[2] and sliderhinge.pair[2].position
+               
+               if a then
+                  local positions = {}
+
+                  self.lines.positions = array.doubles{sliderhinge.anchor, a}
+                  self.points.positions = array.doubles{a}
+               else
+                  self.lines.positions = nil
+                  self.points.positions = nil
+               end
+            end,
+
+            lines = shapes.line {},
+            points = shapes.points {},
+                             }
+
+                                                 }
+      return sliderhinge
+   end,
+
    angular = core.angular,
    planar = core.planar,
    clamp = core.clamp,

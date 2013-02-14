@@ -401,4 +401,6 @@ return {
    doublehinge = core.doublehinge,
    doubleball = core.doubleball,
    linear = core.linear,
+   sliderhinge = core.sliderhinge,
+   slideruniversal = core.slideruniversal,
        }

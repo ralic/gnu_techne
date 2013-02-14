@@ -274,7 +274,7 @@ static int axis_map[3] = {2, 0, 1};
 		self->axes[j][i] = arrays[j]->values.doubles[i];
 	    }
 	}
-
+        
 	dJointSetPUAxis3 (self->joint,
                           self->axes[0][0],
                           self->axes[0][1],

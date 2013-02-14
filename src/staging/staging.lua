@@ -27,7 +27,9 @@ function staging.orbit (values)
    command = values.command
    values.command = nil
 
-   orbit = joints.universal {
+   orbit = joints.slideruniversal {
+      inverted = true,
+
       dummy = primitives.node {
          link = function (self)
             local p, R, R_p, RT, R_pT
@@ -43,32 +45,23 @@ function staging.orbit (values)
 
             self.parent.anchor = p
             self.parent.axes = {
-               R_pT[3], R_pT[2], 
+               RT[3], R_pT[2], R_pT[3], 
             }
 
             self.parent.stops = {
                {{0, 0}, compliance, 0},
                {{0, 0}, compliance, 0},
+               {{0, 0}, compliance, 0},
             }
             
-            self.parent.torso = bodies.point {
-               position = p,
+            self.parent.head = bodies.point {
+               position = arraymath.matrixmultiplyadd (RT, {0, 0, -rest[1]}, p),
+
+               orientation = R,
+               
                mass = mass,
-
-               neck = joints.slider {
-                  stops = {{0, 0}, compliance, 0},
-                  axis = RT[3],
-
-                  head = bodies.point {
-                     position = arraymath.matrixmultiplyadd (RT, {0, 0, -rest[1]}, p),
-
-                     orientation = R,
-
-                     mass = mass,
-                     eye = primitives.observer {}
-                                      },
-                                    },
-                                             }
+               eye = primitives.observer {}
+                                            }
          end,
                               }
                            }
@@ -104,47 +97,42 @@ function staging.orbit (values)
 
                               -- Reconfigure the slider.
 
-                              stops = self.torso.neck.stops
-
-                              a = command[1] - rest[1]
-                              stops[1] = {a, a}
-
-                              self.torso.neck.stops = stops
-
-                              -- Reconfigure the ball joint srping.
-
                               stops = self.stops
+                              a = command[1] - rest[1]
+
+                              stops[1][1] = {a, a}
+
+                              -- Reconfigure the universal joint.
 
                               a = math.clamp (command[2] - rest[2],
                                               -math.pi, math.pi)
                               b = math.clamp (command[3] - rest[3],
                                               -math.pi, math.pi)
 
-                              stops[2][1] = {a, a}
-                              stops[1][1] = {b, b}
+                              stops[3][1] = {a, a}
+                              stops[2][1] = {b, b}
 
                               self.stops = stops
                            elseif key == "compliance" then
                               local stops
 
                               compliance = value
+                              stops = self.stops
 
                               -- Reconfigure the slider.
 
-                              stops = self.torso.neck.stops
-                              stops[2] = value
-                              self.torso.neck.stops = stops
+                              stops[1][2] = value
 
-                              -- Reconfigure the ball joint srping.
+                              -- Reconfigure the universal joint.
 
-                              self.stops = stops
-                              stops[2] = value
+                              stops[2][2] = value
+                              stops[3][2] = value
+
                               stops = self.stops
                            elseif key == "mass" then
                               mass = value
                               
-                              self.torso.mass = value
-                              self.torso.neck.head.mass = value
+                              self.headmass = value
                            else
                               oldmeta.__newindex(self, key, value)
                            end

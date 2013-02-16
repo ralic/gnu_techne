@@ -24,12 +24,13 @@
 #include "roam.h"
 
 static roam_Context *context;
-static float modelview[16];
+static float modelview[16], normal[3];
+static char buffer[SEED_BUFFER_SIZE * SEED_SIZE];
 static struct {
     double density, bias;
 } parameters;
 
-static int seeds_n;
+static int seeds_n, coarse_n, fine_n, fill;
 
 static void seed_triangle(float *a, float *b_0, float *b_1,
                           float z_a, float z_0, float z_1, int level)
@@ -52,6 +53,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         }
     } else {
         float z, r;
+        long int k;
         int i, n;
 
         /* { */
@@ -68,10 +70,6 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
         /* assert (a[0] >= 0 && a[1] >= 0); */
 
-        /* { */
-        /*     srand48((long int)a); */
-        /* } */
-
         /* If proper winding is observed then no two triangles can
          * share the same base vertices (the left base vertex of one
          * will be the right base vertex of the opposite and vice
@@ -79,7 +77,8 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
          * a vertex through a pairing function and use the result as a
          * unique seed for the RNG. */
         
-        srand48((long int)(0.5 * (b_0[0] + b_0[1]) * (b_0[0] + b_0[1] + 1) + b_0[1]));
+        k = (long int)(0.5 * (b_0[0] + b_0[1]) * (b_0[0] + b_0[1] + 1) + b_0[1]);
+        srand48(k);
 
         z = fmin((z_0 + z_1 + z_a) / 3.0, -parameters.bias);
         n = (int)(parameters.bias * parameters.density / z / z);
@@ -88,6 +87,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         for (i = 0 ; i < n ; i += 1) {
             double r_1, r_2, sqrtr_1, k[3];
             float c[3];
+            char *p;
 
             r_1 = drand48();
             r_2 = drand48();
@@ -102,11 +102,26 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             c[1] = k[0] * a[1] + k[1] * b_0[1] + k[2] * b_1[1];
             c[2] = k[0] * a[2] + k[1] * b_0[2] + k[2] * b_1[2];
 
-            glVertexAttrib3fv(0, c);
-            glVertexAttrib1f(2, r);
+            if (fill == SEED_BUFFER_SIZE) {
+                glBufferData (GL_ARRAY_BUFFER, SEED_BUFFER_SIZE * SEED_SIZE,
+                              buffer, GL_STREAM_DRAW);
+                glDrawArrays (GL_POINTS, 0, SEED_BUFFER_SIZE);
+                glBufferData (GL_ARRAY_BUFFER, SEED_BUFFER_SIZE * SEED_SIZE,
+                              NULL, GL_STREAM_DRAW);
+                
+                fill = 0;
+            }
             
+            p = buffer + fill * SEED_SIZE;
+            memcpy (p, c, 3 * sizeof(float));
+            memcpy (p + 3 * sizeof(float), normal, 3 * sizeof(float));
+            memcpy (p + 6 * sizeof(float), &r, sizeof(float));
+
+            fill += 1;            
             seeds_n += 1;
         }
+
+        fine_n += 1;
     }
 }
 
@@ -120,7 +135,7 @@ static void seed_subtree(roam_Triangle *n)
 	    roam_Triangle *p;
 	    roam_Diamond *d, *e;
             float *a, *b_0, *b_1, z_a, z_0, z_1;
-            float u[3], v[3], w[3];
+            float u[3], v[3];
 	    int i;
 
 	    p = n->parent;
@@ -142,10 +157,8 @@ static void seed_subtree(roam_Triangle *n)
             v[1] = b_1[1] - a[1];
             v[2] = b_1[2] - a[2];
 
-            t_cross (w, u, v);
-            t_normalize_3 (w);
-
-            glVertexAttrib3fv(1, w);
+            t_cross (normal, u, v);
+            t_normalize_3 (normal);
 
             /* Calculate the distance from the eye to each vertex. */
             
@@ -165,6 +178,7 @@ static void seed_subtree(roam_Triangle *n)
                 modelview[14];
             
             seed_triangle (a, b_0, b_1, z_a, z_0, z_1, d->level);
+            coarse_n += 1;
 	}
     }
 }
@@ -175,7 +189,8 @@ void seed_vegetation(roam_Context *new, double density, double bias,
     roam_Tileset *tiles;
     int i, j;
 
-    seeds_n = 0;
+    fill = 0;
+    seeds_n = coarse_n = fine_n = 0;
     context = new;
     parameters.density = density;
     parameters.bias = bias;
@@ -194,14 +209,17 @@ void seed_vegetation(roam_Context *new, double density, double bias,
             glBindTexture(GL_TEXTURE_2D, tiles->imagery[k]);
             glPointSize(1);
             
-            glBegin(GL_POINTS);
-            
 	    seed_subtree(context->roots[k][0]);
 	    seed_subtree(context->roots[k][1]);
-    
-            glEnd();
 	}
     }
 
-    /* _TRACE ("%d\n", seeds_n); */
+    glBufferSubData (GL_ARRAY_BUFFER, 0, fill * SEED_SIZE, buffer);
+    glDrawArrays (GL_POINTS, 0, fill);
+    glBufferData (GL_ARRAY_BUFFER, SEED_BUFFER_SIZE * SEED_SIZE,
+                  NULL, GL_STREAM_DRAW);
+    
+    fill = 0;
+
+    /* _TRACE ("Seeds: %d, coarse: %d, fine: %d\n", seeds_n, coarse_n, fine_n); */
 }

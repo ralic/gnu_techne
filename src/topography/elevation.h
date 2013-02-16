@@ -85,6 +85,7 @@
         unsigned int scale, offset;
     } locations;
 
+    unsigned int buffer;
     int reference;
 
     double density, bias;

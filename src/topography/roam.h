@@ -17,6 +17,9 @@
 #ifndef _ROAM_H_
 #define _ROAM_H_
 
+#define SEED_BUFFER_SIZE (10000)
+#define SEED_SIZE ((3 + 3 + 1) * 4)
+
 #define BLOCKING (512)
 #define TRIANGLE_POOL (0)
 #define DIAMOND_POOL (1)

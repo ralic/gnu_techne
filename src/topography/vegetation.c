@@ -36,10 +36,18 @@
     [super initWithMode: GL_POINTS];
 
     self->context = &mold->context;
+
+    /* Create the VBO. */
+    
+    glGenBuffers(1, &self->buffer);
+    glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
+    glBufferData (GL_ARRAY_BUFFER, SEED_BUFFER_SIZE * SEED_SIZE,
+                  NULL, GL_STREAM_DRAW);
 }
 
 -(void) free
 {
+    glDeleteBuffers(1, &self->buffer);
     luaL_unref (_L, LUA_REGISTRYINDEX, self->reference);
         
     [super free];
@@ -47,8 +55,30 @@
 
 -(void) meetParent: (Shader *)parent
 {
+    int i;
+    
     [super meetParent: parent];
+    
+    /* Bind the VBOs into the VAO. */
+    
+    glBindVertexArray(self->name);
 
+    glBindBuffer(GL_ARRAY_BUFFER, self->buffer);
+
+    i = glGetAttribLocation(parent->name, "positions");
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, SEED_SIZE, (void *)0);
+    glEnableVertexAttribArray(i);
+
+    i = glGetAttribLocation(parent->name, "normals");
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, SEED_SIZE, (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(i);
+
+    i = glGetAttribLocation(parent->name, "sizes");
+    glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, SEED_SIZE, (void *)(6 * sizeof(float)));
+    glEnableVertexAttribArray(i);
+
+    /* Query uniform locations. */
+    
     self->locations.scale = glGetUniformLocation(parent->name, "scale");
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
 }
@@ -73,6 +103,9 @@
 
     optimize_geometry(self->context, frame);
 
+    glBindBuffer(GL_ARRAY_BUFFER, self->buffer);
+    glBindVertexArray(self->name);
+    
     seed_vegetation (self->context, self->density, self->bias,
                      self->locations.scale, self->locations.offset);
 

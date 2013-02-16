@@ -1,6 +1,6 @@
-layout(location=0) in vec3 positions;
-layout(location=1) in vec3 normals;
-layout(location=2) in float sizes;
+in vec3 positions;
+in vec3 normals;
+in float sizes;
 
 uniform sampler2D base;
 uniform vec3 references[N], weights[N];

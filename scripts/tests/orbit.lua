@@ -13,6 +13,13 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+local string = require "string"
+local math = require "math"
+local units = require "units"
+local primitives = require "primitives"
+local bindings = require "bindings"
+local widgets = require "widgets"
+local controllers = require "controllers"
 local staging = require "staging"
 local rubberband = require "rubberband"
 local current

@@ -39,8 +39,6 @@
     self->optimize = 1;
     
     self->context = &mold->context;
-    self->context->target = 5000;
-
     self->ranges = (int *)calloc (self->context->tileset.size[0] *
                                   self->context->tileset.size[1],
                                   sizeof (int));

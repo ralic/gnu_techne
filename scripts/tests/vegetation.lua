@@ -17,12 +17,17 @@ resources.dofile "common.lua"
 
 graphics.perspective = {units.degrees(50), 0.1, 10000}
 
-local file = not options.generate and io.open ("heightmap.bin")
+local file = not options.generate and io.open (".heightmap")
 local heights
 
 if not file then
+   local m, M
+
    heights = array.nushorts(resources.dofile ("diamondsquare.lua", 4096, 0.000125))
-   file = io.open ("heightmap.bin", "w")
+   m, M = arraymath.range(heights)
+   heights = arraymath.scale(arraymath.offset (heights, -m), 1 / (M - m))
+
+   file = io.open (".heightmap", "w")
    file:write (array.dump(heights))
 else
    heights = array.nushorts(4097, 4097, file:read("*a"))
@@ -64,7 +69,7 @@ elevation = topography.elevation {
 
    tiles = {
       {
-         {heights, nil, array.nuchars(base), {500, 0}}
+         {heights, nil, array.nuchars(base), {375, 0}}
       }
    }
 }
@@ -105,7 +110,7 @@ root = primitives.root {
                              },
 
    grass = topography.grass {
-      tag = "vegetation",
+      tag = "seeds",
 
       amplification = 10,
       separation = 1,
@@ -115,7 +120,7 @@ root = primitives.root {
          {{1, 0.4, 0}, {120 / 360, .99, .99}},
       },
       
-      shape = elevation.vegetation {
+      shape = elevation.seeds {
          bias = 3,
          density = 1000,
                                    }
@@ -127,7 +132,7 @@ root = primitives.root {
       tick = function(self, ticks)
          local command = {-1000,
                           (ticks % 2 > 0 and 1 or -1) * units.degrees(90),
-                          ticks % 2 > 0 and units.degrees(70.63) or units.degrees(69.35)}
+                          ticks % 2 > 0 and units.degrees(70.65) or units.degrees(68.75)}
 
          self.parent.orbit.command = command
 

@@ -21,7 +21,7 @@
 #include "roam.h"
 #include "elevation.h"
 
-@implementation Vegetation
+@implementation ElevationSeeds
 
 -(void) init
 {

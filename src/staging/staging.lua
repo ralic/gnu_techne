@@ -13,7 +13,12 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-arraymath = require "arraymath"
+local math = require "math"
+local arraymath = require "arraymath"
+local primitives = require "primitives"
+local bodies = require "bodies"
+local joints = require "joints"
+local physics = require "physics"
 
 local staging = {}
 

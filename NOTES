@@ -73,5 +73,8 @@ TODO (ASAP):
   approach.
 * Add support for setting clamp and filtering modes to the Texture Node.
 * Euler joints should always have 3 dofs and need only two axes.
-* Add sensitivity control to the orbit node.
-* Add perhpas some sort of small robot to survey the world.
+* Investigate making the rubberband a true virtual controller, by adding a
+  pseudo-device to the controllers table.
+* Investigate having independent bindings tables (perhaps with a syntax like:
+  local bindings = require "bindings" bindings[somevalue][sequence] = ...
+* Move common.lua and orbit.lua into scripts/utilities/ and fix as needed.

@@ -1177,6 +1177,7 @@ void *allocate_mesh(roam_Context *new)
     tiles = &context->tileset;
 
     context->frame = 0;
+    context->target = 5000;
     context->triangles = 0;
     context->diamonds = 0;
     context->culled = 0;

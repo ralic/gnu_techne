@@ -21,6 +21,7 @@ local array = require "array"
 local shading = require "shading"
 local shapes = require "shapes"
 local bindings = require "bindings"
+local controllers = require "controllers"
 
 local rubberband = {
    button = 2,
@@ -49,8 +50,7 @@ local overlay = shading.overlay {
       shape = shapes.lines {},
                          },
 
-   pointer = controllers['Core pointer'] {
-                                        },
+   pointer = controllers['Core pointer'] {},
 
    link = function (self)
       local a, O, P, binding

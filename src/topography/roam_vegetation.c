@@ -27,7 +27,7 @@ static roam_Context *context;
 static float modelview[16], normal[3];
 static char *buffer;
 static struct {
-    double density, bias;
+    double density, bias, threshold;
 } parameters;
 
 static int total, current;
@@ -37,7 +37,9 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 {    
     if (level < TREE_HEIGHT - 1) {
         if ((z_a < 0 || z_0 < 0 || z_1 < 0) &&
-            (z_a > -70 || z_0 > -70 || z_1 > -70)) {
+            (z_a > parameters.threshold ||
+             z_0 > parameters.threshold ||
+             z_1 > parameters.threshold)) {
             float b_c[3], z_c;
     
             b_c[0] = 0.5 * (b_0[0] + b_1[0]);
@@ -199,6 +201,7 @@ void seed_vegetation(roam_Context *new, double density, double bias,
     context = new;
     parameters.density = density;
     parameters.bias = bias;
+    parameters.threshold = -sqrt(bias * density);
     tiles = &context->tileset;
     
     t_copy_modelview (modelview);
@@ -225,5 +228,5 @@ void seed_vegetation(roam_Context *new, double density, double bias,
     buffer = NULL;
     current = 0;
 
-    /* _TRACE ("Seeds: %d\n", fine_n); */
+    /* _TRACE ("Seeds: %d\n", total); */
 }

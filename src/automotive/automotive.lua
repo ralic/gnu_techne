@@ -36,18 +36,19 @@ return {
 
 	    wheel = core.wheel (parameters)
 
-	    wheel.volume = shading.flat {
-	       color = {1, 0, 0, 1},
+	    wheel.volume = shading.wireframe {
+               shading = shading.flat {
+                  color = {1, 0, 0, 1},
 
-	       shape = shapes.torus {
-		  wireframe = true,
-		  radii = wheel.radii,
-		  segments = {16, 7},
-		  ranges = {{0, 2 * math.pi},
-			    {-math.pi / 2, math.pi / 2}},
-		  -- draw = function (self) print (self) end,
-	       },
-	    }
+                  shape = shapes.torus {
+                     radii = wheel.radii,
+                     segments = {16, 7},
+                     ranges = {{0, 2 * math.pi},
+                               {-math.pi / 2, math.pi / 2}},
+                     -- draw = function (self) print (self) end,
+                                       },
+                                      },
+                                             }
 
 	    oldmeta = getmetatable(wheel)
 	    replacemetatable(wheel, {

@@ -37,9 +37,9 @@
 
 	dJointSetAMotorAxis (self->joint, 2,
 			     dJointGetBody (self->joint, 1) ? 2 : 0,
-			     self->axes[1][0],
-			     self->axes[1][1],
-			     self->axes[1][2]);
+			     self->axes[2][0],
+			     self->axes[2][1],
+			     self->axes[2][2]);
 	
 	dJointSetAMotorMode (self->joint, dAMotorEuler);
     }

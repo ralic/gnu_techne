@@ -34,8 +34,8 @@
 
 -(int) _get_shape;
 -(void) _set_shape;
--(int) _get_vegetation;
--(void) _set_vegetation;
+-(int) _get_seeds;
+-(void) _set_seeds;
 -(int) _get_body;
 -(void) _set_body;
 
@@ -77,7 +77,7 @@
 
 @end
 
-@interface Vegetation: Shape {
+@interface ElevationSeeds: Shape {
 @public
     roam_Context *context;
 

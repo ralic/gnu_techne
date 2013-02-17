@@ -64,27 +64,25 @@ static array_Array *checkreal (lua_State *L, int index)
     return array;
 }
 
-static array_Array *checkrank (lua_State *L, int index, int rank)
+static void checkrank (lua_State *L, int index, int rank)
 {
     array_Array *array;
     
-    array = checkreal (L, index);
+    array = lua_touserdata (L, index);
     
     if ((rank == 0 && array->rank != 1 && array->rank != 2) ||
 	(rank > 0 && array->rank != rank)) {
 	luaL_argerror (L, index,
 		       "array has incompatible rank");
     }
-
-    return array;
 }
 
-static array_Array *checksimilar (lua_State *L, int i, int j)
+static void checksimilar (lua_State *L, int i, int j)
 {
     array_Array *A, *B;
 
-    A = checkreal(L, i);
-    B = checkreal(L, j);
+    A = lua_touserdata(L, i);
+    B = lua_touserdata(L, j);
     
     if (A->type != B->type) {
 	luaL_argerror (L, j, "array type doesn't match");
@@ -100,8 +98,6 @@ static array_Array *checksimilar (lua_State *L, int i, int j)
 	luaL_argerror (L, j, "array size doesn't match");
 	lua_error (L);
     }
-
-    return A;
 }
 
 /* Arithmetic operations API. */
@@ -109,8 +105,8 @@ static array_Array *checksimilar (lua_State *L, int i, int j)
 #define DEFINE_OPERATION_WRAPPER(OP)		\
     static int OP (lua_State *L)		\
     {						\
-	checkreal (L, 1);			\
-	checkreal (L, 2);			\
+	array_checkarray (L, 1);		\
+	array_checkarray (L, 2);		\
 						\
 	checksimilar(L, 1, 2);			\
 						\
@@ -126,8 +122,8 @@ DEFINE_OPERATION_WRAPPER(divide)
 
 static int combine (lua_State *L)
 {
-    checkreal (L, 1);
-    checkreal (L, 2);
+    array_checkarray (L, 1);
+    array_checkarray (L, 2);
     luaL_checknumber (L, 3);
     luaL_checknumber (L, 4);
 
@@ -148,6 +144,15 @@ static int raise (lua_State *L)
     return 1;
 }
 
+static int range (lua_State *L)
+{
+    array_checkarray (L, 1);
+
+    arraymath_range(L);
+    
+    return 2;
+}
+
 static int scale (lua_State *L)
 {
     array_checkarray (L, 1);
@@ -158,10 +163,22 @@ static int scale (lua_State *L)
     return 1;
 }
 
+static int offset (lua_State *L)
+{
+    array_checkarray (L, 1);
+    luaL_checknumber (L, 2);
+
+    arraymath_offset(L);
+    
+    return 1;
+}
+
 /* Linear algebra API. */
 
 static int dot (lua_State *L)
 {
+    checkreal(L, 1);
+    checkreal(L, 2);
     checkrank(L, 1, 1);
     checkrank(L, 2, 1);
     checksimilar (L, 1, 2);
@@ -175,7 +192,9 @@ static int cross (lua_State *L)
 {
     array_Array *A;
 
-    A = checkrank(L, 1, 1);
+    A = checkreal(L, 1);
+    checkreal(L, 2);
+    checkrank(L, 1, 1);
     checkrank(L, 2, 1);
     checksimilar (L, 1, 2);
 
@@ -191,6 +210,7 @@ static int cross (lua_State *L)
 
 static int normalize (lua_State *L)
 {
+    checkreal(L, 1);
     checkrank (L, 1, 1);
     arraymath_normalize(L);
     
@@ -199,6 +219,7 @@ static int normalize (lua_State *L)
 
 static int length (lua_State *L)
 {
+    checkreal(L, 1);
     checkrank (L, 1, 1);
     lua_pushnumber (L, arraymath_length(L));
     
@@ -207,6 +228,8 @@ static int length (lua_State *L)
 
 static int distance (lua_State *L)
 {
+    checkreal(L, 1);
+    checkreal(L, 2);
     checkrank(L, 1, 1);
     checkrank(L, 2, 1);
     checksimilar (L, 1, 2);
@@ -220,7 +243,8 @@ static int transpose (lua_State *L)
 {
     array_Array *A;
 
-    A = checkrank (L, 1, 2);
+    A = checkreal(L, 1);
+    checkrank (L, 1, 2);
 
     if (A->size[0] != A->size[1]) {
 	lua_pushstring (L, "Matrix is not square.");
@@ -236,8 +260,9 @@ static int matrix_multiply (lua_State *L)
 {
     array_Array *A, *B;
 
-    A = checkrank (L, 1, 2);
+    A = checkreal (L, 1);
     B = checkreal (L, 2);
+    checkrank (L, 1, 2);
 
     if ((A->type != B->type) ||
 #ifdef ARRAYMATH_COLUMN_MAJOR
@@ -259,9 +284,10 @@ static int matrix_multiplyadd (lua_State *L)
 {
     array_Array *A, *B;
 
-    A = checkrank (L, 1, 2);
+    A = checkreal (L, 1);
     B = checkreal (L, 2);
     checkreal (L, 3);
+    checkrank (L, 1, 2);
 
     if ((A->type != B->type) || 
         (B->rank == 2 && A->size[0] != B->size[1]) ||
@@ -616,7 +642,9 @@ int luaopen_arraymath_core (lua_State *L)
 	{"subtract", subtract},
 	{"divide", divide},
 	{"scale", scale},
+	{"offset", offset},
 	{"raise", raise},
+	{"range", range},
 	{"combine", combine},
 	    
 	{"dot", dot},

@@ -32,6 +32,23 @@ static struct {
 
 static int total, current;
 
+static void flush_buffer (int remap) {
+    assert(glUnmapBuffer(GL_ARRAY_BUFFER));
+    glDrawArrays (GL_POINTS, 0, current);
+                
+    current = 0;
+
+    if (remap) {
+        buffer = glMapBufferRange (GL_ARRAY_BUFFER, 0,
+                                   SEED_BUFFER_SIZE * SEED_SIZE,
+                                   GL_MAP_WRITE_BIT |
+                                   GL_MAP_INVALIDATE_BUFFER_BIT);
+        
+    }else {
+        buffer = NULL;
+    }
+}
+
 static void seed_triangle(float *a, float *b_0, float *b_1,
                           float z_a, float z_0, float z_1, int level)
 {    
@@ -105,15 +122,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             c[2] = k[0] * a[2] + k[1] * b_0[2] + k[2] * b_1[2];
 
             if (current == SEED_BUFFER_SIZE) {
-                assert(glUnmapBuffer(GL_ARRAY_BUFFER));
-                glDrawArrays (GL_POINTS, 0, SEED_BUFFER_SIZE);
-                buffer = glMapBufferRange (GL_ARRAY_BUFFER, 0,
-                                           SEED_BUFFER_SIZE * SEED_SIZE,
-                                           GL_MAP_WRITE_BIT |
-                                           GL_MAP_INVALIDATE_BUFFER_BIT);
-                
-                
-                current = 0;
+                flush_buffer (1);
             }
             
             p = buffer + current * SEED_SIZE;
@@ -219,14 +228,12 @@ void seed_vegetation(roam_Context *new, double density, double bias,
             
 	    seed_subtree(context->roots[k][0]);
 	    seed_subtree(context->roots[k][1]);
+
+            flush_buffer (1);
 	}
     }
 
-    assert(glUnmapBuffer(GL_ARRAY_BUFFER));
-    glDrawArrays (GL_POINTS, 0, current);
-
-    buffer = NULL;
-    current = 0;
+    flush_buffer (0);
 
     /* _TRACE ("Seeds: %d\n", total); */
 }

@@ -15,16 +15,68 @@
 
 local string = require "string"
 local math = require "math"
+local arraymath = require "arraymath"
 local units = require "units"
 local primitives = require "primitives"
+local bodies = require "bodies"
+local joints = require "joints"
 local bindings = require "bindings"
 local widgets = require "widgets"
 local controllers = require "controllers"
-local staging = require "staging"
-local rubberband = require "rubberband"
-local current
+local physics = require "physics"
 
+local rest = {...}
+local initial = {...}
+local current = {...}
+local zoom = false
 local sensitivity = 3
+local compliance = {1000000, 150000}
+local mass = {
+   1e-3,
+   arraymath.zero(3),
+   arraymath.diagonal(3, 1e-6)
+}
+
+local function update (self, rho, theta, phi)
+   local stops
+
+   if rho then
+      current[1] = rho
+   end
+
+   if theta then
+      current[2] = math.clamp (theta,
+                               -math.pi + rest[2],
+                               math.pi + rest[2])
+   end
+
+   if phi then
+      current[3] = math.clamp (phi,
+                               -math.pi + rest[3],
+                               math.pi + rest[3])
+   end
+
+   -- Reconfigure the slider.
+
+   stops = self.torso.neck.stops
+
+   a = current[1] - rest[1]
+   stops[1] = {a, a}
+
+   self.torso.neck.stops = stops
+
+   -- Reconfigure the ball joint srping.
+
+   stops = self.stops
+
+   a = math.clamp (current[2] - rest[2], -math.pi, math.pi)
+   b = math.clamp (current[3] - rest[3], -math.pi, math.pi)
+                   
+   stops[2][1] = {a, a}
+   stops[1][1] = {b, b}
+   
+   self.stops = stops
+end
 
 local info = primitives.root {
    display = widgets.display {
@@ -34,37 +86,68 @@ local info = primitives.root {
          padding = {0.01, 0, 0.01, 0},
                               }
                              }
-                       }
+                             }
 
-local orbit = staging.orbit {
-   command = {...},
-
+local orbit = joints.universal {
    link = function (self)
-      rubberband.momentary = true
+      local p, R, R_p, RT, R_pT
 
-      bindings['[Rubberband]absolute-axis-0'] = function(sequence, value)
-         local command = self.command
+      p = self.parent.position or {0, 0, 0}
+      R_p = self.parent.orientation or arraymath.diagonal(3, 1)
+      R_pT = arraymath.transpose(R_p)
+      R = arraymath.concatenate(R_p,
+                                arraymath.relue (0, rest[3], rest[2]))
+      RT = arraymath.transpose(R)
 
-         if not rubberband.zoom then
-            command[2] = current[2] - math.ldexp(units.degrees(value), -sensitivity)
+      -- Configure the rig.
 
-            self.command = command
+      self.anchor = p
+      self.axes = {
+         R_pT[3], R_pT[2], 
+      }
+
+      self.stops = {
+         {{0, 0}, compliance, 0},
+         {{0, 0}, compliance, 0},
+      }
+      
+      self.torso = bodies.point {
+         position = p,
+         mass = mass,
+
+         neck = joints.slider {
+            stops = {{0, 0}, compliance, 0},
+            axis = RT[3],
+
+            head = bodies.point {
+               position = arraymath.matrixmultiplyadd (RT, {0, 0, -rest[1]}, p),
+
+               orientation = R,
+
+               mass = mass,
+               eye = primitives.observer {}
+                                },
+                              },
+                                       }
+
+      bindings['[Rubberband]drag-absolute-axis-0'] = function(sequence, value)
+         if not zoom then
+            update(self, nil,
+                   initial[2] - math.ldexp(units.degrees(value), -sensitivity))
          end
       end
 
-      bindings['[Rubberband]absolute-axis-1'] = function(sequence, value)
-         local command = self.command
-
-         if rubberband.zoom then
-            command[1] = current[1] - math.ldexp(value, -sensitivity)
+      bindings['[Rubberband]drag-absolute-axis-1'] = function(sequence, value)
+         if zoom then
+            update(self, initial[1] - math.ldexp(value, -sensitivity))
          else
-            command[3] = current[3] - math.ldexp(units.degrees(value), -sensitivity)
+            update(self, nil, nil,
+                   initial[3] - math.ldexp(units.degrees(value), -sensitivity))
          end
-
-         self.command = command
       end
    end,
 
+   rubberband = controllers['Rubberband'] {},
    pointer = controllers['Core pointer'] {
       relative = function(self, axis, value)
          sensitivity = math.clamp (sensitivity + value, 1, 10)
@@ -85,22 +168,24 @@ local orbit = staging.orbit {
 
       buttonrelease = function (self, button)
          if button == 1 or button == 3 then
-            rubberband.engaged = false
+            self.parent.rubberband.engaged = false
          end         
       end,
 
       buttonpress = function (self, button)
          if button == 1 then
-            rubberband.engaged = true
-            rubberband.zoom = false
-            current = self.parent.command
+            initial = table.pack(table.unpack(current))
+            zoom = false
+
+            self.parent.rubberband.engaged = true
          elseif button == 3 then
-            rubberband.engaged = true
-            rubberband.zoom = true
-            current = self.parent.command
+            initial = table.pack(table.unpack(current))
+            zoom = true
+
+            self.parent.rubberband.engaged = true
          end         
       end
                                          }
-                      }
+                               }
 
 return orbit

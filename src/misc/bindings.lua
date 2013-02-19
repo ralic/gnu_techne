@@ -16,25 +16,24 @@
 local string = require "string"
 local table = require "table"
 local primitives = require "primitives"
-local controllers = require 'controllers'
+local controllers = require "controllers"
 
+local devices = {}
 local bindings = {}
-local sequence = {}
-local index = bindings
-local down, current = 0, nil
+local context
 
 local function push (suffix, terminal, ...)
    local binding, catchall, name
 
-   -- print (table.concat (sequence, " ") .. " " .. suffix)
+   -- print (table.concat (context.sequence, " ") .. " " .. suffix)
 
-   sequence[#sequence + 1] = suffix
-   name = table.concat (sequence, ' ')
-   binding, catchall = index[name], index["*"]
+   context.sequence[#context.sequence + 1] = suffix
+   name = table.concat (context.sequence, ' ')
+   binding, catchall = context.index[name], context.index["*"]
 
    if binding then
       if type (binding) == "table" then
-	 index = binding
+	 context.index = binding
 
 	 return false
       else
@@ -45,7 +44,7 @@ local function push (suffix, terminal, ...)
    end
 
    if terminal then
-      index, sequence = bindings, {}
+      context.index, context.sequence = bindings, {}
    end
 
    return true
@@ -53,15 +52,15 @@ end
 
 local function pop (n)
    for i = 1, n do
-      sequence[#sequence] = nil
+      context.sequence[#context.sequence] = nil
    end
 end
 
 local function press (self, prefix, key, ...)
    local suffix
 
-   down = down + 1
-   current = key
+   context.down = context.down + 1
+   context.current = key
 
    push (prefix .. "down-" .. key, false, ...)
 end
@@ -69,16 +68,16 @@ end
 local function release (self, prefix, key, ...)
    local suffix
 
-   down = down - 1
+   context.down = context.down - 1
 
-   push (prefix .. "up-" .. tostring(key), down == 0 and current ~= key, ...)
+   push (prefix .. "up-" .. tostring(key), context.down == 0 and context.current ~= key, ...)
    
-   if current == key then
+   if context.current == key then
       pop(2)
-      push (prefix .. tostring(key), down == 0, ...)
+      push (prefix .. tostring(key), context.down == 0, ...)
    end
 
-   current = nil
+   context.current = nil
 end
 
 local function motion (self, prefix, motion, button, axis, value, ...)
@@ -92,7 +91,7 @@ end
 local root = primitives.root {}
 
 for name, device in pairs(controllers) do
-   local prefix
+   local prefix, state
    local buttons = {}
 
    if name == "Core pointer" or name == "Core keyboard" then
@@ -101,8 +100,16 @@ for name, device in pairs(controllers) do
       prefix = "[" .. name .. "]"
    end
 
-   root[name] = device { 
+   state = {
+      sequence = {},
+      index = bindings,
+      down = 0,
+      current = nil
+   }
+
+   root[name] = device {
       buttonpress = function (self, key)
+         context = state
          buttons[key] = true
 
          if type(key) ~= "string" then
@@ -113,6 +120,7 @@ for name, device in pairs(controllers) do
       end,
 
       buttonrelease = function (self, key)
+         context = state
          buttons[key] = nil
 
          if type(key) ~= "string" then
@@ -123,10 +131,12 @@ for name, device in pairs(controllers) do
       end,
 
       absolute = function (self, axis, value)
+         context = state
          motion(self, prefix, "absolute", next(buttons), axis, value)
       end,
 
       relative = function (self, axis, value)
+         context = state
          motion(self, prefix, "relative", next(buttons), axis, value)
       end,
      

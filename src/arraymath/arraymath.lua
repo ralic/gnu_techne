@@ -16,6 +16,11 @@
 local array = require 'array'
 local arraymath = require 'arraymath.core'
 
+-- Arrays created without being initialized from a table or string
+-- default to zero anyway.  This is just syntactic sugar.
+
+arraymath.zero = array.doubles
+
 function arraymath.tensor(u, v)
    return arraymath.matrixmultiply(array.cast(#u, 1, u), array.cast (1, #v, v))
 end

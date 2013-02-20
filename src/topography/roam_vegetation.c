@@ -30,7 +30,7 @@ static struct {
     double density, bias, threshold;
 } parameters;
 
-static int total, current;
+static int total, current, coarse, fine;
 
 static void flush_buffer (int remap) {
     assert(glUnmapBuffer(GL_ARRAY_BUFFER));
@@ -142,6 +142,8 @@ static void seed_subtree(roam_Triangle *n)
 	if(!is_leaf(n)) {
 	    seed_subtree(n->children[0]);
 	    seed_subtree(n->children[1]);
+
+            coarse += 1;
 	} else {
 	    roam_Triangle *p;
 	    roam_Diamond *d, *e;
@@ -189,6 +191,8 @@ static void seed_subtree(roam_Triangle *n)
                 modelview[14];
             
             seed_triangle (a, b_0, b_1, z_a, z_0, z_1, d->level);
+
+            fine += 1;
 	}
     }
 }
@@ -205,8 +209,7 @@ void seed_vegetation(roam_Context *new, double density, double bias,
                                GL_MAP_WRITE_BIT |
                                GL_MAP_INVALIDATE_BUFFER_BIT);
     
-    current = 0;
-    total = 0;
+    current = coarse = fine = total = 0;
     context = new;
     parameters.density = density;
     parameters.bias = bias;
@@ -235,5 +238,5 @@ void seed_vegetation(roam_Context *new, double density, double bias,
 
     flush_buffer (0);
 
-    /* _TRACE ("Seeds: %d\n", total); */
+    _TRACE ("Seeds: %d, Coarse: %d, Fine %d\n", total, coarse, fine);
 }

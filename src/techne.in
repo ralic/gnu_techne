@@ -29,5 +29,5 @@ if [ "$debug" -eq 1 -a -n "$commands" ]; then
 elif [ "$debug" -eq 1 ]; then
     gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne ${args[*]}
 else
-    ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne "${args[@]}"
+    ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts "${args[@]}"
 fi

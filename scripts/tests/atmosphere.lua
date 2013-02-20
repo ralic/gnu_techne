@@ -13,7 +13,15 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-resources.dofile "common.lua"
+arraymath = require "arraymath"
+resources = require "resources"
+graphics = require "graphics"
+dynamics = require "dynamics"
+primitives = require "primitives"
+topography = require "topography"
+units = require "units"
+
+resources.dofile "utils/basic.lua"
 
 graphics.perspective = {units.degrees(90), 0.1, 10000}
 dynamics.timescale = 0
@@ -34,7 +42,7 @@ root = primitives.root {
          period = 0,
 
          tick = function (self, ticks, delta, elapsed)
-            self.parent.orientation = arraymath.euler (0, units.degrees(130), elapsed*0)
+            self.parent.orientation = arraymath.euler (0, units.degrees(130), elapsed)
          end,
                                      }
                                   }

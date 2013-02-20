@@ -13,8 +13,18 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-resources.dofile "common.lua"
-local heights = resources.dofile ("diamondsquare.lua", 512, 0.0012)
+math = require "math"
+array = require "array"
+resources = require "resources"
+graphics = require "graphics"
+primitives = require "primitives"
+topography = require "topography"
+shading = require "shading"
+units = require "units"
+
+resources.dofile "utils/basic.lua"
+
+local heights = resources.dofile ("tests/diamondsquare.lua", 512, 0.0012)
 
 graphics.perspective = {units.degrees(50), 0.1, 10000}
 
@@ -30,7 +40,7 @@ elevation = topography.elevation {
 }
 
 root = primitives.root {
-   orbit = resources.dofile ("orbit.lua", -1000, 0, 0),
+   orbit = resources.dofile ("utils/orbit.lua", -1000, 0, 0),
 
    wireframe = shading.wireframe {
       shader = shading.flat {

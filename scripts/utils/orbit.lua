@@ -174,12 +174,12 @@ local orbit = joints.universal {
 
       buttonpress = function (self, button)
          if button == 1 then
-            initial = table.pack(table.unpack(current))
+            initial = {current[1], current[2], current[3]}
             zoom = false
 
             self.parent.rubberband.engaged = true
          elseif button == 3 then
-            initial = table.pack(table.unpack(current))
+            initial = {current[1], current[2], current[3]}
             zoom = true
 
             self.parent.rubberband.engaged = true

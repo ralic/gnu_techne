@@ -563,23 +563,46 @@ int main(int argc, char **argv)
 	    }
 	    luap_setcolor (_L, colorize);
 	} else if (option == 'c') {
-	    const char *prefixes[] = {"./", PKGDATADIR"/scripts/", ""};
-	    char *path;
-	    int i;
-		
-	    /* Try to find the specified script in a bunch of
-	       predetermined directories. */
-		
-	    for (i = 0;
-		 i < sizeof(prefixes) / sizeof (char *);
-		 i += 1) {
-		asprintf (&path, "%s%s", prefixes[i], optarg);
+	    char *path = NULL;
+	    int i, n;
 
-		if (!access (path, F_OK)) {
-		    break;
-		}
-	    }
+            lua_getfield (_L, -1, "prefix");
 
+            /* Wrap a single prefix inside a table. */
+
+            if (lua_type (_L, -1) == LUA_TSTRING) {
+                lua_createtable (_L, 1, 0);
+                lua_insert (_L, -2);
+                lua_rawseti (_L, -2, 1);
+            }
+            
+            if (lua_type (_L, -1) == LUA_TTABLE) {
+                n = lua_rawlen (_L, -1);
+                
+                /* Try to find the specified script in a bunch of
+                   predetermined directories. */
+		
+                for (i = 0 ; i < n ; i += 1) {
+                    lua_rawgeti(_L, -1, i + 1);
+                    asprintf (&path, "%s/%s", lua_tostring(_L, -1), optarg);
+                    lua_pop(_L, 1);
+                    
+                    if (!access (path, F_OK)) {
+                        break;
+                    }
+                }
+
+                if (i == n) {
+                    path = NULL;
+                }
+            }
+            
+            lua_pop(_L, 1);
+
+            if (!path) {
+                path = optarg;
+            }
+            
 	    /* Compile the chunk and stash it away behind the options
 	     * table. */
 	    

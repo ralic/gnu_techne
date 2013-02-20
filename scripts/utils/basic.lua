@@ -13,10 +13,18 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+techne = require "techne"
+graphics = require "graphics"
+dynamics = require "dynamics"
+bindings = require "bindings"
+
+local defaultwidht, defaultheight, title
+
 techne.iterate = true
 
-graphics.window = {800, 600}
-graphics.title = 'Foo'
+graphics.window = {options.width or defaultwidth or 800,
+                   options.height or defaultheight or 600}
+graphics.title = title or 'Techne'
 graphics.hide = false
 
 bindings['escape'] = function ()

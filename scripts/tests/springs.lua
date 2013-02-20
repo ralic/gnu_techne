@@ -13,14 +13,25 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-resources.dofile "common.lua"
-resources.dofile "orbit.lua"
+math = require "math"
+resources = require "resources"
+joints = require "joints"
+bodies = require "bodies"
+primitives = require "primitives"
+physics = require "physics"
+units = require "units"
+
+resources.dofile "utils/basic.lua"
 
 graphics.perspective = {45, 0.1, 10000}
 dynamics.gravity = {0, 0, -9.81}
 
 root = primitives.root {
+   orbit = resources.dofile ("utils/orbit.lua", -3, 0, units.degrees(60)),
    environment = bodies.environment {
+      ground = bodies.plane {
+         position = {0, 0, -0.7},
+                            }
                                     },
                        }
 
@@ -78,7 +89,7 @@ local b = {}
 
 for i = 1, 3 do
    b[i] = bodies.box {
-      position = {0, 1, -1.25+ 0.75 * i},
+      position = {0, 1, -1.25 + 0.75 * i},
       size = {0.1, 0.1, 0.4},
 
       mass = {

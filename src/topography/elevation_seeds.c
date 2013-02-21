@@ -40,9 +40,6 @@
     /* Create the VBO. */
     
     glGenBuffers(1, &self->buffer);
-    glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
-    glBufferData (GL_ARRAY_BUFFER, SEED_BUFFER_SIZE * SEED_SIZE,
-                  NULL, GL_STREAM_DRAW);
 }
 
 -(void) free

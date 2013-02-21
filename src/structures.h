@@ -82,6 +82,22 @@
         *list = (node);                         \
     }
 
+#define t_single_unlink_head(list)               \
+    {                                            \
+        *(list) = (*(list))->next;               \
+    }
+
+#define t_single_unlink_sibling(node)            \
+    {                                            \
+        (node)->next = (node)->next->next;       \
+    }
+
+#define t_single_link_after(node, sibling)      \
+    {                                           \
+        (node)->next = (sibling)->next;         \
+        (sibling)->next = node;                 \
+    }
+
 /* Circular doubly-linked lists. */
 
 #define t_circular_link_after(node, sibling)		\

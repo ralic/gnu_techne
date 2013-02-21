@@ -29,6 +29,9 @@
 #include "builtin.h"
 
 typedef enum {
+    T_FLUSH_ONLY = 0,
+    T_FREEABLE = 1,
+    
     T_LOAD = 0,
     T_MULTIPLY = 1,
     
@@ -49,9 +52,12 @@ void t_print_timing_resolution();
 long long int t_get_real_time ();
 long long int t_get_cpu_time ();
 
-void *t_build_pool(int factor, size_t size);
-void *t_allocate_from_pool (void *p);
+void *t_build_pool(int factor, size_t size, t_Enumerated mode);
+void *t_allocate_pooled (void *p);
+void t_free_pooled (void *p, void *block);
 void t_reset_pool (void *p);
+void t_flush_pool (void *p);
+void t_free_pool (void *p);
 
 void t_load_projection (float *matrix);
 void t_push_projection (float *matrix);

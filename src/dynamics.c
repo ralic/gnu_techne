@@ -242,7 +242,7 @@ static void callback (void *data, dGeomID a, dGeomID b)
 		/* Initialize a new contact joint with values returned
 		 * by the user. */
 		
-		context = t_allocate_from_pool(pool);
+		context = t_allocate_pooled(pool);
 		    
 		context->contact.geom = geoms[i];
 
@@ -366,7 +366,7 @@ void t_convert_spring(double k_s, double k_d, double *erp, double *cfm)
 
     /* Create the contact context pool. */
 
-    pool = t_build_pool (64, sizeof (struct context));
+    pool = t_build_pool (64, sizeof (struct context), T_FLUSH_ONLY);
     
     /* Export the joints iterator. */
     

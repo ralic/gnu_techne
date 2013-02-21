@@ -161,79 +161,13 @@ void look_up_sample(roam_Tileset *tiles, int i, int j, double *h, double *e)
     }
 }
 
-static roam_Block *allocate_fresh_block (int pool)
-{
-    roam_Block *block;
-    roam_Chunk *chunk;
-    int i, size;
-
-    size = pool == TRIANGLE_POOL ? sizeof (roam_Triangle) : sizeof (roam_Diamond);
-    
-    block = (roam_Block *)malloc (BLOCKING * size + sizeof (roam_Block));
-    block->chunks = NULL;
-    block->next = NULL;
-
-    for (i = 0 ; i < BLOCKING ; i += 1) {
-	chunk = (roam_Chunk *)(((char *)block) + sizeof (roam_Block) + i * size);
-	chunk->next = block->chunks;
-	block->chunks = chunk;
-    }
-
-    context->blocks[pool] += 1;
-
-/*     printf ("Allocated block %d at %p.\n", context->blocks[pool], block); */
-
-    return block;
-}
-
-static void *allocate_chunk (int pool)
-{
-    roam_Block *block;
-    roam_Chunk *chunk;
-
-    for (block = context->pools[pool];
-	 block && !block->chunks;
-	 block = block->next);
-
-    if (!block) {
-	block = allocate_fresh_block (pool);
-	
-	block->next = context->pools[pool];
-	context->pools[pool] = block;
-    }
-
-    chunk = block->chunks;
-    block->chunks = chunk->next;
-
-    context->chunks[pool] += 1;
-
-/*     printf ("Allocated chunk %d from block %p at %p (next comes %p).\n", */
-/* 	    context->chunks, block, chunk, chunk->next); */
-    
-    assert(chunk);
-
-    return (void *)chunk;
-}
-
-static void free_chunk(int pool, void *chunk)
-{
-    assert (context->pools[pool]);
-/*     printf ("Freeing chunk %d.\n", context->chunks); */
-    context->chunks[pool] -= 1;
-
-    ((roam_Chunk *)chunk)->next = context->pools[pool]->chunks;
-    context->pools[pool]->chunks = chunk;
-}
-
 static void allocate_diamonds(roam_Diamond **d, int n)
 {
     int i;
     
     for(i = 0 ; i < n ; i += 1) {
-        d[i] = (roam_Diamond *)allocate_chunk (DIAMOND_POOL);
+        d[i] = (roam_Diamond *)t_allocate_pooled (context->pools[DIAMOND_POOL]);
     }
-
-    context->diamonds += n;
 }
 
 static void deallocate_diamonds(roam_Diamond **d, int n)
@@ -241,10 +175,8 @@ static void deallocate_diamonds(roam_Diamond **d, int n)
     int i;
     
     for(i = 0 ; i < n ; i += 1) {
-        free_chunk(DIAMOND_POOL, d[i]);
+        t_free_pooled(context->pools[DIAMOND_POOL], d[i]);
     }
-
-    context->diamonds -= n;
 }
 
 static void initialize_diamond(roam_Diamond *d, roam_Triangle *n,
@@ -460,10 +392,8 @@ static void allocate_triangles(roam_Triangle **n, int k)
     int i;
     
     for(i = 0 ; i < k ; i += 1) {
-        n[i] = (roam_Triangle *)allocate_chunk (TRIANGLE_POOL);
+        n[i] = (roam_Triangle *)t_allocate_pooled (context->pools[TRIANGLE_POOL]);
     }
-
-    context->triangles += k;
 }
 
 static void deallocate_triangles(roam_Triangle **n, int k)
@@ -471,10 +401,8 @@ static void deallocate_triangles(roam_Triangle **n, int k)
     int i;
     
     for(i = 0 ; i < k ; i += 1) {
-	free_chunk (TRIANGLE_POOL, n[i]);
+	t_free_pooled(context->pools[TRIANGLE_POOL], n[i]);
     }
-
-    context->triangles -= k;
 }
 
 static void initialize_triangle(roam_Triangle *c, roam_Diamond *d, roam_Triangle *p,
@@ -1131,9 +1059,8 @@ void optimize_geometry(roam_Context *new, int frame)
     /* } */
     
 #if 0
-    printf("%d triangles, %d diamonds, %d culled, %d visible, %d drawn\n"
+    printf("%d culled, %d visible, %d drawn\n"
            "Qs_max = %d, Qm_min = %d, |Qs| = %d, |Qm| = %d\n",
-           context->triangles, context->diamonds,
 	   context->culled, context->visible, context->drawn,
            context->maximum, context->minimum,
            context->queued[0], context->queued[1]);
@@ -1178,8 +1105,6 @@ void *allocate_mesh(roam_Context *new)
 
     context->frame = 0;
     context->target = 5000;
-    context->triangles = 0;
-    context->diamonds = 0;
     context->culled = 0;
     context->visible = 0;
     context->queued[0] = 0;
@@ -1188,13 +1113,17 @@ void *allocate_mesh(roam_Context *new)
     context->minimum = QUEUE_SIZE - 1;
     context->maximum = 0;
 
-    context->pools[0] = NULL;
-    context->pools[1] = NULL;
+    context->pools[TRIANGLE_POOL] = t_build_pool (TRIANGLE_CHUNKING_FACTOR,
+                                                  sizeof(roam_Triangle),
+                                                  T_FREEABLE);
+    context->pools[DIAMOND_POOL] = t_build_pool (DIAMOND_CHUNKING_FACTOR,
+                                                 sizeof(roam_Diamond),
+                                                 T_FREEABLE);
 
-    context->blocks[0] = 0;
-    context->blocks[1] = 0;
     context->chunks[0] = 0;
     context->chunks[1] = 0;
+    context->blocks[0] = 0;
+    context->blocks[1] = 0;
 
     context->roots = (roam_Triangle *(*)[2])calloc(context->tileset.size[0] *
                                                    context->tileset.size[1],
@@ -1339,22 +1268,12 @@ void *allocate_mesh(roam_Context *new)
 
 void free_mesh(roam_Context *new)
 {
-    roam_Block *block, *next;
-    int i;
-
     context = new;
     
-    /* Free all allocated blocks. */
-    
-    for (i = 0 ; i < 2 ; i += 1) {
-	for (block = context->pools[i] ; block ; block = next) {
-	    next = block->next;
-	
-	    free(block);
-	}
+    /* Free all allocated chunks. */
 
-	context->pools[i] = NULL;
-    }
+    t_free_pool (context->pools[DIAMOND_POOL]); 
+    t_free_pool (context->pools[TRIANGLE_POOL]); 
 
     free(context->roots);
 }

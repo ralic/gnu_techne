@@ -20,7 +20,8 @@
 #define SEED_BUFFER_SIZE (10000)
 #define SEED_SIZE ((3 + 3 + 1) * 4)
 
-#define BLOCKING (512)
+#define TRIANGLE_CHUNKING_FACTOR (512)
+#define DIAMOND_CHUNKING_FACTOR (1024)
 #define TRIANGLE_POOL (0)
 #define DIAMOND_POOL (1)
 
@@ -89,29 +90,19 @@ typedef struct {
 typedef struct {
     roam_Tileset tileset;
 
-    struct block *pools[2];
+    void *pools[2];
     
     struct diamond *queues[2][QUEUE_SIZE];
     struct triangle *(*roots)[2];
 
     float *buffer;
     
-    int blocks[2], chunks[2], queued[2];
-    int triangles, diamonds, culled, visible, drawn;
+    int chunks[2], blocks[2], queued[2];
+    int culled, visible, drawn;
     int minimum, maximum;
 
     int target, frame;
 } roam_Context;
-
-struct block {
-    struct block *next;
-    
-    void *chunks;
-};
-
-struct chunk {
-    struct chunk *next;
-};
 
 struct triangle {
     struct diamond *diamond;
@@ -131,8 +122,6 @@ struct diamond {
     char level, flags;
 };
 
-typedef struct chunk roam_Chunk;
-typedef struct block roam_Block;
 typedef struct triangle roam_Triangle;
 typedef struct diamond roam_Diamond;
 

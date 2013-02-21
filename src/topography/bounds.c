@@ -15,6 +15,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include "roam.h"
@@ -95,6 +96,7 @@ void calculate_tile_bounds(unsigned short *heights, unsigned short *bounds,
     H = heights;
     B = bounds;
 
+    memset (B, 0, size * size * sizeof(unsigned short));
     B[0] = 65535;
     B[l] = 65535;
     B[l * (l + 1)] = 65535;

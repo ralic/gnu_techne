@@ -13,11 +13,11 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-math = require "math"
-resources = require "resources"
-graphics = require "graphics"
-primitives = require "primitives"
-widgets = require "widgets"
+local math = require "math"
+local resources = require "resources"
+local graphics = require "graphics"
+local primitives = require "primitives"
+local widgets = require "widgets"
 
 resources.dofile "utils/basic.lua"
 

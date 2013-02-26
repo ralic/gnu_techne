@@ -73,5 +73,3 @@ TODO (ASAP):
   approach.
 * Add support for setting clamp and filtering modes to the Texture Node.
 * Euler joints should always have 3 dofs and need only two axes.
-* Investigate having independent bindings tables (perhaps with a syntax like:
-  local bindings = require "bindings" bindings[somevalue][sequence] = ...

@@ -13,13 +13,13 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-math = require "math"
-resources = require "resources"
-joints = require "joints"
-bodies = require "bodies"
-primitives = require "primitives"
-physics = require "physics"
-units = require "units"
+local math = require "math"
+local resources = require "resources"
+local joints = require "joints"
+local bodies = require "bodies"
+local primitives = require "primitives"
+local physics = require "physics"
+local units = require "units"
 
 resources.dofile "utils/basic.lua"
 

@@ -13,13 +13,13 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-arraymath = require "arraymath"
-resources = require "resources"
-graphics = require "graphics"
-dynamics = require "dynamics"
-primitives = require "primitives"
-topography = require "topography"
-units = require "units"
+local arraymath = require "arraymath"
+local resources = require "resources"
+local graphics = require "graphics"
+local dynamics = require "dynamics"
+local primitives = require "primitives"
+local topography = require "topography"
+local units = require "units"
 
 resources.dofile "utils/basic.lua"
 

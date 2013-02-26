@@ -13,38 +13,41 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+local package = require "package"
 local string = require "string"
 local table = require "table"
 local primitives = require "primitives"
 local controllers = require "controllers"
 
-local devices = {}
 local bindings = {}
 local context
 
+local function call(name, ...)
+   for key, value in pairs(bindings) do
+      local binding = value[name]
+      if binding then
+         binding(...)
+         return true
+      end
+   end
+
+   return false
+end
+
 local function push (suffix, terminal, ...)
-   local binding, catchall, name
+   local name
 
    -- print (table.concat (context.sequence, " ") .. " " .. suffix)
 
    context.sequence[#context.sequence + 1] = suffix
    name = table.concat (context.sequence, ' ')
-   binding, catchall = context.index[name], context.index["*"]
 
-   if binding then
-      if type (binding) == "table" then
-	 context.index = binding
-
-	 return false
-      else
-         binding(name, ...)
-      end
-   elseif catchall then
-      catchall(name, ...)
+   if not call(name, name, ...) then
+      call("*", name, ...)
    end
 
    if terminal then
-      context.index, context.sequence = bindings, {}
+      context.sequence = {}
    end
 
    return true
@@ -102,7 +105,6 @@ for name, device in pairs(controllers) do
 
    state = {
       sequence = {},
-      index = bindings,
       down = 0,
       current = nil
    }
@@ -145,4 +147,17 @@ end
 
 bindings[root] = root
 
-return bindings
+local function createmap(name)
+   local t = {}
+                           
+   bindings[#bindings + 1] = t
+   return t
+end
+
+package.searchers[#package.searchers + 1] = function (name)
+   
+   module, submodule = string.match(name, "(%w+)%.(%w+)")
+   if module == "bindings" then
+      return createmap, submodule
+   end
+end

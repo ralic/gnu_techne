@@ -13,10 +13,10 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-techne = require "techne"
-graphics = require "graphics"
-dynamics = require "dynamics"
-bindings = require "bindings"
+local techne = require "techne"
+local graphics = require "graphics"
+local dynamics = require "dynamics"
+local bindings = require "bindings.basic"
 
 local defaultwidht, defaultheight, title
 

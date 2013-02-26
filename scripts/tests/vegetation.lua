@@ -13,17 +13,18 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-io = require "io"
-math = require "math"
-array = require "array"
-arraymath = require "arraymath"
-resources = require "resources"
-graphics = require "graphics"
-primitives = require "primitives"
-topography = require "topography"
-shading = require "shading"
-textures = require "textures"
-units = require "units"
+local io = require "io"
+local math = require "math"
+local array = require "array"
+local arraymath = require "arraymath"
+local resources = require "resources"
+local graphics = require "graphics"
+local primitives = require "primitives"
+local topography = require "topography"
+local shading = require "shading"
+local textures = require "textures"
+local units = require "units"
+local bindings = require "bindings.default"
 
 resources.dofile "utils/basic.lua"
 

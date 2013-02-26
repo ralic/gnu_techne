@@ -13,14 +13,14 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-array = require "array"
-resources = require "resources"
-graphics = require "graphics"
-dynamics = require "dynamics"
-primitives = require "primitives"
-shapes = require "shapes"
-shading = require "shading"
-textures = require "textures"
+local array = require "array"
+local resources = require "resources"
+local graphics = require "graphics"
+local dynamics = require "dynamics"
+local primitives = require "primitives"
+local shapes = require "shapes"
+local shading = require "shading"
+local textures = require "textures"
 
 resources.dofile "utils/basic.lua"
 

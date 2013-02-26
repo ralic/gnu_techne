@@ -13,14 +13,14 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-resources = require "resources"
-graphics = require "graphics"
-dynamics = require "dynamics"
-primitives = require "primitives"
-joints = require "joints"
-bodies = require "bodies"
-physics = require "physics"
-units = require "units"
+local resources = require "resources"
+local graphics = require "graphics"
+local dynamics = require "dynamics"
+local primitives = require "primitives"
+local joints = require "joints"
+local bodies = require "bodies"
+local physics = require "physics"
+local units = require "units"
 
 resources.dofile "utils/basic.lua"
 

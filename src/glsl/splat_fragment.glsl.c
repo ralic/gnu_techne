@@ -45,6 +45,6 @@ void main()
                                     factor * texel,
                                     tau), rho);
 
-    //vec4(detail[0], 1.0);
+    /* fragment = vec4(factor * texel, 1.0); */
     //fragment = vec4(vec3(C), 1.0);
 }

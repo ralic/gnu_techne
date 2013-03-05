@@ -60,7 +60,7 @@ typedef union {
 -(void) declare: (int) n privateUniforms: (const char **)names;
 -(void) add: (const int) n sourceStrings: (const char **) strings
         for: (t_Enumerated)stage;
--(void) addSource: (const char *) source for: (t_Enumerated)stage;
+-(void) addSourceString: (const char *) source for: (t_Enumerated)stage;
 -(void) link;
 
 @end

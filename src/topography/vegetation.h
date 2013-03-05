@@ -14,24 +14,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _VEGETATION_H_
+#define _VEGETATION_H_
+
 #include <lua.h>
-#include <lauxlib.h>
+#include "shader.h"
 
-#include "techne.h"
-#include "atmosphere.h"
-#include "elevation.h"
-#include "splat.h"
-#include "vegetation.h"
-#include "grass.h"
-#include "barren.h"
+@interface Vegetation: Shader {
+@public
+    double separation;
 
-int luaopen_topography_core (lua_State *L)
-{
-    Class classes[] = {[Elevation class], [Splat class], [Atmosphere class],
-                       [Vegetation class], [Grass class], [Barren class],
-                       NULL};
-
-    t_exportnodes (L, classes);
-
-    return 1;
+    struct {
+        unsigned int base, colors, power, references, weights;
+    } locations;
 }
+
+-(int) _get_separation;
+-(void) _set_separation;
+-(void) update;
+
+@end
+
+#endif

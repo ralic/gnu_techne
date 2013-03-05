@@ -1,73 +1,65 @@
-layout(points) in;
-layout(line_strip, max_vertices = 100) out;
-   
-uniform vec3 colors[N];
-               
-uniform grass_debug {               
-    bool debug;
+uniform Grass_parameters {
+    float bias, segments, stiffness, height, width;
 };
-               
-in cluster_attributes {
-    vec3 center, normal;
-    float size;
-    int counts[N];
-} cluster[1];
 
-out vec3 color;
+vec2 rand(void);
 
-uvec2 next;
-
-vec2 rand(void)
+void Grass_main (mat4 M, mat4 P, vec3 c, vec3 n, vec3 s, vec3 t, float r, float d)
 {
-    const uvec2 a = uvec2(1103515245u, 1013904223u);
-    const uvec2 c = uvec2(12345u, 1u);
-    next = (next * a + c) & uvec2(2147483647, 4294967295);
-    return vec2 (next) / vec2(1073741824.0, 2147483648.0) - 1.0;
-}
+    const float pi = 3.1415926535;
+    const float pi_2 = 1.5707963268;
+    mat4 PM;
+    vec4 p;
+    vec2 u;
+    float psi, cospsi, sinpsi, l, h, theta, k, x, y, z;
+    int i, n_s;
 
-void main()
-{
-    mat4 mvp;
-    vec3 n, s, t, c;
-    float r;
-    int i, j;
+    l = height * d;
+    h = 0.5 * width * d;
     
-    mvp = projection * modelview;
-    r = cluster[0].size;
-    c = cluster[0].center;
-    n = cluster[0].normal;
+    u = rand();
+    psi = u.x * pi;
+    cospsi = cos(psi); sinpsi = sin(psi);
+    theta = 0.01;
     
-    if (n.z < 1.0) {
-        s = normalize(vec3(n.y, -n.x, 0));
-        t = cross (s, n);
-    } else {
-        s = vec3(1, 0, 0);
-        t = vec3(0, 1, 0);
-    }
+    z = min((M * vec4 (c, 1)).z, -bias);
+    n_s = int(max(-bias * segments / z, 1));
+    k = stiffness * l * l;
+    
+    p = vec4(c + r * u.x * s + r * u.y * t, 1);
+    PM = P * M;
+    
+    for (i = 0, x = y = 0 ; i < n_s ; i += 1) {
+        float A, D, l_i, phi;
 
-    next = floatBitsToUint (c.xy);
+        l_i = l - i * l / n_s;
+        A = l_i * l_i / k;
+        D = 1 - 4 / 2.42 * A * (pi_2 - theta - A);
+        phi = (1 - sqrt(D)) / (2 / 2.42 * A);
 
-    for (i = 0 ; i < N ; i += 1) {
-        for (j = 0 ; j < cluster[0].counts[i] ; j += 1) {
-            vec4 c_0;
-            vec2 z;
-
-            z = rand();
-            c_0 = vec4(c + r * z.x * s + r * z.y * t, 1);
-            
-            color = colors[i];
-            gl_Position = mvp * c_0;
-            gl_PrimitiveID = gl_PrimitiveIDIn;
-            EmitVertex();
-
-            z = (z + 1) * vec2(3.1415926, 0.3 * 3.1415926 / 2.0);
-            gl_Position = mvp * (c_0 + 0.02 * vec4(cos(z.x) * sin(z.y),
-                                                   sin(z.x) * sin(z.y),
-                                                   cos(z.y), 0));
-            gl_PrimitiveID = gl_PrimitiveIDIn;
-            EmitVertex();
-
-            EndPrimitive();
+        if (phi > pi_2) {
+            phi = pi - phi;
         }
+        
+        theta += pi_2 - theta - phi;
+        
+        gl_Position = PM * (p + vec4(x * cospsi - h * sinpsi,
+                                    x * sinpsi + h * cospsi,
+                                    y, 0));
+        EmitVertex();
+
+        gl_Position = PM * (p + vec4(x * cospsi + h * sinpsi,
+                                    x * sinpsi - h * cospsi,
+                                    y, 0));
+        EmitVertex();
+
+        x += l / n_s * cos(phi);
+        y += l / n_s * sin(phi);
     }
+    
+    gl_Position = PM * (p + vec4(x * cospsi, x * sinpsi, y, 0));
+    EmitVertex();
+
+    gl_PrimitiveID = gl_PrimitiveIDIn;
+    EndPrimitive();
 }

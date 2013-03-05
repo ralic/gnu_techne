@@ -281,8 +281,8 @@ static void calculate_sky_color(double azimuth, double elevation,
         
         [shader initWithHandle: &handle];
         [shader declare: 1 privateUniforms: private];
-	[shader addSource: glsl_textured_vertex for: T_VERTEX_STAGE];
-	[shader addSource: glsl_textured_fragment for: T_FRAGMENT_STAGE];
+	[shader addSourceString: glsl_textured_vertex for: T_VERTEX_STAGE];
+	[shader addSourceString: glsl_textured_fragment for: T_FRAGMENT_STAGE];
 	[shader link];
     } else {
         t_pushuserdata(_L, 1, handle);

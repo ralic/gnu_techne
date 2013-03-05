@@ -555,7 +555,7 @@ int t_add_global_block (const char *name, const char *declaration)
     glDeleteShader(shader);
 }
 
--(void) addSource: (const char *) source for: (t_Enumerated)stage
+-(void) addSourceString: (const char *) source for: (t_Enumerated)stage
 {
     [self add: 1 sourceStrings: &source for: stage];
 }
@@ -934,6 +934,12 @@ int t_add_global_block (const char *name, const char *declaration)
         free(self->uniforms);
     }
 
+    self->name = 0;    
+    self->uniforms_n = 0;
+    self->blocks_n = 0;
+    
+    /* Release the reference to the mold. */
+    
     luaL_unref (_L, LUA_REGISTRYINDEX, self->reference);
 }
 

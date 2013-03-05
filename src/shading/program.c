@@ -67,21 +67,21 @@
     lua_rawgeti (_L, 3, 1);
     if (lua_type (_L, -1) == LUA_TSTRING) {
 	source = lua_tostring(_L, -1);
-	[self addSource: source for: T_VERTEX_STAGE];
+	[self addSourceString: source for: T_VERTEX_STAGE];
     }
     lua_pop(_L, 1);
 
     lua_rawgeti (_L, 3, 2);
     if (lua_type (_L, -1) == LUA_TSTRING) {
 	source = lua_tostring(_L, -1);
-	[self addSource: source for: T_GEOMETRY_STAGE];
+	[self addSourceString: source for: T_GEOMETRY_STAGE];
     }
     lua_pop(_L, 1);
 
     lua_rawgeti (_L, 3, 3);
     if (lua_type (_L, -1) == LUA_TSTRING) {
 	source = lua_tostring(_L, -1);
-	[self addSource: source for: T_FRAGMENT_STAGE];
+	[self addSourceString: source for: T_FRAGMENT_STAGE];
     }
     lua_pop(_L, 1);
 

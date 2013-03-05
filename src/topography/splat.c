@@ -231,7 +231,7 @@
         char *header;
         ShaderMold *shader;
         
-#include "glsl/splat_common.h"	
+#include "glsl/color.h"	
 #include "glsl/splat_vertex.h"	
 #include "glsl/splat_fragment.h"	
 
@@ -241,8 +241,8 @@
         
         [shader initWithHandle: NULL];
         [shader declare: 8 privateUniforms: private];
-	[shader addSource: glsl_splat_vertex for: T_VERTEX_STAGE];
-	[shader add: 3 sourceStrings: (const GLchar *[3]){header, glsl_splat_common, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
+	[shader addSourceString: glsl_splat_vertex for: T_VERTEX_STAGE];
+	[shader add: 3 sourceStrings: (const GLchar *[3]){header, glsl_color, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
 	[shader link];
 
         [self load];

@@ -30,7 +30,7 @@ static struct {
     double density, bias, threshold;
 } parameters;
 
-static int total, current, coarse, fine;
+static int total, current, coarse, fine, saturated;
 
 static void prepare_buffer () {
     glBufferData (GL_ARRAY_BUFFER, SEED_BUFFER_SIZE * SEED_SIZE,
@@ -70,7 +70,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         }
     } else {
         float z, r;
-        long int k;
+        long int l, m;
         int i, n;
 
         /* { */
@@ -93,16 +93,19 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
          * versa).  We can therefore transform the coordinates of the
          * a vertex through a pairing function and use the result as a
          * unique seed for the RNG. */
-        
-        k = (long int)(0.5 * (b_0[0] + b_0[1]) * (b_0[0] + b_0[1] + 1) + b_0[1]);
-        srand48(k);
 
+        l = b_0[0] + b_1[0];
+        m = b_0[1] + b_1[1];
+        srand48((((l + m) * (l + m + 1)) >> 1) + m);
+
+        /* fprintf(stderr, "%d\n", (((l + m) * (l + m + 1)) >> 1) + m); */
+        
         z = fmin((z_0 + z_1 + z_a) / 3.0, -parameters.bias);
-        n = (int)(parameters.bias * parameters.density / z / z);
+        n = (int)(-parameters.bias * parameters.density / z);
         r = sqrt(1.0 / n);
-
-        assert (n <= parameters.bias * parameters.density);
         
+        assert (n <= parameters.density);
+
         for (i = 0 ; i < n ; i += 1) {
             double r_1, r_2, sqrtr_1, k[3];
             float c[3];
@@ -134,7 +137,11 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             current += 1;            
             total += 1;
         }
-
+        
+        if (z == -parameters.bias) {
+            saturated += 1;
+        }
+        
         fine += 1;
     }
 }
@@ -202,11 +209,11 @@ void seed_vegetation(roam_Context *new, double density, double bias,
     roam_Tileset *tiles;
     int i, j;
     
-    current = coarse = fine = total = 0;
+    current = coarse = fine = total = saturated = 0;
     context = new;
     parameters.density = density;
     parameters.bias = bias;
-    parameters.threshold = -sqrt(bias * density);
+    parameters.threshold = -bias * density;
     tiles = &context->tileset;
     
     t_copy_modelview (modelview);
@@ -231,5 +238,6 @@ void seed_vegetation(roam_Context *new, double density, double bias,
 	}
     }
 
-    _TRACE ("Seeds: %d, Coarse: %d, Fine %d\n", total, coarse, fine);
+    /* if (fine > 0) abort(); */
+    /* _TRACE ("Horizon: %g, Seeds: %d, Coarse: %d, Fine %d, Saturated: (%d triangles, %.1f%% of seeds)\n", parameters.threshold, total, coarse, fine, saturated, 100 * saturated * density / total); */
 }

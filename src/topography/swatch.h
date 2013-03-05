@@ -14,24 +14,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _SWATCH_H_
+#define _SWATCH_H_
+
 #include <lua.h>
-#include <lauxlib.h>
+#include "graphic.h"
 
-#include "techne.h"
-#include "atmosphere.h"
-#include "elevation.h"
-#include "splat.h"
-#include "vegetation.h"
-#include "grass.h"
-#include "barren.h"
-
-int luaopen_topography_core (lua_State *L)
-{
-    Class classes[] = {[Elevation class], [Splat class], [Atmosphere class],
-                       [Vegetation class], [Grass class], [Barren class],
-                       NULL};
-
-    t_exportnodes (L, classes);
-
-    return 1;
+@interface Swatch: Graphic {
+@public
+    float values[3], weights[3];
+    int swatch;
 }
+
+-(const char *)implementation;
+-(void) update;
+-(void) assign: (int)i;
+
+-(int) _get_reference;
+-(void) _set_reference;
+
+@end
+
+#endif

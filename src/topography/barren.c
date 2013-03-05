@@ -14,24 +14,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
+
 #include <lua.h>
 #include <lauxlib.h>
 
+#include "gl.h"
+
 #include "techne.h"
-#include "atmosphere.h"
-#include "elevation.h"
-#include "splat.h"
-#include "vegetation.h"
-#include "grass.h"
 #include "barren.h"
 
-int luaopen_topography_core (lua_State *L)
-{
-    Class classes[] = {[Elevation class], [Splat class], [Atmosphere class],
-                       [Vegetation class], [Grass class], [Barren class],
-                       NULL};
+@implementation Barren
 
-    t_exportnodes (L, classes);
-
-    return 1;
-}
+@end

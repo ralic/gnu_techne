@@ -18,22 +18,10 @@
 #define _GRASS_H_
 
 #include <lua.h>
-#include "shader.h"
+#include "swatch.h"
 
-typedef struct {
-    float color[3], values[6];
-} grass_Pigment;
-
-@interface Grass: Shader {
+@interface Grass: Swatch {
 @public
-    double separation;
-
-    grass_Pigment *pigments;
-    int pigments_n;
-
-    struct {
-        unsigned int base, colors, power, references, weights;
-    } locations;
 }
 
 @end

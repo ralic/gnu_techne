@@ -61,7 +61,7 @@ void main()
         t = vec3(0, 1, 0);
     }
 
-    srand(floatBitsToUint (c.xy) + gl_InvocationID);
+    srand(floatBitsToUint (c.xy) * gl_InvocationID);
 
 #define EXPAND_CLUSTER(FUNCTION, i)                                     \
     if (i == argmin) {                                                  \

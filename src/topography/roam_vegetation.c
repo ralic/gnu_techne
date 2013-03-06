@@ -30,19 +30,19 @@ static struct {
     double density, bias, threshold;
 } parameters;
 
-static int total, current, coarse, fine, saturated;
+static int total, current, blades, fine;
 
 static void prepare_buffer () {
     glBufferData (GL_ARRAY_BUFFER, SEED_BUFFER_SIZE * SEED_SIZE,
                   NULL, GL_STREAM_DRAW);
     buffer = glMapBuffer (GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-    current = 0;
 }
 
 static void flush_buffer () {
     assert(glUnmapBuffer(GL_ARRAY_BUFFER));
     glDrawArrays (GL_POINTS, 0, current);
     buffer = NULL;
+    current = 0;
 }
 
 static void seed_triangle(float *a, float *b_0, float *b_1,
@@ -65,8 +65,6 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             
             seed_triangle(b_c, a, b_0, z_c, z_a, z_0, level + 1);
             seed_triangle(b_c, b_1, a, z_c, z_1, z_a, level + 1);
-
-            coarse += 1;
         }
     } else {
         float z, r;
@@ -124,6 +122,11 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             c[1] = k[0] * a[1] + k[1] * b_0[1] + k[2] * b_1[1];
             c[2] = k[0] * a[2] + k[1] * b_0[2] + k[2] * b_1[2];
 
+            if (!buffer) {
+                assert(current == 0);
+                prepare_buffer();
+            }
+
             if (current == SEED_BUFFER_SIZE) {
                 flush_buffer ();
                 prepare_buffer();
@@ -136,10 +139,6 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
             current += 1;            
             total += 1;
-        }
-        
-        if (z == -parameters.bias) {
-            saturated += 1;
         }
         
         fine += 1;
@@ -209,7 +208,7 @@ void seed_vegetation(roam_Context *new, double density, double bias,
     roam_Tileset *tiles;
     int i, j;
     
-    current = coarse = fine = total = saturated = 0;
+    current = fine = total = 0;
     context = new;
     parameters.density = density;
     parameters.bias = bias;
@@ -225,8 +224,6 @@ void seed_vegetation(roam_Context *new, double density, double bias,
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {
 	    int k = i * tiles->size[1] + j;
 
-            prepare_buffer();
-            
             glUniform2f(_lo, j, i);
             glBindTexture(GL_TEXTURE_2D, tiles->imagery[k]);
             glPointSize(1);
@@ -234,10 +231,12 @@ void seed_vegetation(roam_Context *new, double density, double bias,
 	    seed_subtree(context->roots[k][0]);
 	    seed_subtree(context->roots[k][1]);
 
-            flush_buffer ();
+            if (current > 0) {
+                flush_buffer ();
+            }
 	}
     }
 
     /* if (fine > 0) abort(); */
-    /* _TRACE ("Horizon: %g, Seeds: %d, Coarse: %d, Fine %d, Saturated: (%d triangles, %.1f%% of seeds)\n", parameters.threshold, total, coarse, fine, saturated, 100 * saturated * density / total); */
+    /* _TRACE ("Horizon: %g, Seeds: %d, Fine: %d\n", parameters.threshold, total, fine); */
 }

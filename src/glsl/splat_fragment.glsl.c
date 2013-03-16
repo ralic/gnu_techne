@@ -46,5 +46,5 @@ void main()
                                     tau), rho);
 
     /* fragment = vec4(factor * texel, 1.0); */
-    //fragment = vec4(vec3(C), 1.0);
+    /* fragment = vec4(vec3(texture2D(base, uv)), 1.0); */
 }

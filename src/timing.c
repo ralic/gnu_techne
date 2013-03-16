@@ -73,7 +73,7 @@ long long int t_get_cpu_time ()
 #else
     struct timespec time;
 
-    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &time);
+    clock_gettime (CLOCK_MONOTONIC, &time);
 
     return (long long int)time.tv_sec * 1000000000 + time.tv_nsec;
 #endif

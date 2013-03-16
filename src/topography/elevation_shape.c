@@ -26,7 +26,6 @@
 -(void) init
 {
     Elevation *mold;
-    int l;
 
     /* Make a reference to the mold to make sure it's not
      * collected. */
@@ -46,12 +45,6 @@
     /* Create the vertex buffer. */
 
     glGenBuffers(1, &self->buffer);
-    l = 9 * self->context->target * sizeof(float);
-    
-    glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
-    glBufferData (GL_ARRAY_BUFFER, l, NULL, GL_STREAM_DRAW);
-
-    self->vertices = malloc(l);
 }
 
 -(void) free
@@ -91,18 +84,7 @@
 
 -(void) _set_target
 {
-    int l;
-
     self->context->target = lua_tonumber (_L, 3);
-
-    /* Update the vertex buffer size. */
-
-    l = 9 * self->context->target * sizeof(float);
-
-    glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
-    glBufferData (GL_ARRAY_BUFFER, l, NULL, GL_STREAM_DRAW);
-
-    self->vertices = realloc(self->vertices, l);
 }
 
 -(int) _get_optimize
@@ -120,6 +102,7 @@
 -(void) draw: (int)frame
 {
     roam_Tileset *tiles;
+    float *vert;
     int i, j, l;
     
     tiles = &self->context->tileset;
@@ -139,16 +122,18 @@
     if (self->optimize) {
         optimize_geometry(self->context, frame);
     }
-    
-    draw_geometry(self->context, self->vertices, self->ranges);
 
-    /* Update the vertex buffer object. */
-    
     l = 9 * self->context->target * sizeof(float);
+    
+    /* Update the vertex buffer object. */
     
     glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
     glBufferData (GL_ARRAY_BUFFER, l, NULL, GL_STREAM_DRAW);
-    glBufferData (GL_ARRAY_BUFFER, l, self->vertices, GL_STREAM_DRAW);
+    vert = glMapBuffer (GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    
+    draw_geometry(self->context, vert, self->ranges);
+
+    assert(glUnmapBuffer(GL_ARRAY_BUFFER));
 
     /* Prepare to draw. */
     

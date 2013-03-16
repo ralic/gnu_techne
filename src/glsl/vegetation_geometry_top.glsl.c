@@ -1,5 +1,5 @@
 layout(points, invocations = 32) in;
-layout(triangle_strip, max_vertices = 15) out;
+layout(triangle_strip, max_vertices = 18) out;
 
 uniform sampler2D base, foo;
 uniform vec3 references[N], weights[N];
@@ -53,7 +53,7 @@ void main()
 
     /* ... */
     
-    if (n.z < 1.0) {
+    if (any(greaterThan(n.xy, vec2(0)))) {
         s = normalize(vec3(n.y, -n.x, 0));
         t = cross (s, n);
     } else {

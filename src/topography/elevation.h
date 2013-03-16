@@ -50,7 +50,6 @@
     } locations;
 
     unsigned int buffer;
-    float *vertices;
     int reference, optimize, *ranges;
 }
 

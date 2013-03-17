@@ -1,4 +1,4 @@
-layout(vertices = 3) out;
+layout(vertices = 1) out;
 
 in seed_attributes {
     vec3 position, color;
@@ -7,7 +7,7 @@ in seed_attributes {
 
 out plant_attributes {
     vec3 position;
-} plant[3];
+} plant[1];
 
 patch out vec3 color;
 patch out int index;

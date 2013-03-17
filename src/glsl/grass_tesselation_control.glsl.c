@@ -6,7 +6,7 @@ void Grass_control()
     float z, n;
 
     p = seed[0].position;
-    z = min((projection * modelview * vec4(p, 1)).z, -bias);
+    z = min((modelview * vec4(p, 1)).z, -bias);
     n = -bias * density / z;
     
     gl_TessLevelOuter[0] = n;

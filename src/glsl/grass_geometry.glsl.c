@@ -8,7 +8,7 @@ void Grass_main (mat4 M, mat4 P, vec3 c, vec3 n, vec3 s, vec3 t, float r, float 
 {
     const float pi = 3.1415926535;
     const float pi_2 = 1.5707963268;
-    const int n_s = 4;
+    const int n_s = 2;
     const vec4 sc = vec4 (0.625, 0.625, 1, 1);
     
     mat4 PM;
@@ -31,7 +31,7 @@ void Grass_main (mat4 M, mat4 P, vec3 c, vec3 n, vec3 s, vec3 t, float r, float 
     /* l_d = 1-1; */
     /* l_d = gl_InvocationID == 0 ? 4 : 8; */
     /* l_d = z < 0 ? 4 : 1; */
-    k = (1 + 0.1 * u.x) * l * l;
+    k = (2 + 0.1 * u.x) * l * l;
 
     p = vec4(c + r * u.x * s + r * u.y * t, 1);
     PM = P * M;

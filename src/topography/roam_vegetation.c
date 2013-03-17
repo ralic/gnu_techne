@@ -48,7 +48,7 @@ static void flush_buffer () {
 static void seed_triangle(float *a, float *b_0, float *b_1,
                           float z_a, float z_0, float z_1, int level)
 {    
-    if (level < TREE_HEIGHT - 1) {
+    if (level < TREE_HEIGHT - VEGETATION_LEVEL_BIAS - 1) {
         float b_c[3], z_c;
     
         b_c[0] = 0.5 * (b_0[0] + b_1[0]);
@@ -90,7 +90,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         
         assert (n <= parameters.density);
 
-        for (i = 0 ; i < n ; i += 1) {
+        for (i = 0 ; i < n << VEGETATION_LEVEL_BIAS ; i += 1) {
             double r_1, r_2, sqrtr_1, k[3];
             float c[3];
             char *p;
@@ -207,7 +207,7 @@ void seed_vegetation(roam_Context *new, double density, double bias,
     context = new;
     parameters.density = density;
     parameters.bias = bias;
-    parameters.threshold = -bias * density;
+    parameters.threshold = -parameters.bias * parameters.density;
     tiles = &context->tileset;
     
     t_copy_modelview (modelview);

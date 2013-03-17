@@ -523,6 +523,10 @@ int t_add_global_block (const char *name, const char *declaration)
 	shader = glCreateShader(GL_GEOMETRY_SHADER);break;
     case T_FRAGMENT_STAGE:
 	shader = glCreateShader(GL_FRAGMENT_SHADER);break;
+    case T_TESSELATION_CONTROL_STAGE:
+	shader = glCreateShader(GL_TESS_CONTROL_SHADER);break;
+    case T_TESSELATION_EVALUATION_STAGE:
+	shader = glCreateShader(GL_TESS_EVALUATION_SHADER);break;
     default:
 	assert(0);
     }
@@ -656,6 +660,8 @@ int t_add_global_block (const char *name, const char *declaration)
 		case GL_VERTEX_SHADER: type = "Vertex"; break;
 		case GL_FRAGMENT_SHADER: type = "Fragment"; break;
 		case GL_GEOMETRY_SHADER: type = "Geometry"; break;
+		case GL_TESS_CONTROL_SHADER: type = "Tesselation control"; break;
+		case GL_TESS_EVALUATION_SHADER: type = "Tesselation evaluation"; break;
 		default:assert(0);
 		}
 	    

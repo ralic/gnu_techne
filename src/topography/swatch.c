@@ -109,7 +109,7 @@
                  1, self->weights);
 }
 
--(const char *)implementation
+-(const char **)implementation
 {
     return NULL;
 }

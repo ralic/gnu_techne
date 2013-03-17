@@ -38,6 +38,8 @@ typedef enum {
     T_VERTEX_STAGE = 0,
     T_GEOMETRY_STAGE = 1,
     T_FRAGMENT_STAGE = 2,
+    T_TESSELATION_CONTROL_STAGE = 3,
+    T_TESSELATION_EVALUATION_STAGE = 4,
 } t_Enumerated;
 
 lua_State *_L;

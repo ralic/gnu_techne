@@ -26,7 +26,7 @@
     int swatch;
 }
 
--(const char *)implementation;
+-(const char **)implementation;
 -(void) update;
 -(void) assign: (int)i;
 

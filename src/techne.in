@@ -25,9 +25,9 @@ for arg in "$@"; do
 done
 
 if [ "$debug" -eq 1 -a -n "$commands" ]; then
-    echo -e "$commands" | gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne ${args[*]}
+    echo -e "$commands" | gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts ${args[*]}
 elif [ "$debug" -eq 1 ]; then
-    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne ${args[*]}
+    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts ${args[*]}
 else
     ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts "${args[@]}"
 fi

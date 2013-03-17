@@ -24,13 +24,22 @@
 #include "techne.h"
 #include "grass.h"
 
+static const char *sources[2];
+
 @implementation Grass
 
--(const char *)implementation
++(void)initialize
 {
-#include "glsl/grass_geometry.h"
+#include "glsl/grass_tesselation_control.h"
+#include "glsl/grass_tesselation_evaluation.h"
 
-    return glsl_grass_geometry;
+    sources[0] = glsl_grass_tesselation_control;
+    sources[1] = glsl_grass_tesselation_evaluation;
+}
+
+-(const char **)implementation
+{
+    return sources;
 }
 
 @end

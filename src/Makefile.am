@@ -16,11 +16,13 @@ bin_SCRIPTS = techne
 BUILT_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h			\
 		glsl/layout_vertex.h glsl/textured_fragment.h		\
 		glsl/splat_vertex.h glsl/splat_fragment.h		\
-		glsl/color.h glsl/rand.h glsl/vegetation_geometry_top.h	\
-		glsl/vegetation_geometry_bottom.h			\
+		glsl/color.h glsl/rand.h \
+		glsl/vegetation_tesselation_control_header.h		\
+		glsl/vegetation_tesselation_evaluation_header.h		\
 		glsl/vegetation_vertex.h glsl/vegetation_fragment.h	\
-		glsl/grass_geometry.h glsl/transform_block.h 		\
-		glsl/preamble.h gl.h glx.h
+		glsl/grass_tesselation_control.h \
+		glsl/grass_tesselation_evaluation.h \
+		glsl/transform_block.h glsl/preamble.h gl.h glx.h
 SUFFIXES = .glsl.c
 $(BUILT_SOURCES): glsl/stringify
 .glsl.c.h: glsl/stringify

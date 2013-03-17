@@ -1,7 +1,7 @@
-in vec4 color;
+in vec3 shade;
 out vec4 fragment;
 
 void main()
 {
-    fragment = color;
+    fragment = vec4(shade, 1);
 }

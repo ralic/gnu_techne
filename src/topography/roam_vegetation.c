@@ -23,6 +23,13 @@
 #include "techne.h"
 #include "roam.h"
 
+#define should_seed(z_a, z_0, z_1)              \
+    (z_a < 0 && z_a > parameters.threshold) ||  \
+    (z_0 < 0 && z_0 > parameters.threshold) ||  \
+    (z_1 < 0 && z_1 > parameters.threshold) ||  \
+    z_a * z_0 < 0 ||                            \
+    z_0 * z_1 < 0
+
 static roam_Context *context;
 static float modelview[16], normal[3];
 static char *buffer;
@@ -40,7 +47,7 @@ static void prepare_buffer () {
 
 static void flush_buffer () {
     assert(glUnmapBuffer(GL_ARRAY_BUFFER));
-    glDrawArrays (GL_POINTS, 0, current);
+    glDrawArraysInstanced (GL_PATCHES, 0, current, 32);
     buffer = NULL;
     current = 0;
 }
@@ -59,10 +66,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
         /* _TRACE ("%f\n", fabs(z_c - 0.5 * (z_0 + z_1))); */
             
-        if ((z_a < 0 || z_0 < 0 || z_1 < 0) &&
-            (z_a > parameters.threshold ||
-             z_0 > parameters.threshold ||
-             z_1 > parameters.threshold)) {
+        if (should_seed(z_a, z_0, z_1)) {
             seed_triangle(b_c, a, b_0, z_c, z_a, z_0, level + 1);
             seed_triangle(b_c, b_1, a, z_c, z_1, z_a, level + 1);
         }
@@ -165,11 +169,7 @@ static void seed_subtree(roam_Triangle *n)
             modelview[10] * b_1[2] +
             modelview[14];
 
-        if ((z_a < 0 || z_0 < 0 || z_1 < 0) &&
-            (z_a > parameters.threshold ||
-             z_0 > parameters.threshold ||
-             z_1 > parameters.threshold)) {
-
+        if (should_seed(z_a, z_0, z_1)) {
             if(!is_leaf(n)) {
                 seed_subtree(n->children[0]);
                 seed_subtree(n->children[1]);
@@ -212,6 +212,8 @@ void seed_vegetation(roam_Context *new, double density, double bias,
     
     t_copy_modelview (modelview);
 
+    glPatchParameteri(GL_PATCH_VERTICES, 1);
+    
     glUniform1f(_ls, ldexpf(1, -tiles->depth));
     glActiveTexture(GL_TEXTURE0);
 

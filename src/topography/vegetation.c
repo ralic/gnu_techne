@@ -66,8 +66,8 @@
 #include "glsl/color.h"
 #include "glsl/rand.h"
 #include "glsl/vegetation_vertex.h"
-#include "glsl/vegetation_geometry_top.h"
-#include "glsl/vegetation_geometry_bottom.h"
+#include "glsl/vegetation_tesselation_control_header.h"
+#include "glsl/vegetation_tesselation_evaluation_header.h"
 #include "glsl/vegetation_fragment.h"
 
     /* Update the swatch nodes. */
@@ -89,23 +89,28 @@
         
     [shader initWithHandle: NULL];
     [shader declare: 6 privateUniforms: private];
-    [shader add: 2 sourceStrings: (const GLchar *[2]){header, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
-    [shader add: 2 sourceStrings: (const GLchar *[2]){glsl_rand, glsl_color} for: T_GEOMETRY_STAGE];
+    [shader add: 4 sourceStrings: (const GLchar *[4]){header, glsl_rand, glsl_color, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
 
     {
-        const char *pieces[2 * m + 3];
+        const char *control[2 * m + 3], *evaluation[2 * m + 3];
         int i, j;
 
         for (child = self->down, i = 0, j = 0;
              child;
              child = child->right) {
             if ([child isKindOf: [Swatch class]]) {
-                const char *source = [(Swatch *)child implementation];
+                const char **sources = [(Swatch *)child implementation];
 
-                if (source) {
-                    [shader addSourceString: source for: T_GEOMETRY_STAGE];
-                    asprintf((char **)&pieces[j], "void %s_main (mat4, mat4, vec3, vec3, vec3, vec3, float, float);\n", [child name]);
-                    asprintf((char **)&pieces[m + j + 2], "EXPAND_CLUSTER (%s_main, %d)\n", [child name], i);
+                if (sources) {
+                    control[j + 1] = sources[0];
+                    asprintf((char **)&control[m + j + 2],
+                             "if (seed[0].index == %d) %s_control();\n",
+                             i, [child name]);
+
+                    evaluation[j + 1] = sources[1];
+                    asprintf((char **)&evaluation[m + j + 2],
+                             "if (index == %d) %s_evaluation();\n",
+                             i, [child name]);
 
                     j += 1;
                 }
@@ -114,11 +119,19 @@
             }
         }
 
-        pieces[m] = header;
-        pieces[m + 1] = glsl_vegetation_geometry_top;
-        pieces[2 * m + 2] = glsl_vegetation_geometry_bottom;
+        control[0] = glsl_vegetation_tesselation_control_header;
+        control[m + 1] = "void main() {    if(gl_InvocationID == 0) {gl_TessLevelOuter[0] = 0;    gl_TessLevelOuter[1] = 0;    gl_TessLevelOuter[2] = 0;    gl_TessLevelInner[0] = 0;    gl_TessLevelInner[1] = 0;}\n";
+        control[2 * m + 2] = "}";
 
-        [shader add: 2 * m + 3 sourceStrings: pieces for: T_GEOMETRY_STAGE];
+        [shader add: 2 * m + 3 sourceStrings: control
+                for: T_TESSELATION_CONTROL_STAGE];
+
+        evaluation[0] = glsl_vegetation_tesselation_evaluation_header;
+        evaluation[m + 1] = "void main() {\n";
+        evaluation[2 * m + 2] = "}";
+
+        [shader add: 2 * m + 3 sourceStrings: evaluation
+                for: T_TESSELATION_EVALUATION_STAGE];
     }
     
     [shader addSourceString: glsl_vegetation_fragment for: T_FRAGMENT_STAGE];

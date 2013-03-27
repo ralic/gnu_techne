@@ -23,12 +23,15 @@
 @interface Swatch: Graphic {
 @public
     float values[3], weights[3];
-    int swatch;
+    unsigned int program;
+
+    struct {
+        unsigned int references, weights;
+    } locations;
 }
 
 -(const char **)implementation;
--(void) update;
--(void) assign: (int)i;
+-(void) updateWithProgram: (unsigned int)name andIndex: (int)i;
 
 -(int) _get_reference;
 -(void) _set_reference;

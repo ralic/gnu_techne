@@ -22,6 +22,7 @@
 
 @interface Grass: Swatch {
 @public
+    unsigned int deflections;
 }
 
 @end

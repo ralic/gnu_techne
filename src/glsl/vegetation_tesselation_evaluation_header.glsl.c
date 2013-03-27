@@ -1,4 +1,4 @@
-layout(triangles, equal_spacing) in;
+layout(isolines, equal_spacing) in;
 
 in plant_attributes {
     vec3 position;
@@ -8,3 +8,4 @@ patch in vec3 color;
 patch in int index;
 
 out vec3 shade;
+out int _index;

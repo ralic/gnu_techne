@@ -27,8 +27,6 @@ void main()
     float D, r;
     int i, argmin;
 
-    srand(uvec2(gl_InstanceID));
-    
     /* ... */
 
     n = normals;
@@ -40,6 +38,8 @@ void main()
         t = vec3(0, 1, 0);
     }
 
+    srand(floatBitsToUint (positions.xy * (gl_InstanceID + 1)));
+    
     r = sizes;
     u = rand();
     c = positions + r * u.x * s + r * u.y * t;

@@ -9,6 +9,5 @@ void Grass_evaluation()
     p = plant[0].position;
     c = gl_TessCoord.xyz;
  
-    gl_Position = projection * modelview * vec4(p + p_0 * c.x + p_1 * c.y + p_2 * c.z, 1);
-    shade = color;
+    gl_Position = vec4(p + p_1 * c.x /* + p_1 * c.y + p_2 * c.z */, 1);
 }

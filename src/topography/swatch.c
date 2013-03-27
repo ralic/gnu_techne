@@ -82,31 +82,22 @@
             assert (parent->name);
             
             glUseProgram (parent->name);
-            glUniform3fv(parent->locations.references + self->swatch,
-                         1, self->values);
-
-            glUniform3fv(parent->locations.weights + self->swatch,
-                         1, self->weights);
+            glUniform3fv(self->locations.references, 1, self->values);
+            glUniform3fv(self->locations.weights, 1, self->weights);
         }
     }
 }
 
--(void) assign: (int)i
+-(void) updateWithProgram: (unsigned int)name andIndex: (int)i
 {
-    self->swatch = i;
-}
-
--(void) update
-{
-    Vegetation *parent = (Vegetation *)self->up;
-
-    /* The palette node should already have called glUseProgram(). */
+    self->program = name;
+    self->locations.references = glGetUniformLocation (name, "references") + i;
+    self->locations.weights = glGetUniformLocation (name, "weights") + i;
     
-    glUniform3fv(parent->locations.references + self->swatch,
-                 1, self->values);
+    glUseProgram(name);
 
-    glUniform3fv(parent->locations.weights + self->swatch,
-                 1, self->weights);
+    glUniform3fv(self->locations.references, 1, self->values);
+    glUniform3fv(self->locations.weights, 1, self->weights);
 }
 
 -(const char **)implementation

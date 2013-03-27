@@ -37,9 +37,49 @@ static const char *sources[2];
     sources[1] = glsl_grass_tesselation_evaluation;
 }
 
+-(void)init
+{
+    float texels[16 * 16 * 2];
+    int i, j;
+
+    for (i = 0 ; i < 16 ; i += 1) {
+        for (j = 0 ; j < 16 ; j += 1) {
+            texels[2 * ((16 * i) + j) + 0] = (i / 16.0) * (j / 16.0);
+            texels[2 * ((16 * i) + j) + 1] = (j / 16.0);
+        }
+    }
+    
+    [super init];
+
+    glGenTextures (1, &self->deflections);
+    glBindTexture(GL_TEXTURE_RECTANGLE, self->deflections);
+    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RG, 16, 16, 0, GL_RG,
+                 GL_FLOAT, texels);
+    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+}
+
+-(void)free
+{
+    glDeleteTextures (1, &self->deflections);
+
+    [super free];
+}
+    
 -(const char **)implementation
 {
     return sources;
+}
+
+-(void) updateWithProgram: (unsigned int)name andIndex: (int)i
+{
+    unsigned int l;
+    
+    l = glGetUniformLocation (name, "deflections");
+    
+    [super updateWithProgram: name andIndex: i];
 }
 
 @end

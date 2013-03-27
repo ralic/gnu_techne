@@ -22,15 +22,33 @@
 #include "techne.h"
 #include "graphic.h"
 
+typedef enum {
+    SHADER_BASIC_UNIFORM,
+    SHADER_SAMPLER_UNIFORM
+} shader_UniformKind;
+
+typedef enum {
+    SHADER_PUBLIC_UNIFORM,
+    SHADER_PROTECTED_UNIFORM,
+    SHADER_PRIVATE_UNIFORM
+} shader_UniformMode;
+
 typedef struct {
-    int kind;
+    shader_UniformKind kind;
+    shader_UniformMode mode;
+} shader_Any;
+
+typedef struct {
+    shader_UniformKind kind;
+    shader_UniformMode mode;
     
     unsigned int block;
     int type, size, offset, arraystride, matrixstride;
 } shader_Basic;
 
 typedef struct {
-    int kind;
+    shader_UniformKind kind;
+    shader_UniformMode mode;
     
     unsigned int texture, unit;
     int location, reference;
@@ -38,8 +56,7 @@ typedef struct {
 } shader_Sampler; 
 
 typedef union {
-    int kind;
-    
+    shader_Any any;
     shader_Basic basic;
     shader_Sampler sampler;
 } shader_Uniform;
@@ -54,13 +71,17 @@ typedef union {
 
     const char **private;
     int private_n;
+    int unit_0;                   /* The base texture unit for public
+                                   * samplers. */
 }
 
 -(void) initWithHandle: (ShaderMold **)handle;
--(void) declare: (int) n privateUniforms: (const char **)names;
+-(void) declare: (int) n privateUniforms: (const char **) names;
 -(void) add: (const int) n sourceStrings: (const char **) strings
         for: (t_Enumerated)stage;
 -(void) addSourceString: (const char *) source for: (t_Enumerated)stage;
+-(void) addSourceFragement: (const char *) fragment for: (t_Enumerated)stage;
+-(void) finishAssemblingSourceFor: (t_Enumerated)stage;
 -(void) link;
 
 @end

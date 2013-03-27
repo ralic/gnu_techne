@@ -82,7 +82,7 @@ elevation = topography.elevation {
 
    tiles = {
       {
-         {heights, nil, array.nuchars(base), {375, 0}}
+         {heights, nil, array.nuchars(base), {200, 0}}
       }
    }
 }
@@ -106,8 +106,6 @@ root = primitives.root {
       index = -1,
 
       splat = topography.splat {
-         tag = "elevation",
-
          albedo = 1.5,
          separation = 1,
 
@@ -117,27 +115,37 @@ root = primitives.root {
          },
 
          shape = elevation.shape {
+            tag = "elevation",
             target = 15000,
                                  }
-                       },
-                             },
+                               },
+                                 },
 
-   grass = topography.grass {
-      tag = "seeds",
-
-      amplification = 10,
-      separation = 1,
-
-      palette = {
-         {{1, 1, 0}, {0, .99, .99}},
-         {{1, 0.4, 0}, {120 / 360, .99, .99}},
-      },
+   grass = shading.wireframe {
+      enabled = false,
       
-      shape = elevation.seeds {
-         bias = 3,
-         density = 1000,
-                                   }
-                            },
+      topography.vegetation {
+         tag = "vegetation",
+
+         foo = red,
+         separation = 1,
+
+         topography.grass {
+            reference = {0, .99, .99}
+                          },
+
+         topography.barren {
+            reference = {120 / 360, .99, .99},
+                           },
+         
+         shape = elevation.seeds {
+            tag = "seeds",
+            
+            bias = 2,
+            density = 60,
+                                 }
+                            }
+                                },
 
    cameraman = options.timed and primitives.timer {
       period = 2,

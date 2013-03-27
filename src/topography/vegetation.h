@@ -23,9 +23,10 @@
 @interface Vegetation: Shader {
 @public
     double separation;
+    int swatches;
 
     struct {
-        unsigned int base, colors, power, references, weights;
+        unsigned int colors, power;
     } locations;
 }
 

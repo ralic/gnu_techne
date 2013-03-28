@@ -9,5 +9,5 @@ out plant_attributes {
     vec3 position;
 } plant[1];
 
-patch out vec3 color;
-patch out int index;
+patch out vec3 color_tc;
+patch out int index_tc;

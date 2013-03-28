@@ -70,6 +70,7 @@
 #include "glsl/vegetation_vertex.h"
 #include "glsl/vegetation_tesselation_control_header.h"
 #include "glsl/vegetation_tesselation_evaluation_header.h"
+#include "glsl/vegetation_geometry_header.h"
 #include "glsl/vegetation_fragment.h"
 
     /* Update the swatch nodes. */
@@ -82,35 +83,7 @@
         
     [shader initWithHandle: NULL];
     [shader declare: 6 privateUniforms: private];
-    [shader add: 4 sourceStrings: (const GLchar *[4]){header, glsl_rand, glsl_color, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
-
-    {
-        const char *foo = "layout(lines) in;"
-            "layout(triangle_strip, max_vertices = 4) out;"
-            "in vec3 shade[2];"
-            "in int _index[2];"
-            "out vec3 _shade;"
-            "void main() {"
-            "/*switch (_index[0]) {"
-            "case 2:*/"
-            "mat4 PM = projection * modelview;"
-            "_shade = shade[0];"
-            "gl_Position = PM * (gl_in[0].gl_Position + vec4(0, 0.005, 0, 0));"
-            "EmitVertex();"
-            "gl_Position = PM * (gl_in[0].gl_Position - vec4(0, 0.005, 0, 0));"
-            "EmitVertex();"
-            "gl_Position = PM * (gl_in[1].gl_Position + vec4(0, 0.005, 0, 0));"
-            "EmitVertex();"
-            "gl_Position = PM * (gl_in[1].gl_Position - vec4(0, 0.005, 0, 0));"
-            "EmitVertex();"
-            "gl_PrimitiveID = gl_PrimitiveIDIn;"
-            "EndPrimitive();"
-            "/*break;"
-            "}*/"
-            "}";
-        
-        [shader addSourceString: foo for: T_GEOMETRY_STAGE];
-    }
+    [shader add: 4 sourceStrings: (const char *[4]){header, glsl_rand, glsl_color, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
 
     /* Assemble the tessellation source. */
     /* Start with the global headers. */
@@ -120,6 +93,9 @@
         
     [shader addSourceFragement: glsl_vegetation_tesselation_evaluation_header
                            for: T_TESSELATION_EVALUATION_STAGE];
+        
+    [shader addSourceFragement: glsl_vegetation_geometry_header
+                           for: T_GEOMETRY_STAGE];
 
     /* Add per-swatch headers. */
     
@@ -127,25 +103,54 @@
          child;
          child = child->right) {
         if ([child isKindOf: [Swatch class]]) {
-            const char **sources = [(Swatch *)child implementation];
-
-            if (sources) {
-                [shader addSourceFragement: sources[0]
+            Swatch *swatch = (Swatch *)child;
+            char *s;
+            
+            if (swatch->sources[T_TESSELATION_CONTROL_STAGE]) {
+                [shader add:2 sourceStrings: (const char *[2]){
+                        glsl_vegetation_tesselation_control_header,
+                            swatch->sources[T_TESSELATION_CONTROL_STAGE]}
                                        for: T_TESSELATION_CONTROL_STAGE];
-                    
-                [shader addSourceFragement: sources[1]
+                
+                asprintf(&s, "void %s_control();\n", [child name]);
+                
+                [shader addSourceFragement: s for: T_TESSELATION_CONTROL_STAGE];
+            }
+
+            if (swatch->sources[T_TESSELATION_EVALUATION_STAGE]) {
+                [shader add:2 sourceStrings: (const char *[2]){
+                        glsl_vegetation_tesselation_evaluation_header,
+                            swatch->sources[T_TESSELATION_EVALUATION_STAGE]}
                                        for: T_TESSELATION_EVALUATION_STAGE];
+                
+                asprintf(&s, "void %s_evaluation();\n", [child name]);
+                
+                [shader addSourceFragement: s for: T_TESSELATION_EVALUATION_STAGE];
+            }
+
+            if (swatch->sources[T_GEOMETRY_STAGE]) {
+                [shader add:2 sourceStrings: (const char *[2]){
+                        glsl_vegetation_geometry_header,
+                            swatch->sources[T_GEOMETRY_STAGE]}
+                                       for: T_GEOMETRY_STAGE];
+                
+                asprintf(&s, "void %s_geometry();\n", [child name]);
+                
+                [shader addSourceFragement: s for: T_GEOMETRY_STAGE];
             }
         }
     }
 
     /* Start the main functions. */
     
-    [shader addSourceFragement: "void main() { switch(seed[0].index) {\n" 
+    [shader addSourceFragement: "void main() { color_tc = seed[0].color; index_tc = seed[0].index; switch(seed[0].index) {\n" 
                            for: T_TESSELATION_CONTROL_STAGE];
         
-    [shader addSourceFragement: "void main() {shade = color; _index = index; switch(index) {\n"
+    [shader addSourceFragement: "void main() {color_te = color_tc; index_te = index_tc; switch(index_tc) {\n"
                            for: T_TESSELATION_EVALUATION_STAGE];
+        
+    [shader addSourceFragement: "void main() {color_g = color_te[0]; switch(index_te[0]) {\n"
+                           for: T_GEOMETRY_STAGE];
 
     /* Add switching code. */
     
@@ -157,7 +162,7 @@
 
             if ([child isMemberOf: [Barren class]]) {
                 asprintf(&s,
-                         "case %d: if(gl_InvocationID == 0) gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = gl_TessLevelInner[0] = gl_TessLevelInner[1] = 0;break;\n",
+                         "case %d: if(gl_InvocationID == 0) gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = 0;break;\n",
                          i);
                 
                 [shader addSourceFragement: s
@@ -173,22 +178,30 @@
                 asprintf(&s,
                          "case %d: %s_evaluation();break;\n",
                          i, [child name]);
-                [shader addSourceFragement: s
-                 for: T_TESSELATION_EVALUATION_STAGE];
+                [shader addSourceFragement: s for: T_TESSELATION_EVALUATION_STAGE];
+                
+                asprintf(&s,
+                         "case %d: %s_geometry();break;\n",
+                         i, [child name]);
+                [shader addSourceFragement: s for: T_GEOMETRY_STAGE];
             }
                 
             i += 1;
         }
     }
+
+    [shader addSourceFragement: "}}" 
+                           for: T_TESSELATION_CONTROL_STAGE];
         
     [shader addSourceFragement: "}}"
                            for: T_TESSELATION_EVALUATION_STAGE];
 
     [shader addSourceFragement: "}}" 
-                           for: T_TESSELATION_CONTROL_STAGE];
+                           for: T_GEOMETRY_STAGE];
 
     [shader finishAssemblingSourceFor: T_TESSELATION_CONTROL_STAGE];
     [shader finishAssemblingSourceFor: T_TESSELATION_EVALUATION_STAGE];
+    [shader finishAssemblingSourceFor: T_GEOMETRY_STAGE];
 
     /* Add the fragment source. */
     

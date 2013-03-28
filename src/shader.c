@@ -52,7 +52,7 @@ static int globals_n;
 struct {
     int length;
     const char **fragments;
-} pipelines[5];
+} pipelines[T_STAGES_N];
 
 #define TYPE_ERROR()							\
     {									\
@@ -763,7 +763,7 @@ int t_add_global_block (const char *name, const char *declaration)
 
             uniform = &self->uniforms[i];
             uniform->any.mode = SHADER_PUBLIC_UNIFORM;
-            
+
             if (is_sampler(types[i])) {
                 char buffer[l];
 
@@ -1072,9 +1072,9 @@ int t_add_global_block (const char *name, const char *declaration)
         uniform = &self->uniforms[i];
 
         if (uniform->any.mode != SHADER_PRIVATE_UNIFORM) {
-            if (uniforms->any.kind == SHADER_BASIC_UNIFORM) {
+            if (uniform->any.kind == SHADER_BASIC_UNIFORM) {
 #define DO_VALUE UPDATE_VALUE
-                DO_UNIFORM (&self->uniforms[i].basic);
+                DO_UNIFORM (&uniform->basic);
 #undef DO_VALUE
             
                 return 1;

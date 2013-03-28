@@ -11,11 +11,6 @@ void Grass_control()
     
     gl_TessLevelOuter[0] = n;
     gl_TessLevelOuter[1] = 1.0;
-    /* gl_TessLevelOuter[2] = 1.0; */
-    /* gl_TessLevelInner[0] = 1.0; */
-    /* gl_TessLevelInner[1] = 1.0; */
     
     plant[gl_InvocationID].position = p;
-    color = seed[0].color;
-    index = seed[0].index;        
 }

@@ -40,6 +40,7 @@ typedef enum {
     T_FRAGMENT_STAGE,
     T_TESSELATION_CONTROL_STAGE,
     T_TESSELATION_EVALUATION_STAGE,
+    T_STAGES_N,
 } t_Enumerated;
 
 lua_State *_L;

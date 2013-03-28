@@ -99,7 +99,9 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         j = (int)fmin(32 * n_0, 31);
         n = (int)ceil(n_0);
         r = sqrt(1.0 / n);
-        
+
+        assert (z < -1.8);
+        if (n > 1) _TRACE ("%d\n", n);
         /* printf ("%f\n", parameters.bias * parameters.density / -z); */
         /* assert (j <= 31); */
         /* assert (n <= parameters.density); */

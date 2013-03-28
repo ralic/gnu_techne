@@ -23,6 +23,7 @@
 @interface Swatch: Graphic {
 @public
     float values[3], weights[3];
+    const char * sources[T_STAGES_N];
     unsigned int program;
 
     struct {
@@ -30,7 +31,6 @@
     } locations;
 }
 
--(const char **)implementation;
 -(void) updateWithProgram: (unsigned int)name andIndex: (int)i;
 
 -(int) _get_reference;

@@ -100,10 +100,5 @@
     glUniform3fv(self->locations.weights, 1, self->weights);
 }
 
--(const char **)implementation
-{
-    return NULL;
-}
-
 @end
 

@@ -24,24 +24,22 @@
 #include "techne.h"
 #include "grass.h"
 
-static const char *sources[2];
-
 @implementation Grass
-
-+(void)initialize
-{
-#include "glsl/grass_tesselation_control.h"
-#include "glsl/grass_tesselation_evaluation.h"
-
-    sources[0] = glsl_grass_tesselation_control;
-    sources[1] = glsl_grass_tesselation_evaluation;
-}
 
 -(void)init
 {
     float texels[16 * 16 * 2];
     int i, j;
 
+#include "glsl/grass_tesselation_control.h"
+#include "glsl/grass_tesselation_evaluation.h"
+#include "glsl/grass_geometry.h"
+
+    self->sources[T_TESSELATION_CONTROL_STAGE] = glsl_grass_tesselation_control;
+    self->sources[T_TESSELATION_EVALUATION_STAGE] = glsl_grass_tesselation_evaluation;
+    self->sources[T_GEOMETRY_STAGE] = glsl_grass_geometry;
+
+    /* Calculate the deflection texture. */
     for (i = 0 ; i < 16 ; i += 1) {
         for (j = 0 ; j < 16 ; j += 1) {
             texels[2 * ((16 * i) + j) + 0] = (i / 16.0) * (j / 16.0);

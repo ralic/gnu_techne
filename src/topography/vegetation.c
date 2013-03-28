@@ -107,7 +107,7 @@
             char *s;
             
             if (swatch->sources[T_TESSELATION_CONTROL_STAGE]) {
-                [shader add:2 sourceStrings: (const char *[2]){
+                [shader add: 2 sourceStrings: (const char *[2]){
                         glsl_vegetation_tesselation_control_header,
                             swatch->sources[T_TESSELATION_CONTROL_STAGE]}
                                        for: T_TESSELATION_CONTROL_STAGE];
@@ -118,7 +118,7 @@
             }
 
             if (swatch->sources[T_TESSELATION_EVALUATION_STAGE]) {
-                [shader add:2 sourceStrings: (const char *[2]){
+                [shader add: 2 sourceStrings: (const char *[2]){
                         glsl_vegetation_tesselation_evaluation_header,
                             swatch->sources[T_TESSELATION_EVALUATION_STAGE]}
                                        for: T_TESSELATION_EVALUATION_STAGE];
@@ -143,13 +143,13 @@
 
     /* Start the main functions. */
     
-    [shader addSourceFragement: "void main() { color_tc = seed[0].color; index_tc = seed[0].index; switch(seed[0].index) {\n" 
+    [shader addSourceFragement: "void main() { color_tc = color[0]; index_tc = index[0]; switch(index[0]) {\n" 
                            for: T_TESSELATION_CONTROL_STAGE];
         
-    [shader addSourceFragement: "void main() {color_te = color_tc; index_te = index_tc; switch(index_tc) {\n"
+    [shader addSourceFragement: "void main() { color_te = color_tc; index_te = index_tc; switch(index_tc) {\n"
                            for: T_TESSELATION_EVALUATION_STAGE];
         
-    [shader addSourceFragement: "void main() {color_g = color_te[0]; switch(index_te[0]) {\n"
+    [shader addSourceFragement: "void main() { color_g = color_te[0]; switch(index_te[0]) {\n"
                            for: T_GEOMETRY_STAGE];
 
     /* Add switching code. */

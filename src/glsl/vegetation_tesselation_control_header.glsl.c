@@ -1,13 +1,9 @@
 layout(vertices = 1) out;
 
-in seed_attributes {
-    vec3 position, color;
-    int index;
-} seed[1];
+in vec3 position[], color[];
+in int index[];
 
-out plant_attributes {
-    vec3 position;
-} plant[1];
+out vec3 position_tc[];
 
 patch out vec3 color_tc;
 patch out int index_tc;

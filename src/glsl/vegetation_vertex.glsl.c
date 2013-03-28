@@ -2,10 +2,8 @@ in vec3 positions;
 in vec3 normals;
 in float sizes;
 
-out seed_attributes {
-    vec3 position, color;
-    int index;
-} seed;
+out vec3 position, color;
+out int index;
 
 uniform sampler2D base, foo;
 uniform vec3 references[N], weights[N];
@@ -63,7 +61,7 @@ void main()
     
     /* ... */
     
-    seed.position = c;
-    seed.index = argmin;
-    seed.color = 2 * (texel.r + texel.g + texel.b) / 3.0 * vec3(0.742141, 0.681327, 0.588593) * texture2D(foo, uv / 0.0025).rgb;
+    position = c;
+    index = argmin;
+    color = 2 * (texel.r + texel.g + texel.b) / 3.0 * vec3(0.742141, 0.681327, 0.588593) * texture2D(foo, uv / 0.0025).rgb;
 }

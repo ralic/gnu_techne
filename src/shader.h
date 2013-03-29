@@ -20,6 +20,7 @@
 #include <lua.h>
 #include "gl.h"
 #include "techne.h"
+#include "texture.h"
 #include "graphic.h"
 
 typedef enum {
@@ -95,6 +96,7 @@ typedef union {
 
 -(void)load;
 -(void)unload;
+-(void) setSamplerUniform: (const char *)name to: (unsigned int)texture;
 
 @end
 

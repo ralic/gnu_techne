@@ -59,8 +59,8 @@
 -(void) update
 {
     Node *child;
-    const char *private[6] = {"base", "offset", "scale", "power",
-                              "references", "weights"};
+    const char *private[] = {"base", "offset", "scale", "power",
+                             "references", "weights"};
     char *header;
     ShaderMold *shader;
     int i;
@@ -97,7 +97,8 @@
     [shader addSourceFragement: glsl_vegetation_geometry_header
                            for: T_GEOMETRY_STAGE];
 
-    /* Add per-swatch headers. */
+    /* Add per-swatch sources to the program as well as function
+     * declarations. */
     
     for (child = self->down;
          child;
@@ -210,25 +211,21 @@
 
     [self load];
 
-    /* Get uniform locations. */
-        
-    i = glGetUniformLocation (self->name, "base");
-    self->locations.power = glGetUniformLocation (self->name, "power");
-
-    /* Vegetation-related uniforms will remain constant as the
-     * program is only used by this node so all uniform values can
-     * be loaded beforehand. */
+    /* Initialize uniforms. */
 
     glUseProgram(self->name);
         
+    i = glGetUniformLocation (self->name, "base");
     glUniform1i(i, 0);
+
+    self->locations.power = glGetUniformLocation (self->name, "power");
     glUniform1f(self->locations.power, self->separation);
 
     /* Request all the children to update their uniforms. */
     
     for (child = self->down, i = 0 ; child ; child = child->right) {
         if ([child isKindOf: [Swatch class]]) {
-            [(Swatch *)child updateWithProgram: self->name andIndex: i];
+            [(Swatch *)child updateWithIndex: i];
             i += 1;
         }
     }

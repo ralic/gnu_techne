@@ -22,6 +22,7 @@
 #include "gl.h"
 
 #include "techne.h"
+#include "shader.h"
 #include "grass.h"
 
 @implementation Grass
@@ -40,6 +41,7 @@
     self->sources[T_GEOMETRY_STAGE] = glsl_grass_geometry;
 
     /* Calculate the deflection texture. */
+
     for (i = 0 ; i < 16 ; i += 1) {
         for (j = 0 ; j < 16 ; j += 1) {
             texels[2 * ((16 * i) + j) + 0] = (i / 16.0) * (j / 16.0);
@@ -47,16 +49,22 @@
         }
     }
     
+    /* for (i = 0 ; i < 16 ; i += 1) { */
+    /*     for (j = 0 ; j < 16 ; j += 1) { */
+    /*         _TRACE ("%f, %f\n", texels[2 * ((16 * i) + j) + 0], texels[2 * ((16 * i) + j) + 1]); */
+    /*     } */
+    /* } */
+    
     [super init];
 
     glGenTextures (1, &self->deflections);
-    glBindTexture(GL_TEXTURE_RECTANGLE, self->deflections);
-    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RG, 16, 16, 0, GL_RG,
+    glBindTexture(GL_TEXTURE_2D, self->deflections);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, 16, 16, 0, GL_RG,
                  GL_FLOAT, texels);
-    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 -(void)free
@@ -65,19 +73,11 @@
 
     [super free];
 }
-    
--(const char **)implementation
-{
-    return sources;
-}
 
--(void) updateWithProgram: (unsigned int)name andIndex: (int)i
+-(void) updateWithIndex: (int)i
 {
-    unsigned int l;
-    
-    l = glGetUniformLocation (name, "deflections");
-    
-    [super updateWithProgram: name andIndex: i];
+    [super updateWithIndex: i];
+    [(Shader *)self->up setSamplerUniform: "deflections" to: self->deflections];
 }
 
 @end

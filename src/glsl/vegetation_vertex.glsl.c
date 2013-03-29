@@ -3,7 +3,7 @@ in vec3 normals;
 in float sizes;
 
 out vec3 position, color;
-out int index;
+flat out int index;
 
 uniform sampler2D base, foo;
 uniform vec3 references[N], weights[N];
@@ -20,8 +20,7 @@ vec2 rand(void);
 void main()
 {
     vec3 texel, hsv, c, n, s, t;
-    vec2 uv;
-    vec2 u;
+    vec2 uv, u;
     float D, r;
     int i, argmin;
 

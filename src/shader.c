@@ -727,7 +727,7 @@ int t_add_global_block (const char *name, const char *declaration)
     glGetProgramiv (self->name, GL_ACTIVE_UNIFORMS, &u);
     
     if (u > 0) {
-	unsigned int list[u], skiplist[u];
+	unsigned int list[u], privates[u];
 	int types[u], sizes[u], offsets[u];
 	int arraystrides[u], matrixstrides[u], indices[u];
 	int i, l;
@@ -737,7 +737,7 @@ int t_add_global_block (const char *name, const char *declaration)
 
         glGetProgramiv(self->name, GL_ACTIVE_UNIFORM_MAX_LENGTH, &l);
         glGetUniformIndices (self->name, self->private_n, self->private,
-                             skiplist);
+                             privates);
 
 	for (i = 0 ; i < u ; i += 1) {
 	    list[i] = i;
@@ -786,6 +786,9 @@ int t_add_global_block (const char *name, const char *declaration)
                 case GL_SAMPLER_3D:
                     uniform->sampler.target = GL_TEXTURE_3D;
                     break;
+                case GL_SAMPLER_2D_RECT:
+                    uniform->sampler.target = GL_TEXTURE_RECTANGLE;
+                    break;
                 default:
                     t_print_error("Unknown sampler type.\n");
                     abort();
@@ -807,7 +810,7 @@ int t_add_global_block (const char *name, const char *declaration)
         for (i = 0, self->unit_0 = 0 ; i < self->private_n ; i += 1) {
             shader_Uniform *uniform;
 
-            j = skiplist[i];
+            j = privates[i];
             
             uniform = &uniforms[j];
             uniform->any.mode = SHADER_PRIVATE_UNIFORM;
@@ -1048,6 +1051,21 @@ int t_add_global_block (const char *name, const char *declaration)
     return [super _get_];
 }
 
+-(void) setSamplerUniform: (const char *)name to: (unsigned int)texture
+{
+    shader_Sampler *sampler;
+    unsigned int i;
+    
+    glGetUniformIndices(self->name, 1, &name, &i);
+    sampler = &self->uniforms[i].sampler;
+
+    assert (sampler->kind == SHADER_SAMPLER_UNIFORM);
+    luaL_unref(_L, LUA_REGISTRYINDEX, sampler->reference);
+    
+    sampler->texture = texture;
+    sampler->reference = LUA_REFNIL;
+}
+
 -(int) _set_
 {
     const char *k;
@@ -1093,7 +1111,7 @@ int t_add_global_block (const char *name, const char *declaration)
                     sampler->texture = texture->name;
                 }
                 
-                sampler->reference = luaL_ref (_L, LUA_REGISTRYINDEX);            
+                sampler->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
 
                 return 1;
             }

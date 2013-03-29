@@ -1,9 +1,12 @@
+uniform sampler2D deflections;
+
 void Grass_evaluation()
 {
-    vec3 c, p;
+    vec3 p;
+    vec2 uv;
     
     p = position_tc[0];
-    c = gl_TessCoord.xyz;
+    uv = vec2(gl_TessCoord.x, 1);
  
-    position_te = vec4(p + vec3(0, 0, 0.2) * c.x, 1);
+    position_te = vec4(p + 0.2 * vec3(0, texture(deflections, uv).rg), 1);
 }

@@ -1,7 +1,7 @@
 layout(vertices = 1) out;
 
 in vec3 position[], color[];
-in int index[];
+flat in int index[];
 
 out vec3 position_tc[];
 

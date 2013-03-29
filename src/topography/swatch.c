@@ -88,17 +88,26 @@
     }
 }
 
--(void) updateWithProgram: (unsigned int)name andIndex: (int)i
+-(void) meetParent: (Shader *)parent
 {
-    self->program = name;
+    if (![parent isKindOf: [Vegetation class]]) {
+	t_print_warning("%s node has no vegetation parent.\n",
+			[self name]);
+	
+	return;
+    }
+}
+
+-(void) updateWithIndex: (int)i
+{
+    unsigned int name;
+    
+    name = ((Shader *)self->up)->name;
     self->locations.references = glGetUniformLocation (name, "references") + i;
     self->locations.weights = glGetUniformLocation (name, "weights") + i;
-    
-    glUseProgram(name);
 
     glUniform3fv(self->locations.references, 1, self->values);
     glUniform3fv(self->locations.weights, 1, self->weights);
 }
 
 @end
-

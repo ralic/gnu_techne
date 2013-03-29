@@ -244,9 +244,9 @@
 	[shader addSourceString: glsl_splat_vertex for: T_VERTEX_STAGE];
 	[shader add: 3 sourceStrings: (const GLchar *[3]){header, glsl_color, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
 	[shader link];
+        _TRACE ("!! %d\n", shader->unit_0);
 
         [self load];
-
         /* Get uniform locations. */
         
         self->locations.base = glGetUniformLocation (self->name, "base");

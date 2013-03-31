@@ -33,10 +33,14 @@ typedef struct {
     int pigments_n;
 
     struct {
-        unsigned int base, detail, power, references, weights, resolutions;
+        unsigned int power, references, weights, resolutions;
         unsigned int turbidity, factor, beta_p;
         unsigned int direction, intensity, beta_r;
     } locations;
+
+    struct {
+        unsigned int base;
+    } units;
 }
 
 -(int) _get_albedo;

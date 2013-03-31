@@ -19,6 +19,7 @@
 
 #include "techne.h"
 #include "roam.h"
+#include "vegetation.h"
 #include "elevation.h"
 
 @implementation ElevationSeeds
@@ -56,6 +57,13 @@
     
     [super meetParent: parent];
     
+    if (![parent isKindOf: [Vegetation class]]) {
+	t_print_warning("%s node has no Vegetation parent.\n",
+			[self name]);
+	
+	return;
+    }
+
     /* Bind the VBOs into the VAO. */
     
     glBindVertexArray(self->name);
@@ -78,6 +86,9 @@
     
     self->locations.scale = glGetUniformLocation(parent->name, "scale");
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
+
+    self->units.base = [(Vegetation *)self->up getUnitForSamplerUniform: "base"];
+    _TRACE ("%d\n", self->units.base);
 }
 
 -(void) draw: (int)frame
@@ -102,7 +113,8 @@
 
     glBindBuffer(GL_ARRAY_BUFFER, self->buffer);
     glBindVertexArray(self->name);
-    
+    glActiveTexture(GL_TEXTURE0 + self->units.base);
+
     seed_vegetation (self->context, self->density, self->bias,
                      self->locations.scale, self->locations.offset);
 

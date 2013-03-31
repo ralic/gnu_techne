@@ -772,6 +772,7 @@ int t_add_global_block (const char *name, const char *declaration)
                 /* Cache the sampler location. */
             
                 glGetActiveUniformName (self->name, list[i], l, NULL, buffer);
+                _TRACE ("%s, %d\n", buffer, sizes[i]);
                 uniform->sampler.location = glGetUniformLocation (self->name, buffer);
 
                 /* Map sampler type to texture target. */
@@ -807,19 +808,14 @@ int t_add_global_block (const char *name, const char *declaration)
 
         /* Take care of private uniforms. */
         
-        for (i = 0, self->unit_0 = 0 ; i < self->private_n ; i += 1) {
+        for (i = 0 ; i < self->private_n ; i += 1) {
             shader_Uniform *uniform;
 
             j = privates[i];
             
             uniform = &uniforms[j];
             uniform->any.mode = SHADER_PRIVATE_UNIFORM;
-
-            if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
-                self->unit_0 += 1;
-            }
         }
-        /* _TRACE ("unit_0: %d\n", self->unit_0); */
     } else {
 	self->uniforms = NULL;
     }
@@ -908,11 +904,10 @@ int t_add_global_block (const char *name, const char *declaration)
         memcpy (self->uniforms, mold->uniforms,
                 mold->uniforms_n * sizeof (shader_Uniform));
 
-        for (i = 0, n = mold->unit_0 ; i < self->uniforms_n ; i += 1) {
+        for (i = 0, n = 0 ; i < self->uniforms_n ; i += 1) {
             uniform = &self->uniforms[i];
 
-            if (uniform->any.kind == SHADER_SAMPLER_UNIFORM &&
-                uniform->any.mode != SHADER_PRIVATE_UNIFORM) {
+            if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
                 uniform->sampler.unit = n;
                 uniform->sampler.texture = 0;
                 uniform->sampler.reference = LUA_REFNIL;
@@ -1051,12 +1046,22 @@ int t_add_global_block (const char *name, const char *declaration)
     return [super _get_];
 }
 
+-(unsigned int) getUnitForSamplerUniform: (const char *)name
+{
+    unsigned int i;
+    
+    glGetUniformIndices(self->name, 1, &name, &i);
+    return self->uniforms[i].sampler.unit;
+}
+
 -(void) setSamplerUniform: (const char *)name to: (unsigned int)texture
 {
     shader_Sampler *sampler;
     unsigned int i;
     
-    glGetUniformIndices(self->name, 1, &name, &i);
+    glGetUniformIndices(self->name, 1, &name, &i);    
+    assert(i != GL_INVALID_INDEX);
+    
     sampler = &self->uniforms[i].sampler;
 
     assert (sampler->kind == SHADER_SAMPLER_UNIFORM);
@@ -1144,15 +1149,16 @@ int t_add_global_block (const char *name, const char *declaration)
     for (i = 0 ; i < self->uniforms_n ; i += 1) {
         uniform = &self->uniforms[i];
             
-        if (uniform->any.kind == SHADER_SAMPLER_UNIFORM &&
-            uniform->any.mode != SHADER_PRIVATE_UNIFORM) {
+        if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
             shader_Sampler *sampler;
 
             sampler = &uniform->sampler;
-        
-            glActiveTexture(GL_TEXTURE0 + sampler->unit);
-            glBindTexture (sampler->target, sampler->texture);
-            glUniform1i (sampler->location, sampler->unit);
+
+            if (sampler->texture > 0) {
+                glActiveTexture(GL_TEXTURE0 + sampler->unit);
+                glBindTexture (sampler->target, sampler->texture);
+                glUniform1i (sampler->location, sampler->unit);
+            }
         }
     }
     

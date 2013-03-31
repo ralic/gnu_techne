@@ -84,6 +84,10 @@
         unsigned int scale, offset;
     } locations;
 
+    struct {
+        unsigned int base;
+    } units;
+
     unsigned int buffer;
     int reference;
 

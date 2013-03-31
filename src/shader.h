@@ -72,8 +72,6 @@ typedef union {
 
     const char **private;
     int private_n;
-    int unit_0;                   /* The base texture unit for public
-                                   * samplers. */
 }
 
 -(void) initWithHandle: (ShaderMold **)handle;
@@ -96,6 +94,7 @@ typedef union {
 
 -(void)load;
 -(void)unload;
+-(unsigned int) getUnitForSamplerUniform: (const char *)name;
 -(void) setSamplerUniform: (const char *)name to: (unsigned int)texture;
 
 @end

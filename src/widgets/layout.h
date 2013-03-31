@@ -59,7 +59,7 @@
 @interface LayoutShader: Shader {
 @public
     Layout *layout;
-    int location, reference_1;
+    int reference_1;
 }
 
 @end

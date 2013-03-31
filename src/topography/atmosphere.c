@@ -268,7 +268,6 @@ static void calculate_sky_color(double azimuth, double elevation,
 #include "glsl/textured_fragment.h"	
 
     const char *private[1] = {"texture"};
-    int i;
 
     [super init];
     
@@ -309,14 +308,10 @@ static void calculate_sky_color(double azimuth, double elevation,
     self->mie = 5e-5;
     self->dirty = 0;
 
+    /* Bind the sky texture to texture sampler. */
+
     glGenTextures(1, &self->skylight);
-
-    /* Bind the sky texture to the first unit. */
-    
-    i = glGetUniformLocation (self->name, "texture");
-
-    glUseProgram (self->name);
-    glUniform1i (i, 0);
+    [self setSamplerUniform: "texture" to: self->skylight];
 
     /* Create the shape node. */
     
@@ -558,9 +553,6 @@ static void calculate_sky_color(double azimuth, double elevation,
     t_pop_modelview ();
 
     /* Bind resources and draw. */
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, self->skylight);    
     
     glUseProgram(self->name);
 

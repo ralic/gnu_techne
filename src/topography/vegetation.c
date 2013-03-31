@@ -214,9 +214,6 @@
     /* Initialize uniforms. */
 
     glUseProgram(self->name);
-        
-    i = glGetUniformLocation (self->name, "base");
-    glUniform1i(i, 0);
 
     self->locations.power = glGetUniformLocation (self->name, "power");
     glUniform1f(self->locations.power, self->separation);

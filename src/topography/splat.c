@@ -244,13 +244,21 @@
 	[shader addSourceString: glsl_splat_vertex for: T_VERTEX_STAGE];
 	[shader add: 3 sourceStrings: (const GLchar *[3]){header, glsl_color, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
 	[shader link];
-        _TRACE ("!! %d\n", shader->unit_0);
 
         [self load];
+
+        self->units.base = [self getUnitForSamplerUniform: "base"];
+    
+        for (i = 0 ; i < self->pigments_n ; i += 1) {
+            char *s;
+            
+            asprintf(&s, "detail[%d]", 0*i);
+            _TRACE ("%s\n", s);
+            [self setSamplerUniform: s to: self->pigments[i].texture];
+        }
+        
         /* Get uniform locations. */
         
-        self->locations.base = glGetUniformLocation (self->name, "base");
-        self->locations.detail = glGetUniformLocation (self->name, "detail");
         self->locations.power = glGetUniformLocation (self->name, "power");
         self->locations.references = glGetUniformLocation (self->name, "references");
         self->locations.weights = glGetUniformLocation (self->name, "weights");
@@ -271,7 +279,6 @@
 
         glUseProgram(self->name);
         
-        glUniform1i(self->locations.base, 0);
         glUniform1f(self->locations.power, self->separation);
 
         for (i = 0 ; i < self->pigments_n ; i += 1) {
@@ -279,11 +286,6 @@
 
             pigment = &self->pigments[i]; 
 
-            /* Detail texture samplers are assigned consecutive
-             * texture units, starting from 1 since 0 is used by the
-             * base texture. */
-            
-            glUniform1i(self->locations.detail + i, i + 1);
             glUniform2fv (self->locations.resolutions + i, 1,
                           &pigment->values[0]);
             glUniform3fv (self->locations.references + i, 1,
@@ -297,7 +299,6 @@
 -(void) draw: (int)frame
 {
     Atmosphere *atmosphere;
-    int i;
 
     atmosphere = [Atmosphere instance];
     
@@ -316,11 +317,6 @@
         glUniform3fv (self->locations.beta_r, 1, atmosphere->rayleigh);
         glUniform1f (self->locations.beta_p, atmosphere->mie);
         glUniform1f (self->locations.turbidity, atmosphere->turbidity);
-    }
-    
-    for (i = 0 ; i < self->pigments_n ; i += 1) {
-        glActiveTexture(GL_TEXTURE1 + i);
-        glBindTexture(GL_TEXTURE_2D, self->pigments[i].texture);
     }
     
     [super draw: frame];

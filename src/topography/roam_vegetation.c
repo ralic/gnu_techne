@@ -205,7 +205,6 @@ void seed_vegetation(roam_Context *new, double density, double bias,
     glPatchParameteri(GL_PATCH_VERTICES, 1);
     
     glUniform1f(_ls, ldexpf(1, -tiles->depth));
-    glActiveTexture(GL_TEXTURE0);
 
     /* glEnable (GL_RASTERIZER_DISCARD); */
     

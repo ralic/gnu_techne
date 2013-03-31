@@ -391,11 +391,7 @@ static ShaderMold *handle;
     }
     
     [self load];
-
-    self->location = glGetUniformLocation (self->name, "texture");
-
-    glUseProgram (self->name);
-    glUniform1i (self->location, 0);
+    [self setSamplerUniform: "texture" to: self->layout->texture];
 }
 
 -(void) free
@@ -412,8 +408,6 @@ static ShaderMold *handle;
     glEnable(GL_BLEND);
     
     glUseProgram (self->name);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture (GL_TEXTURE_2D, self->layout->texture);
     
     [super draw: frame];
 

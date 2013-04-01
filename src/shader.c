@@ -768,11 +768,11 @@ int t_add_global_block (const char *name, const char *declaration)
                 char buffer[l];
 
                 uniform->sampler.kind = SHADER_SAMPLER_UNIFORM;
+                uniform->sampler.size = sizes[i];
                 
                 /* Cache the sampler location. */
             
                 glGetActiveUniformName (self->name, list[i], l, NULL, buffer);
-                _TRACE ("%s, %d\n", buffer, sizes[i]);
                 uniform->sampler.location = glGetUniformLocation (self->name, buffer);
 
                 /* Map sampler type to texture target. */
@@ -809,12 +809,8 @@ int t_add_global_block (const char *name, const char *declaration)
         /* Take care of private uniforms. */
         
         for (i = 0 ; i < self->private_n ; i += 1) {
-            shader_Uniform *uniform;
-
             j = privates[i];
-            
-            uniform = &uniforms[j];
-            uniform->any.mode = SHADER_PRIVATE_UNIFORM;
+            uniforms[j].any.mode = SHADER_PRIVATE_UNIFORM;
         }
     } else {
 	self->uniforms = NULL;
@@ -908,11 +904,22 @@ int t_add_global_block (const char *name, const char *declaration)
             uniform = &self->uniforms[i];
 
             if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
-                uniform->sampler.unit = n;
-                uniform->sampler.texture = 0;
-                uniform->sampler.reference = LUA_REFNIL;
+                shader_Sampler *sampler;
 
-                n += 1;
+                sampler = &uniform->sampler;
+
+                sampler->unit = n;
+                sampler->texture = 0;
+                sampler->reference = LUA_REFNIL;
+
+                if (sampler->size > 1) {
+                    sampler->textures = calloc (sampler->size,
+                                                sizeof(unsigned int));
+                } else {
+                    sampler->textures = NULL;
+                }
+
+                n += sampler->size;
             }
         }
     } else {
@@ -980,10 +987,12 @@ int t_add_global_block (const char *name, const char *declaration)
 
             uniform = &self->uniforms[i];
 
-            if (uniform->any.kind == SHADER_SAMPLER_UNIFORM &&
-                uniform->any.mode != SHADER_PRIVATE_UNIFORM) {
-                luaL_unref(_L, LUA_REGISTRYINDEX,
-                           self->uniforms[i].sampler.reference);
+            if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
+                luaL_unref(_L, LUA_REGISTRYINDEX, uniform->sampler.reference);
+
+                if (uniform->sampler.textures) {
+                    free(uniform->sampler.textures);
+                }
             }
         }
         
@@ -1065,10 +1074,52 @@ int t_add_global_block (const char *name, const char *declaration)
     sampler = &self->uniforms[i].sampler;
 
     assert (sampler->kind == SHADER_SAMPLER_UNIFORM);
+    assert (sampler->size == 1);
+    
     luaL_unref(_L, LUA_REGISTRYINDEX, sampler->reference);
     
     sampler->texture = texture;
     sampler->reference = LUA_REFNIL;
+}
+
+-(void) setSamplerArrayUniform: (const char *)name to: (unsigned int)texture
+{
+    shader_Sampler *sampler;
+    unsigned int i;
+    
+    glGetUniformIndices(self->name, 1, &name, &i);    
+    assert(i != GL_INVALID_INDEX);
+    
+    sampler = &self->uniforms[i].sampler;
+
+    assert (sampler->kind == SHADER_SAMPLER_UNIFORM);
+    assert (sampler->size == 1);
+    
+    luaL_unref(_L, LUA_REGISTRYINDEX, sampler->reference);
+    
+    sampler->texture = texture;
+    sampler->reference = LUA_REFNIL;
+}
+
+-(void) setSamplerUniform: (const char *)name to: (unsigned int)texture
+                  atIndex: (int)j
+{
+    shader_Sampler *sampler;
+    unsigned int i, *textures;
+    
+    glGetUniformIndices(self->name, 1, &name, &i);    
+    assert(i != GL_INVALID_INDEX);
+    
+    sampler = &self->uniforms[i].sampler;
+
+    assert (sampler->kind == SHADER_SAMPLER_UNIFORM);
+    assert (sampler->size > j);
+    
+    luaL_unref(_L, LUA_REGISTRYINDEX, sampler->reference);
+    sampler->reference = LUA_REFNIL;
+
+    textures = sampler->size > 1 ? sampler->textures : &sampler->texture;    
+    textures[j] = texture;
 }
 
 -(int) _set_
@@ -1104,16 +1155,43 @@ int t_add_global_block (const char *name, const char *declaration)
             } else if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
                 Texture *texture;
                 shader_Sampler *sampler;
+                unsigned int *textures;
+                int j, n;
                 
                 sampler = &self->uniforms[i].sampler;
-                texture = t_testtexture(_L, 3, sampler->target);
+                if (sampler->size > 1) {
+                    if (!lua_istable (_L, 3)) {
+                        t_print_error("Sampler array must be set with an array of textures.\n");
+                        abort();
+                    }
+                } else {
+                    /* Wrap the texture in a table to unify handling
+                     * of single and array samplers. */
+
+                    lua_createtable (_L, 1, 0);
+                    lua_insert(_L, -2);
+                    lua_rawseti (_L, -2, 1);
+                }
+
+                luaL_unref (_L, LUA_REGISTRYINDEX, sampler->reference);
+                
+                n = lua_rawlen(_L, 3);
+                textures = sampler->size > 1 ?
+                    sampler->textures : &sampler->texture;
+
+                for (j = 0 ; j < n ; j += 1) {
+                    lua_rawgeti (_L, 3, 1);
+                    texture = t_testtexture(_L, -1, sampler->target);
 
                 /* _TRACE ("%p\n", texture); */
-                if (!texture) {
-                    sampler->texture = 0;
-                } else {
+                    if (!texture) {
+                        textures[j] = 0;
+                    } else {
                     /* _TRACE ("%d\n", texture->name); */
-                    sampler->texture = texture->name;
+                        textures[j] = texture->name;
+                    }
+
+                    lua_pop(_L, 1);
                 }
                 
                 sampler->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
@@ -1129,7 +1207,7 @@ int t_add_global_block (const char *name, const char *declaration)
 -(void) draw: (int)frame
 {
     shader_Uniform *uniform;        
-    int i;
+    int i, j;
 
     /* _TRACE ("%f, %f, %f, %f,\n" */
     /* 	    "%f, %f, %f, %f,\n" */
@@ -1151,13 +1229,26 @@ int t_add_global_block (const char *name, const char *declaration)
             
         if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
             shader_Sampler *sampler;
+            unsigned int *textures;
 
             sampler = &uniform->sampler;
 
-            if (sampler->texture > 0) {
-                glActiveTexture(GL_TEXTURE0 + sampler->unit);
-                glBindTexture (sampler->target, sampler->texture);
-                glUniform1i (sampler->location, sampler->unit);
+            if (sampler->size > 1) {
+                textures = sampler->textures;
+            } else {
+                textures = &sampler->texture;
+            }
+
+            /* Bind all textures associated with the uniform to
+             * consecutive units starting with the assigned base
+             * unit.  */
+            
+            for (j = 0 ; j < sampler->size ; j += 1) {
+                if (textures[j] > 0) {
+                    glActiveTexture(GL_TEXTURE0 + sampler->unit + j);
+                    glBindTexture (sampler->target, textures[j]);
+                    glUniform1i (sampler->location + j, sampler->unit + j);
+                }
             }
         }
     }

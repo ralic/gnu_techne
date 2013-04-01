@@ -250,11 +250,7 @@
         self->units.base = [self getUnitForSamplerUniform: "base"];
     
         for (i = 0 ; i < self->pigments_n ; i += 1) {
-            char *s;
-            
-            asprintf(&s, "detail[%d]", 0*i);
-            _TRACE ("%s\n", s);
-            [self setSamplerUniform: s to: self->pigments[i].texture];
+            [self setSamplerUniform: "detail" to: self->pigments[i].texture atIndex: i];
         }
         
         /* Get uniform locations. */

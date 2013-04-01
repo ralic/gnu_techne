@@ -51,8 +51,8 @@ typedef struct {
     shader_UniformKind kind;
     shader_UniformMode mode;
     
-    unsigned int texture, unit;
-    int location, reference;
+    unsigned int texture, *textures, unit;
+    int location, size, reference;
     GLenum target;
 } shader_Sampler; 
 
@@ -96,6 +96,8 @@ typedef union {
 -(void)unload;
 -(unsigned int) getUnitForSamplerUniform: (const char *)name;
 -(void) setSamplerUniform: (const char *)name to: (unsigned int)texture;
+-(void) setSamplerUniform: (const char *)name to: (unsigned int)texture
+                  atIndex: (int)j;
 
 @end
 

@@ -25,19 +25,19 @@
 
 -(void) init
 {
-    Elevation *mold;
+    Elevation *elevation;
 
-    /* Make a reference to the mold to make sure it's not
+    /* Make a reference to the elevation to make sure it's not
      * collected. */
 
-    mold = t_tonode (_L, -1);
+    elevation = t_tonode (_L, -1);
     self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
     
     [super initWithMode: GL_TRIANGLES];
 
     self->optimize = 1;
     
-    self->context = &mold->context;
+    self->context = &elevation->context;
     self->ranges = (int *)calloc (self->context->tileset.size[0] *
                                   self->context->tileset.size[1],
                                   sizeof (int));
@@ -73,6 +73,7 @@
 
     self->locations.scale = glGetUniformLocation(parent->name, "scale");
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
+    self->units.base = [parent getUnitForSamplerUniform: "base"];
 }
 
 -(int) _get_target
@@ -137,9 +138,10 @@
 
     /* Prepare to draw. */
     
+    glActiveTexture(GL_TEXTURE0 + self->units.base);
+
     glBindVertexArray(self->name);
     glUniform1f(self->locations.scale, ldexpf(1, -tiles->depth));
-    glActiveTexture(GL_TEXTURE0);
     
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {

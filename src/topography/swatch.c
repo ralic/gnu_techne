@@ -18,7 +18,7 @@
 #include <lauxlib.h>
 
 #include "techne.h"
-#include "vegetation.h"
+#include "elevation.h"
 #include "swatch.h"
 
 @implementation Swatch
@@ -33,6 +33,13 @@
         self->values[i] = 1;
         self->weights[i] = 1;
     }
+}
+
+-(void) free
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->reference);
+        
+    [super free];
 }
 
 -(int) _get_reference
@@ -73,41 +80,68 @@
 			
             lua_pop(_L, 1);
         }
+    }
+}
 
-        /* Update the palette's uniform if needed. */
-        
-        if (self->up) {
-            Vegetation *parent = (Vegetation *)self->up;
+-(int) _get_resolution
+{
+    int j;
+    
+    lua_createtable (_L, 2, 0);
 
-            assert (parent->name);
-            
-            glUseProgram (parent->name);
-            glUniform3fv(self->locations.references, 1, self->values);
-            glUniform3fv(self->locations.weights, 1, self->weights);
+    for (j = 0; j < 2 ; j += 1) {
+        lua_pushnumber(_L, self->resolutions[j]);                
+        lua_rawseti(_L, -2, j + 1);
+    }
+
+    return 1;
+}
+
+-(void) _set_resolution
+{
+    int i;
+
+    if (lua_istable (_L, 3)) {
+        for (i = 0 ; i < 2 ; i += 1) {
+            lua_pushinteger (_L, i + 1);
+            lua_gettable (_L, 3);
+
+            self->resolutions[i] = lua_tonumber (_L, -1);
+			
+            lua_pop(_L, 1);
         }
     }
 }
 
+-(int) _get_detail
+{
+    lua_rawgeti(_L, LUA_REGISTRYINDEX, self->reference);
+    
+    return 1;
+}
+
+-(void) _set_detail
+{
+    self->detail = t_testtexture (_L, -1, GL_TEXTURE_2D);
+    luaL_ref(_L, LUA_REGISTRYINDEX);
+}
+
 -(void) meetParent: (Shader *)parent
 {
-    if (![parent isKindOf: [Vegetation class]]) {
-	t_print_warning("%s node has no vegetation parent.\n",
+    if (![parent isKindOf: [Elevation class]]) {
+	t_print_warning("%s node has no Elevation parent.\n",
 			[self name]);
 	
 	return;
     }
 }
 
--(void) updateWithIndex: (int)i
+-(void) addSourceToVegetationShader: (ShaderMold *)shader for: (t_Enumerated)stage
 {
-    unsigned int name;
-    
-    name = ((Shader *)self->up)->name;
-    self->locations.references = glGetUniformLocation (name, "references") + i;
-    self->locations.weights = glGetUniformLocation (name, "weights") + i;
+}
 
-    glUniform3fv(self->locations.references, 1, self->values);
-    glUniform3fv(self->locations.weights, 1, self->weights);
+-(void) configureVegetationShader: (Shader *)shader
+{
 }
 
 @end

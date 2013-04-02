@@ -19,22 +19,25 @@
 
 #include <lua.h>
 #include "graphic.h"
+#include "shader.h"
 
 @interface Swatch: Graphic {
 @public
-    float values[3], weights[3];
+    float values[3], weights[3], resolutions[2];
     const char *sources[T_STAGES_N];
-    unsigned int program;
 
-    struct {
-        unsigned int references, weights;
-    } locations;
+    Texture *detail;
+    int reference;
 }
 
--(void) updateWithIndex: (int)i;
-
+-(void) configureVegetationShader: (Shader *)shader;
+-(void) addSourceToVegetationShader: (ShaderMold *)shader for: (t_Enumerated)stage;
 -(int) _get_reference;
 -(void) _set_reference;
+-(int) _get_resolution;
+-(void) _set_resolution;
+-(int) _get_detail;
+-(void) _set_detail;
 
 @end
 

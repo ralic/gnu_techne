@@ -1244,10 +1244,11 @@ int t_add_global_block (const char *name, const char *declaration)
              * unit.  */
             
             for (j = 0 ; j < sampler->size ; j += 1) {
+                glUniform1i (sampler->location + j, sampler->unit + j);
+                
                 if (textures[j] > 0) {
                     glActiveTexture(GL_TEXTURE0 + sampler->unit + j);
                     glBindTexture (sampler->target, textures[j]);
-                    glUniform1i (sampler->location + j, sampler->unit + j);
                 }
             }
         }

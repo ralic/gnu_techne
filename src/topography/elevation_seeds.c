@@ -26,17 +26,17 @@
 
 -(void) init
 {
-    Elevation *mold;
+    Elevation *elevation;
 
-    /* Make a reference to the mold to make sure it's not
+    /* Make a reference to the elevation to make sure it's not
      * collected. */
 
-    mold = t_tonode (_L, -1);
+    elevation = t_tonode (_L, -1);
     self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
     
     [super initWithMode: GL_POINTS];
 
-    self->context = &mold->context;
+    self->context = &elevation->context;
 
     /* Create the VBO. */
     
@@ -87,8 +87,7 @@
     self->locations.scale = glGetUniformLocation(parent->name, "scale");
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
 
-    self->units.base = [(Vegetation *)self->up getUnitForSamplerUniform: "base"];
-    _TRACE ("%d\n", self->units.base);
+    self->units.base = [parent getUnitForSamplerUniform: "base"];
 }
 
 -(void) draw: (int)frame

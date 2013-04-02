@@ -5,9 +5,10 @@ in float sizes;
 out vec3 position, color;
 flat out int index;
 
-uniform sampler2D base, foo;
+uniform sampler2D base, detail[N];
 uniform vec3 references[N], weights[N];
-uniform float power;
+uniform vec2 resolutions[N];
+uniform float power, factor;
 
 uniform float scale;
 uniform vec2 offset;
@@ -22,7 +23,7 @@ void main()
     vec3 texel, hsv, c, n, s, t;
     vec2 uv, u;
     float D, r;
-    int i, argmin;
+    int i, j;
 
     /* ... */
 
@@ -47,20 +48,20 @@ void main()
     texel = vec3(texture2D(base, uv));
     hsv = rgb_to_hsv(texel);
     
-    for (i = 0, D = 0, argmin = -1 ; i < N ; i += 1) {
+    for (i = 0, D = 0, j = -1 ; i < N ; i += 1) {
         float d;
         
         d = hsv_distance (hsv, references[i], weights[i], power);
 
         if (d > D) {
             D = d;
-            argmin = i;
+            j = i;
         }
     }
     
     /* ... */
     
     position = c;
-    index = argmin;
-    color = 2 * (texel.r + texel.g + texel.b) / 3.0 * vec3(0.742141, 0.681327, 0.588593) * texture2D(foo, uv / 0.0025).rgb;
+    index = j;
+    color = factor * (texel.r + texel.g + texel.b) / 3.0 * texture2D(detail[j], uv / resolutions[j]).rgb;
 }

@@ -23,6 +23,7 @@
 
 #include "techne.h"
 #include "texture.h"
+#include "swatch.h"
 #include "atmosphere.h"
 #include "splat.h"
 
@@ -30,282 +31,98 @@
 
 -(void) init
 {
-    static const char *list[1] = {"palette"};
+    char *header;
+    const char *private[] = {"base", "detail", "offset", "scale",
+                             "power", "factor", "references", "weights",
+                             "resolutions"};
     
-    [super init];
-    [self set: 1 prerequisites: list];
-
-    self->albedo = 1;
-    self->separation = 1;
-    self->pigments_n = 0;   
-    self->pigments = NULL;
-}
-
--(void) free
-{
+    ShaderMold *shader;
+    Node *child;
     int i;
-    
-    /* Free the current resources. */
-	
-    if (self->pigments) {
-        for (i = 0 ; i < self->pigments_n ; i += 1) {
-            luaL_unref (_L, LUA_REGISTRYINDEX, self->pigments[i].reference);
-        }
-        
-        free (self->pigments);
-    }
-        
-    [super free];
-}
-
--(int) _get_albedo
-{
-    lua_pushnumber (_L, self->albedo);
-
-    return 1;
-}
-
--(int) _get_separation
-{
-    lua_pushnumber (_L, self->separation);
-
-    return 1;
-}
-
--(void) _set_albedo
-{
-    self->albedo = lua_tonumber (_L, -1);
-}
-
--(void) _set_separation
-{
-    self->separation = lua_tonumber (_L, -1);
-}
-
--(int) _get_palette
-{
-    int i, j;
-    
-    if (self->pigments_n > 0) {
-        lua_createtable (_L, self->pigments_n, 0);
-
-        for (i = 0; i < self->pigments_n ; i += 1) {
-            splat_Pigment *pigment;
-
-            pigment = &self->pigments[i]; 
-            lua_createtable (_L, 3, 0);
-
-            /* The texture. */
-            
-            lua_rawgeti(_L, LUA_REGISTRYINDEX, pigment->reference);
-            lua_rawseti(_L, -2, 1);
-
-            /* The resolution. */
-            
-            lua_createtable (_L, 2, 0);
-
-            for (j = 0; j < 2 ; j += 1) {
-                lua_pushnumber(_L, pigment->values[j]);
-                lua_rawseti(_L, -2, j + 1);
-            }
-
-            lua_rawseti(_L, -2, 2);
-
-            /* The color. */
-            
-            lua_createtable (_L, 3, 0);
-
-            for (j = 0; j < 3 ; j += 1) {
-                if (pigment->values[j + 5] > 0) {
-                    lua_pushnumber(_L, pigment->values[j + 2]);
-                } else {
-                    lua_pushnil(_L);
-                }
-                
-                lua_rawseti(_L, -2, j + 1);
-            }
-
-            lua_rawseti(_L, -2, 3);            
-            lua_rawseti(_L, -2, i + 1);            
-        }
-    } else {
-        lua_pushnil(_L);
-    }
-    
-    return 1;
-}
-
--(void) _set_palette
-{
-    int i, j, n;
-	
-    n = lua_rawlen (_L, 3);
-
-    if (self->pigments_n == 0) {
-        /* Allocate resources. */
-	    
-        self->pigments_n = n;
-        self->pigments = (splat_Pigment *)calloc (n, sizeof (splat_Pigment));
-    } else {
-        if (self->pigments_n != n) {
-            t_print_error("Once set, the splatting palette size cannot change.\n");
-            abort();
-        }
-
-        /* Free the current resources. */
-	
-        for (i = 0 ; i < self->pigments_n ; i += 1) {
-            luaL_unref (_L, LUA_REGISTRYINDEX, self->pigments[i].reference);
-        }
-    }
-        
-    /* And load all pigments. */
-	    
-    for (j = 0 ; j < self->pigments_n ; j += 1) {
-        lua_rawgeti(_L, 3, j + 1);
-
-        if (!lua_isnil (_L, -1)) {
-            splat_Pigment *pigment;
-            Texture *texture;
-
-            pigment = &self->pigments[j]; 
-
-            /* The detail map pixels. */
-		
-            lua_rawgeti (_L, -1, 1);
-
-            texture = t_testtexture (_L, -1, GL_TEXTURE_2D);
-            
-            if (texture) {
-                pigment->texture = texture->name;
-            } else {
-                pigment->texture = 0;
-            }
-            
-            pigment->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
-		
-            /* The resolution. */
-		
-            lua_rawgeti (_L, -1, 2);
-
-            for (i = 0 ; i < 2 ; i += 1) {
-                lua_pushinteger (_L, i + 1);
-                lua_gettable (_L, -2);
-                pigment->values[i] = lua_tonumber (_L, -1);
-                lua_pop(_L, 1);
-            }
-
-            lua_pop(_L, 1);
-		
-            /* The HSV color target. */
-		
-            lua_rawgeti (_L, -1, 3);
-
-            if (lua_istable (_L, -1)) {
-                for (i = 0 ; i < 3 ; i += 1) {
-                    lua_pushinteger (_L, i + 1);
-                    lua_gettable (_L, -2);
-
-                    if (lua_isnumber(_L, -1)) {
-                        pigment->values[i + 2] = lua_tonumber (_L, -1);
-                        pigment->values[i + 5] = 1;
-                    } else {
-                        pigment->values[i + 2] = 0;
-                        pigment->values[i + 5] = 0;
-                    }			    
-			
-                    lua_pop(_L, 1);
-                }
-            }
-
-            lua_pop(_L, 1);
-        }
-
-        lua_pop(_L, 1);
-    }
-
-    if (self->name == 0) {
-        const char *private[8] = {"base", "detail", "offset", "scale",
-                                  "power", "references", "weights",
-                                  "resolutions"};
-        char *header;
-        ShaderMold *shader;
         
 #include "glsl/color.h"	
 #include "glsl/splat_vertex.h"	
 #include "glsl/splat_fragment.h"	
 
-        asprintf (&header, "const int N = %d;\n", self->pigments_n);
-        
-	shader = [ShaderMold alloc];
-        
-        [shader initWithHandle: NULL];
-        [shader declare: 8 privateUniforms: private];
-	[shader addSourceString: glsl_splat_vertex for: T_VERTEX_STAGE];
-	[shader add: 3 sourceStrings: (const GLchar *[3]){header, glsl_color, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
-	[shader link];
+    /* Make a reference to the elevation to make sure it's not
+     * collected. */
 
-        [self load];
+    self->elevation = t_tonode (_L, -1);
+    self->reference_1 = luaL_ref (_L, LUA_REGISTRYINDEX);
 
-        self->units.base = [self getUnitForSamplerUniform: "base"];
+    [super init];
+
+    asprintf (&header, "const int N = %d;\n", self->elevation->swatches);
+        
+    shader = [ShaderMold alloc];
+        
+    [shader initWithHandle: NULL];
+    [shader declare: 9 privateUniforms: private];
+    [shader addSourceString: glsl_splat_vertex for: T_VERTEX_STAGE];
+    [shader add: 3 sourceStrings: (const char *[3]){header, glsl_color, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
+    [shader link];
+
+    [self load];
+
+    /* Get uniform locations. */
+
+    self->locations.power = glGetUniformLocation (self->name, "power");
+    self->locations.references = glGetUniformLocation (self->name, "references");
+    self->locations.weights = glGetUniformLocation (self->name, "weights");
+    self->locations.resolutions = glGetUniformLocation (self->name, "resolutions");
+
+    self->locations.turbidity = glGetUniformLocation (self->name, "turbidity");
+    self->locations.factor = glGetUniformLocation (self->name, "factor");
+    self->locations.beta_p = glGetUniformLocation (self->name, "beta_p");
+    self->locations.beta_r = glGetUniformLocation (self->name, "beta_r");
+    self->locations.direction = glGetUniformLocation (self->name, "direction");
+    self->locations.intensity = glGetUniformLocation (self->name, "intensity");
+        
+    /* Splatting-related uniforms will remain constant as the
+     * program is only used by this node so all uniform values can
+     * be loaded beforehand. */
+
+    glUseProgram(self->name);
+    glUniform1f(self->locations.power, self->elevation->separation);
+    glUniform1f (self->locations.factor, self->elevation->albedo);
+
+    /* Initialize reference color uniforms. */
     
-        for (i = 0 ; i < self->pigments_n ; i += 1) {
-            [self setSamplerUniform: "detail" to: self->pigments[i].texture atIndex: i];
-        }
-        
-        /* Get uniform locations. */
-        
-        self->locations.power = glGetUniformLocation (self->name, "power");
-        self->locations.references = glGetUniformLocation (self->name, "references");
-        self->locations.weights = glGetUniformLocation (self->name, "weights");
-        self->locations.resolutions = glGetUniformLocation (self->name, "resolutions");
+    for (child = self->elevation->down, i = 0 ; child ; child = child->right) {
+        if ([child isKindOf: [Swatch class]]) {
+            Swatch *swatch = (Swatch *)child;
 
-        self->locations.turbidity = glGetUniformLocation (self->name, "turbidity");
-        self->locations.factor = glGetUniformLocation (self->name, "factor");
-        self->locations.beta_p = glGetUniformLocation (self->name, "beta_p");
-        self->locations.beta_r = glGetUniformLocation (self->name, "beta_r");
-        self->locations.direction = glGetUniformLocation (self->name, "direction");
-        self->locations.intensity = glGetUniformLocation (self->name, "intensity");
-        
-        /* _TRACE ("%d, %d, %d, %d\n", self->locations.base, self->locations.detail, self->locations.power, self->locations.matrices); */
-        
-        /* Splatting-related uniforms will remain constant as the
-         * program is only used by this node so all uniform values can
-         * be loaded beforehand. */
-
-        glUseProgram(self->name);
-        
-        glUniform1f(self->locations.power, self->separation);
-
-        for (i = 0 ; i < self->pigments_n ; i += 1) {
-            splat_Pigment *pigment;
-
-            pigment = &self->pigments[i]; 
-
+            [self setSamplerUniform: "detail" to: swatch->detail->name atIndex: i];
+            
             glUniform2fv (self->locations.resolutions + i, 1,
-                          &pigment->values[0]);
-            glUniform3fv (self->locations.references + i, 1,
-                          &pigment->values[2]);
-            glUniform3fv (self->locations.weights + i, 1,
-                          &pigment->values[5]);
-        }        
+                          swatch->resolutions);
+            glUniform3fv (self->locations.references + i, 1, swatch->values);
+            glUniform3fv (self->locations.weights + i, 1, swatch->weights);
+
+            i += 1;
+        }
     }
+}
+
+-(void)free
+{
+    luaL_unref(_L, LUA_REGISTRYINDEX, self->reference_1);
+
+    [super free];
 }
 
 -(void) draw: (int)frame
 {
     Atmosphere *atmosphere;
 
-    atmosphere = [Atmosphere instance];
-    
     glEnable (GL_CULL_FACE);
     glEnable (GL_DEPTH_TEST);
 
     /* Bind the program and all textures. */
     
     glUseProgram(self->name);
-
-    glUniform1f (self->locations.factor, self->albedo);
+    
+    atmosphere = [Atmosphere instance];
     
     if (atmosphere) {
         glUniform3fv (self->locations.direction, 1, atmosphere->direction);
@@ -314,7 +131,7 @@
         glUniform1f (self->locations.beta_p, atmosphere->mie);
         glUniform1f (self->locations.turbidity, atmosphere->turbidity);
     }
-    
+
     [super draw: frame];
 
     glDisable (GL_DEPTH_TEST);

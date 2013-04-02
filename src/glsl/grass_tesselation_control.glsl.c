@@ -1,3 +1,10 @@
+layout(vertices = 1) out;
+
+in vec3 position[];
+in vec3 color[];
+out vec3 position_tc[];
+patch out vec3 color_tc;
+
 void Grass_control()
 {
     const float bias = 1, density = 16;
@@ -12,5 +19,6 @@ void Grass_control()
     gl_TessLevelOuter[0] = n;
     gl_TessLevelOuter[1] = 1.0;
     
+    color_tc = color[0];    
     position_tc[gl_InvocationID] = p;
 }

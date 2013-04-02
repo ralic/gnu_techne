@@ -74,10 +74,16 @@
     [super free];
 }
 
--(void) updateWithIndex: (int)i
+-(void) addSourceToVegetationShader: (ShaderMold *)shader for: (t_Enumerated)stage
 {
-    [super updateWithIndex: i];
-    [(Shader *)self->up setSamplerUniform: "deflections" to: self->deflections];
+    [super addSourceToVegetationShader: shader for: stage];
+    [shader addSourceString: self->sources[stage] for: stage];
+}
+
+-(void) configureVegetationShader: (Shader *)shader
+{
+    [super configureVegetationShader: shader];
+    [shader setSamplerUniform: "deflections" to: self->deflections];
 }
 
 @end

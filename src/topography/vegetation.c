@@ -33,34 +33,10 @@
 
 -(void)init
 {
-    [super init];
-
-    self->swatches = 0;
-    self->separation = 1;
-}
-
--(int) _get_separation
-{
-    lua_pushnumber (_L, self->separation);
-
-    return 1;
-}
-
--(void) _set_separation
-{
-    self->separation = lua_tonumber (_L, -1);
-
-    if (self->name) {
-        glUseProgram(self->name);
-        glUniform1f(self->locations.power, self->separation);
-    }
-}
-
--(void) update
-{
     Node *child;
-    const char *private[] = {"base", "offset", "scale", "power",
-                             "references", "weights"};
+    const char *private[] = {"base", "detail", "offset", "scale", "power",
+                             "factor", "references", "weights",
+                             "resolutions"};
     char *header;
     ShaderMold *shader;
     int i;
@@ -73,16 +49,24 @@
 #include "glsl/vegetation_geometry_header.h"
 #include "glsl/vegetation_fragment.h"
 
-    /* Update the swatch nodes. */
-    
-    asprintf (&header, "const int N = %d;\n", self->swatches);
+    /* Make a reference to the elevation to make sure it's not
+     * collected. */
+
+    self->elevation = t_tonode (_L, -1);
+    self->reference_1 = luaL_ref (_L, LUA_REGISTRYINDEX);
+
+    [super init];
+
+    /* Create the program. */
+
+    asprintf (&header, "const int N = %d;\n", self->elevation->swatches);
 
     [self unload];
     
     shader = [ShaderMold alloc];
         
     [shader initWithHandle: NULL];
-    [shader declare: 6 privateUniforms: private];
+    [shader declare: 9 privateUniforms: private];
     [shader add: 4 sourceStrings: (const char *[4]){header, glsl_rand, glsl_color, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
 
     /* Assemble the tessellation source. */
@@ -100,62 +84,51 @@
     /* Add per-swatch sources to the program as well as function
      * declarations. */
     
-    for (child = self->down;
+    for (child = self->elevation->down;
          child;
          child = child->right) {
-        if ([child isKindOf: [Swatch class]]) {
+        if ([child isKindOf: [Swatch class]] &&
+            ![child isMemberOf: [Barren class]]) {
             Swatch *swatch = (Swatch *)child;
             char *s;
             
-            if (swatch->sources[T_TESSELATION_CONTROL_STAGE]) {
-                [shader add: 2 sourceStrings: (const char *[2]){
-                        glsl_vegetation_tesselation_control_header,
-                            swatch->sources[T_TESSELATION_CONTROL_STAGE]}
-                                       for: T_TESSELATION_CONTROL_STAGE];
-                
-                asprintf(&s, "void %s_control();\n", [child name]);
-                
-                [shader addSourceFragement: s for: T_TESSELATION_CONTROL_STAGE];
-            }
+            /* Tessellation control stage. */
 
-            if (swatch->sources[T_TESSELATION_EVALUATION_STAGE]) {
-                [shader add: 2 sourceStrings: (const char *[2]){
-                        glsl_vegetation_tesselation_evaluation_header,
-                            swatch->sources[T_TESSELATION_EVALUATION_STAGE]}
-                                       for: T_TESSELATION_EVALUATION_STAGE];
+            [swatch addSourceToVegetationShader: shader for: T_TESSELATION_CONTROL_STAGE];
                 
-                asprintf(&s, "void %s_evaluation();\n", [child name]);
-                
-                [shader addSourceFragement: s for: T_TESSELATION_EVALUATION_STAGE];
-            }
+            asprintf(&s, "void %s_control();\n", [child name]);
+            [shader addSourceFragement: s for: T_TESSELATION_CONTROL_STAGE];
 
-            if (swatch->sources[T_GEOMETRY_STAGE]) {
-                [shader add:2 sourceStrings: (const char *[2]){
-                        glsl_vegetation_geometry_header,
-                            swatch->sources[T_GEOMETRY_STAGE]}
-                                       for: T_GEOMETRY_STAGE];
+            /* Tessellation evaluation stage. */
+            
+            [swatch addSourceToVegetationShader: shader for: T_TESSELATION_EVALUATION_STAGE];
+            
+            asprintf(&s, "void %s_evaluation();\n", [child name]);
+            [shader addSourceFragement: s for: T_TESSELATION_EVALUATION_STAGE];
+
+            /* Geometry stage. */
+            
+            [swatch addSourceToVegetationShader: shader for: T_GEOMETRY_STAGE];
                 
-                asprintf(&s, "void %s_geometry();\n", [child name]);
-                
-                [shader addSourceFragement: s for: T_GEOMETRY_STAGE];
-            }
+            asprintf(&s, "void %s_geometry();\n", [child name]);
+            [shader addSourceFragement: s for: T_GEOMETRY_STAGE];
         }
     }
 
     /* Start the main functions. */
     
-    [shader addSourceFragement: "void main() { color_tc = color[0]; index_tc = index[0]; switch(index[0]) {\n" 
+    [shader addSourceFragement: "void main() { switch(index_tc = index[0]) {\n" 
                            for: T_TESSELATION_CONTROL_STAGE];
         
-    [shader addSourceFragement: "void main() { color_te = color_tc; index_te = index_tc; switch(index_tc) {\n"
+    [shader addSourceFragement: "void main() { switch(index_te = index_tc) {\n"
                            for: T_TESSELATION_EVALUATION_STAGE];
         
-    [shader addSourceFragement: "void main() { color_g = color_te[0]; switch(index_te[0]) {\n"
+    [shader addSourceFragement: "void main() { switch(index_te[0]) {\n"
                            for: T_GEOMETRY_STAGE];
 
     /* Add switching code. */
     
-    for (child = self->down, i = 0;
+    for (child = self->elevation->down, i = 0;
          child;
          child = child->right) {
         if ([child isKindOf: [Swatch class]]) {
@@ -216,38 +189,38 @@
     glUseProgram(self->name);
 
     self->locations.power = glGetUniformLocation (self->name, "power");
-    glUniform1f(self->locations.power, self->separation);
+    self->locations.factor = glGetUniformLocation (self->name, "factor");
+    self->locations.references = glGetUniformLocation (name, "references");
+    self->locations.weights = glGetUniformLocation (name, "weights");
+    self->locations.resolutions = glGetUniformLocation (self->name, "resolutions");
 
-    /* Request all the children to update their uniforms. */
+    glUniform1f(self->locations.power, self->elevation->separation);
+    glUniform1f (self->locations.factor, self->elevation->albedo);
+
+    /* Initialize reference color uniforms. */
     
-    for (child = self->down, i = 0 ; child ; child = child->right) {
+    for (child = self->elevation->down, i = 0 ; child ; child = child->right) {
         if ([child isKindOf: [Swatch class]]) {
-            [(Swatch *)child updateWithIndex: i];
+            Swatch *swatch = (Swatch *)child;
+
+            glUniform3fv(self->locations.references + i, 1, swatch->values);
+            glUniform3fv(self->locations.weights + i, 1, swatch->weights);
+            glUniform2fv (self->locations.resolutions + i, 1,
+                          swatch->resolutions);
+
+            [swatch configureVegetationShader: self];
+            [self setSamplerUniform: "detail" to: swatch->detail->name atIndex: i];
+           
             i += 1;
         }
     }
 }
 
--(void) adopt: (Node *)child
+-(void)free
 {
-    [super adopt: child];
+    luaL_unref(_L, LUA_REGISTRYINDEX, self->reference_1);
 
-    if ([child isKindOf: [Swatch class]]) {
-        self->swatches += 1;
-        
-        [self update];
-    }
-}
-
--(void) renounce: (Node *)child
-{
-    [super renounce: child];
-
-    if ([child isKindOf: [Swatch class]]) {
-        self->swatches -= 1;
-        
-        [self update];
-    }
+    [super free];
 }
 
 -(void) draw: (int)frame

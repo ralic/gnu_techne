@@ -19,20 +19,17 @@
 
 #include <lua.h>
 #include "shader.h"
+#include "elevation.h"
 
 @interface Vegetation: Shader {
 @public
-    double separation;
-    int swatches;
+    Elevation *elevation;
+    int reference_1;
 
     struct {
-        unsigned int colors, power;
+        unsigned int references, weights, resolutions, colors, power, factor;
     } locations;
 }
-
--(int) _get_separation;
--(void) _set_separation;
--(void) update;
 
 @end
 

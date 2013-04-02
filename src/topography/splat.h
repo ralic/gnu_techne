@@ -17,39 +17,20 @@
 #ifndef _SPLAT_H_
 #define _SPLAT_H_
 
+#include "elevation.h"
 #include "shader.h"
-
-typedef struct {
-    unsigned int texture;
-    float values[8];
-    int reference;
-} splat_Pigment;
 
 @interface Splat: Shader {
 @public
-    double albedo, separation;
-
-    splat_Pigment *pigments;
-    int pigments_n;
+    Elevation *elevation;
+    int reference_1;
 
     struct {
         unsigned int power, references, weights, resolutions;
         unsigned int turbidity, factor, beta_p;
         unsigned int direction, intensity, beta_r;
     } locations;
-
-    struct {
-        unsigned int base;
-    } units;
 }
-
--(int) _get_albedo;
--(int) _get_separation;
--(void) _set_albedo;
--(void) _set_separation;
--(int) _get_palette;
--(void) _set_palette;
-
 @end
 
 #endif

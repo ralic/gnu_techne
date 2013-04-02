@@ -44,17 +44,17 @@ static dReal heightfield_data_callback (void *data, int x, int z)
 -(void) init
 {
     roam_Tileset *tiles;
-    Elevation *mold;
+    Elevation *elevation;
 
-    /* Make a reference to the mold to make sure it's not
+    /* Make a reference to the elevation to make sure it's not
      * collected. */
 
-    mold = t_tonode (_L, -1);
+    elevation = t_tonode (_L, -1);
     self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
     
     [super init];
     
-    tiles = self->tileset = &mold->context.tileset;
+    tiles = self->tileset = &elevation->context.tileset;
     self->data = dGeomHeightfieldDataCreate();
     
     dGeomHeightfieldDataBuildCallback (self->data,

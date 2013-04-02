@@ -28,6 +28,9 @@
 #include "algebra.h"
 #include "shader.h"
 #include "elevation.h"
+#include "vegetation.h"
+#include "splat.h"
+#include "swatch.h"
 #include "roam.h"
 
 static int construct(lua_State *L)
@@ -53,6 +56,9 @@ static int construct(lua_State *L)
     [super init];
 
     tiles = &self->context.tileset;
+
+    self->swatches = 0;
+    self->separation = 1;
     
     /* Read in resolution data. */
 
@@ -324,6 +330,30 @@ static int construct(lua_State *L)
     lua_settable (_L, 1);
 }
 
+-(int) _get_separation
+{
+    lua_pushnumber (_L, self->separation);
+
+    return 1;
+}
+
+-(void) _set_separation
+{
+    self->separation = lua_tonumber (_L, -1);
+}
+
+-(int) _get_albedo
+{
+    lua_pushnumber (_L, self->albedo);
+
+    return 1;
+}
+
+-(void) _set_albedo
+{
+    self->albedo = lua_tonumber (_L, -1);
+}
+
 -(int) _get_shape
 {
     lua_pop (_L, 1);
@@ -361,6 +391,50 @@ static int construct(lua_State *L)
 
 -(void) _set_seeds
 {
+}
+
+-(int) _get_vegetation
+{
+    lua_pop (_L, 1);
+    lua_pushlightuserdata(_L, [/* Elevation */Vegetation class]);
+    lua_pushcclosure(_L, construct, 2);
+    
+    return 1;
+}
+
+-(void) _set_vegetation
+{
+}
+
+-(int) _get_splat
+{
+    lua_pop (_L, 1);
+    lua_pushlightuserdata(_L, [/* Elevation */Splat class]);
+    lua_pushcclosure(_L, construct, 2);
+    
+    return 1;
+}
+
+-(void) _set_splat
+{
+}
+
+-(void) adopt: (Node *)child
+{
+    [super adopt: child];
+
+    if ([child isKindOf: [Swatch class]]) {
+        self->swatches += 1;
+    }
+}
+
+-(void) renounce: (Node *)child
+{
+    [super renounce: child];
+
+    if ([child isKindOf: [Swatch class]]) {
+        self->swatches -= 1;
+    }
 }
 
 -(void) free

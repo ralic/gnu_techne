@@ -29,7 +29,8 @@
 @interface Elevation: Node {
 @public
     roam_Context context;
-    int *references;
+    int swatches, *references;
+    double separation, albedo;
 }
 
 -(int) _get_shape;
@@ -38,6 +39,10 @@
 -(void) _set_seeds;
 -(int) _get_body;
 -(void) _set_body;
+-(int) _get_separation;
+-(void) _set_separation;
+-(int) _get_albedo;
+-(void) _set_albedo;
 
 @end
 
@@ -48,6 +53,10 @@
     struct {
         unsigned int scale, offset;
     } locations;
+
+    struct {
+        unsigned int base;
+    } units;
 
     unsigned int buffer;
     int reference, optimize, *ranges;

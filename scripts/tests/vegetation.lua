@@ -80,6 +80,21 @@ elevation = topography.elevation {
    depth = 12,
    resolution = {0.625, 0.625},
 
+   albedo = 1.5,
+   separation = 1,
+
+   topography.grass {
+      detail = red,
+      resolution = {1, 1},
+      reference = {0, .99, .99}
+                    },
+
+   topography.barren {
+      detail = green,
+      resolution = {1, 1},
+      reference = {120 / 360, .99, .99},
+                     },
+
    tiles = {
       {
          {heights, nil, array.nuchars(base), {200, 0}}
@@ -105,15 +120,7 @@ root = primitives.root {
       enabled = false,
       index = -1,
 
-      splat = topography.splat {
-         albedo = 1.5,
-         separation = 1,
-
-         palette = {
-            {red, {1, 1}, {0, .99, .99}},
-            {green, {1, 1}, {120 / 360, .99, .99}},
-         },
-
+      splat = elevation.splat {
          shape = elevation.shape {
             tag = "elevation",
             target = 15000,
@@ -124,20 +131,9 @@ root = primitives.root {
    grass = shading.wireframe {
       enabled = false,
       
-      topography.vegetation {
+      elevation.vegetation {
          tag = "vegetation",
 
-         foo = red,
-         separation = 1,
-
-         topography.grass {
-            reference = {0, .99, .99}
-                          },
-
-         topography.barren {
-            reference = {120 / 360, .99, .99},
-                           },
-         
          shape = elevation.seeds {
             tag = "seeds",
             

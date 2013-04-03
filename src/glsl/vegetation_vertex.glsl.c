@@ -6,7 +6,7 @@ out vec3 position, color;
 flat out int index;
 
 uniform sampler2D base, detail[N];
-uniform vec3 references[N], weights[N];
+uniform vec3 intensity, references[N], weights[N];
 uniform vec2 resolutions[N];
 uniform float power, factor;
 
@@ -63,5 +63,5 @@ void main()
     
     position = c;
     index = j;
-    color = factor * (texel.r + texel.g + texel.b) / 3.0 * texture2D(detail[j], uv / resolutions[j]).rgb;
+    color = factor * intensity * (texel.r + texel.g + texel.b) / 3.0 * texture2D(detail[j], uv / resolutions[j]).rgb;
 }

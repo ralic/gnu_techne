@@ -15,6 +15,7 @@
  */
 
 #include <stdlib.h>
+#include <math.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -25,11 +26,16 @@
 #include "shader.h"
 #include "grass.h"
 
+#define N_K 32               /* Number of stiffness samples. */
+#define N_S 32               /* Number of blade segments. */
+#define K_0 2.2              /* Lower bound of stiffness parameter. */
+#define K_1 3                /* Upper bound of stiffness parameter. */
+
 @implementation Grass
 
 -(void)init
 {
-    float texels[16 * 16 * 2];
+    float *texels, x, y, k, theta_0, phi, l_i, A, Delta;
     int i, j;
 
 #include "glsl/grass_tesselation_control.h"
@@ -42,29 +48,51 @@
 
     /* Calculate the deflection texture. */
 
-    for (i = 0 ; i < 16 ; i += 1) {
-        for (j = 0 ; j < 16 ; j += 1) {
-            texels[2 * ((16 * i) + j) + 0] = (i / 16.0) * (j / 16.0);
-            texels[2 * ((16 * i) + j) + 1] = (j / 16.0);
+    texels = malloc(N_K * N_S * 2 * sizeof(float));
+
+    for (j = 0 ; j < N_K ; j += 1) {
+        x = y = theta_0 = 0;
+        k = K_0 + (K_1 - K_0) * (float)j / (N_K - 1);
+        
+        for (i = 0 ; i < N_S ; i += 1) {
+            texels[2 * ((N_S * j) + i) + 0] = x;
+            texels[2 * ((N_S * j) + i) + 1] = y;
+
+            if (i == N_S) {
+                break;
+            }
+            
+            l_i = (1 - (float)i / (N_S - 1));
+            A = l_i * l_i / k;
+            Delta = 1 - 4 / 2.42 * A * (M_PI / 2 - theta_0 - A);
+            phi = (1 - sqrt(Delta)) / (2 / 2.42 * A);
+
+            if (phi > M_PI / 2) {
+                phi = M_PI - phi;
+            }
+            
+            theta_0 += M_PI / 2 - theta_0 - phi;
+            x += cos(M_PI / 2 - theta_0) / (N_S - 1);
+            y += sin(M_PI / 2 - theta_0) / (N_S - 1);
         }
     }
     
-    /* for (i = 0 ; i < 16 ; i += 1) { */
-    /*     for (j = 0 ; j < 16 ; j += 1) { */
-    /*         _TRACE ("%f, %f\n", texels[2 * ((16 * i) + j) + 0], texels[2 * ((16 * i) + j) + 1]); */
-    /*     } */
+    /* for (i = 8, j = 0 ; j < 16 ; j += 1) { */
+    /*     _TRACE ("%f, %f\n", texels[2 * ((16 * i) + j) + 0], texels[2 * ((16 * i) + j) + 1]); */
     /* } */
     
     [super init];
 
     glGenTextures (1, &self->deflections);
     glBindTexture(GL_TEXTURE_2D, self->deflections);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, 16, 16, 0, GL_RG,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, N_S, N_K, 0, GL_RG,
                  GL_FLOAT, texels);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    free (texels);
 }
 
 -(void)free

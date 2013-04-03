@@ -11,7 +11,7 @@ void Grass_evaluation()
     vec2 uv;
     
     p = position_tc[0];
-    uv = vec2(gl_TessCoord.x, 1);
+    uv = vec2(gl_TessCoord.x, 0.06);
     
     color_te = color_tc; 
     position_te = vec4(p + 0.2 * vec3(0, texture(deflections, uv).rg), 1);

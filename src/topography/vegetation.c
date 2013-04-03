@@ -24,6 +24,7 @@
 
 #include "array/array.h"
 #include "techne.h"
+#include "atmosphere.h"
 #include "vegetation.h"
 #include "swatch.h"
 #include "barren.h"
@@ -193,6 +194,7 @@
     self->locations.references = glGetUniformLocation (name, "references");
     self->locations.weights = glGetUniformLocation (name, "weights");
     self->locations.resolutions = glGetUniformLocation (self->name, "resolutions");
+    self->locations.intensity = glGetUniformLocation (self->name, "intensity");
 
     glUniform1f(self->locations.power, self->elevation->separation);
     glUniform1f (self->locations.factor, self->elevation->albedo);
@@ -225,10 +227,18 @@
 
 -(void) draw: (int)frame
 {
+    Atmosphere *atmosphere;
+
     /* glEnable (GL_CULL_FACE); */
     glEnable (GL_DEPTH_TEST);
     
     glUseProgram(self->name);
+
+    atmosphere = [Atmosphere instance];
+    
+    if (atmosphere) {
+        glUniform3fv (self->locations.intensity, 1, atmosphere->intensity);
+    }
     
     [super draw: frame];
 

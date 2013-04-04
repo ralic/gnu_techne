@@ -70,16 +70,16 @@
 
     glBindBuffer(GL_ARRAY_BUFFER, self->buffer);
 
-    i = glGetAttribLocation(parent->name, "positions");
+    i = glGetAttribLocation(parent->name, "apex");
     glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, SEED_SIZE, (void *)0);
     glEnableVertexAttribArray(i);
 
-    i = glGetAttribLocation(parent->name, "normals");
+    i = glGetAttribLocation(parent->name, "left");
     glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, SEED_SIZE, (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(i);
 
-    i = glGetAttribLocation(parent->name, "sizes");
-    glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, SEED_SIZE, (void *)(6 * sizeof(float)));
+    i = glGetAttribLocation(parent->name, "right");
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, SEED_SIZE, (void *)(6 * sizeof(float)));
     glEnableVertexAttribArray(i);
 
     /* Query uniform locations. */

@@ -138,7 +138,7 @@ root = primitives.root {
             tag = "seeds",
             
             bias = 1,
-            density = 100,
+            density = 64 * 100,
                                  }
                             }
                                 },

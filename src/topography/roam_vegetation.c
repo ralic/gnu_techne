@@ -23,6 +23,10 @@
 #include "techne.h"
 #include "roam.h"
 
+#define BINS_N 32
+#define LOWER_BOUND 1
+#define UPPER_BOUND 64
+
 #define should_seed(z_a, z_0, z_1)              \
     (z_a < 0 && z_a > parameters.threshold) ||  \
     (z_0 < 0 && z_0 > parameters.threshold) ||  \
@@ -33,15 +37,15 @@
 static struct {
     char *buffer;
     int fill, capacity;
-} bins[32];
+} bins[BINS_N];
 
 static roam_Context *context;
-static float modelview[16], normal[3];
+static float modelview[16];
 static struct {
     double density, bias, threshold;
 } parameters;
 
-static int total, coarse, fine, highwater;
+static int total, coarse, instances, highwater;
 
 static void grow_bin(int i)
 {
@@ -77,65 +81,39 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             seed_triangle(b_c, b_1, a, z_c, z_1, z_a, level + 1);
         }
     } else {
-        float z, r, n_0;
-        long int l, m;
-        int i, j, n;
-
-        /* If proper winding is observed then no two triangles can
-         * share the same base vertices (the left base vertex of one
-         * will be the right base vertex of the opposite and vice
-         * versa).  We can therefore transform the coordinates of the
-         * a vertex through a pairing function and use the result as a
-         * unique seed for the RNG. */
-
-        l = b_0[0] + b_1[0];
-        m = b_0[1] + b_1[1];
-        srand48((((l + m) * (l + m + 1)) >> 1) + m);
+        float z, n_0;
+        int j;
+        char *p;
 
         /* fprintf(stderr, "%d\n", (((l + m) * (l + m + 1)) >> 1) + m); */
         
         z = fmin((z_0 + z_1 + z_a) / 3.0, -parameters.bias);
         n_0 = parameters.bias * parameters.bias * parameters.density / z / z;
-        j = (int)fmin(32 * n_0, 31);
-        n = (int)ceil(n_0);
-        r = sqrt(1.0 / n);
+        j = (n_0 - LOWER_BOUND) / (UPPER_BOUND - LOWER_BOUND) * (BINS_N - 1);
+
+        if (j < 0) {
+            j = 0;
+        }
+
+        if (j >= BINS_N) {
+            j = BINS_N - 1;
+        }
+        
+        if (bins[j].fill == bins[j].capacity) {
+            grow_bin(j);
+        }
 
         /* printf ("%f\n", parameters.bias * parameters.density / -z); */
         /* assert (j <= 31); */
         /* assert (n <= parameters.density); */
 
-        for (i = 0 ; i < n ; i += 1) {
-            double r_1, r_2, sqrtr_1, k[3];
-            float c[3];
-            char *p;
-
-            r_1 = drand48();
-            r_2 = drand48();
-            
-            sqrtr_1 = sqrt(r_1);
-            
-            k[0] = 1 - sqrtr_1;
-            k[1] = sqrtr_1 * (1 - r_2);
-            k[2] = sqrtr_1 * r_2;
-            
-            c[0] = k[0] * a[0] + k[1] * b_0[0] + k[2] * b_1[0];
-            c[1] = k[0] * a[1] + k[1] * b_0[1] + k[2] * b_1[1];
-            c[2] = k[0] * a[2] + k[1] * b_0[2] + k[2] * b_1[2];
-
-            if (bins[j].fill == bins[j].capacity) {
-                grow_bin(j);
-            }
-            
-            p = bins[j].buffer + bins[j].fill * SEED_SIZE;
-            memcpy (p, c, 3 * sizeof(float));
-            memcpy (p + 3 * sizeof(float), normal, 3 * sizeof(float));
-            memcpy (p + 6 * sizeof(float), &r, sizeof(float));
-
-            bins[j].fill += 1;            
-            total += 1;
-        }
+        p = bins[j].buffer + bins[j].fill * SEED_SIZE;
+        memcpy (p, a, 3 * sizeof(float));
+        memcpy (p + 3 * sizeof(float), b_0, 3 * sizeof(float));
+        memcpy (p + 6 * sizeof(float), b_1, 3 * sizeof(float));
         
-        fine += 1;
+        bins[j].fill += 1;
+        total += 1;        
     }
 }
 
@@ -154,7 +132,7 @@ static void seed_subtree(roam_Triangle *n, float z_a, float z_0, float z_1)
             } else {
                 roam_Triangle *p;
                 roam_Diamond *d, *e;
-                float *a, *b_0, *b_1, u[3], v[3];
+                float *a, *b_0, *b_1;
                 int i;
 
                 p = n->parent;
@@ -165,19 +143,6 @@ static void seed_subtree(roam_Triangle *n, float z_a, float z_0, float z_1)
                 a = e->center;
                 b_0 = d->vertices[!i];
                 b_1 = d->vertices[i];
-            
-                /* Calculate the triangle's normal. */
-            
-                u[0] = b_0[0] - a[0];
-                u[1] = b_0[1] - a[1];
-                u[2] = b_0[2] - a[2];
-
-                v[0] = b_1[0] - a[0];
-                v[1] = b_1[1] - a[1];
-                v[2] = b_1[2] - a[2];
-
-                t_cross (normal, u, v);
-                t_normalize_3 (normal);
             
                 seed_triangle (a, b_0, b_1, z_a, z_0, z_1, d->level);
 
@@ -193,17 +158,16 @@ void seed_vegetation(roam_Context *new, double density, double bias,
     roam_Tileset *tiles;
     int i, j;
 
-    coarse = fine = total = 0;
+    coarse = instances = total = 0;
     context = new;
     parameters.density = density;
     parameters.bias = bias;
-    parameters.threshold = -sqrt(bias * bias * density * 32);
+    parameters.threshold = -sqrt(bias * bias * density);
     tiles = &context->tileset;
     
     t_copy_modelview (modelview);
     
     glPatchParameteri(GL_PATCH_VERTICES, 1);
-    
     glUniform1f(_ls, ldexpf(1, -tiles->depth));
 
     /* glEnable (GL_RASTERIZER_DISCARD); */
@@ -216,7 +180,7 @@ void seed_vegetation(roam_Context *new, double density, double bias,
             float z_a0, z_a1, z_b0, z_b1;
 	    int q, k;
 
-            for (k = 0 ; k < 32 ; k += 1) {
+            for (k = 0 ; k < BINS_N ; k += 1) {
                 bins[k].fill = 0;
             }
     
@@ -263,12 +227,17 @@ void seed_vegetation(roam_Context *new, double density, double bias,
             seed_subtree(n_0, z_a0, z_b0, z_b1);
             seed_subtree(n_1, z_a1, z_b1, z_b0);
 
-            for (k = 0 ; k < 32 ; k += 1) {
+            for (k = 0, instances = 0 ; k < 32 ; k += 1) {
+                int n;
+
+                n = LOWER_BOUND + (k + 0.5) * (UPPER_BOUND - LOWER_BOUND) / BINS_N;
                 if(bins[k].fill > 0) {
                     /* printf ("%d, %d\n", k, bins[k].fill); */
                     glBufferData (GL_ARRAY_BUFFER, highwater * SEED_SIZE, NULL, GL_STREAM_DRAW);
                     glBufferSubData (GL_ARRAY_BUFFER, 0, bins[k].fill * SEED_SIZE, bins[k].buffer);
-                    glDrawArraysInstanced(GL_PATCHES, 0, bins[k].fill, k + 1);
+                    glDrawArraysInstanced(GL_PATCHES, 0, bins[k].fill, n);
+
+                    instances += bins[k].fill * n;
                 }
             }
 	}
@@ -277,5 +246,5 @@ void seed_vegetation(roam_Context *new, double density, double bias,
     /* glDisable (GL_RASTERIZER_DISCARD); */
 
     /* if (fine > 0) abort(); */
-    /* _TRACE ("Horizon: %g, Seeds: %d, Coarse: %d, Fine: %d\n", parameters.threshold, total, coarse, fine); */
+    /* _TRACE ("Horizon: %g, Seeds: %d, Coarse: %d, Fine: %d\n", parameters.threshold, instances, coarse, total); */
 }

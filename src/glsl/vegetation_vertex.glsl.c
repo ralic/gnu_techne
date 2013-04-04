@@ -1,6 +1,4 @@
-in vec3 positions;
-in vec3 normals;
-in float sizes;
+in vec3 apex, left, right;
 
 out vec3 position, color;
 flat out int index;
@@ -20,27 +18,19 @@ vec2 rand(void);
 
 void main()
 {
-    vec3 texel, hsv, c, n, s, t;
+    vec3 texel, hsv, c, s, t;
     vec2 uv, u;
-    float D, r;
+    float D, r, sqrtux;
     int i, j;
 
-    /* ... */
-
-    n = normals;
-    if (any(greaterThan(n.xy, vec2(0)))) {
-        s = normalize(vec3(n.y, -n.x, 0));
-        t = cross (s, n);
-    } else {
-        s = vec3(1, 0, 0);
-        t = vec3(0, 1, 0);
-    }
-
-    srand(floatBitsToUint (positions.xy * (gl_InstanceID + 1)));
+    srand(floatBitsToUint (left.xy * (gl_InstanceID + 1)));
     
-    r = sizes;
     u = rand();
-    c = positions + r * u.x * s + r * u.y * t;
+    sqrtux = sqrt(u.x);
+    
+    c = (1 - sqrtux) * apex +
+        sqrtux * (1 - u.y) * left +
+        sqrtux * u.y * right;
 
     /* ... */
 

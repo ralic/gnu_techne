@@ -810,7 +810,12 @@ int t_add_global_block (const char *name, const char *declaration)
         
         for (i = 0 ; i < self->private_n ; i += 1) {
             j = privates[i];
-            uniforms[j].any.mode = SHADER_PRIVATE_UNIFORM;
+            if (j >= 0) {
+                assert(j < self->uniforms_n);
+                uniforms[j].any.mode = SHADER_PRIVATE_UNIFORM;
+            } else {
+                _TRACE ("Private uniform '%s' (%d) is inactive.\n", self->private[i], i);
+            }
         }
     } else {
 	self->uniforms = NULL;

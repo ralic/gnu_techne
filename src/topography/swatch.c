@@ -101,7 +101,7 @@
 {
     int i;
 
-    if (lua_istable (_L, 3)) {
+    if (!lua_isnil (_L, 3)) {
         for (i = 0 ; i < 2 ; i += 1) {
             lua_pushinteger (_L, i + 1);
             lua_gettable (_L, 3);

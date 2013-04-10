@@ -23,9 +23,7 @@
 #include "techne.h"
 #include "roam.h"
 
-#define BINS_N 32
-#define LOWER_BOUND 1
-#define UPPER_BOUND 64
+#define BINS_N 16
 
 #define should_seed(z_a, z_0, z_1)              \
     (z_a < 0 && z_a > parameters.threshold) ||  \
@@ -37,6 +35,7 @@
 static struct {
     char *buffer;
     int fill, capacity;
+    double mean, sum;
 } bins[BINS_N];
 
 static roam_Context *context;
@@ -45,7 +44,7 @@ static struct {
     double density, bias, threshold;
 } parameters;
 
-static int total, coarse, instances, highwater;
+static int total, coarse, instances, highwater, initialized;
 
 static void grow_bin(int i)
 {
@@ -81,7 +80,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             seed_triangle(b_c, b_1, a, z_c, z_1, z_a, level + 1);
         }
     } else {
-        float z, n_0;
+        double z, n_0;
         int j;
         char *p;
 
@@ -89,15 +88,16 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         
         z = fmin((z_0 + z_1 + z_a) / 3.0, -parameters.bias);
         n_0 = parameters.bias * parameters.bias * parameters.density / z / z;
-        j = (n_0 - LOWER_BOUND) / (UPPER_BOUND - LOWER_BOUND) * (BINS_N - 1);
 
-        if (j < 0) {
-            j = 0;
-        }
+        /* This simple search should be preffered to binary searching
+         * as the vast majority of seeds are likely to end up in the
+         * first bins. */
+        
+        for (j = 0;
+             j < BINS_N - 1 && n_0 > 0.5 * (bins[j].mean + bins[j + 1].mean);
+             j += 1);
 
-        if (j >= BINS_N) {
-            j = BINS_N - 1;
-        }
+        /* _TRACE ("%d\n", j); */
         
         if (bins[j].fill == bins[j].capacity) {
             grow_bin(j);
@@ -112,6 +112,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         memcpy (p + 3 * sizeof(float), b_0, 3 * sizeof(float));
         memcpy (p + 6 * sizeof(float), b_1, 3 * sizeof(float));
         
+        bins[j].sum += n_0;
         bins[j].fill += 1;
         total += 1;        
     }
@@ -170,6 +171,14 @@ void seed_vegetation(roam_Context *new, double density, double bias,
     glPatchParameteri(GL_PATCH_VERTICES, 1);
     glUniform1f(_ls, ldexpf(1, -tiles->depth));
 
+    if (!initialized) {
+        for (i = 0 ; i < BINS_N ; i += 1) {
+            bins[i].mean = 0.5 * (i + 0.5) * parameters.density / BINS_N;
+        }
+
+        initialized = 1;
+    }
+    
     /* glEnable (GL_RASTERIZER_DISCARD); */
     
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
@@ -181,7 +190,14 @@ void seed_vegetation(roam_Context *new, double density, double bias,
 	    int q, k;
 
             for (k = 0 ; k < BINS_N ; k += 1) {
+                if (bins[k].fill > 0) {
+                    bins[k].mean = bins[k].sum / bins[k].fill;
+                }
+                
                 bins[k].fill = 0;
+                bins[k].sum = 0;
+
+                assert (k == BINS_N - 1 || bins[k].mean <= bins[k + 1].mean);
             }
     
             k = i * tiles->size[1] + j;
@@ -227,17 +243,14 @@ void seed_vegetation(roam_Context *new, double density, double bias,
             seed_subtree(n_0, z_a0, z_b0, z_b1);
             seed_subtree(n_1, z_a1, z_b1, z_b0);
 
-            for (k = 0, instances = 0 ; k < 32 ; k += 1) {
-                int n;
-
-                n = LOWER_BOUND + (k + 0.5) * (UPPER_BOUND - LOWER_BOUND) / BINS_N;
+            for (k = 0 ; k < BINS_N ; k += 1) {
                 if(bins[k].fill > 0) {
-                    /* printf ("%d, %d\n", k, bins[k].fill); */
+                    /* printf ("%d, %.1f\n", k, bins[k].mean); */
                     glBufferData (GL_ARRAY_BUFFER, highwater * SEED_SIZE, NULL, GL_STREAM_DRAW);
                     glBufferSubData (GL_ARRAY_BUFFER, 0, bins[k].fill * SEED_SIZE, bins[k].buffer);
-                    glDrawArraysInstanced(GL_PATCHES, 0, bins[k].fill, n);
+                    glDrawArraysInstanced(GL_PATCHES, 0, bins[k].fill, round(bins[k].mean));
 
-                    instances += bins[k].fill * n;
+                    instances += bins[k].fill * round(bins[k].mean);
                 }
             }
 	}

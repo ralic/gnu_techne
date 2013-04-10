@@ -35,7 +35,7 @@
 -(void)init
 {
     Node *child;
-    const char *private[] = {"base", "detail", "offset", "scale", "power",
+    const char *private[] = {"base", "detail", "offset", "scale",
                              "factor", "references", "weights",
                              "resolutions"};
     char *header;
@@ -67,7 +67,7 @@
     shader = [ShaderMold alloc];
         
     [shader initWithHandle: NULL];
-    [shader declare: 9 privateUniforms: private];
+    [shader declare: 8 privateUniforms: private];
     [shader add: 4 sourceStrings: (const char *[4]){header, glsl_rand, glsl_color, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
 
     /* Assemble the tessellation source. */
@@ -189,14 +189,12 @@
 
     glUseProgram(self->name);
 
-    self->locations.power = glGetUniformLocation (self->name, "power");
     self->locations.factor = glGetUniformLocation (self->name, "factor");
     self->locations.references = glGetUniformLocation (name, "references");
     self->locations.weights = glGetUniformLocation (name, "weights");
     self->locations.resolutions = glGetUniformLocation (self->name, "resolutions");
     self->locations.intensity = glGetUniformLocation (self->name, "intensity");
 
-    glUniform1f(self->locations.power, self->elevation->separation);
     glUniform1f (self->locations.factor, self->elevation->albedo);
 
     /* Initialize reference color uniforms. */

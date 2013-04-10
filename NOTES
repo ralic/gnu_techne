@@ -73,3 +73,6 @@ TODO (ASAP):
   approach.
 * Add support for setting clamp and filtering modes to the Texture Node.
 * Euler joints should always have 3 dofs and need only two axes.
+
+* Determine optimal initial centers for seed clusters.
+* Look into the possibility of making the seeding process iterative instead of recursive.

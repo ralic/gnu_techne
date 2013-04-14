@@ -23,29 +23,19 @@
 #include "techne.h"
 #include "roam.h"
 
-#define BINS_N 16
-
-#define should_seed(z_a, z_0, z_1)              \
-    (z_a < 0 && z_a > parameters.threshold) ||  \
-    (z_0 < 0 && z_0 > parameters.threshold) ||  \
-    (z_1 < 0 && z_1 > parameters.threshold) ||  \
-    z_a * z_0 < 0 ||                            \
+#define should_seed(z_a, z_0, z_1)   \
+    (z_a < 0 && z_a > threshold) ||  \
+    (z_0 < 0 && z_0 > threshold) ||  \
+    (z_1 < 0 && z_1 > threshold) ||  \
+    z_a * z_0 < 0 ||                 \
     z_0 * z_1 < 0
 
-static struct {
-    char *buffer;
-    int fill, capacity;
-    double mean, sum, error;
-} bins[BINS_N];
-
 static roam_Context *context;
+static roam_Bin *bins;
 static float modelview[16];
-static struct {
-    double density, bias, threshold;
-} parameters;
+static double density, bias, threshold, error;
 
-static int total, coarse, instances, highwater, initialized, z_min, z_max;
-static double error;
+static int total, coarse, instances, highwater, initialized;
 
 static void grow_bin(int i)
 {
@@ -81,20 +71,16 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             seed_triangle(b_c, b_1, a, z_c, z_1, z_a, level + 1);
         }
     } else {
-        double z, n_0, d;
+        double z, n_0;
         int j;
         char *p;
 
         /* fprintf(stderr, "%d\n", (((l + m) * (l + m + 1)) >> 1) + m); */
         
-        z = fmax(-(z_0 + z_1 + z_a) / 3.0, parameters.bias);
-        n_0 = parameters.bias * parameters.bias * parameters.density / z / z;
+        z = fmax(-(z_0 + z_1 + z_a) / 3.0, bias);
+        n_0 = bias * bias * density / z / z;
 
-        if (z < z_min) {
-            z_min = z;
-        } else if (z > z_max) {
-            z_max = z;
-        }
+        /* fprintf (stderr, "%f\n", n_0); */
         
         /* This simple search should be preffered to binary searching
          * as the vast majority of seeds are likely to end up in the
@@ -110,21 +96,19 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             grow_bin(j);
         }
 
-        /* printf ("%f\n", parameters.bias * parameters.density / -z); */
+        /* printf ("%f\n", bias * density / -z); */
         /* assert (j <= 31); */
-        /* assert (n <= parameters.density); */
+        /* assert (n <= density); */
 
         p = bins[j].buffer + bins[j].fill * SEED_SIZE;
         memcpy (p, a, 3 * sizeof(float));
         memcpy (p + 3 * sizeof(float), b_0, 3 * sizeof(float));
         memcpy (p + 6 * sizeof(float), b_1, 3 * sizeof(float));
 
-        d = bins[j].mean - n_0;
-        
-        bins[j].error += d * d;
         bins[j].sum += n_0;
         bins[j].fill += 1;
-        total += 1;        
+        error += bins[j].mean - n_0;
+        total += 1;
     }
 }
 
@@ -163,41 +147,46 @@ static void seed_subtree(roam_Triangle *n, float z_a, float z_0, float z_1)
     }
 }
 
-void seed_vegetation(roam_Context *new, double density, double bias,
+void seed_vegetation(roam_Context *context_in,
+                     double density_in, double bias_in,
                      unsigned int _ls, unsigned int _lo)
 {
     roam_Tileset *tiles;
     int i, j;
 
     coarse = instances = total = error = 0;
-    context = new;
-    parameters.density = density;
-    parameters.bias = bias;
-    parameters.threshold = -sqrt(bias * bias * density);
+    context = context_in;
+    density = density_in;
+    bias = bias_in;
+    threshold = -sqrt(bias_in * bias_in * density_in);
     tiles = &context->tileset;
+    bins = context->bins;
     
     t_copy_modelview (modelview);
     
     glPatchParameteri(GL_PATCH_VERTICES, 1);
     glUniform1f(_ls, ldexpf(1, -tiles->depth));
 
-    if (!initialized) {
-        double f, b, c;
-
-        z_min = bias;
-        z_max = -parameters.threshold;
+    /* Initialize the bin centers using a power series.  This tends to
+     * make bin seed density ranges inversely proportional to the
+     * number of seeds that are expected to fall into them given a
+     * frustum viewing volume. */
     
-        b = parameters.bias * parameters.bias * parameters.density / z_min / z_min;
-        c = pow(z_max / z_min, 1.0 / (BINS_N - 1));
+    if (!initialized) {
+        double f, c;
+    
+        c = pow(density, 1.0 / (BINS_N - 1));
 
-        for (i = BINS_N - 1, f = 1 ; i >= 0 ; i -= 1, f /= c) {
-            bins[i].mean = b * f * f / c;
+        for (i = 0, f = 1 ; i < BINS_N ; i += 1, f *= c) {
+            bins[i].mean = f;
+            /* bins[i].mean = 1 + i * (density - 1) / (BINS_N - 1); */
             /* printf ("%f\n", bins[i].mean); */
         }
 
         initialized = 1;
     }
     
+    glEnable (GL_MULTISAMPLE);
     /* glEnable (GL_RASTERIZER_DISCARD); */
     
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
@@ -213,28 +202,10 @@ void seed_vegetation(roam_Context *new, double density, double bias,
                     bins[k].mean = bins[k].sum / bins[k].fill;
                 }
 
-                bins[k].error = 0;
                 bins[k].fill = 0;
                 bins[k].sum = 0;
 
-                assert (k == BINS_N - 1 || bins[k].mean <= bins[k + 1].mean);
-            }
-    
-            {
-                double d, f, b, c;
-                int k;
-                
-                b = parameters.bias * parameters.bias * parameters.density / z_min / z_min;
-                c = pow(z_max / z_min, 1.0 / (BINS_N - 1));
-                
-                for (k = BINS_N - 1, f = 1 ; k >= 0 ; k -= 1, f /= c) {
-                    if (bins[k].fill > 0) {
-                        /* printf ("%d, %.1f, %.1f\n", */
-                        /*         k, b * f * f / c, bins[k].mean); */
-
-                        bins[k].mean = b * f * f / c;
-                    }
-                }
+                /* assert (k == BINS_N - 1 || bins[k].mean <= bins[k + 1].mean); */
             }
 
             k = i * tiles->size[1] + j;
@@ -282,21 +253,22 @@ void seed_vegetation(roam_Context *new, double density, double bias,
 
             for (k = 0 ; k < BINS_N ; k += 1) {
                 if(bins[k].fill > 0) {
+                    /* printf ("%f\n", bins[k].mean); */
                     glBufferData (GL_ARRAY_BUFFER, highwater * SEED_SIZE, NULL, GL_STREAM_DRAW);
                     glBufferSubData (GL_ARRAY_BUFFER, 0, bins[k].fill * SEED_SIZE, bins[k].buffer);
                     glDrawArraysInstanced(GL_PATCHES, 0, bins[k].fill, round(bins[k].mean));
 
                     instances += bins[k].fill * round(bins[k].mean);
-                    error += sqrt (bins[k].error / bins[k].fill);
                 }
             }
 	}
     }
 
-    _TRACE ("error: %f\n", error);
+    /* _TRACE ("error: %f\n", error); */
 
+    /* glDisable (GL_MULTISAMPLE); */
     /* glDisable (GL_RASTERIZER_DISCARD); */
 
-    /* if (fine > 0) abort(); */
-    /* _TRACE ("Horizon: %g, Seeds: %d, Coarse: %d, Fine: %d\n", parameters.threshold, instances, coarse, total); */
+    /* if (total > 0) abort(); */
+    /* _TRACE ("Horizon: %g, Seeds: %d, Coarse: %d, Fine: %d\n", threshold, instances, coarse, total); */
 }

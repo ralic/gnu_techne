@@ -29,7 +29,7 @@
 #define N_K 32               /* Number of stiffness samples. */
 #define N_S 32               /* Number of blade segments. */
 #define K_0 2.2              /* Lower bound of stiffness parameter. */
-#define K_1 2.5                /* Upper bound of stiffness parameter. */
+#define K_1 2.5              /* Upper bound of stiffness parameter. */
 
 @implementation Grass
 
@@ -77,16 +77,17 @@
         }
     }
     
-    /* for (i = 8, j = 0 ; j < 16 ; j += 1) { */
-    /*     _TRACE ("%f, %f\n", texels[2 * ((16 * i) + j) + 0], texels[2 * ((16 * i) + j) + 1]); */
+    /* for (i = N_K / 2, j = 0 ; j < N_S ; j += 1) { */
+    /*     _TRACE ("%f, %f\n", texels[2 * ((N_S * i) + j) + 0], texels[2 * ((N_S * i) + j) + 1]); */
     /* } */
     
     [super init];
 
     glGenTextures (1, &self->deflections);
     glBindTexture(GL_TEXTURE_2D, self->deflections);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, N_S, N_K, 0, GL_RG,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, N_S, N_K, 0, GL_RG,
                  GL_FLOAT, texels);
+    
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

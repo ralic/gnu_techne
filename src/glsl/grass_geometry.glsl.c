@@ -8,7 +8,7 @@ out vec3 color_g;
 void Grass_geometry()
 {
     mat4 PM = projection * modelview;
-    vec4 h = vec4(0, distance_te[0] * 0.005, 0, 0);
+    vec4 h = vec4(0, distance_te[0] * 0.003, 0, 0);
 
     color_g = color_te[0];
     

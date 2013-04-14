@@ -94,9 +94,9 @@ static void calculate_view_frustum()
     }
 }
  
-void switch_to_context(roam_Context *new)
+void switch_to_context(roam_Context *context_in)
 {
-    context = new;
+    context = context_in;
 }
 
 void look_up_sample(roam_Tileset *tiles, int i, int j, double *h, double *e)
@@ -961,14 +961,14 @@ static void draw_subtree(roam_Triangle *n)
     }
 }
 
-void optimize_geometry(roam_Context *new, int frame)
+void optimize_geometry(roam_Context *context_in, int frame)
 {
     roam_Tileset *tiles;
     roam_Diamond *d = NULL, *d_0;
     float M[16], P[16];
     int i, j, delta, overlap;
 
-    context = new;
+    context = context_in;
 
     /* Don't optimize more than once per frame. */
 
@@ -1067,12 +1067,12 @@ void optimize_geometry(roam_Context *new, int frame)
 #endif
 }
 
-void draw_geometry(roam_Context *new, float *buffer, int *ranges)
+void draw_geometry(roam_Context *context_in, float *buffer, int *ranges)
 {
     roam_Tileset *tiles;
     int i, j;
 
-    context = new;
+    context = context_in;
     tiles = &context->tileset;
     
     /* Draw the geometry into the provided buffers. */
@@ -1092,14 +1092,14 @@ void draw_geometry(roam_Context *new, float *buffer, int *ranges)
     }
 }       
 
-void *allocate_mesh(roam_Context *new)
+void *allocate_mesh(roam_Context *context_in)
 {
     roam_Tileset *tiles;
     roam_Triangle *(*T)[4];
     roam_Diamond *(*D)[3];
     int i, j, d, s, t;
 
-    context = new;
+    context = context_in;
     
     tiles = &context->tileset;
 
@@ -1266,9 +1266,9 @@ void *allocate_mesh(roam_Context *new)
     return (void *)context;
 }
 
-void free_mesh(roam_Context *new)
+void free_mesh(roam_Context *context_in)
 {
-    context = new;
+    context = context_in;
     
     /* Free all allocated chunks. */
 

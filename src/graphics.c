@@ -354,7 +354,7 @@ static void draw (Node *root)
     char **argv = NULL;
     const char *name, *class;
 
-    int i, j, r, g, b, a, z, s;
+    int i, j, r, g, b, a, z, s, n;
 
     /* Get the configuration. */
     
@@ -592,8 +592,11 @@ static void draw (Node *root)
     glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
                           GLX_STENCIL_SIZE, &s);
 
+    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                          GLX_SAMPLES, &n);
+
     t_print_message ("The configuration of the framebuffer is "
-                     "[%d, %d, %d, %d, %d, %d].\n", r, g, b, a, z, s);
+                     "[%d, %d, %d, %d, %d, %d, %d].\n", r, g, b, a, z, s, n);
 
     t_print_message ("The rendering context is%sdirect.\n",
                      glXIsDirect (GDK_DISPLAY_XDISPLAY(display), context) ?

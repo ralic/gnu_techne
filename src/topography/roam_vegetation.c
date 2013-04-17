@@ -188,7 +188,7 @@ void seed_vegetation(roam_Context *context_in,
     
     glEnable (GL_MULTISAMPLE);
     /* glEnable (GL_RASTERIZER_DISCARD); */
-    
+
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {
             roam_Triangle *n_0, *n_1;

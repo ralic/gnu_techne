@@ -596,14 +596,14 @@ int t_add_global_block (const char *name, const char *declaration)
     pipelines[stage].length = 0;
 }
 
--(void) initWithHandle: (ShaderMold **)handle
+-(void) initWithHandle: (ShaderMold **)handle_in
 {
     [super init];
 
     self->name = glCreateProgram();
     self->private = NULL;
     self->private_n = 0;
-    self->handle = handle;
+    self->handle = handle_in;
 
     if (self->handle) {
         *(self->handle) = self;
@@ -1060,20 +1060,20 @@ int t_add_global_block (const char *name, const char *declaration)
     return [super _get_];
 }
 
--(unsigned int) getUnitForSamplerUniform: (const char *)name
+-(unsigned int) getUnitForSamplerUniform: (const char *)uniform
 {
     unsigned int i;
     
-    glGetUniformIndices(self->name, 1, &name, &i);
+    glGetUniformIndices(self->name, 1, &uniform, &i);
     return self->uniforms[i].sampler.unit;
 }
 
--(void) setSamplerUniform: (const char *)name to: (unsigned int)texture
+-(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture
 {
     shader_Sampler *sampler;
     unsigned int i;
     
-    glGetUniformIndices(self->name, 1, &name, &i);    
+    glGetUniformIndices(self->name, 1, &uniform, &i);    
     assert(i != GL_INVALID_INDEX);
     
     sampler = &self->uniforms[i].sampler;
@@ -1087,12 +1087,12 @@ int t_add_global_block (const char *name, const char *declaration)
     sampler->reference = LUA_REFNIL;
 }
 
--(void) setSamplerArrayUniform: (const char *)name to: (unsigned int)texture
+-(void) setSamplerArrayUniform: (const char *)uniform to: (unsigned int)texture
 {
     shader_Sampler *sampler;
     unsigned int i;
     
-    glGetUniformIndices(self->name, 1, &name, &i);    
+    glGetUniformIndices(self->name, 1, &uniform, &i);    
     assert(i != GL_INVALID_INDEX);
     
     sampler = &self->uniforms[i].sampler;
@@ -1106,13 +1106,13 @@ int t_add_global_block (const char *name, const char *declaration)
     sampler->reference = LUA_REFNIL;
 }
 
--(void) setSamplerUniform: (const char *)name to: (unsigned int)texture
+-(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture
                   atIndex: (int)j
 {
     shader_Sampler *sampler;
     unsigned int i, *textures;
     
-    glGetUniformIndices(self->name, 1, &name, &i);    
+    glGetUniformIndices(self->name, 1, &uniform, &i);    
     assert(i != GL_INVALID_INDEX);
     
     sampler = &self->uniforms[i].sampler;

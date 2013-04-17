@@ -44,17 +44,17 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
 
 @implementation Texture
 
--(void)initWithTarget: (GLenum)target andName: (unsigned int)name
+-(void)initWithTarget: (GLenum)target_in andName: (unsigned int)name_in
 {
-    self->target = target;
-    self->name = name;
+    self->target = target_in;
+    self->name = name_in;
     
     [super init];
 }
 
--(void)initWithTarget: (GLenum)target
+-(void)initWithTarget: (GLenum)target_in
 {
-    self->target = target;
+    self->target = target_in;
     glGenTextures(1, &self->name);
     
     [super init];

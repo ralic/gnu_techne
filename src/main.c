@@ -141,7 +141,7 @@ static int construct_hooks(lua_State *L)
     return 1;
 }
 
-static void push_lua_stack(lua_State *L)
+static void pushstack(lua_State *L)
 {
     lua_Debug ar;
     int i, h;
@@ -179,12 +179,12 @@ static void push_lua_stack(lua_State *L)
     lua_concat (L, lua_gettop(L) - h);
 }
 
-static int handler (lua_State *L)
+static int error_handler (lua_State *L)
 {
     lua_pushstring(L, COLOR(1, 37));
     lua_insert (L, 1);
 
-    push_lua_stack(L);
+    pushstack(L);
     lua_concat (L, 2);
     
     return 1;
@@ -197,17 +197,15 @@ static void print_c_stack()
     char **lines;
     int i, n;
     
-    /* Print the C stack. */
-
     t_print_error("\n%sC stack trace:\n", COLOR(0, 31));
     
     n = backtrace (frames, 64);
     lines = backtrace_symbols (frames, n);
 
     for (i = 0 ; i < n ; i += 1) {
-	t_print_error("%s#%-2d%s %s\n", COLOR(0, 31), i, COLOR(0,), lines[i]);
+        t_print_error("%s#%-2d%s %s\n", COLOR(0, 31), i, COLOR(0,), lines[i]);
     }
-#endif    
+#endif
 }
 
 #ifndef __WIN32__
@@ -237,12 +235,11 @@ static void handle_signal(int signum)
 
     t_print_error("%sSignal received: %s", COLOR(1, 37), strsignal(signum));
 
-    push_lua_stack(_L);
+    pushstack(_L);
     t_print_error(lua_tostring (_L, -1));
     lua_pop (_L, 1);
     
     print_c_stack();
-
     t_print_error("This is bad.  Aborting.\n");
     
     abort();    
@@ -256,9 +253,7 @@ static int panic(lua_State *L)
 #endif
 
     t_print_error("%s%s", COLOR(1, 37), lua_tostring(L, -1));
-    
     print_c_stack();
-
     t_print_error("\nThis is bad.  Aborting.\n");
     
     abort();
@@ -296,7 +291,7 @@ int t_call (lua_State *L, int nargs, int nresults)
 	/* Push the message handler and call the function. */
 
 	h_0 = lua_gettop(L) - nargs;
-	lua_pushcfunction (L, handler);
+	lua_pushcfunction (L, error_handler);
 	lua_insert (L, h_0);
 	r = lua_pcall (L, nargs, nresults, h_0);
     
@@ -709,7 +704,7 @@ int main(int argc, char **argv)
     for (node = [Root nodes] ; node ; node = node->right) {
     	[node toggle];
     }
-    
+
     t_print_message("Bye!\n");
     exit (EXIT_SUCCESS);
 }

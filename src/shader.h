@@ -74,7 +74,7 @@ typedef union {
     int private_n;
 }
 
--(void) initWithHandle: (ShaderMold **)handle;
+-(void) initWithHandle: (ShaderMold **)handle_in;
 -(void) declare: (int) n privateUniforms: (const char **) names;
 -(void) add: (const int) n sourceStrings: (const char **) strings
         for: (t_Enumerated)stage;
@@ -94,9 +94,9 @@ typedef union {
 
 -(void)load;
 -(void)unload;
--(unsigned int) getUnitForSamplerUniform: (const char *)name;
--(void) setSamplerUniform: (const char *)name to: (unsigned int)texture;
--(void) setSamplerUniform: (const char *)name to: (unsigned int)texture
+-(unsigned int) getUnitForSamplerUniform: (const char *)uniform;
+-(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture;
+-(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture
                   atIndex: (int)j;
 
 @end

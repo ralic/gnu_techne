@@ -359,7 +359,7 @@ static int construct(lua_State *L)
     lua_pop (_L, 1);
     lua_pushlightuserdata(_L, [ElevationShape class]);
     lua_pushcclosure(_L, construct, 2);
-    
+
     return 1;
 }
 

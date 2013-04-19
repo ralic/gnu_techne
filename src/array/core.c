@@ -93,26 +93,6 @@ static int cast (lua_State *L)
     return 1;
 }
 
-static int slice (lua_State *L)
-{
-    array_Array *array;
-    int j;
-
-    array = array_checkarray (L, 1);
-
-    {
-	int slices[array->rank * 2];
-
-	for (j = 0 ; j < array->rank * 2 ; j += 1) {
-	    slices[j] = luaL_checknumber (L, j + 2);
-	}
-	
-	array_slicev (L, 1, slices);
-    }		 
-    
-    return 1;
-}
-
 static int copy (lua_State *L)
 {
     array_checkarray (L, 1);
@@ -193,7 +173,6 @@ int luaopen_array_core (lua_State *L)
 	{"set", set},
 	{"dump", dump},
 	{"cast", cast},
-	{"slice", slice},
 	{"adjust", adjust},        
 	    
 	{NULL, NULL}

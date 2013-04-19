@@ -93,7 +93,6 @@ void array_copy (lua_State *L, int index);
 void array_set (lua_State *L, int index, lua_Number c);
 void array_cast (lua_State *L, int index, int rank, ...);
 void array_toarray (lua_State *L, int index, array_Type type, int rank, ...);
-void array_slicev (lua_State *L, int index, int *slices);
 void array_castv (lua_State *L, int index, int rank, int *size);
 void array_toarrayv (lua_State *L, int index, array_Type type, int rank, int *size);
 array_Array *array_createarrayv (lua_State *L, array_Type type, void *values,

@@ -290,12 +290,14 @@
 	
     if(lua_istable (_L, 3)) {
 	for(j = 0 ; j < 3 ; j += 1) {
-            double erp, cfm;
-            
 	    lua_rawgeti (_L, 3, j + 1);
 		
 	    if(lua_istable (_L, -1)) {
-		lua_rawgeti (_L, -1, 1);
+                double erp, cfm;
+            
+		/* The limits. */
+
+                lua_rawgeti (_L, -1, 1);
 		for(i = 0 ; i < 2 ; i += 1) {
 		    lua_rawgeti (_L, -1, i + 1);
 		
@@ -305,17 +307,35 @@
 		}
 		lua_pop (_L, 1);
 
-		lua_rawgeti (_L, -1, 2);
-		for(i = 0 ; i < 2 ; i += 1) {
-		    lua_rawgeti (_L, -1, i + 1);
+		/* The hardness. */
+        
+                lua_rawgeti (_L, -1, 2);
+        
+                if (!lua_isnil(_L, -1)) {
+                    for(i = 0 ; i < 2 ; i += 1) {
+                        lua_rawgeti (_L, -1, i + 1);
 
-		    self->hardness[j][i] = lua_tonumber (_L, -1);
-			
-		    lua_pop (_L, 1);
-		}
+                        self->hardness[j][i] = lua_tonumber (_L, -1);
+
+                        lua_pop (_L, 1);
+                    }
+
+                    t_convert_from_spring(self->hardness[j][0],
+                                          self->hardness[j][1],
+                                          &erp, &cfm);
+                } else {
+                    erp = dWorldGetERP(_WORLD);
+                    cfm = dWorldGetCFM(_WORLD);
+
+                    t_convert_to_spring(erp, cfm,
+                                        &self->hardness[j][0],
+                                        &self->hardness[j][1]);
+                }
+        
+                lua_pop (_L, 1);
                 
-		lua_pop (_L, 1);
-	
+                /* The bounce. */
+                
 		lua_rawgeti (_L, -1, 3);
 		bounce[j] = lua_tonumber (_L, -1);
 		lua_pop (_L, 1);
@@ -328,10 +348,6 @@
 		dJointSetLMotorParam (self->joint,
 				      dParamHiStop + dParamGroup * j,
 				      self->stops[j][1]);
-
-                t_convert_spring(self->hardness[j][0],
-                                 self->hardness[j][1],
-                                 &erp, &cfm);
 
 		dJointSetLMotorParam (self->joint,
 				      dParamStopCFM + dParamGroup * j,

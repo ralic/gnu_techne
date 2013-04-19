@@ -359,9 +359,9 @@
 	lua_rawgeti (_L, 3, 2);
 	self->elasticity[1] = lua_tonumber (_L, -1);
 
-        t_convert_spring(self->elasticity[0], self->elasticity[1],
-                         &self->contact.surface.soft_erp,
-                         &self->contact.surface.soft_cfm);
+        t_convert_from_spring(self->elasticity[0], self->elasticity[1],
+                              &self->contact.surface.soft_erp,
+                              &self->contact.surface.soft_cfm);
 
 	lua_pop (_L, 2);
     } else {

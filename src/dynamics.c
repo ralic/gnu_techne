@@ -195,7 +195,7 @@ static void callback (void *data, dGeomID a, dGeomID b)
                             k_d = 0;
                         }
 
-                        t_convert_spring(k_s, k_d, &tau, &sigma);
+                        t_convert_from_spring(k_s, k_d, &tau, &sigma);
 		    }
 		    
 		    lua_settop (_L, h);
@@ -335,10 +335,16 @@ static void step (Node *root, double h, double t)
     t_end_interval (root);
 }
 
-void t_convert_spring(double k_s, double k_d, double *erp, double *cfm)
+void t_convert_from_spring(double k_s, double k_d, double *erp, double *cfm)
 {
     *cfm = 1.0 / (stepsize * k_s + k_d);
     *erp = stepsize * k_s / (stepsize * k_s + k_d);
+}
+
+void t_convert_to_spring(double erp, double cfm, double *k_s, double *k_d)
+{
+    *k_s = erp / (cfm * stepsize);
+    *k_d = - (erp - 1) / cfm;
 }
 
 @implementation Dynamics

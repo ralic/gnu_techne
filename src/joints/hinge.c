@@ -229,6 +229,8 @@
     if(lua_istable (_L, 3)) {
         double erp, cfm;        
         
+        /* The limits. */
+        
 	lua_rawgeti (_L, 3, 1);
 	for(i = 0 ; i < 2 ; i += 1) {
 	    lua_rawgeti (_L, -1, i + 1);
@@ -239,16 +241,35 @@
 	}
 	lua_pop (_L, 1);
 
+        /* The hardness. */
+        
 	lua_rawgeti (_L, 3, 2);
-	for(i = 0 ; i < 2 ; i += 1) {
-	    lua_rawgeti (_L, -1, i + 1);
+        
+        if (!lua_isnil(_L, -1)) {
+            for(i = 0 ; i < 2 ; i += 1) {
+                lua_rawgeti (_L, -1, i + 1);
 
-	    self->hardness[i] = lua_tonumber (_L, -1);
+                self->hardness[i] = lua_tonumber (_L, -1);
 
-	    lua_pop (_L, 1);
-	}
+                lua_pop (_L, 1);
+            }
+
+            t_convert_from_spring(self->hardness[0],
+                                  self->hardness[1],
+                                  &erp, &cfm);
+        } else {
+            erp = dWorldGetERP(_WORLD);
+            cfm = dWorldGetCFM(_WORLD);
+
+            t_convert_to_spring(erp, cfm,
+                                &self->hardness[0],
+                                &self->hardness[1]);
+        }
+        
 	lua_pop (_L, 1);
 	
+        /* The bounce. */
+        
 	lua_rawgeti (_L, 3, 3);
 	self->bounce = lua_tonumber (_L, -1);
 	lua_pop (_L, 1);
@@ -257,10 +278,6 @@
 			     self->stops[0]);
 	dJointSetHingeParam (self->joint, dParamHiStop,
 			     self->stops[1]);
-
-        t_convert_spring(self->hardness[0],
-                         self->hardness[1],
-                         &erp, &cfm);
   
 	dJointSetHingeParam (self->joint, dParamStopCFM,
 			     cfm);

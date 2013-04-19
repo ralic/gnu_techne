@@ -407,9 +407,9 @@ static dColliderFn * getCollider (int num)
 		k_s = lambda[8] * data->elasticity[0];
 		k_d = lambda[9] * data->elasticity[1];
 
-                t_convert_spring(k_s, k_d,
-                                 &contact.surface.soft_erp,
-                                 &contact.surface.soft_cfm);
+                t_convert_from_spring(k_s, k_d,
+                                      &contact.surface.soft_erp,
+                                      &contact.surface.soft_cfm);
 	    }
 	
 	    joint = dJointCreateContact (_WORLD, _GROUP, &contact);

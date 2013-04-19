@@ -75,7 +75,8 @@ void t_copy_modelview(float *matrix);
 void t_get_pointer (int *x, int *y);
 void t_warp_pointer (int x, int y);
 
-void t_convert_spring(double k_s, double k_d, double *erp, double *cfm);
+void t_convert_from_spring(double k_s, double k_d, double *erp, double *cfm);
+void t_convert_to_spring(double erp, double cfm, double *k_s, double *k_d);
 
 int luaopen_moremath (lua_State *L);
 int luaopen_morebase (lua_State *L);

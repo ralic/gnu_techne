@@ -24,19 +24,17 @@
 @interface Slider: Joint {
 @public
     double axis[3], motor[2], stops[2], hardness[2];
-    double fudge, tolerance, bounce;
+    double tolerance, bounce;
 }
 
 -(int) _get_axis;
 -(int) _get_motor;
 -(int) _get_stops;
 -(int) _get_tolerance;
--(int) _get_fudge;
 
 -(void) _set_axis;
 -(void) _set_motor;
 -(void) _set_stops;
--(void) _set_fudge;
 -(void) _set_tolerance;
 
 -(int) _get_position;

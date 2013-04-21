@@ -114,7 +114,7 @@ void *t_allocate_pooled (void *p)
         if (!pool->chunks) {
             /* This is the first allocation. */
 	
-            add_new_chunk (pool);
+            pool->current = add_new_chunk (pool);
         }
 
         i = pool->blocks_n % pool->factor;

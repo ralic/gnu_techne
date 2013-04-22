@@ -84,13 +84,13 @@ elevation = topography.elevation {
    separation = 1,
 
    topography.grass {
-      detail = red,
+      detail = green,
       resolution = {1, 1},
       reference = {0, .99, .99}
                     },
 
    topography.barren {
-      detail = green,
+      detail = red,
       resolution = {1, 1},
       reference = {120 / 360, .99, .99},
                      },
@@ -138,7 +138,7 @@ root = primitives.root {
             tag = "seeds",
             
             bias = 1,
-            density = 64 * 100,
+            density = 500,
                                  }
                             }
                                 },

@@ -3,7 +3,8 @@ layout(lines) in;
 in vec4 position_te[];
 in vec3 color_te[];
 in float distance_te[];
-in int category_te[];             
+in mat2x3 basis_te[];
+flat in int category_te[];             
 out vec3 color_g;
 
 void Grass_geometry()
@@ -14,27 +15,38 @@ void Grass_geometry()
 
     if (category_te[0] == 0) {
         const float sqrt_2 = sqrt(2);
-        float rho = 0.001;
+        vec4 b_0, b_1;
+        float rho = 0.01;
+
+        b_0 = vec4(basis_te[0][0], 0);
+        b_1 = vec4(basis_te[0][1], 0);
 
         /* A stem. */
 
-        gl_Position = PM * (position_te[0] + rho * vec4(-sqrt_2, -sqrt_2, 0, 0));
+        gl_Position = PM * (position_te[0] + rho * b_0);
         EmitVertex();
 
-        gl_Position = PM * (position_te[1] + rho * vec4(-sqrt_2, -sqrt_2, 0, 0));
+        gl_Position = PM * (position_te[1] + rho * b_0);
         EmitVertex();
 
-        gl_Position = PM * (position_te[0] + rho * vec4(-sqrt_2, sqrt_2, 0, 0));
+        gl_Position = PM * (position_te[0] + rho * b_1);
         EmitVertex();
 
-        gl_Position = PM * (position_te[1] + rho * vec4(-sqrt_2, sqrt_2, 0, 0));
+        gl_Position = PM * (position_te[1] + rho * b_1);
         EmitVertex();
 
-        gl_Position = PM * (position_te[0] + rho * vec4(0, 1, 0, 0));
+        gl_Position = PM * (position_te[0] - rho * b_0);
         EmitVertex();
 
-        gl_Position = PM * (position_te[1] + rho * vec4(0, 1, 0, 0));
+        gl_Position = PM * (position_te[1] - rho * b_0);
         EmitVertex();
+
+        gl_Position = PM * (position_te[0] - rho * b_1);
+        EmitVertex();
+
+        gl_Position = PM * (position_te[1] - rho * b_1);
+        EmitVertex();
+
     } else {
         vec4 h = vec4(0, distance_te[0] * 0.03, 0, 0);
     

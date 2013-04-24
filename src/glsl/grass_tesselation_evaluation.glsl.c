@@ -5,7 +5,7 @@ patch in float distance_tc;
 out vec4 position_te;
 out vec3 color_te;
 out float distance_te;
-out mat2x3 basis_te;
+out mat2x3 plane_te;
 flat out int category_te;
 
 uniform sampler2D deflections;
@@ -34,8 +34,8 @@ void Grass_evaluation()
         
         d = vec3(cosphi, sinphi, 1) * t.rrg;
 
-        basis_te = mat2x3 (vec3(-costheta * sinphi, cosphi, sinphi * sintheta),
-                           vec3(cosphi * costheta, sinphi, -cosphi * sintheta));
+        plane_te = mat2x3 (vec3(cosphi * costheta, costheta * sinphi, -sintheta),
+                           vec3(-sinphi, cosphi,0));
         position_te = vec4(p + d, 1);
     } else {
         float psi, cospsi, sinpsi;
@@ -53,7 +53,7 @@ void Grass_evaluation()
         t_1 = vec3(texture(deflections, vec2(gl_TessCoord.x, 1.0)));
         d_1 = cospsi * vec3(t_1.x, 0, t_1.y) + sinpsi * vec3(t_1.y, 0, -t_1.x);
 
-        basis_te = mat2x3(vec3(-sin(phi), cos(phi), 0), vec3(0));
+        plane_te = mat2x3(vec3(-sinphi, cosphi, 0), vec3(0));
         position_te = vec4(p + d + 0.05 * d_1, 1);
     }
     

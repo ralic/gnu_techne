@@ -45,15 +45,11 @@ local function update (self, rho, theta, phi)
    end
 
    if theta then
-      current[2] = math.clamp (theta,
-                               -math.pi + rest[2],
-                               math.pi + rest[2])
+      current[2] = math.clamp (theta, -math.pi + rest[2], math.pi + rest[2])
    end
 
    if phi then
-      current[3] = math.clamp (phi,
-                               -math.pi + rest[3],
-                               math.pi + rest[3])
+      current[3] = math.clamp (phi, -math.pi + rest[3], math.pi + rest[3])
    end
 
    -- Reconfigure the slider.
@@ -71,7 +67,7 @@ local function update (self, rho, theta, phi)
 
    a = math.clamp (current[2] - rest[2], -math.pi, math.pi)
    b = math.clamp (current[3] - rest[3], -math.pi, math.pi)
-                   
+   
    stops[2][1] = {a, a}
    stops[1][1] = {b, b}
    
@@ -84,9 +80,9 @@ local info = primitives.root {
          align = {-1, -1},
          color = {1, 1, 1},
          padding = {0.01, 0, 0.01, 0},
-                              }
-                             }
-                             }
+      }
+   }
+}
 
 local orbit = joints.universal {
    link = function (self)
@@ -95,15 +91,14 @@ local orbit = joints.universal {
       p = self.parent.position or {0, 0, 0}
       R_p = self.parent.orientation or arraymath.diagonal(3, 1)
       R_pT = arraymath.transpose(R_p)
-      R = arraymath.concatenate(R_p,
-                                arraymath.relue (0, rest[3], rest[2]))
+      R = arraymath.concatenate(R_p, arraymath.euler (0, rest[3], rest[2]))
       RT = arraymath.transpose(R)
 
       -- Configure the rig.
 
       self.anchor = p
       self.axes = {
-         R_pT[3], R_pT[2], 
+         R_pT[3], RT[2], 
       }
 
       self.stops = {
@@ -126,9 +121,9 @@ local orbit = joints.universal {
 
                mass = mass,
                eye = primitives.observer {}
-                                },
-                              },
-                                       }
+            },
+         },
+      }
 
       bindings['[Rubberband]drag-absolute-axis-0'] = function(sequence, value)
          if not zoom then
@@ -163,7 +158,7 @@ local orbit = joints.universal {
                info.display.layout.text = ""
                self.period = nil
             end
-                                       }
+         }
       end,
 
       buttonrelease = function (self, button)
@@ -186,6 +181,6 @@ local orbit = joints.universal {
          end         
       end
                                          }
-                               }
+}
 
 return orbit

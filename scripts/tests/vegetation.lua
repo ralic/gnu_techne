@@ -103,7 +103,7 @@ elevation = topography.elevation {
 }
 
 root = primitives.root {
-   orbit = resources.dofile ("utils/orbit.lua", -1000, 0, units.degrees(81.6)),
+   orbit = resources.dofile ("utils/orbit.lua", -1000, units.degrees(0), units.degrees(81.6)),
 
    atmosphere = topography.atmosphere {
       size = {1024, 512},

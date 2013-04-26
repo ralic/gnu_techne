@@ -147,12 +147,9 @@ root = primitives.root {
       period = 2,
       
       tick = function(self, ticks)
-         local command = {-1000,
-                          (ticks % 2 > 0 and 1 or -1) * units.degrees(90),
-                          ticks % 2 > 0 and units.degrees(70.65) or units.degrees(68.75)}
-
-         self.parent.orbit.command = command
-
+         self.parent.orbit.azimuth = (ticks % 2 > 0 and 1 or 0) * units.degrees(90)
+         self.parent.orbit.elevation = ticks % 2 > 0 and units.degrees(79.5) or units.degrees(81.6)
+         
          if ticks > 4 then
             techne.iterate = false
          end

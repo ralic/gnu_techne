@@ -25,7 +25,8 @@
 
 typedef enum {
     SHADER_BASIC_UNIFORM,
-    SHADER_SAMPLER_UNIFORM
+    SHADER_SAMPLER_UNIFORM,
+    SHADER_COUNTER_UNIFORM
 } shader_UniformKind;
 
 typedef enum {
@@ -51,24 +52,41 @@ typedef struct {
     shader_UniformKind kind;
     shader_UniformMode mode;
     
-    unsigned int texture, *textures, unit;
-    int location, size, reference;
+    unsigned int index, unit;
+    int location, size;
     GLenum target;
 } shader_Sampler; 
+
+typedef struct {
+    shader_UniformKind kind;
+    shader_UniformMode mode;
+    
+    unsigned int offset, buffer;
+} shader_Counter; 
 
 typedef union {
     shader_Any any;
     shader_Basic basic;
     shader_Sampler sampler;
+    shader_Counter counter;
 } shader_Uniform;
+
+typedef struct {
+    unsigned int name, *names;
+    int reference;
+} shader_Texture; 
 
 @interface ShaderMold: Node {
 @public
     ShaderMold **handle;
 
-    unsigned int *blocks, name;
+    unsigned int name;
     shader_Uniform *uniforms;
-    int blocks_n, uniforms_n;
+
+    int blocks_n;               /* Number of uniform blocks. */
+    int uniforms_n;             /* Number of uniform variables. */
+    int buffers_n;              /* Number of atomic counter buffers. */
+    int samplers_n;             /* Number of sampler uniforms. */
 
     const char **private;
     int private_n;
@@ -87,9 +105,11 @@ typedef union {
 
 @interface Shader: Graphic {
 @public
-    unsigned int *blocks, name;
+    unsigned int *blocks, *buffers, name;
     shader_Uniform *uniforms;
-    int blocks_n, uniforms_n, reference;
+    shader_Texture *textures;
+    int public_buffer, blocks_n, uniforms_n, buffers_n, samplers_n;
+    int reference;
 }
 
 -(void)load;

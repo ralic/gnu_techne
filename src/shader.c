@@ -521,6 +521,24 @@ int t_add_global_block (const char *name, const char *declaration)
     }
 }
 
+-(void) initWithHandle: (ShaderMold **)handle_in
+{
+    [super init];
+
+    self->name = glCreateProgram();
+    self->private = NULL;
+    self->private_n = 0;
+    self->uniforms = NULL;
+    self->uniforms_n = 0;
+    self->blocks_n = 0;
+    self->buffers_n = 0;
+    self->handle = handle_in;
+
+    if (self->handle) {
+        *(self->handle) = self;
+    }
+}
+
 -(void) add: (const int) n sourceStrings: (const char **) strings
         for: (t_Enumerated)stage
 {
@@ -596,28 +614,8 @@ int t_add_global_block (const char *name, const char *declaration)
     pipelines[stage].length = 0;
 }
 
--(void) initWithHandle: (ShaderMold **)handle_in
-{
-    [super init];
-
-    self->name = glCreateProgram();
-    self->private = NULL;
-    self->private_n = 0;
-    self->handle = handle_in;
-
-    if (self->handle) {
-        *(self->handle) = self;
-    }
-}
-
 -(void) free
 {
-    /* Free the uniform buffer object table. */
-
-    if (self->blocks_n > 0) {
-	free(self->blocks);
-    }
-    
     /* Free the uniform information and delete the program. */
 
     if (self->uniforms_n > 0) {
@@ -722,14 +720,17 @@ int t_add_global_block (const char *name, const char *declaration)
 	}
     }
     
-    /* Create a map of active uniforms. */
+    /* We need to query the program about its active uniforms.  This
+     * information will be used by all instances to allocate and
+     * manage the memory that will hold the actual values for each
+     * instance of the program. */
     
     glGetProgramiv (self->name, GL_ACTIVE_UNIFORMS, &u);
     
     if (u > 0) {
 	unsigned int list[u], privates[u];
-	int types[u], sizes[u], offsets[u];
-	int arraystrides[u], matrixstrides[u], indices[u];
+	int types[u], sizes[u], offsets[u], buffer_indices[u];
+	int arraystrides[u], matrixstrides[u], block_indices[u];
 	int i, l;
 
         self->uniforms_n = u;
@@ -746,7 +747,7 @@ int t_add_global_block (const char *name, const char *declaration)
 	/* Read interesting parameters for all uniforms. */
 	
 	glGetActiveUniformsiv(self->name, u, list,
-			      GL_UNIFORM_BLOCK_INDEX, indices);
+			      GL_UNIFORM_BLOCK_INDEX, block_indices);
 	glGetActiveUniformsiv(self->name, u, list,
 			      GL_UNIFORM_TYPE, types);
 	glGetActiveUniformsiv(self->name, u, list,
@@ -757,8 +758,11 @@ int t_add_global_block (const char *name, const char *declaration)
 			      GL_UNIFORM_ARRAY_STRIDE, arraystrides);
 	glGetActiveUniformsiv(self->name, u, list,
 			      GL_UNIFORM_MATRIX_STRIDE, matrixstrides);
+	glGetActiveUniformsiv(self->name, u, list,
+			      GL_UNIFORM_ATOMIC_COUNTER_BUFFER_INDEX,
+                              buffer_indices);
         
-	for (i = 0, n = 0 ; i < u ; i += 1) {
+	for (i = 0, j = 0, n = 0 ; i < u ; i += 1) {
             shader_Uniform *uniform;
 
             uniform = &self->uniforms[i];
@@ -769,13 +773,18 @@ int t_add_global_block (const char *name, const char *declaration)
 
                 uniform->sampler.kind = SHADER_SAMPLER_UNIFORM;
                 uniform->sampler.size = sizes[i];
+                uniform->sampler.unit = n;
+                uniform->sampler.index = j;
+
+                n += uniform->sampler.size;
+                j += 1;
                 
                 /* Cache the sampler location. */
             
                 glGetActiveUniformName (self->name, list[i], l, NULL, buffer);
                 uniform->sampler.location = glGetUniformLocation (self->name, buffer);
 
-                /* Map sampler type to texture target. */
+                /* Map the sampler type to texture target. */
             
                 switch (types[i]) {
                 case GL_SAMPLER_1D:
@@ -794,10 +803,15 @@ int t_add_global_block (const char *name, const char *declaration)
                     t_print_error("Unknown sampler type.\n");
                     abort();
                 }
+            } else if (types[i] == GL_UNSIGNED_INT_ATOMIC_COUNTER) {
+                uniform->counter.kind = SHADER_COUNTER_UNIFORM;
+                
+                uniform->counter.buffer = buffer_indices[i];
+                uniform->counter.offset = offsets[i];
             } else {
                 uniform->basic.kind = SHADER_BASIC_UNIFORM;
                 
-                uniform->basic.block = indices[i];
+                uniform->basic.block = block_indices[i];
                 uniform->basic.type = types[i];
                 uniform->basic.size = sizes[i];
                 uniform->basic.offset = offsets[i];
@@ -805,6 +819,8 @@ int t_add_global_block (const char *name, const char *declaration)
                 uniform->basic.matrixstride = matrixstrides[i];
             }	
         }
+
+        self->samplers_n = j;
 
         /* Take care of private uniforms. */
         
@@ -821,15 +837,93 @@ int t_add_global_block (const char *name, const char *declaration)
 	self->uniforms = NULL;
     }
 
+    /* Here we just set up bindings between uniform blocks and buffer
+     * objects.  Uniform block i is bound to binding point i and the
+     * convention is that prior to drawing the shader binds all its
+     * buffer objects in the same way.  That is the buffer object with
+     * name blocks[i] is bound to binding point i.  The actual buffer
+     * objects are allocated per-shader on load.  */
+    
     glGetProgramiv (self->name, GL_ACTIVE_UNIFORM_BLOCKS, &self->blocks_n);
 
+    for (i = 0 ; i < self->blocks_n ; i += 1) {
+        glUniformBlockBinding (self->name, i, i);
+    }
+
+    glGetProgramiv (self->name, GL_ACTIVE_ATOMIC_COUNTER_BUFFERS, &self->buffers_n);
+}
+
+@end
+
+@implementation Shader
+
+-(void)init
+{
+    [super init];
+
+    self->reference = LUA_REFNIL;
+    self->public_buffer = -1;
+}
+
+-(void) load
+{
+    ShaderMold *mold;
+    int i;
+
+    /* Make a reference to the mold to make sure it's not
+     * collected. */
+
+    mold = t_tonode (_L, -1);
+    self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+
+    self->name = mold->name;    
+    self->uniforms_n = mold->uniforms_n;
+    self->blocks_n = mold->blocks_n;
+    self->buffers_n = mold->buffers_n;
+    self->samplers_n = mold->samplers_n;
+    
+    /* Allocate and initialize the textures table. */
+
+    self->uniforms = mold->uniforms;
+
+    if (mold->samplers_n > 0) {
+        shader_Uniform *uniform;
+        
+        self->textures = malloc (mold->samplers_n * sizeof (shader_Texture));
+    
+        for (i = 0 ; i < self->uniforms_n ; i += 1) {
+            uniform = &self->uniforms[i];
+
+            if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
+                shader_Sampler *sampler;
+                shader_Texture *texture;
+
+                sampler = &uniform->sampler;
+                texture = &self->textures[sampler->index];
+
+                texture->name = 0;
+                texture->reference = LUA_REFNIL;
+
+                if (sampler->size > 1) {
+                    texture->names = calloc (sampler->size,
+                                             sizeof(unsigned int));
+                } else {
+                    texture->names = NULL;
+                }
+            }
+        }
+    } else {
+	self->textures = NULL;
+    }
+
+    /* Allocate the uniform buffer objects. */
+    
     if (self->blocks_n > 0) {
 	self->blocks = malloc (self->blocks_n * sizeof (unsigned int));
 
 	for (i = 0 ; i < self->blocks_n ; i += 1) {
 	    int l;
 
-	    glUniformBlockBinding (self->name, i, i);
 	    glGetActiveUniformBlockiv(self->name, i,
 				      GL_UNIFORM_BLOCK_NAME_LENGTH,
 				      &l);
@@ -854,111 +948,63 @@ int t_add_global_block (const char *name, const char *declaration)
                     assert (j != globals_n);
 		    self->blocks[i] = globals[j].index;
 		} else {
-                    self->blocks[i] = GL_INVALID_INDEX;
+                    int n;
+                    
+                    glGetActiveUniformBlockiv(self->name, i,
+                                              GL_UNIFORM_BLOCK_DATA_SIZE,
+                                              &n);
+
+                    glGenBuffers(1, &self->blocks[i]);
+                    glBindBuffer(GL_UNIFORM_BUFFER, self->blocks[i]);
+
+                    {
+                        char zero[n];
+
+                        memset (zero, 0, n * sizeof (char));
+                        glBufferData(GL_UNIFORM_BUFFER, n, zero, GL_DYNAMIC_DRAW);
+                    }
 		}
 	    }
 	}
     } else {
 	self->blocks = NULL;
     }
-}
 
-@end
-
-@implementation Shader
-
--(void)init
-{
-    [super init];
-
-    self->reference = LUA_REFNIL;
-
-    self->name = 0;    
-    self->uniforms_n = 0;
-    self->blocks_n = 0;
-
-    self->uniforms = NULL;
-    self->blocks = NULL;
-}
-
--(void) load
-{
-    ShaderMold *mold;
-    int i, n;
-
-    /* Make a reference to the mold to make sure it's not
-     * collected. */
-
-    mold = t_tonode (_L, -1);
-    self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
-
-    self->name = mold->name;    
-    self->uniforms_n = mold->uniforms_n;
-    self->blocks_n = mold->blocks_n;
+    /* Allocate the atomic counter buffer objects. */
     
-    /* Allocate and initialize the uniforms table. */
+    if (self->buffers_n > 0) {
+	self->buffers = malloc (self->buffers_n * sizeof (unsigned int));
 
-    if (self->uniforms_n > 0) {
-        shader_Uniform *uniform;
-        
-        self->uniforms = malloc (mold->uniforms_n * sizeof (shader_Uniform));
-        memcpy (self->uniforms, mold->uniforms,
-                mold->uniforms_n * sizeof (shader_Uniform));
+	for (i = 0 ; i < self->buffers_n ; i += 1) {
+	    int j, n;
 
-        for (i = 0, n = 0 ; i < self->uniforms_n ; i += 1) {
-            uniform = &self->uniforms[i];
+            /* Keep a note of the index if this buffer is bound to
+             * binding point 0, which is reserved for public atomic
+             * counters. */
+            
+            glGetActiveAtomicCounterBufferiv(self->name, i, GL_ATOMIC_COUNTER_BUFFER_BINDING, &j);
 
-            if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
-                shader_Sampler *sampler;
-
-                sampler = &uniform->sampler;
-
-                sampler->unit = n;
-                sampler->texture = 0;
-                sampler->reference = LUA_REFNIL;
-
-                if (sampler->size > 1) {
-                    sampler->textures = calloc (sampler->size,
-                                                sizeof(unsigned int));
-                } else {
-                    sampler->textures = NULL;
-                }
-
-                n += sampler->size;
+            if (j == 0) {
+                self->public_buffer = i;
             }
-        }
-    } else {
-	self->uniforms = NULL;
-    }
 
-    /* Allocate the uniform buffer objects. */
-    
-    if (self->blocks_n > 0) {
-	self->blocks = malloc (self->blocks_n * sizeof (unsigned int));
-        memcpy (self->blocks, mold->blocks,
-                self->blocks_n * sizeof (unsigned int));
+            /* Allocate a buffer object of the required size. */
+            
+            glGetActiveAtomicCounterBufferiv(self->name, i, GL_ATOMIC_COUNTER_BUFFER_DATA_SIZE, &n);
 
-	for (i = 0 ; i < self->blocks_n ; i += 1) {
-	    int s;
+            glGenBuffers(1, &self->buffers[i]);
+            glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, self->buffers[i]);
 
-            if (self->blocks[i] == GL_INVALID_INDEX) {
-                glGetActiveUniformBlockiv(self->name, i,
-                                          GL_UNIFORM_BLOCK_DATA_SIZE,
-                                          &s);
+            {
+                char zero[n];
 
-                glGenBuffers(1, &self->blocks[i]);
-                glBindBuffer(GL_UNIFORM_BUFFER, self->blocks[i]);
-
-                {
-                    char zero[s];
-
-                    memset (zero, 0, s * sizeof (char));
-                    glBufferData(GL_UNIFORM_BUFFER, s, zero, GL_DYNAMIC_DRAW);
-                }
+                memset (zero, 0, n * sizeof (char));
+                glBufferData(GL_ATOMIC_COUNTER_BUFFER, n, zero,
+                             GL_DYNAMIC_COPY);
             }
 	}
     } else {
-	self->blocks = NULL;
+	self->buffers = NULL;
     }
 }
 
@@ -983,30 +1029,39 @@ int t_add_global_block (const char *name, const char *declaration)
 	glDeleteBuffers (self->blocks_n, self->blocks);
 	free(self->blocks);
     }
+    
+    /* Free the atomic counter buffer objects. */
 
-    /* Free the uniforms table. */
+    if (self->buffers_n > 0) {
+        glDeleteBuffers (self->buffers_n, self->buffers);
+	free(self->buffers);
+    }
 
-    if (self->uniforms_n > 0) {
+    /* Free the textures table if there is one. */
+
+    if (self->samplers_n > 0) {
         for (i = 0 ; i < self->uniforms_n ; i += 1) {
             shader_Uniform *uniform;
 
             uniform = &self->uniforms[i];
 
             if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
-                luaL_unref(_L, LUA_REGISTRYINDEX, uniform->sampler.reference);
+                shader_Sampler *sampler;
+                shader_Texture *texture;
 
-                if (uniform->sampler.textures) {
-                    free(uniform->sampler.textures);
+                sampler = &uniform->sampler;
+                texture = &self->textures[sampler->index];
+                
+                luaL_unref(_L, LUA_REGISTRYINDEX, texture->reference);
+
+                if (sampler->size > 1) {
+                    free(texture->names);
                 }
             }
         }
         
-        free(self->uniforms);
+        free(self->textures);
     }
-
-    self->name = 0;    
-    self->uniforms_n = 0;
-    self->blocks_n = 0;
     
     /* Release the reference to the mold. */
     
@@ -1017,6 +1072,58 @@ int t_add_global_block (const char *name, const char *declaration)
 {
     [self unload];
     [super free];
+}
+
+-(unsigned int) getUnitForSamplerUniform: (const char *)uniform
+{
+    unsigned int i;
+    
+    glGetUniformIndices(self->name, 1, &uniform, &i);
+    return self->uniforms[i].sampler.unit;
+}
+
+-(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture_name
+{
+    shader_Sampler *sampler;
+    shader_Texture *texture;
+    unsigned int i;
+    
+    glGetUniformIndices(self->name, 1, &uniform, &i);    
+    assert(i != GL_INVALID_INDEX);
+    
+    sampler = &self->uniforms[i].sampler;
+    texture = &self->textures[sampler->index];
+    
+    assert (sampler->kind == SHADER_SAMPLER_UNIFORM);
+    assert (sampler->size == 1);
+    
+    luaL_unref(_L, LUA_REGISTRYINDEX, texture->reference);
+    
+    texture->name = texture_name;
+    texture->reference = LUA_REFNIL;
+}
+
+-(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture_name
+                  atIndex: (int)j
+{
+    shader_Sampler *sampler;
+    shader_Texture *texture;
+    unsigned int i, *names;
+    
+    glGetUniformIndices(self->name, 1, &uniform, &i);    
+    assert(i != GL_INVALID_INDEX);
+    
+    sampler = &self->uniforms[i].sampler;
+    texture = &self->textures[sampler->index];
+
+    assert (sampler->kind == SHADER_SAMPLER_UNIFORM);
+    assert (sampler->size > j);
+    
+    luaL_unref(_L, LUA_REGISTRYINDEX, texture->reference);
+    texture->reference = LUA_REFNIL;
+
+    names = sampler->size > 1 ? texture->names : &texture->name;    
+    names[j] = texture_name;
 }
 
 -(int) _get_
@@ -1050,81 +1157,33 @@ int t_add_global_block (const char *name, const char *declaration)
 
                 return 1;
             } else if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
-                lua_rawgeti (_L, LUA_REGISTRYINDEX, self->uniforms[i].sampler.reference);            
+                shader_Sampler *sampler;
+                shader_Texture *texture;
+
+                sampler = &self->uniforms[i].sampler;
+                texture = &self->textures[sampler->index];
+
+                lua_rawgeti (_L, LUA_REGISTRYINDEX, texture->reference);
                 
+                return 1;
+            } else if (uniform->any.kind == SHADER_COUNTER_UNIFORM) {
+                int n;
+
+                glBindBuffer (GL_ATOMIC_COUNTER_BUFFER,
+                              self->buffers[uniform->counter.buffer]);
+
+                glGetBufferSubData (GL_ATOMIC_COUNTER_BUFFER,
+                                    uniform->counter.offset,
+                                    sizeof (unsigned int), &n);
+                
+                lua_pushinteger (_L, n);
+
                 return 1;
             }
         }
     }
 
     return [super _get_];
-}
-
--(unsigned int) getUnitForSamplerUniform: (const char *)uniform
-{
-    unsigned int i;
-    
-    glGetUniformIndices(self->name, 1, &uniform, &i);
-    return self->uniforms[i].sampler.unit;
-}
-
--(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture
-{
-    shader_Sampler *sampler;
-    unsigned int i;
-    
-    glGetUniformIndices(self->name, 1, &uniform, &i);    
-    assert(i != GL_INVALID_INDEX);
-    
-    sampler = &self->uniforms[i].sampler;
-
-    assert (sampler->kind == SHADER_SAMPLER_UNIFORM);
-    assert (sampler->size == 1);
-    
-    luaL_unref(_L, LUA_REGISTRYINDEX, sampler->reference);
-    
-    sampler->texture = texture;
-    sampler->reference = LUA_REFNIL;
-}
-
--(void) setSamplerArrayUniform: (const char *)uniform to: (unsigned int)texture
-{
-    shader_Sampler *sampler;
-    unsigned int i;
-    
-    glGetUniformIndices(self->name, 1, &uniform, &i);    
-    assert(i != GL_INVALID_INDEX);
-    
-    sampler = &self->uniforms[i].sampler;
-
-    assert (sampler->kind == SHADER_SAMPLER_UNIFORM);
-    assert (sampler->size == 1);
-    
-    luaL_unref(_L, LUA_REGISTRYINDEX, sampler->reference);
-    
-    sampler->texture = texture;
-    sampler->reference = LUA_REFNIL;
-}
-
--(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture
-                  atIndex: (int)j
-{
-    shader_Sampler *sampler;
-    unsigned int i, *textures;
-    
-    glGetUniformIndices(self->name, 1, &uniform, &i);    
-    assert(i != GL_INVALID_INDEX);
-    
-    sampler = &self->uniforms[i].sampler;
-
-    assert (sampler->kind == SHADER_SAMPLER_UNIFORM);
-    assert (sampler->size > j);
-    
-    luaL_unref(_L, LUA_REGISTRYINDEX, sampler->reference);
-    sampler->reference = LUA_REFNIL;
-
-    textures = sampler->size > 1 ? sampler->textures : &sampler->texture;    
-    textures[j] = texture;
 }
 
 -(int) _set_
@@ -1158,12 +1217,14 @@ int t_add_global_block (const char *name, const char *declaration)
             
                 return 1;
             } else if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
-                Texture *texture;
                 shader_Sampler *sampler;
-                unsigned int *textures;
+                shader_Texture *texture;
+                unsigned int *names;
                 int j, n;
                 
                 sampler = &self->uniforms[i].sampler;
+                texture = &self->textures[sampler->index];
+                
                 if (sampler->size > 1) {
                     if (!lua_istable (_L, 3)) {
                         t_print_error("Sampler array must be set with an array of textures.\n");
@@ -1178,28 +1239,46 @@ int t_add_global_block (const char *name, const char *declaration)
                     lua_rawseti (_L, -2, 1);
                 }
 
-                luaL_unref (_L, LUA_REGISTRYINDEX, sampler->reference);
+                luaL_unref (_L, LUA_REGISTRYINDEX, texture->reference);
                 
                 n = lua_rawlen(_L, 3);
-                textures = sampler->size > 1 ?
-                    sampler->textures : &sampler->texture;
+                names = sampler->size > 1 ? texture->names : &texture->name;
 
                 for (j = 0 ; j < n ; j += 1) {
-                    lua_rawgeti (_L, 3, 1);
+                    Texture *texture;
+                    
+                    lua_rawgeti (_L, 3, j);
                     texture = t_testtexture(_L, -1, sampler->target);
 
                 /* _TRACE ("%p\n", texture); */
                     if (!texture) {
-                        textures[j] = 0;
+                        names[j] = 0;
                     } else {
                     /* _TRACE ("%d\n", texture->name); */
-                        textures[j] = texture->name;
+                        names[j] = texture->name;
                     }
 
                     lua_pop(_L, 1);
                 }
                 
-                sampler->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+                texture->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+
+                return 1;
+            } else if (uniform->any.kind == SHADER_COUNTER_UNIFORM) {
+                int n;
+
+                glBindBuffer (GL_ATOMIC_COUNTER_BUFFER,
+                              self->buffers[uniform->counter.buffer]);
+
+                if (!lua_isnumber (_L, 3)) {
+                    t_print_error("Atomic counter must be set with an integer.\n");
+                    abort();
+                }
+
+                n = lua_tointeger (_L, 3);
+                glBufferSubData (GL_ATOMIC_COUNTER_BUFFER,
+                                 uniform->counter.offset,
+                                 sizeof (unsigned int), &n);
 
                 return 1;
             }
@@ -1229,20 +1308,23 @@ int t_add_global_block (const char *name, const char *declaration)
 	}
     }
 
+    if (self->public_buffer >= 0) {
+        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0,
+                         self->buffers[self->public_buffer]);
+    }
+
     for (i = 0 ; i < self->uniforms_n ; i += 1) {
         uniform = &self->uniforms[i];
             
         if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
             shader_Sampler *sampler;
-            unsigned int *textures;
+            shader_Texture *texture;
+            unsigned int *names;
 
             sampler = &uniform->sampler;
+            texture = &self->textures[sampler->index];
 
-            if (sampler->size > 1) {
-                textures = sampler->textures;
-            } else {
-                textures = &sampler->texture;
-            }
+            names = sampler->size > 1 ? texture->names : &texture->name;    
 
             /* Bind all textures associated with the uniform to
              * consecutive units starting with the assigned base
@@ -1251,9 +1333,9 @@ int t_add_global_block (const char *name, const char *declaration)
             for (j = 0 ; j < sampler->size ; j += 1) {
                 glUniform1i (sampler->location + j, sampler->unit + j);
                 
-                if (textures[j] > 0) {
+                if (names[j] > 0) {
                     glActiveTexture(GL_TEXTURE0 + sampler->unit + j);
-                    glBindTexture (sampler->target, textures[j]);
+                    glBindTexture (sampler->target, names[j]);
                 }
             }
         }

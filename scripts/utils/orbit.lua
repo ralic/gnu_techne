@@ -25,9 +25,17 @@ local widgets = require "widgets"
 local controllers = require "controllers"
 local physics = require "physics"
 
-local rest = {...}
-local initial = {...}
-local current = {...}
+local parameters = ...
+
+local rest = {parameters.radius,
+              parameters.azimuth,
+              parameters.elevation}
+local initial = {parameters.radius,
+                 parameters.azimuth,
+                 parameters.elevation}
+local current = {parameters.radius,
+                 parameters.azimuth,
+                 parameters.elevation}
 local zoom = false
 local sensitivity = 3
 local compliance = {1000000, 150000}
@@ -85,6 +93,8 @@ local info = primitives.root {
 }
 
 local orbit = primitives.transform {
+   position = parameters.position,
+   
    universal = joints.universal {
       link = function (self)
          local p, R, R_p, RT, R_pT

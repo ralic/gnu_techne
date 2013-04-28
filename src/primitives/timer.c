@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
+
 #include <lua.h>
 #include <lauxlib.h>
 
@@ -26,16 +28,31 @@
 {
     [super init];
 
-    self->armed = 0;
     self->tick = LUA_REFNIL;    
-    self->period = 1;
+    self->shortcircuit = 0;
+    self->period = 0.0 / 0.0;
 }
 
 -(void) toggle
 {
+    /* If we're about to get unlinked and our period is infinity
+     * tick. */
+        
+    if (self->linked && isinf(self->period) > 0) {
+        self->shortcircuit = 1;
+        [self tick];
+        self->shortcircuit = 0;
+    }
+
     [super toggle];
 
+    /* Reset the timer if it's just been linked. */
+    
     if (self->linked) {
+        clock_gettime (CLOCK_REALTIME, &self->checkpoint);
+        self->elapsed = 0;
+        self->delta = 0;
+        self->count = 0;
     }
 }
 
@@ -55,7 +72,7 @@
     self->delta = time.tv_sec - self->checkpoint.tv_sec +
 	         (time.tv_nsec - self->checkpoint.tv_nsec) / 1e9;
 
-    if (self->delta > self->period) {
+    if (self->shortcircuit || self->delta > self->period) {
 	self->elapsed += self->delta;
 	self->checkpoint = time;
 	self->count += 1;
@@ -83,7 +100,7 @@
 
 -(int) _get_period
 {
-    if (self->armed) {
+    if (!isnan(self->period)) {
         lua_pushnumber (_L, self->period);
     } else {
         lua_pushnil (_L);
@@ -116,17 +133,9 @@
 -(void) _set_period
 {
     if (lua_isnil (_L, 3)) {
-        self->armed = 0;
+        self->period = 0.0 / 0.0;
     } else {
         self->period = lua_tonumber (_L, 3);
-        
-        if (!self->armed) {
-            clock_gettime (CLOCK_REALTIME, &self->checkpoint);
-            self->elapsed = 0;
-            self->delta = 0;
-            self->count = 0;
-            self->armed = 1;
-        }
     }
 }
 

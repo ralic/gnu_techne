@@ -428,7 +428,11 @@ static int next_ancestor(lua_State *L)
 {
     int k;
 
-    k = lua_tointeger(L, 2);
+    if(!lua_isnil(L, 2)) {
+        k = lua_tointeger(L, 2);
+    } else {
+        k = -1;
+    }
 
     lua_pop (L, 1);
     lua_pushinteger (L, k + 1);
@@ -563,9 +567,23 @@ static int ancestors_iterator(lua_State *L)
 {
     lua_pushcfunction (L, next_ancestor);
     lua_pushvalue(L, 1);
-    lua_pushinteger (L, 0);
+    lua_pushnil (L);
 
     return 3;
+}
+
+static int ancestors_ipairs(lua_State *L)
+{
+    lua_pushcfunction(L, next_ancestor);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_pushnil (L);
+    
+    return 3;
+}
+
+static int ancestors_pairs(lua_State *L)
+{
+    return ancestors_ipairs(L);
 }
 
 static int ancestors_tostring(lua_State *L)
@@ -594,19 +612,20 @@ static int ancestors_index(lua_State *L)
     Node *object;
     int i, n;
 
-    if (lua_type (_L, 2) == LUA_TNUMBER) {
-	n = lua_tonumber (_L, 2);
-	object = *(Node **)lua_touserdata (_L, lua_upvalueindex(1));
+    if (lua_type (L, 2) == LUA_TNUMBER) {
+	n = lua_tonumber (L, 2);
 	
-	for (i = 0 ; i < n && object ; i += 1, object = object->up);
+	for (i = 0, object = *(Node **)lua_touserdata (L, lua_upvalueindex(1));
+             i < n && object;
+             i += 1, object = object->up);
 
 	if (object) {
-	    t_pushuserdata (_L, 1, object);
+	    t_pushuserdata (L, 1, object);
 	} else {
-	    lua_pushnil (_L);
+	    lua_pushnil (L);
 	}
     } else {
-	lua_pushnil (_L);
+	lua_pushnil (L);
     }
 
     return 1;
@@ -617,17 +636,18 @@ static int ancestors_newindex(lua_State *L)
     Node *object;
     int i, n;
 
-    if (lua_type (_L, 2) == LUA_TNUMBER) {
-    	n = lua_tonumber (_L, 2);
-	object = *(Node **)lua_touserdata (_L, lua_upvalueindex(1));
+    if (lua_type (L, 2) == LUA_TNUMBER) {
+    	n = lua_tonumber (L, 2);
 	
-	for (i = 0 ; i < n - 1 && object ; i += 1, object = object->up);
+	for (i = 0, object = *(Node **)lua_touserdata (L, lua_upvalueindex(1));
+             i < n - 1 && object;
+             i += 1, object = object->up);
 
 	if (object) {
-	    t_pushuserdata (_L, 1, object);
-	    lua_pushstring (_L, "parent");
-	    lua_pushvalue (_L, 3);
-	    lua_settable (_L, -3);
+	    t_pushuserdata (L, 1, object);
+	    lua_pushstring (L, "parent");
+	    lua_pushvalue (L, 3);
+	    lua_settable (L, -3);
 	}
     }
 
@@ -1606,6 +1626,13 @@ static void unlink_node (Node *node)
     T_WARN_READONLY;
 }
 
+-(int) _get_children
+{
+    lua_rawgeti (_L, LUA_REGISTRYINDEX, self->children);
+
+    return 1;
+}
+
 -(int) _get_ancestors
 {
     lua_newtable (_L);
@@ -1622,6 +1649,14 @@ static void unlink_node (Node *node)
     lua_pushstring(_L, "__newindex");
     lua_pushvalue (_L, 1);
     lua_pushcclosure(_L, (lua_CFunction)ancestors_newindex, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__ipairs");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)ancestors_ipairs, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__pairs");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)ancestors_pairs, 1);
     lua_settable(_L, -3);
     lua_pushstring(_L, "__tostring");
     lua_pushvalue (_L, 1);
@@ -1648,6 +1683,11 @@ static void unlink_node (Node *node)
 }
 
 -(void) _set_ancestors
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_children
 {
     T_WARN_READONLY;
 }

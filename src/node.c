@@ -1606,7 +1606,7 @@ static void unlink_node (Node *node)
     return 1;
 }
 
--(int) _get_descendants
+-(int) _get_children
 {
     Node *child;
     int i;
@@ -1621,16 +1621,9 @@ static void unlink_node (Node *node)
     return 1;
 }
 
--(void) _set_descendants
+-(void) _set_children
 {
     T_WARN_READONLY;
-}
-
--(int) _get_children
-{
-    lua_rawgeti (_L, LUA_REGISTRYINDEX, self->children);
-
-    return 1;
 }
 
 -(int) _get_ancestors
@@ -1683,11 +1676,6 @@ static void unlink_node (Node *node)
 }
 
 -(void) _set_ancestors
-{
-    T_WARN_READONLY;
-}
-
--(void) _set_children
 {
     T_WARN_READONLY;
 }

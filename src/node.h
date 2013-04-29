@@ -124,8 +124,8 @@ struct protocol {
 -(int) _get_type;
 -(void) _set_type;
 
--(int) _get_descendants;
--(void) _set_descendants;
+-(int) _get_children;
+-(void) _set_children;
 
 @end
 

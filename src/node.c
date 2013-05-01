@@ -405,45 +405,6 @@ static int children_iterator(lua_State *L)
     return 3;
 }
 
-static int ancestor(lua_State *L)
-{
-    Node *object;
-    int i, n;
-
-    object = t_checknode(L, 1, [Node class]);
-    n = luaL_optinteger(L, 2, 0);
-
-    for (i = 0 ; i < n && object ; i += 1, object = object->up);
-
-    if (object) {
-	t_pushuserdata (L, 1, object);
-    } else {
-	lua_pushnil (L);
-    }
-
-    return 1;
-}
-
-static int next_ancestor(lua_State *L)
-{
-    int k;
-
-    if(!lua_isnil(L, 2)) {
-        k = lua_tointeger(L, 2);
-    } else {
-        k = -1;
-    }
-
-    lua_pop (L, 1);
-    lua_pushinteger (L, k + 1);
-    lua_pushcfunction (L, ancestor);
-    lua_pushvalue (L, 1);
-    lua_pushinteger (L, k + 1);
-    t_call (L, 2, 1);
-
-    return lua_isnil (L, -1) ? 1 : 2;
-}
-
 static int next_key(lua_State *L)
 {
     static int state;
@@ -563,6 +524,34 @@ static int next_array_key(lua_State *L)
     return 2;
 }
 
+static int next_ancestor(lua_State *L)
+{
+    Node *object;
+    int i, k;
+
+    if(!lua_isnil(L, 2)) {
+        k = lua_tointeger(L, 2);
+    } else {
+        k = 0;
+    }
+    lua_pop (L, 1);
+
+    object = t_checknode(L, 1, [Node class]);
+    for (i = 0 ; i < k && object ; i += 1, object = object->up);
+
+    lua_pushinteger (L, k + 1);
+
+    if (object) {
+	t_pushuserdata (L, 1, object);
+
+        return 2;
+    } else {
+	lua_pushnil (L);
+
+        return 1;
+    }
+}
+
 static int ancestors_iterator(lua_State *L)
 {
     lua_pushcfunction (L, next_ancestor);
@@ -633,24 +622,137 @@ static int ancestors_index(lua_State *L)
 
 static int ancestors_newindex(lua_State *L)
 {
-    Node *object;
-    int i, n;
+    t_print_warning ("Changing the ancestors table will have no effect on "
+                     "node linkage.");
+    
+    return 0;
+}
+
+static Node *kth_sibling (Node *node, int k)
+{
+    Node *sibling;
+    int i;
+
+    /* To return the k-th sibling first seek the left-most sibling and
+     * then count k nodes from that excluding ourselves. The second
+     * loop is rather ridiculous. */
+    
+    for (sibling = node ; sibling->left ; sibling = sibling->left);
+    for (i = 0;
+         sibling == node || (i < k && sibling);
+         i += (sibling != node),
+             sibling = (sibling->right == node ?
+                        sibling->right->right : sibling->right));
+
+    return sibling;
+}
+
+static int next_sibling(lua_State *L)
+{
+    Node *node, *sibling;
+    int k;
+
+    if(!lua_isnil(L, 2)) {
+        k = lua_tointeger(L, 2);
+    } else {
+        k = 0;
+    }
+    lua_pop (L, 1);
+
+    node = t_checknode(L, 1, [Node class]);
+    sibling = kth_sibling(node, k);
+    
+    lua_pushinteger (L, k + 1);
+
+    if (sibling) {
+	t_pushuserdata (L, 1, sibling);
+
+        return 2;
+    } else {
+	lua_pushnil (L);
+
+        return 1;
+    }
+}
+
+static int siblings_iterator(lua_State *L)
+{
+    lua_pushcfunction (L, next_sibling);
+    lua_pushvalue(L, 1);
+    lua_pushnil (L);
+
+    return 3;
+}
+
+static int siblings_ipairs(lua_State *L)
+{
+    lua_pushcfunction(L, next_sibling);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_pushnil (L);
+    
+    return 3;
+}
+
+static int siblings_pairs(lua_State *L)
+{
+    return siblings_ipairs(L);
+}
+
+static int siblings_tostring(lua_State *L)
+{
+    lua_pushstring(L, "Siblings");
+   
+    return 1;
+}
+
+static int siblings_len(lua_State *L)
+{
+    Node *sibling, *node;
+    int i;
+
+    node = *(Node **)lua_touserdata(L, lua_upvalueindex(1));
+    
+    for (i = 0, sibling = node->left;
+         sibling;
+         i += 1, sibling = sibling->left);
+    
+    for (sibling = node->right;
+         sibling;
+         i += 1, sibling = sibling->right);
+
+    lua_pushinteger (L, i);
+
+    return 1;
+}
+
+static int siblings_index(lua_State *L)
+{
+    Node *node, *sibling;
+    int k;
 
     if (lua_type (L, 2) == LUA_TNUMBER) {
-    	n = lua_tonumber (L, 2);
+	k = lua_tonumber (L, 2);
 	
-	for (i = 0, object = *(Node **)lua_touserdata (L, lua_upvalueindex(1));
-             i < n - 1 && object;
-             i += 1, object = object->up);
+	node = *(Node **)lua_touserdata (L, lua_upvalueindex(1));
+        sibling = kth_sibling(node, k);
 
-	if (object) {
-	    t_pushuserdata (L, 1, object);
-	    lua_pushstring (L, "parent");
-	    lua_pushvalue (L, 3);
-	    lua_settable (L, -3);
+	if (sibling) {
+	    t_pushuserdata (L, 1, sibling);
+	} else {
+	    lua_pushnil (L);
 	}
+    } else {
+	lua_pushnil (L);
     }
 
+    return 1;
+}
+
+static int siblings_newindex(lua_State *L)
+{
+    t_print_warning ("Changing the siblings table will have no effect on "
+                     "node linkage.");
+    
     return 0;
 }
 
@@ -1217,6 +1319,9 @@ static void unlink_node (Node *node)
 
 	lua_pushcfunction (_L, ancestors_iterator);
 	lua_setglobal (_L, "ancestors");
+
+	lua_pushcfunction (_L, siblings_iterator);
+	lua_setglobal (_L, "siblings");
     }
 }
 
@@ -1660,6 +1765,40 @@ static void unlink_node (Node *node)
     return 1;
 }
 
+-(int) _get_siblings
+{
+    lua_newtable (_L);
+
+    lua_newtable (_L);
+    lua_pushstring(_L, "__len");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)siblings_len, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__index");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)siblings_index, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__newindex");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)siblings_newindex, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__ipairs");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)siblings_ipairs, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__pairs");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)siblings_pairs, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__tostring");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)siblings_tostring, 1);
+    lua_settable(_L, -3);
+    lua_setmetatable(_L, -2);
+
+    return 1;
+}
+
 -(void) _set_parent
 {
     if (!lua_isnil (_L, 3)) {
@@ -1676,6 +1815,11 @@ static void unlink_node (Node *node)
 }
 
 -(void) _set_ancestors
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_siblings
 {
     T_WARN_READONLY;
 }

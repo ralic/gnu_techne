@@ -532,7 +532,7 @@ static int next_ancestor(lua_State *L)
     if(!lua_isnil(L, 2)) {
         k = lua_tointeger(L, 2);
     } else {
-        k = 0;
+        k = 1;
     }
     lua_pop (L, 1);
 

@@ -72,7 +72,7 @@ static int construct(lua_State *L)
     lua_pushstring(_L, "resolution");
     lua_gettable(_L, 1);
 
-    if(lua_istable(_L, 1)) {
+    if(lua_istable(_L, -1)) {
         for(i = 0 ; i < 2 ; i += 1) {
             lua_rawgeti(_L, -1, i + 1);
             tiles->resolution[i] = lua_tonumber(_L, -1);

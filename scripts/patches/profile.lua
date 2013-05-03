@@ -13,6 +13,10 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+if not options.profile then
+   return
+end
+
 local table = require "table"
 local string = require "string"
 local primitives = require "primitives"
@@ -71,7 +75,7 @@ Ran a total of %d iterations in %.1f seconds at %.1f ms per iteration (%.1f Hz).
       
       nodes = {}
       
-      if options.profile then
+      if type(options.profile) ~= "boolean" then
          local specifications
 
          -- Wrap a single node in a table.

@@ -9,7 +9,6 @@ out mat2x3 plane_te;
 flat out int category_te;
 
 uniform sampler2D deflections;
-layout(binding = 0) uniform atomic_uint count;
 
 void Grass_evaluation()
 {
@@ -41,6 +40,4 @@ void Grass_evaluation()
     color_te = color_tc;
     distance_te = distance_tc;
     category_te = c;
-
-    atomicCounterIncrement(count);
 }

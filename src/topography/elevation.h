@@ -26,6 +26,18 @@
 #include "body.h"
 #include "shader.h"
 
+#define BINS_N 16
+
+#define SEED_BUFFER_SIZE (10000)
+#define SEED_SIZE (3 * 3 * 4)
+#define VEGETATION_LEVEL_BIAS 0
+
+typedef struct {
+    char *buffer;
+    int total, fill, capacity;
+    double mean, sum;
+} elevation_Bin;
+
 @interface Elevation: Node {
 @public
     roam_Context context;
@@ -88,6 +100,7 @@
 @interface ElevationSeeds: Shape {
 @public
     roam_Context *context;
+    elevation_Bin bins[BINS_N];
 
     struct {
         unsigned int scale, offset;
@@ -108,6 +121,9 @@
 
 -(int) _get_bias;
 -(void) _set_bias;
+
+-(int) _get_bins;
+-(void) _set_bins;
 
 @end
 

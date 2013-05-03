@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <lualib.h>
 #include <lauxlib.h>
 
@@ -45,11 +46,23 @@ static int sign(lua_State *L)
     return 1;
 }
 
+static int luaround(lua_State *L)
+{
+    double a;
+    
+    a = luaL_checknumber (L, 1);
+
+    lua_pushnumber (L, round(a));
+    
+    return 1;
+}
+
 int luaopen_moremath (lua_State *L)
 {
     luaL_Reg api[] = {
 	{"clamp", clamp},
 	{"sign", sign},
+	{"round", luaround},
 	{NULL, NULL}
     };
 

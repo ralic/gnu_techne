@@ -17,12 +17,6 @@
 #ifndef _ROAM_H_
 #define _ROAM_H_
 
-#define BINS_N 16
-
-#define SEED_BUFFER_SIZE (10000)
-#define SEED_SIZE (3 * 3 * 4)
-#define VEGETATION_LEVEL_BIAS 0
-
 #define TRIANGLE_CHUNKING_FACTOR (512)
 #define DIAMOND_CHUNKING_FACTOR (1024)
 #define TRIANGLE_POOL (0)
@@ -91,14 +85,7 @@ typedef struct {
 } roam_Tileset;
 
 typedef struct {
-    char *buffer;
-    int fill, capacity;
-    double mean, sum;
-} roam_Bin;
-
-typedef struct {
     roam_Tileset tileset;
-    roam_Bin bins[BINS_N];
 
     void *pools[2];
     
@@ -138,8 +125,6 @@ typedef struct diamond roam_Diamond;
 void look_up_sample(roam_Tileset *tiles, int i, int j, double *h, double *e);
 void optimize_geometry(roam_Context *context_in, int frame);
 void draw_geometry(roam_Context *context_in, float *buffer, int *ranges);
-void seed_vegetation(roam_Context *context_in, double density_in, double bias_in,
-                     unsigned int _ls, unsigned int _lo);
 void free_mesh(roam_Context *context_in);
 void *allocate_mesh(roam_Context *context_in);
 void calculate_tile_bounds(unsigned short *heights, unsigned short *bounds,

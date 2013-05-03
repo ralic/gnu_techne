@@ -74,4 +74,5 @@ TODO (ASAP):
 * Add support for setting clamp and filtering modes to the Texture Node.
 * Euler joints should always have 3 dofs and need only two axes.
 
-* Look into the possibility of making the seeding process iterative instead of recursive.
+* Investigate bindings malfunction.  To reproduce start with:
+  techne -ac utils/basic.lua -i

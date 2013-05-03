@@ -5,20 +5,42 @@ patch in float distance_tc;
 out vec4 position_te;
 out vec3 color_te;
 out float distance_te;
+out mat2x3 plane_te;
+flat out int category_te;
 
 uniform sampler2D deflections;
+layout(binding = 0) uniform atomic_uint count;
 
 void Grass_evaluation()
 {
-    vec3 p, r, d;
-    vec2 uv;
+    vec3 p, d, t;
+    float phi, cosphi, sinphi;
+    float theta, costheta, sintheta;
+    int c;
     
     p = position_tc[0];
-    uv = vec2(gl_TessCoord.x, chance_tc.x);
-    r = vec3(cos(2 * pi * chance_tc.y), sin(2 * pi * chance_tc.y), 1);
-    d = texture(deflections, uv).rrg;
-    
+
+    phi = 2 * pi * chance_tc.x;
+    cosphi = cos(phi);
+    sinphi = sin(phi);
+    c = 0;
+
+
+    /* A stem segment. */
+        
+    t = vec3(texture(deflections, vec2((0.3 + 0.7 * chance_tc.x) * gl_TessCoord.x, chance_tc.y)));
+    theta = t.b;
+    costheta = cos(theta);
+    sintheta = sin(theta);
+        
+    d = vec3(cosphi, sinphi, 1) * t.rrg;
+
+    plane_te = mat2x3 (vec3(cosphi * costheta, costheta * sinphi, -sintheta),
+                       vec3(-sinphi, cosphi,0));
+    position_te = vec4(p + 0.2 * d, 1);    
     color_te = color_tc;
-    position_te = vec4(p + 0.2 * (0.5 + 0.5 * chance_tc.x) * distance_tc * r * d, 1);
     distance_te = distance_tc;
+    category_te = c;
+
+    atomicCounterIncrement(count);
 }

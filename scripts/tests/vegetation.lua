@@ -84,13 +84,13 @@ elevation = topography.elevation {
    separation = 1,
 
    topography.grass {
-      detail = red,
+      detail = green,
       resolution = {1, 1},
       reference = {0, .99, .99}
                     },
 
    topography.barren {
-      detail = green,
+      detail = red,
       resolution = {1, 1},
       reference = {120 / 360, .99, .99},
                      },
@@ -103,7 +103,7 @@ elevation = topography.elevation {
 }
 
 root = primitives.root {
-   orbit = resources.dofile ("utils/orbit.lua", -1000, 0, units.degrees(81.6)),
+   orbit = resources.dofile ("utils/orbit.lua", -1000, units.degrees(0), units.degrees(81.6)),
 
    atmosphere = topography.atmosphere {
       size = {1024, 512},
@@ -138,7 +138,7 @@ root = primitives.root {
             tag = "seeds",
             
             bias = 1,
-            density = 64 * 100,
+            density = 500,
                                  }
                             }
                                 },
@@ -147,12 +147,9 @@ root = primitives.root {
       period = 2,
       
       tick = function(self, ticks)
-         local command = {-1000,
-                          (ticks % 2 > 0 and 1 or -1) * units.degrees(90),
-                          ticks % 2 > 0 and units.degrees(70.65) or units.degrees(68.75)}
-
-         self.parent.orbit.command = command
-
+         self.parent.orbit.azimuth = (ticks % 2 > 0 and 1 or 0) * units.degrees(90)
+         self.parent.orbit.elevation = ticks % 2 > 0 and units.degrees(79.5) or units.degrees(81.6)
+         
          if ticks > 4 then
             techne.iterate = false
          end

@@ -57,9 +57,7 @@ function resources.loadfile (name)
 end
 
 function resources.dofile (name, ...)
-   print ("  " .. name)
-
-   return assert(loadfile(resolve(name)))(...)
+   return assert(resources.loadfile(name))(...)
 end
 
 return resources

@@ -294,14 +294,15 @@ int t_call (lua_State *L, int nargs, int nresults)
 	lua_pushcfunction (L, error_handler);
 	lua_insert (L, h_0);
 	r = lua_pcall (L, nargs, nresults, h_0);
-    
+
 	/* Pop the message handler from the stack. */
     
 	lua_remove (L, h_0);
+        nesting -= 1;
 
 	if (r) {
 	    /* Pop the error message in case of failure. */
-	
+
 	    return lua_error (L);
 	} else {
 	    return r;

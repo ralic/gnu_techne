@@ -78,7 +78,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         /* fprintf(stderr, "%d\n", (((l + m) * (l + m + 1)) >> 1) + m); */
         
         z = fmax(-(z_0 + z_1 + z_a) / 3.0, bias);
-        n_0 = bias * bias * density / z / z;
+        n_0 = bias * bias * density / z / z * sqrt(fabs(modelview[10]));
 
         /* fprintf (stderr, "%f\n", n_0); */
         
@@ -158,7 +158,7 @@ void seed_vegetation(roam_Context *context_in,
     context = context_in;
     density = density_in;
     bias = bias_in;
-    threshold = -sqrt(bias_in * bias_in * density_in);
+    threshold = -sqrt(bias_in * bias_in * density_in * fabs(modelview[10]));
     tiles = &context->tileset;
     bins = context->bins;
     
@@ -266,7 +266,7 @@ void seed_vegetation(roam_Context *context_in,
 
     /* _TRACE ("error: %f\n", error); */
 
-    /* glDisable (GL_MULTISAMPLE); */
+    glDisable (GL_MULTISAMPLE);
     /* glDisable (GL_RASTERIZER_DISCARD); */
 
     /* if (total > 0) abort(); */

@@ -28,7 +28,7 @@
 
 #define N_K 32               /* Number of stiffness samples. */
 #define N_S 32               /* Number of blade segments. */
-#define K_0 2.2              /* Lower bound of stiffness parameter. */
+#define K_0 2.1              /* Lower bound of stiffness parameter. */
 #define K_1 2.5              /* Upper bound of stiffness parameter. */
 
 @implementation Grass
@@ -48,15 +48,16 @@
 
     /* Calculate the deflection texture. */
 
-    texels = malloc(N_K * N_S * 2 * sizeof(float));
+    texels = malloc(N_K * N_S * 3 * sizeof(float));
 
     for (j = 0 ; j < N_K ; j += 1) {
         x = y = theta_0 = 0;
         k = K_0 + (K_1 - K_0) * (float)j / (N_K - 1);
         
         for (i = 0 ; i < N_S ; i += 1) {
-            texels[2 * ((N_S * j) + i) + 0] = x;
-            texels[2 * ((N_S * j) + i) + 1] = y;
+            texels[3 * ((N_S * j) + i) + 0] = x;
+            texels[3 * ((N_S * j) + i) + 1] = y;
+            texels[3 * ((N_S * j) + i) + 2] = theta_0;
 
             if (i == N_S) {
                 break;
@@ -72,20 +73,20 @@
             }
             
             theta_0 += M_PI / 2 - theta_0 - phi;
-            x += cos(M_PI / 2 - theta_0) / (N_S - 1);
-            y += sin(M_PI / 2 - theta_0) / (N_S - 1);
+            x += sin(theta_0) / (N_S - 1);
+            y += cos(theta_0) / (N_S - 1);
         }
     }
     
     /* for (i = N_K / 2, j = 0 ; j < N_S ; j += 1) { */
-    /*     _TRACE ("%f, %f\n", texels[2 * ((N_S * i) + j) + 0], texels[2 * ((N_S * i) + j) + 1]); */
+    /*     _TRACE ("%f, %f, %f\n", texels[3 * ((N_S * i) + j) + 0], texels[3 * ((N_S * i) + j) + 1], texels[3 * ((N_S * i) + j) + 2]); */
     /* } */
     
     [super init];
 
     glGenTextures (1, &self->deflections);
     glBindTexture(GL_TEXTURE_2D, self->deflections);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, N_S, N_K, 0, GL_RG,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, N_S, N_K, 0, GL_RGB,
                  GL_FLOAT, texels);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

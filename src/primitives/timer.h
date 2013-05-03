@@ -25,7 +25,7 @@
     struct timespec checkpoint;
 
     double period, elapsed, delta, count;
-    int tick, armed;
+    int tick, shortcircuit;
 }
 
 -(void) tick;

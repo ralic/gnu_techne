@@ -28,7 +28,7 @@
 
 #define N_K 32               /* Number of stiffness samples. */
 #define N_S 32               /* Number of blade segments. */
-#define K_0 2.2              /* Lower bound of stiffness parameter. */
+#define K_0 2.1              /* Lower bound of stiffness parameter. */
 #define K_1 2.5              /* Upper bound of stiffness parameter. */
 
 @implementation Grass

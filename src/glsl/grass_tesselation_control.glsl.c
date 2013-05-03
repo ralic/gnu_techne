@@ -17,9 +17,9 @@ void Grass_control()
 
     p = position[0];
     z = min((modelview * vec4(p, 1)).z, -bias);
-    n = bias * bias * density / z / z;
+    n = bias * density / -z * (1 - chance[0].y);
     
-    gl_TessLevelOuter[0] = 3.0;
+    gl_TessLevelOuter[0] = 1.0;
     gl_TessLevelOuter[1] = n;
     
     color_tc = color[0];    

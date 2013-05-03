@@ -49,6 +49,20 @@ static int quiet = 0;         /* Suppress messages. */
 
 static int colorize = 1;      /* Color terminal output. */
 
+static int message (lua_State *L)
+{
+    t_print_message(luaL_checkstring(L, 1));
+
+    return 0;
+}
+
+static int warn (lua_State *L)
+{
+    t_print_warning(luaL_checkstring(L, 1));
+
+    return 0;
+}
+    
 static int hooks_call (lua_State *L)
 {
     int i, h, h_1, n = 0;
@@ -312,6 +326,7 @@ int t_call (lua_State *L, int nargs, int nresults)
 	 * established. */
 	
 	lua_call (L, nargs, nresults);
+        nesting -= 1;
 
 	return 0;
     }
@@ -359,6 +374,7 @@ int main(int argc, char **argv)
     static struct option options[] = {
 	{"option", 1, 0, 'O'},
 	{"execute", 1, 0, 'e'},
+	{"patch", 1, 0, 'p'},
 	{"load", 1, 0, 'l'},
 	{"load-all", 1, 0, 'a'},
 	{"interactive", 0, 0, 'i'},
@@ -439,7 +455,7 @@ int main(int argc, char **argv)
     /* Parse the command line. */
     
     while ((option = getopt_long (argc, argv,
-				  "O:c:e:l:ahiq",
+				  "O:p:c:e:l:ahiq",
 				  options, 0)) != -1) {
 	if (option == 'O') {
 	    char *equal;
@@ -558,7 +574,7 @@ int main(int argc, char **argv)
 				 "setting '%s'.\n", optarg);
 	    }
 	    luap_setcolor (_L, colorize);
-	} else if (option == 'c') {
+	} else if (option == 'c' || option == 'p') {
 	    char *path = NULL;
 	    int i, n;
 
@@ -570,6 +586,11 @@ int main(int argc, char **argv)
                 lua_createtable (_L, 1, 0);
                 lua_insert (_L, -2);
                 lua_rawseti (_L, -2, 1);
+            } else if (lua_isnil(_L, -1)) {
+                lua_pop(_L, 1);
+                lua_createtable (_L, 1, 0);
+                lua_pushliteral (_L, "./");
+                lua_rawseti (_L, -2, 1);
             }
             
             if (lua_type (_L, -1) == LUA_TTABLE) {
@@ -580,7 +601,15 @@ int main(int argc, char **argv)
 		
                 for (i = 0 ; i < n ; i += 1) {
                     lua_rawgeti(_L, -1, i + 1);
-                    asprintf (&path, "%s/%s", lua_tostring(_L, -1), optarg);
+
+                    if (option == 'c') {
+                        asprintf (&path, "%s/%s",
+                                  lua_tostring(_L, -1), optarg);
+                    } else {
+                        asprintf (&path, "%s/patches/%s.lua",
+                                  lua_tostring(_L, -1), optarg);
+                    }
+                    
                     lua_pop(_L, 1);
                     
                     if (!access (path, F_OK)) {
@@ -596,19 +625,25 @@ int main(int argc, char **argv)
             lua_pop(_L, 1);
 
             if (!path) {
-                path = optarg;
-            }
-            
-	    /* Compile the chunk and stash it away behind the options
-	     * table. */
+                if (option == 'c') {
+                    t_print_warning("Could not find input file '%s'.\n",
+                                    optarg);
+                } else {
+                    t_print_warning("Could not find patch '%s'.\n",
+                                    optarg);
+                }
+            } else {
+                /* Compile the chunk and stash it away behind the options
+                 * table. */
 	    
-	    if(luaL_loadfile (_L, path)) {
-		lua_error (_L);
-	    } else {
-		lua_insert (_L, 1);
-	    }
+                if(luaL_loadfile (_L, path)) {
+                    lua_error (_L);
+                } else {
+                    lua_insert (_L, 1);
+                }
 
-	    t_print_message ("Compiled input file %s\n", path);
+                t_print_message ("Compiled the input file %s\n", path);
+            }
 	} else if (option == 'h') {
 	    t_print_message (
 		"Usage: %s [OPTION...]\n\n"
@@ -616,7 +651,9 @@ int main(int argc, char **argv)
 		"  -h, --help                                     "
 		"Display this help message.\n"
 		"  -c FILE, --configuration=FILE                  "
-		"Specify a configuration script.\n"
+		"Load the specified input file.\n"
+		"  -p PATCH, --patch=PATCH                        "
+		"Apply the specified patch script.\n"
 		"  -l MODULE, --load=MODULE                       "
 		"Load the specified module during initialization.\n"
 		"  -a, --load-all                                 "
@@ -671,6 +708,12 @@ int main(int argc, char **argv)
 
     lua_pushcfunction (_L, construct_hooks);
     lua_setglobal (_L, "hooks");
+
+    lua_pushcfunction (_L, message);
+    lua_setglobal (_L, "message");
+
+    lua_pushcfunction (_L, warn);
+    lua_setglobal (_L, "warn");
     
     /* Proceed to execute specified input. */
 

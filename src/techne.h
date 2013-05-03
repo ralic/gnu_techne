@@ -88,6 +88,10 @@ int luaopen_morebase (lua_State *L);
 -(int) _get_iterations;	
 -(void) _set_iterate;
 -(void) _set_iterations;
+-(int) _get_interactive;
+-(void) _set_interactive;
+-(int) _get_time;
+-(void) _set_time;
 
 @end
 

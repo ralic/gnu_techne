@@ -21,6 +21,62 @@
 #include "roam.h"
 #include "elevation.h"
 
+static float *buffer;
+static int triangles_n;
+    
+static void draw_subtree(roam_Triangle *n)
+{
+    if(!is_out(n)) {
+	if(!is_leaf(n)) {
+	    draw_subtree(n->children[0]);
+	    draw_subtree(n->children[1]);
+	} else {
+	    roam_Triangle *p;
+	    roam_Diamond *d, *e;
+	    int i;
+
+	    p = n->parent;
+	    d = n->diamond;
+	    e = p->diamond;
+	    i = is_primary(n);
+
+            memcpy (buffer + 9 * triangles_n,
+                    d->vertices[!i], 3 * sizeof(float));
+            memcpy (buffer + 9 * triangles_n + 3,
+                    d->vertices[i], 3 * sizeof(float));
+            memcpy (buffer + 9 * triangles_n + 6,
+                    e->center, 3 * sizeof(float));
+
+	    triangles_n += 1;
+	}
+    }
+}
+
+static void draw_geometry(roam_Context *context, float *buffer_in,
+                          int *ranges)
+{
+    roam_Tileset *tiles;
+    int i, j;
+
+    buffer = buffer_in;
+    tiles = &context->tileset;
+    
+    /* Draw the geometry into the provided buffers. */
+    
+    triangles_n = 0;
+
+    for (i = 0 ; i < tiles->size[0] ; i += 1) {    
+	for (j = 0 ; j < tiles->size[1] ; j += 1) {
+	    int k = i * tiles->size[1] + j;
+
+	    draw_subtree(context->roots[k][0]);
+	    draw_subtree(context->roots[k][1]);
+
+            ranges[k] = triangles_n;
+	}
+    }
+}       
+
 @implementation ElevationShape
 
 -(void) init

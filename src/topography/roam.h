@@ -92,8 +92,6 @@ typedef struct {
     struct diamond *queues[2][QUEUE_SIZE];
     struct triangle *(*roots)[2];
 
-    float *buffer;
-    
     int chunks[2], blocks[2], queued[2];
     int culled, visible, drawn;
     int minimum, maximum;
@@ -124,7 +122,6 @@ typedef struct diamond roam_Diamond;
 
 void look_up_sample(roam_Tileset *tiles, int i, int j, double *h, double *e);
 void optimize_geometry(roam_Context *context_in, int frame);
-void draw_geometry(roam_Context *context_in, float *buffer, int *ranges);
 void free_mesh(roam_Context *context_in);
 void *allocate_mesh(roam_Context *context_in);
 void calculate_tile_bounds(unsigned short *heights, unsigned short *bounds,

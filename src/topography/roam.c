@@ -932,35 +932,6 @@ static void traverse_quadtree(roam_Triangle *n, roam_Triangle *m, int l)
 
 #endif
 
-static void draw_subtree(roam_Triangle *n)
-{
-    if(!is_out(n)) {
-	if(!is_leaf(n)) {
-	    draw_subtree(n->children[0]);
-	    draw_subtree(n->children[1]);
-	} else {
-	    roam_Triangle *p;
-	    roam_Diamond *d, *e;
-            float *b;
-	    int i, k;
-
-	    p = n->parent;
-	    d = n->diamond;
-	    e = p->diamond;
-	    i = is_primary(n);
-
-            b = context->buffer;
-            k = context->drawn;
-            
-            memcpy (b + 9 * k, d->vertices[!i], 3 * sizeof(float));
-            memcpy (b + 9 * k + 3, d->vertices[i], 3 * sizeof(float));
-            memcpy (b + 9 * k + 6, e->center, 3 * sizeof(float));
-
-	    context->drawn += 1;
-	}
-    }
-}
-
 void optimize_geometry(roam_Context *context_in, int frame)
 {
     roam_Tileset *tiles;
@@ -1059,38 +1030,13 @@ void optimize_geometry(roam_Context *context_in, int frame)
     /* } */
     
 #if 0
-    printf("%d culled, %d visible, %d drawn\n"
+    printf("%d culled, %d visible\n"
            "Qs_max = %d, Qm_min = %d, |Qs| = %d, |Qm| = %d\n",
-	   context->culled, context->visible, context->drawn,
+	   context->culled, context->visible,
            context->maximum, context->minimum,
            context->queued[0], context->queued[1]);
 #endif
 }
-
-void draw_geometry(roam_Context *context_in, float *buffer, int *ranges)
-{
-    roam_Tileset *tiles;
-    int i, j;
-
-    context = context_in;
-    tiles = &context->tileset;
-    
-    /* Draw the geometry into the provided buffers. */
-    
-    context->buffer = buffer;
-    context->drawn = 0;
-
-    for (i = 0 ; i < tiles->size[0] ; i += 1) {    
-	for (j = 0 ; j < tiles->size[1] ; j += 1) {
-	    int k = i * tiles->size[1] + j;
-
-	    draw_subtree(context->roots[k][0]);
-	    draw_subtree(context->roots[k][1]);
-
-            ranges[k] = context->drawn;
-	}
-    }
-}       
 
 void *allocate_mesh(roam_Context *context_in)
 {

@@ -50,6 +50,7 @@ seedsprofiler = primitives.graphic {
       for i, bin in ipairs(self.bins) do
          bin[1] = bin[1] + parent.bins[i][1]
          bin[2] = bin[2] + parent.bins[i][2]
+         bin[3] = parent.bins[i][3]
       end
 
       self.seeds = self.seeds + aggregate(parent.bins)
@@ -63,22 +64,24 @@ seedsprofiler = primitives.graphic {
       message(string.format([[
 Seed profile for node: %s
 Mean seed count per iteration: %.1f
-+------+----------+----------+
-| Bin  |   Mean   |  Seeds   |
-+------+----------+----------+
+                  +----------+----------+
+                  |        Seeds        |
++------+----------+----------+----------+
+| Bin  |   Mean   |   Mean   |    Max   |
++------+----------+----------+----------+
 ]],
                             tostring(self.parent),
                             self.seeds / n))
 
       for i, bin in ipairs(self.bins) do
          message(string.format([[
-|% 6d|% 10.1f|% 10d|
+|% 6d|% 10.1f|% 10d|% 10d|
 ]],
-                               i, bin[1] / n, bin[2] / n))
+                               i, bin[1] / n, bin[2] / n, bin[3]))
       end
       
       message([[
-+------+----------+----------+
++------+----------+----------+----------+
 ]])
    end
 }

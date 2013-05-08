@@ -103,6 +103,55 @@
 	_C[15] = _A[3] * _B[12] + _A[7] * _B[13] + _A[11] * _B[14] + _A[15] * _B[15]; \
     }
 
+/* u = M * (v, 1), where M a 4x4 matrix and v a 3-vector. */
+
+#define t_transform_43(u, T, v)                                         \
+    {									\
+	typeof(u[0]) *_u = u;						\
+	typeof(T[0]) *_T = T;						\
+	typeof(v[0]) *_v = v;						\
+									\
+	_u[0] = _T[0] * _v[0] + _T[1] * _v[1] + _T[2] * _v[2] + _T[3];  \
+	_u[1] = _T[4] * _v[0] + _T[5] * _v[1] + _T[6] * _v[2] + _T[7];  \
+	_u[2] = _T[8] * _v[0] + _T[8] * _v[1] + _T[10] * _v[2] + _T[11]; \
+    }
+
+#define t_transform_4T3(u, T, v)                                        \
+    {									\
+	typeof(u[0]) *_u = u;						\
+	typeof(T[0]) *_T = T;						\
+	typeof(v[0]) *_v = v;						\
+									\
+	_u[0] = _T[0] * _v[0] + _T[4] * _v[1] + _T[8] * _v[2] + _T[12]; \
+	_u[1] = _T[1] * _v[0] + _T[5] * _v[1] + _T[9] * _v[2] + _T[13]; \
+	_u[2] = _T[2] * _v[0] + _T[6] * _v[1] + _T[10] * _v[2] + _T[14]; \
+    }
+
+/* R stands for Reduced, or perhaps, Rotation.  In any case only the
+ * upper 3x3 rotation matrix is used. */
+
+#define t_transform_4R3(u, T, v)                                        \
+    {									\
+	typeof(u[0]) *_u = u;						\
+	typeof(T[0]) *_T = T;						\
+	typeof(v[0]) *_v = v;						\
+									\
+	_u[0] = _T[0] * _v[0] + _T[1] * _v[1] + _T[2] * _v[2];          \
+	_u[1] = _T[4] * _v[0] + _T[5] * _v[1] + _T[6] * _v[2];          \
+	_u[2] = _T[8] * _v[0] + _T[8] * _v[1] + _T[10] * _v[2];         \
+    }
+
+#define t_transform_4RT3(u, T, v)                                       \
+    {									\
+	typeof(u[0]) *_u = u;						\
+	typeof(T[0]) *_T = T;						\
+	typeof(v[0]) *_v = v;						\
+									\
+	_u[0] = _T[0] * _v[0] + _T[4] * _v[1] + _T[8] * _v[2];          \
+	_u[1] = _T[1] * _v[0] + _T[5] * _v[1] + _T[9] * _v[2];          \
+	_u[2] = _T[2] * _v[0] + _T[6] * _v[1] + _T[10] * _v[2];         \
+    }
+
 #define t_transpose_4(T, A)                                             \
     {									\
         T[0] = A[0]; T[1] = A[4]; T[2] = A[8]; T[3] = A[12];            \

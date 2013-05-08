@@ -27,11 +27,11 @@
 #include "vegetation.h"
 #include "elevation.h"
 
-#define should_seed(z_a, z_0, z_1)   \
-    (z_a < 0 && z_a > threshold) ||  \
-    (z_0 < 0 && z_0 > threshold) ||  \
-    (z_1 < 0 && z_1 > threshold) ||  \
-    z_a * z_0 < 0 ||                 \
+#define should_seed(z_a, z_0, z_1)     \
+    (z_a < 0 && z_a > threshold) ||    \
+    (z_0 < 0 && z_0 > threshold) ||    \
+    (z_1 < 0 && z_1 > threshold) ||    \
+    z_a * z_0 < 0 ||                   \
     z_0 * z_1 < 0
 
 static roam_Context *context;
@@ -57,32 +57,49 @@ static void grow_bin(int i)
 }
 
 static void seed_triangle(float *a, float *b_0, float *b_1,
-                          float z_a, float z_0, float z_1, int level)
+                          float *a_r, float *b_0r, float *b_1r,
+                          int level)
 {    
+    float z_a, z_0, z_1;
+
+    z_a = a_r[2] + modelview[14];
+    z_0 = b_0r[2] + modelview[14];
+    z_1 = b_1r[2] + modelview[14];
+        
     if (level < TREE_HEIGHT - 1) {
-        float b_c[3], z_c;
-    
-        b_c[0] = 0.5 * (b_0[0] + b_1[0]);
-        b_c[1] = 0.5 * (b_0[1] + b_1[1]);
-        b_c[2] = 0.5 * (b_0[2] + b_1[2]);
-
-        z_c = 0.5 * (z_0 + z_1);
-
-        /* _TRACE ("%f\n", fabs(z_c - 0.5 * (z_0 + z_1))); */
-            
         if (should_seed(z_a, z_0, z_1)) {
-            seed_triangle(b_c, a, b_0, z_c, z_a, z_0, level + 1);
-            seed_triangle(b_c, b_1, a, z_c, z_1, z_a, level + 1);
+            float c[3], c_r[3];
+    
+            c[0] = 0.5 * (b_0[0] + b_1[0]);
+            c[1] = 0.5 * (b_0[1] + b_1[1]);
+            c[2] = 0.5 * (b_0[2] + b_1[2]);
+    
+            c_r[0] = 0.5 * (b_0r[0] + b_1r[0]);
+            c_r[1] = 0.5 * (b_0r[1] + b_1r[1]);
+            c_r[2] = 0.5 * (b_0r[2] + b_1r[2]);
+
+            /* _TRACE ("%f\n", fabs(z_c - 0.5 * (z_0 + z_1))); */
+            
+            seed_triangle(c, a, b_0, c_r, a_r, b_0r, level + 1);
+            seed_triangle(c, b_1, a, c_r, b_1r, a_r, level + 1);
         }
     } else {
+        float c_e[3], c;
         double z, n_0;
-        int j;
+        int i, j;
         char *p;
 
         /* fprintf(stderr, "%d\n", (((l + m) * (l + m + 1)) >> 1) + m); */
+
+        for (i = 0 ; i < 3 ; i += 1) {
+            c_e[i] = (a_r[i] + b_0r[i] + b_1r[i]) / 3.0 + modelview[12 + i];
+        }
+
+        c = fabs(t_dot_3(&modelview[8], c_e)) / t_length_3(c_e);
         
         z = fmax(-(z_0 + z_1 + z_a) / 3.0, bias);
-        n_0 = bias * bias * density / z / z * sqrt(fabs(modelview[10]));
+        n_0 = bias * bias * density / z / z * sqrt(c);
+        /* _TRACE ("%f\n", c); */
 
         /* fprintf (stderr, "%f\n", n_0); */
         
@@ -103,7 +120,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         /* printf ("%f\n", bias * density / -z); */
         /* assert (j <= 31); */
         /* assert (n <= density); */
-
+        
         p = bins[j].buffer + bins[j].fill * SEED_SIZE;
         memcpy (p, a, 3 * sizeof(float));
         memcpy (p + 3 * sizeof(float), b_0, 3 * sizeof(float));
@@ -116,18 +133,26 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
     }
 }
 
-static void seed_subtree(roam_Triangle *n, float z_a, float z_0, float z_1)
+static void seed_subtree(roam_Triangle *n,
+                         float *a_r, float *b_0r, float *b_1r)
 {
     if(!is_out(n)) {
-        if (should_seed(z_a, z_0, z_1)) {
+        float z_a, z_0, z_1;
 
-            if(!is_leaf(n)) {
-                float z_c;
+        z_a = a_r[2] + modelview[14];
+        z_0 = b_0r[2] + modelview[14];
+        z_1 = b_1r[2] + modelview[14];
         
-                z_c = 0.5 * (z_0 + z_1);
+        if (should_seed(z_a, z_0, z_1)) {
+            if(!is_leaf(n)) {
+                float c_r[3];
+        
+                c_r[0] = 0.5 * (b_0r[0] + b_1r[0]);
+                c_r[1] = 0.5 * (b_0r[1] + b_1r[1]);
+                c_r[2] = 0.5 * (b_0r[2] + b_1r[2]);
 
-                seed_subtree(n->children[0], z_c, z_a, z_0);
-                seed_subtree(n->children[1], z_c, z_1, z_a);
+                seed_subtree(n->children[0], c_r, a_r, b_0r);
+                seed_subtree(n->children[1], c_r, b_1r, a_r);
             } else {
                 roam_Triangle *p;
                 roam_Diamond *d, *e;
@@ -143,7 +168,7 @@ static void seed_subtree(roam_Triangle *n, float z_a, float z_0, float z_1)
                 b_0 = d->vertices[!i];
                 b_1 = d->vertices[i];
             
-                seed_triangle (a, b_0, b_1, z_a, z_0, z_1, d->level);
+                seed_triangle (a, b_0, b_1, a_r, b_0r, b_1r, d->level);
 
                 coarse += 1;
             }
@@ -158,15 +183,15 @@ static void seed_vegetation(ElevationSeeds *seeds,
     roam_Tileset *tiles;
     int i, j;
 
+    t_copy_modelview (modelview);
+    
     coarse = fine = error = 0;
     context = seeds->context;
     bins = seeds->bins;
     density = density_in;
     bias = bias_in;
-    threshold = -sqrt(bias_in * bias_in * density_in * fabs(modelview[10]));
+    threshold = -100;//-sqrt(bias_in * bias_in * density_in * fabs(modelview[10]));
     tiles = &context->tileset;
-    
-    t_copy_modelview (modelview);
     
     glPatchParameteri(GL_PATCH_VERTICES, 1);
     glUniform1f(_ls, ldexpf(1, -tiles->depth));
@@ -211,7 +236,7 @@ static void seed_vegetation(ElevationSeeds *seeds,
             roam_Triangle *n_0, *n_1;
             roam_Diamond *d, *p_0, *p_1;
             float *b_0, *b_1, *a_0, *a_1;
-            float z_a0, z_a1, z_b0, z_b1;
+            float b_0r[3], b_1r[3], a_0r[3], a_1r[3];
 	    int q, k;
             
             for (k = 0 ; k < BINS_N ; k += 1) {
@@ -238,29 +263,14 @@ static void seed_vegetation(ElevationSeeds *seeds,
             a_1 = p_1->center;
 
             /* Calculate the distance from the eye to each vertex. */
-            
-            z_a0 = modelview[2] * a_0[0] +
-                modelview[6] * a_0[1] +
-                modelview[10] * a_0[2] +
-                modelview[14];
-            
-            z_a1 = modelview[2] * a_1[0] +
-                modelview[6] * a_1[1] +
-                modelview[10] * a_1[2] +
-                modelview[14];
-            
-            z_b0 = modelview[2] * b_0[0] +
-                modelview[6] * b_0[1] +
-                modelview[10] * b_0[2] +
-                modelview[14];
 
-            z_b1 = modelview[2] * b_1[0] +
-                modelview[6] * b_1[1] +
-                modelview[10] * b_1[2] +
-                modelview[14];
+            t_transform_4RT3(b_0r, modelview, b_0);
+            t_transform_4RT3(b_1r, modelview, b_1);
+            t_transform_4RT3(a_0r, modelview, a_0);
+            t_transform_4RT3(a_1r, modelview, a_1);
 
-            seed_subtree(n_0, z_a0, z_b0, z_b1);
-            seed_subtree(n_1, z_a1, z_b1, z_b0);
+            seed_subtree(n_0, a_0r, b_0r, b_1r);
+            seed_subtree(n_1, a_1r, b_1r, b_0r);
 
             for (k = 0 ; k < BINS_N ; k += 1) {
                 if(bins[k].fill > 0) {
@@ -279,7 +289,7 @@ static void seed_vegetation(ElevationSeeds *seeds,
     /* glDisable (GL_RASTERIZER_DISCARD); */
 
     /* if (fine > 0) abort(); */
-    _TRACE ("Horizon: %g, Coarse: %d, Fine: %d\n", threshold, coarse, fine);
+    /* _TRACE ("Horizon: %g, Coarse: %d, Fine: %d\n", threshold, coarse, fine); */
 }
 
 @implementation ElevationSeeds
@@ -413,11 +423,13 @@ static void seed_vegetation(ElevationSeeds *seeds,
     lua_createtable (_L, BINS_N, 0);
 
     for (i = 0 ; i < BINS_N ; i += 1) {
-        lua_createtable (_L, 2, 0);
+        lua_createtable (_L, 3, 0);
         lua_pushnumber (_L, self->bins[i].mean);
         lua_rawseti (_L, -2, 1);
         lua_pushinteger (_L, self->bins[i].total);
         lua_rawseti (_L, -2, 2);
+        lua_pushinteger (_L, self->bins[i].capacity);
+        lua_rawseti (_L, -2, 3);
 
         lua_rawseti (_L, -2, i + 1);
     }

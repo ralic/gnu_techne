@@ -103,7 +103,11 @@ elevation = topography.elevation {
 }
 
 root = primitives.root {
-   orbit = resources.dofile ("utils/orbit.lua", -1000, units.degrees(0), units.degrees(81.6)),
+   orbit = resources.dofile ("utils/orbit.lua", {
+                                radius = -1000,
+                                azimuth = units.degrees(0),
+                                elevation = units.degrees(81.6)
+                                                }),
 
    atmosphere = topography.atmosphere {
       size = {1024, 512},
@@ -138,7 +142,7 @@ root = primitives.root {
             tag = "seeds",
             
             bias = 1,
-            density = 500,
+            density = 50000,
                                  }
                             }
                                 },

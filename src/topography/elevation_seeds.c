@@ -27,17 +27,22 @@
 #include "vegetation.h"
 #include "elevation.h"
 
+/* Check whether a triangle is within the seedable depth range.  The
+ * last two tests ensure that a triangle that is larger than the
+ * entire viewing volume (and will therefore fail the first three
+ * tests) will still be seeded. */
+
 #define should_seed(z_a, z_0, z_1)     \
-    (z_a < 0 && z_a > threshold) ||    \
-    (z_0 < 0 && z_0 > threshold) ||    \
-    (z_1 < 0 && z_1 > threshold) ||    \
+    (z_a < 0 && z_a > horizon) ||      \
+    (z_0 < 0 && z_0 > horizon) ||      \
+    (z_1 < 0 && z_1 > horizon) ||      \
     z_a * z_0 < 0 ||                   \
     z_0 * z_1 < 0
 
 static roam_Context *context;
 static elevation_Bin *bins;
-static float modelview[16];
-static double density, bias, threshold, error;
+static float modelview[16], projection[16];
+static double density, bias, horizon, error;
 
 static int fine, coarse, highwater, initialized;
 
@@ -55,21 +60,37 @@ static void grow_bin(int i)
     
     bins[i].buffer = realloc (bins[i].buffer, bins[i].capacity * SEED_SIZE);
 }
+        
+static void project(float *r, float *s)
+{
+    float z;
+
+    z = fmax(-(r[2] + modelview[14]) + bias, bias);
+    s[0] = projection[0] * (r[0] + modelview[12]) / z;
+    s[1] = projection[5] * (r[1] + modelview[13]) / z;
+}
 
 static void seed_triangle(float *a, float *b_0, float *b_1,
                           float *a_r, float *b_0r, float *b_1r,
+                          float *a_s, float *b_0s, float *b_1s,
                           int level)
-{    
-    float z_a, z_0, z_1;
-
-    z_a = a_r[2] + modelview[14];
-    z_0 = b_0r[2] + modelview[14];
-    z_1 = b_1r[2] + modelview[14];
-        
+{
     if (level < TREE_HEIGHT - 1) {
+        double z_a, z_0, z_1;
+
+        /* This is not a fine triangle, so calculate the depths of the
+         * vertices to test whether to descend any further. */
+        
+        z_a = a_r[2] + modelview[14];
+        z_0 = b_0r[2] + modelview[14];
+        z_1 = b_1r[2] + modelview[14];
+        
         if (should_seed(z_a, z_0, z_1)) {
-            float c[3], c_r[3];
-    
+            float c[3], c_r[3], c_s[2];
+
+            /* Interpolate the center vertex in object and rotated
+             * space and recurse. */
+            
             c[0] = 0.5 * (b_0[0] + b_1[0]);
             c[1] = 0.5 * (b_0[1] + b_1[1]);
             c[2] = 0.5 * (b_0[2] + b_1[2]);
@@ -78,30 +99,33 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             c_r[1] = 0.5 * (b_0r[1] + b_1r[1]);
             c_r[2] = 0.5 * (b_0r[2] + b_1r[2]);
 
+            project (c_r, c_s);
+
             /* _TRACE ("%f\n", fabs(z_c - 0.5 * (z_0 + z_1))); */
             
-            seed_triangle(c, a, b_0, c_r, a_r, b_0r, level + 1);
-            seed_triangle(c, b_1, a, c_r, b_1r, a_r, level + 1);
+            seed_triangle(c, a, b_0, c_r, a_r, b_0r, c_s, a_s, b_0s, level + 1);
+            seed_triangle(c, b_1, a, c_r, b_1r, a_r, c_s, b_1s, a_s, level + 1);
         }
     } else {
-        float c_e[3], c;
-        double z, n_0;
-        int i, j;
         char *p;
+        double n_0, u[2], v[2];
+        int i, j;
 
-        /* fprintf(stderr, "%d\n", (((l + m) * (l + m + 1)) >> 1) + m); */
+        /* Project all vertices into screen space. */
 
-        for (i = 0 ; i < 3 ; i += 1) {
-            c_e[i] = (a_r[i] + b_0r[i] + b_1r[i]) / 3.0 + modelview[12 + i];
+        /* Calculate the screen-space area of the triangle and
+         * multiply by density and bias to get the number of seeds. */
+        
+        for (i = 0 ; i < 2 ; i += 1) {
+            u[i] = b_0s[i] - a_s[i];
+            v[i] = b_1s[i] - a_s[i];
         }
 
-        c = fabs(t_dot_3(&modelview[8], c_e)) / t_length_3(c_e);
-        
-        z = fmax(-(z_0 + z_1 + z_a) / 3.0, bias);
-        n_0 = bias * bias * density / z / z * sqrt(c);
-        /* _TRACE ("%f\n", c); */
+        /* _TRACEM (4, 4, "f", projection); */
 
-        /* fprintf (stderr, "%f\n", n_0); */
+        n_0 = round(density * bias * bias * 
+                    0.5 * sqrt((u[0] * u[0] + u[1] * u[1]) *
+                               (v[0] * v[0] + v[1] * v[1])));
         
         /* This simple search should be preffered to binary searching
          * as the vast majority of seeds are likely to end up in the
@@ -128,7 +152,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
         bins[j].sum += n_0;
         bins[j].fill += 1;
-        error += bins[j].mean - n_0;
+        error += (bins[j].mean - n_0) * (bins[j].mean - n_0);
         fine += 1;
     }
 }
@@ -137,7 +161,7 @@ static void seed_subtree(roam_Triangle *n,
                          float *a_r, float *b_0r, float *b_1r)
 {
     if(!is_out(n)) {
-        float z_a, z_0, z_1;
+        double z_a, z_0, z_1;
 
         z_a = a_r[2] + modelview[14];
         z_0 = b_0r[2] + modelview[14];
@@ -146,17 +170,17 @@ static void seed_subtree(roam_Triangle *n,
         if (should_seed(z_a, z_0, z_1)) {
             if(!is_leaf(n)) {
                 float c_r[3];
-        
+                
                 c_r[0] = 0.5 * (b_0r[0] + b_1r[0]);
                 c_r[1] = 0.5 * (b_0r[1] + b_1r[1]);
                 c_r[2] = 0.5 * (b_0r[2] + b_1r[2]);
-
+                
                 seed_subtree(n->children[0], c_r, a_r, b_0r);
                 seed_subtree(n->children[1], c_r, b_1r, a_r);
             } else {
                 roam_Triangle *p;
                 roam_Diamond *d, *e;
-                float *a, *b_0, *b_1;
+                float *a, *b_0, *b_1, a_s[2], b_0s[2], b_1s[2];
                 int i;
 
                 p = n->parent;
@@ -167,8 +191,12 @@ static void seed_subtree(roam_Triangle *n,
                 a = e->center;
                 b_0 = d->vertices[!i];
                 b_1 = d->vertices[i];
-            
-                seed_triangle (a, b_0, b_1, a_r, b_0r, b_1r, d->level);
+
+                project(a_r, a_s);
+                project(b_0r, b_0s);
+                project(b_1r, b_1s);
+                
+                seed_triangle (a, b_0, b_1, a_r, b_0r, b_1r, a_s, b_0s, b_1s, d->level);
 
                 coarse += 1;
             }
@@ -184,15 +212,16 @@ static void seed_vegetation(ElevationSeeds *seeds,
     int i, j;
 
     t_copy_modelview (modelview);
+    t_copy_projection (projection);
     
     coarse = fine = error = 0;
     context = seeds->context;
     bins = seeds->bins;
+    horizon = -seeds->horizon;        
     density = density_in;
     bias = bias_in;
-    threshold = -100;//-sqrt(bias_in * bias_in * density_in * fabs(modelview[10]));
     tiles = &context->tileset;
-    
+
     glPatchParameteri(GL_PATCH_VERTICES, 1);
     glUniform1f(_ls, ldexpf(1, -tiles->depth));
 
@@ -288,8 +317,11 @@ static void seed_vegetation(ElevationSeeds *seeds,
     glDisable (GL_MULTISAMPLE);
     /* glDisable (GL_RASTERIZER_DISCARD); */
 
+    seeds->triangles_n[0] = coarse;
+    seeds->triangles_n[1] = fine;
+    seeds->error = error;
     /* if (fine > 0) abort(); */
-    /* _TRACE ("Horizon: %g, Coarse: %d, Fine: %d\n", threshold, coarse, fine); */
+    /* _TRACE ("Horizon: %g, Coarse: %d, Fine: %d\n", horizon, coarse, fine); */
 }
 
 @implementation ElevationSeeds
@@ -307,6 +339,7 @@ static void seed_vegetation(ElevationSeeds *seeds,
     [super initWithMode: GL_POINTS];
 
     self->context = &elevation->context;
+    self->horizon = 100;
 
     /* Create the VBO. */
     
@@ -438,6 +471,49 @@ static void seed_vegetation(ElevationSeeds *seeds,
 }
 
 -(void) _set_bins
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_triangles
+{
+    int i;
+    
+    lua_createtable (_L, 2, 0);
+
+    for (i = 0 ; i < 2 ; i += 1) {
+        lua_pushnumber (_L, self->triangles_n[i]);
+        lua_rawseti (_L, -2, i + 1);
+    }
+    
+    return 1;
+}
+
+-(void) _set_triangles
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_horizon
+{
+    lua_pushnumber (_L, self->horizon);
+    
+    return 1;
+}
+
+-(void) _set_horizon
+{
+    self->horizon = lua_tonumber (_L, 3);
+}
+
+-(int) _get_error
+{
+    lua_pushnumber (_L, self->error);
+    
+    return 1;
+}
+
+-(void) _set_error
 {
     T_WARN_READONLY;
 }

@@ -26,7 +26,7 @@
 #include "body.h"
 #include "shader.h"
 
-#define BINS_N 16
+#define BINS_N 32
 
 #define SEED_BUFFER_SIZE (10000)
 #define SEED_SIZE (3 * 3 * 4)
@@ -113,7 +113,8 @@ typedef struct {
     unsigned int buffer;
     int reference;
 
-    double density, bias;
+    double density, bias, horizon, error;
+    int triangles_n[2];
 }
 
 -(int) _get_density;
@@ -124,6 +125,15 @@ typedef struct {
 
 -(int) _get_bins;
 -(void) _set_bins;
+
+-(int) _get_triangles;
+-(void) _set_triangles;
+
+-(int) _get_horizon;
+-(void) _set_horizon;
+
+-(int) _get_error;
+-(void) _set_error;
 
 @end
 

@@ -38,7 +38,9 @@ end
 seedsprofiler = primitives.graphic {
    link = function(self)
       local parent = self.parent
-      
+
+      self.triangles = parent.triangles
+      self.error = parent.error
       self.bins = parent.bins
       self.seeds = aggregate(parent.bins)
       self.start = techne.iterations
@@ -54,6 +56,10 @@ seedsprofiler = primitives.graphic {
       end
 
       self.seeds = self.seeds + aggregate(parent.bins)
+
+      self.triangles[1] = self.triangles[1] + parent.triangles[1]
+      self.triangles[2] = self.triangles[2] + parent.triangles[2]
+      self.error = self.error + parent.error
    end,
 
    unlink = function(self)
@@ -63,19 +69,22 @@ seedsprofiler = primitives.graphic {
       
       message(string.format([[
 Seed profile for node: %s
+Mean number of triangles visited: %d roam, %d fine
 Mean seed count per iteration: %.1f
-                  +----------+----------+
-                  |        Seeds        |
-+------+----------+----------+----------+
-| Bin  |   Mean   |   Mean   |    Max   |
-+------+----------+----------+----------+
+Mean total within-cluster squared error: %.1f
+                  +----------+-----------+
+                  |         Seeds        |
++------+----------+----------+-----------+
+| Bin  |  Center  |   Mean   |  Alloc'd  |
++------+----------+----------+-----------+
 ]],
                             tostring(self.parent),
-                            self.seeds / n))
+                            self.seeds / n, self.error / n,
+                            self.triangles[1] / n, self.triangles[2] / n))
 
       for i, bin in ipairs(self.bins) do
          message(string.format([[
-|% 6d|% 10.1f|% 10d|% 10d|
+|% 6d|% 10.1f|% 10d|% 11d|
 ]],
                                i, bin[1] / n, bin[2] / n, bin[3]))
       end

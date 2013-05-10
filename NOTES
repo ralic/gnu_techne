@@ -76,4 +76,3 @@ TODO (ASAP):
 
 * Investigate bindings malfunction.  To reproduce start with:
   techne -ac utils/basic.lua -i
-* Finish seeding profiling.

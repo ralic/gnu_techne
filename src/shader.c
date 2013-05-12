@@ -826,6 +826,7 @@ int t_add_global_block (const char *name, const char *declaration)
         
         for (i = 0 ; i < self->private_n ; i += 1) {
             j = privates[i];
+
             if (j >= 0) {
                 assert(j < self->uniforms_n);
                 uniforms[j].any.mode = SHADER_PRIVATE_UNIFORM;
@@ -1150,7 +1151,7 @@ int t_add_global_block (const char *name, const char *declaration)
         uniform = &self->uniforms[i];
 
         if (uniform->any.mode != SHADER_PRIVATE_UNIFORM) {
-            if (uniforms->any.kind == SHADER_BASIC_UNIFORM) {
+            if (uniform->any.kind == SHADER_BASIC_UNIFORM) {
 #define DO_VALUE READ_VALUE
                 DO_UNIFORM (&self->uniforms[i].basic);
 #undef DO_VALUE

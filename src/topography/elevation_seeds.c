@@ -123,7 +123,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
         /* _TRACEM (4, 4, "f", projection); */
 
-        n_0 = round(density * bias * bias * 
+        n_0 = round(density *
                     0.5 * sqrt((u[0] * u[0] + u[1] * u[1]) *
                                (v[0] * v[0] + v[1] * v[1])));
         
@@ -258,7 +258,11 @@ static void seed_vegetation(ElevationSeeds *seeds,
     }
     
     glEnable (GL_MULTISAMPLE);
-    /* glEnable (GL_RASTERIZER_DISCARD); */
+
+//#define RASTERTIZER_DISCARD   
+#ifdef RASTERTIZER_DISCARD
+    glEnable (GL_RASTERIZER_DISCARD);
+#endif
 
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {
@@ -315,7 +319,10 @@ static void seed_vegetation(ElevationSeeds *seeds,
     /* _TRACE ("error: %f\n", error); */
 
     glDisable (GL_MULTISAMPLE);
-    /* glDisable (GL_RASTERIZER_DISCARD); */
+    
+#ifdef RASTERTIZER_DISCARD
+    glDisable (GL_RASTERIZER_DISCARD);
+#endif
 
     seeds->triangles_n[0] = coarse;
     seeds->triangles_n[1] = fine;

@@ -69,10 +69,11 @@ seedsprofiler = primitives.graphic {
       
       message(string.format([[
 Seed profile for node: %s
-Mean number of triangles visited: %d roam, %d fine
 Mean seed count per iteration: %.1f
 Mean total within-cluster squared error: %.1f
-                  +----------+-----------+
+Mean number of triangles visited: %d roam, %d fine
+
+                  +----------------------+
                   |         Seeds        |
 +------+----------+----------+-----------+
 | Bin  |  Center  |   Mean   |  Alloc'd  |
@@ -90,7 +91,7 @@ Mean total within-cluster squared error: %.1f
       end
       
       message([[
-+------+----------+----------+----------+
++------+----------+----------+-----------+
 ]])
    end
 }

@@ -42,7 +42,7 @@
 static roam_Context *context;
 static elevation_Bin *bins;
 static float modelview[16], projection[16];
-static double density, bias, horizon, error;
+static double density, bias, horizon, error, area, aspect;
 
 static int fine, coarse, highwater, initialized;
 
@@ -66,7 +66,7 @@ static void project(float *r, float *s)
     float z;
 
     z = fmax(-(r[2] + modelview[14]) + bias, bias);
-    s[0] = projection[0] * (r[0] + modelview[12]) / z;
+    s[0] = aspect * projection[0] * (r[0] + modelview[12]) / z;
     s[1] = projection[5] * (r[1] + modelview[13]) / z;
 }
 
@@ -108,7 +108,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         }
     } else {
         char *p;
-        double n_0, u[2], v[2];
+        double A, n_0, u[2], v[2];
         int i, j;
 
         /* Project all vertices into screen space. */
@@ -122,10 +122,9 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         }
 
         /* _TRACEM (4, 4, "f", projection); */
-
-        n_0 = round(density *
-                    0.5 * sqrt((u[0] * u[0] + u[1] * u[1]) *
-                               (v[0] * v[0] + v[1] * v[1])));
+        A = 0.5 * sqrt((u[0] * u[0] + u[1] * u[1]) *
+                       (v[0] * v[0] + v[1] * v[1]));
+        n_0 = round(density * A);
         
         /* This simple search should be preffered to binary searching
          * as the vast majority of seeds are likely to end up in the
@@ -153,6 +152,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         bins[j].sum += n_0;
         bins[j].fill += 1;
         error += (bins[j].mean - n_0) * (bins[j].mean - n_0);
+        area += A;
         fine += 1;
     }
 }
@@ -209,12 +209,15 @@ static void seed_vegetation(ElevationSeeds *seeds,
                             unsigned int _ls, unsigned int _lo)
 {
     roam_Tileset *tiles;
-    int i, j;
+    int viewport[4], i, j;
 
     t_copy_modelview (modelview);
     t_copy_projection (projection);
-    
-    coarse = fine = error = 0;
+
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    aspect = (double)viewport[2] / (double)viewport[3];
+
+    coarse = fine = error = area = 0;
     context = seeds->context;
     bins = seeds->bins;
     horizon = -seeds->horizon;        
@@ -327,8 +330,8 @@ static void seed_vegetation(ElevationSeeds *seeds,
     seeds->triangles_n[0] = coarse;
     seeds->triangles_n[1] = fine;
     seeds->error = error;
-    /* if (fine > 0) abort(); */
-    /* _TRACE ("Horizon: %g, Coarse: %d, Fine: %d\n", horizon, coarse, fine); */
+
+    /* _TRACE ("Area: %g\n", area); */
 }
 
 @implementation ElevationSeeds

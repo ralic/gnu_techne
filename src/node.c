@@ -381,28 +381,118 @@ static int next_attribute(lua_State *L)
     }
 }
 
-static int configuration_iterator(lua_State *L)
+static int attributes_pairs(lua_State *L)
 {
-    t_checknode(L, 1, [Node class]);
-
-    lua_pushcfunction (L, next_attribute);
-    lua_pushvalue(L, 1);
-    lua_pushinteger(L, 0);
-
+    lua_pushcfunction(L, next_attribute);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_pushnil (L);
+    
     return 3;
 }
 
-static int children_iterator(lua_State *L)
+static int attributes_ipairs(lua_State *L)
 {
-    Node *object;
+    lua_pushboolean (L, 1);
+    lua_pushcclosure (L, next_attribute, 1);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_pushinteger (L, 0);
+    
+    return 3;
+}
 
-    object = t_checknode(L, 1, [Node class]);
+static int attributes_tostring(lua_State *L)
+{
+    lua_pushstring(L, "Attributes");
+   
+    return 1;
+}
 
-    lua_getglobal (L, "next");
-    lua_rawgeti (L, LUA_REGISTRYINDEX, object->children);    
+static int attributes_len(lua_State *L)
+{
+    int i;
+
+    lua_pushcfunction(L, next_attribute);
+    lua_pushvalue(L, lua_upvalueindex(1));
     lua_pushnil(L);
 
-    return 3;
+    assert (lua_gettop(L) == 5);
+    
+    for (i = 0 ; ; i += 1) {
+        lua_call (L, 2, LUA_MULTRET);
+
+        if (lua_gettop(L) < 4) {
+            break;
+        }
+
+        lua_pop(L, 1);
+        lua_pushcfunction(L, next_attribute);
+        lua_insert (L, -2);
+        lua_pushvalue(L, lua_upvalueindex(1));
+        lua_insert (L, -2);
+    }
+    
+    lua_pushinteger (L, i);
+
+    return 1;
+}
+
+static int checkattribute(lua_State *L, int index)
+{
+    Node *object;
+    const struct protocol *protocol;
+    int i;
+    
+    /* Check whether the given value exists in the protocol. */
+    
+    object = *(Node **)lua_touserdata (L, lua_upvalueindex(1));
+    protocol = object->protocol;
+    
+    if (lua_type(L, 2) == LUA_TNUMBER) {
+        for (i = 0;
+             i < protocol->size &&
+                 protocol->properties[0][i].name != NULL;
+             i += 1);
+    } else if (lua_type(L, 2) == LUA_TSTRING) {
+        const char *k;
+        
+        k = lua_tostring(L, 2);
+        
+        for (i = 0;
+             i < protocol->size &&
+                 (!protocol->properties[0][i].name ||
+                  strcmp(protocol->properties[0][i].name, k));
+             i += 1);
+    } else {
+        return 0;
+    }
+
+    return i < protocol->size;
+}
+
+static int attributes_index(lua_State *L)
+{
+    if (checkattribute(L, 2)) {
+        lua_pushvalue(L, lua_upvalueindex(1));
+        lua_replace(L, 1);
+        lua_gettable(L, 1);
+    } else {
+        lua_pushnil(L);
+    }
+
+    return 1;
+}
+
+static int attributes_newindex(lua_State *L)
+{
+    if (checkattribute(L, 2)) {
+        lua_pushvalue(L, lua_upvalueindex(1));
+        lua_replace(L, 1);
+        lua_settable(L, 1);
+    } else {
+        lua_pushnil(L);
+    }
+
+    return 0;
 }
 
 static int next_key(lua_State *L)
@@ -552,15 +642,6 @@ static int next_ancestor(lua_State *L)
     }
 }
 
-static int ancestors_iterator(lua_State *L)
-{
-    lua_pushcfunction (L, next_ancestor);
-    lua_pushvalue(L, 1);
-    lua_pushnil (L);
-
-    return 3;
-}
-
 static int ancestors_ipairs(lua_State *L)
 {
     lua_pushcfunction(L, next_ancestor);
@@ -673,15 +754,6 @@ static int next_sibling(lua_State *L)
 
         return 1;
     }
-}
-
-static int siblings_iterator(lua_State *L)
-{
-    lua_pushcfunction (L, next_sibling);
-    lua_pushvalue(L, 1);
-    lua_pushnil (L);
-
-    return 3;
 }
 
 static int siblings_ipairs(lua_State *L)
@@ -1308,20 +1380,6 @@ static void unlink_node (Node *node)
 
 	signature = lua_topointer (_L, -1);
 	metatable = luaL_ref (_L, LUA_REGISTRYINDEX);
-
-        /* Export iterators and other utility functions. */
-        
-	lua_pushcfunction (_L, configuration_iterator);
-	lua_setglobal (_L, "configuration");
-
-	lua_pushcfunction (_L, children_iterator);
-	lua_setglobal (_L, "children");
-
-	lua_pushcfunction (_L, ancestors_iterator);
-	lua_setglobal (_L, "ancestors");
-
-	lua_pushcfunction (_L, siblings_iterator);
-	lua_setglobal (_L, "siblings");
     }
 }
 
@@ -1711,6 +1769,18 @@ static void unlink_node (Node *node)
     return 1;
 }
 
+-(int) _get_annotations
+{
+    lua_getuservalue (_L, 1);
+    
+    return 1;
+}
+
+-(void) _set_annotations
+{
+    T_WARN_READONLY;
+}
+
 -(int) _get_children
 {
     Node *child;
@@ -1799,6 +1869,40 @@ static void unlink_node (Node *node)
     return 1;
 }
 
+-(int) _get_attributes
+{
+    lua_newtable (_L);
+
+    lua_newtable (_L);
+    lua_pushstring(_L, "__len");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)attributes_len, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__index");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)attributes_index, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__newindex");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)attributes_newindex, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__ipairs");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)attributes_ipairs, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__pairs");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)attributes_pairs, 1);
+    lua_settable(_L, -3);
+    lua_pushstring(_L, "__tostring");
+    lua_pushvalue (_L, 1);
+    lua_pushcclosure(_L, (lua_CFunction)attributes_tostring, 1);
+    lua_settable(_L, -3);
+    lua_setmetatable(_L, -2);
+
+    return 1;
+}
+
 -(void) _set_parent
 {
     if (!lua_isnil (_L, 3)) {
@@ -1820,6 +1924,11 @@ static void unlink_node (Node *node)
 }
 
 -(void) _set_siblings
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_attributes
 {
     T_WARN_READONLY;
 }

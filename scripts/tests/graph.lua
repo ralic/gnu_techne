@@ -28,7 +28,7 @@ function populate (node, j)
 end
 
 function flatten (node)
-   for i, child in children(node) do
+   for i, child in pairs(node.children) do
       flatten (child)
 
       child.parent = root
@@ -36,7 +36,7 @@ function flatten (node)
 end
 
 function collect (node)
-   for i, child in children(node) do
+   for i, child in pairs(node.children) do
       flatten (child)
 
       child.parent = nil
@@ -45,5 +45,5 @@ end
 
 populate (root, 1)
 flatten (root)
-assert (#root.descendants == 120)
+assert (#root.children == 120)
 collect (root)

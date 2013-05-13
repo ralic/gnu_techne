@@ -115,11 +115,11 @@ Ran a total of %d iterations in %.1f seconds at %.1f ms per iteration (%.1f Hz).
          -- No nodes specified explicitly; collect all roots and
          -- built-ins.
          
-         for _, root in siblings(self) do
+         for _, root in pairs(self.siblings) do
             dump(root, all)
          end
          
-         for _, builtin in siblings(techne) do
+         for _, builtin in pairs(techne.siblings) do
             dump(builtin, all)
          end
 

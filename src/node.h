@@ -112,11 +112,17 @@ struct protocol {
 -(int) _get_parent;
 -(int) _get_ancestors;
 -(int) _get_siblings;
+-(int) _get_children;
+-(int) _get_annotations;
+-(int) _get_attributes;
 -(int) _get_index;
 
 -(void) _set_parent;
 -(void) _set_ancestors;
 -(void) _set_siblings;
+-(void) _set_children;
+-(void) _set_annotations;
+-(void) _set_attributes;
 -(void) _set_link;
 -(void) _set_unlink;
 -(void) _set_get;
@@ -126,8 +132,6 @@ struct protocol {
 -(int) _get_type;
 -(void) _set_type;
 
--(int) _get_children;
--(void) _set_children;
 
 @end
 

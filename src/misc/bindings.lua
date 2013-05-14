@@ -48,6 +48,7 @@ local function push (suffix, terminal, ...)
 
    if terminal then
       context.sequence = {}
+      context.depth = 0
    end
 
    return true
@@ -62,7 +63,7 @@ end
 local function press (self, prefix, key, ...)
    local suffix
 
-   context.down = context.down + 1
+   context.depth = context.depth + 1
    context.current = key
 
    push (prefix .. "down-" .. key, false, ...)
@@ -71,13 +72,13 @@ end
 local function release (self, prefix, key, ...)
    local suffix
 
-   context.down = context.down - 1
+   context.depth = context.depth - 1
 
-   push (prefix .. "up-" .. tostring(key), context.down == 0 and context.current ~= key, ...)
+   push (prefix .. "up-" .. tostring(key), context.depth <= 0 and context.current ~= key, ...)
    
    if context.current == key then
       pop(2)
-      push (prefix .. tostring(key), context.down == 0, ...)
+      push (prefix .. tostring(key), context.depth <= 0, ...)
    end
 
    context.current = nil
@@ -105,7 +106,7 @@ for name, device in pairs(controllers) do
 
    state = {
       sequence = {},
-      down = 0,
+      depth = 0,
       current = nil
    }
 

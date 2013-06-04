@@ -1,12 +1,13 @@
 in vec3 position_tc[];
 patch in vec3 color_tc;
 patch in vec2 chance_tc;
-patch in float distance_tc;
+patch in float distance_tc, depth_tc;
 out vec4 position_te;
 out vec3 color_te;
 out float distance_te;
 out mat2x3 plane_te;
 flat out int category_te;
+flat out float depth_te;
 
 uniform sampler2D deflections;
 
@@ -27,7 +28,7 @@ void Grass_evaluation()
 
     /* A stem segment. */
         
-    t = vec3(texture(deflections, vec2((0.3 + 0.7 * chance_tc.x) * gl_TessCoord.x, chance_tc.y)));
+    t = vec3(texture(deflections, vec2(gl_TessCoord.x, 0.45 + 0.55 * chance_tc.y)));
     theta = t.b;
     costheta = cos(theta);
     sintheta = sin(theta);
@@ -36,8 +37,11 @@ void Grass_evaluation()
 
     plane_te = mat2x3 (vec3(cosphi * costheta, costheta * sinphi, -sintheta),
                        vec3(-sinphi, cosphi,0));
-    position_te = vec4(p + 0.2 * d, 1);    
+    position_te = vec4(p + (0.1 + 0.1 * distance_te + 0.1 * chance_tc.x) * d, 1);
+    /* position_te = vec4(p + vec3(0, 0, 0.03 * gl_TessCoord.x), 1); */
+
     color_te = color_tc;
     distance_te = distance_tc;
+    depth_te = depth_tc;
     category_te = c;
 }

@@ -35,7 +35,7 @@
 typedef struct {
     char *buffer;
     int total, fill, capacity;
-    double mean, sum;
+    double center, sum;
 } elevation_Bin;
 
 @interface Elevation: Node {

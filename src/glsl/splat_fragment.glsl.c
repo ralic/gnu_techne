@@ -23,6 +23,7 @@ void main()
     
     for (i = 0, C = 0.0 ; i < N ; i += 1) {
         distances[i] = 1 / pow(hsv_distance (hsv, references[i], weights[i]), power);
+        
         C += distances[i];
     }
 
@@ -44,7 +45,7 @@ void main()
     fragment = vec4(intensity * mix(50.0 * vec3(phase_r),
                                     factor * texel,
                                     tau), rho);
-
+    
     /* fragment = vec4(factor * texel, 1.0); */
     /* fragment = vec4(vec3(texture2D(base, uv)), 1.0); */
 }

@@ -70,7 +70,7 @@ seedsprofiler = primitives.graphic {
       message(string.format([[
 Seed profile for node: %s
 Mean seed count per iteration: %.1f
-Mean total within-cluster squared error: %.1f
+Within-cluster RMS error: %.1f
 Mean number of triangles visited: %d roam, %d fine
 
                   +----------------------+
@@ -80,7 +80,7 @@ Mean number of triangles visited: %d roam, %d fine
 +------+----------+----------+-----------+
 ]],
                             tostring(self.parent),
-                            self.seeds / n, self.error / n,
+                            self.seeds / n, math.sqrt(self.error / self.seeds),
                             self.triangles[1] / n, self.triangles[2] / n))
 
       for i, bin in ipairs(self.bins) do

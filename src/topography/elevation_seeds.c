@@ -27,6 +27,9 @@
 #include "vegetation.h"
 #include "elevation.h"
 
+//#define RASTERTIZER_DISCARD   
+//#define K_MEANS
+
 /* Check whether a triangle is within the seedable depth range.  The
  * last two tests ensure that a triangle that is larger than the
  * entire viewing volume (and will therefore fail the first three
@@ -43,6 +46,7 @@ static roam_Context *context;
 static elevation_Bin *bins;
 static float modelview[16], projection[16];
 static double density, bias, horizon, error, area, aspect;
+static double n_min, n_max;
 
 static int fine, coarse, highwater, initialized;
 
@@ -124,14 +128,22 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         /* _TRACEM (4, 4, "f", projection); */
         A = 0.5 * sqrt((u[0] * u[0] + u[1] * u[1]) *
                        (v[0] * v[0] + v[1] * v[1]));
-        n_0 = round(density * A);
+        n_0 = fmax(density * A, 1);
+
+        if (n_min > n_0) {
+            n_min = n_0;
+        }
+
+        if (n_max < n_0) {
+            n_max = n_0;
+        }
         
         /* This simple search should be preffered to binary searching
          * as the vast majority of seeds are likely to end up in the
          * first bins. */
-        
+
         for (j = 0;
-             j < BINS_N - 1 && n_0 > 0.5 * (bins[j].mean + bins[j + 1].mean);
+             j < BINS_N - 1 && n_0 > 0.5 * (bins[j].center + bins[j + 1].center);
              j += 1);
 
         /* _TRACE ("%d\n", j); */
@@ -143,15 +155,28 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         /* printf ("%f\n", bias * density / -z); */
         /* assert (j <= 31); */
         /* assert (n <= density); */
-        
+
+        /* { */
+        /*     float c[2], m; */
+
+        /*     c[0] = (a[0] + b_0[0] + b_1[0]) / 3; */
+        /*     c[1] = (a[1] + b_0[1] + b_1[1]) / 3; */
+        /*     m = sqrt(c[0] * c[0] + c[1] * c[1]); */
+            
+        /*     _TRACE ("%f, %f\n", c[0] / m, c[1] / m); */
+        /* } */
+            
         p = bins[j].buffer + bins[j].fill * SEED_SIZE;
         memcpy (p, a, 3 * sizeof(float));
         memcpy (p + 3 * sizeof(float), b_0, 3 * sizeof(float));
         memcpy (p + 6 * sizeof(float), b_1, 3 * sizeof(float));
 
+#ifdef K_MEANS
         bins[j].sum += n_0;
+#endif
+        
         bins[j].fill += 1;
-        error += (bins[j].mean - n_0) * (bins[j].mean - n_0);
+        error += (bins[j].center - n_0) * (bins[j].center - n_0);
         area += A;
         fine += 1;
     }
@@ -218,6 +243,8 @@ static void seed_vegetation(ElevationSeeds *seeds,
     aspect = (double)viewport[2] / (double)viewport[3];
 
     coarse = fine = error = area = 0;
+    n_min = 1.0 / 0.0;
+    n_max = 0;
     context = seeds->context;
     bins = seeds->bins;
     horizon = -seeds->horizon;        
@@ -239,9 +266,9 @@ static void seed_vegetation(ElevationSeeds *seeds,
         c = pow(density, 1.0 / (BINS_N - 1));
 
         for (i = 0, f = 1 ; i < BINS_N ; i += 1, f *= c) {
-            bins[i].mean = f;
-            /* bins[i].mean = 1 + i * (density - 1) / (BINS_N - 1); */
-            /* printf ("%f\n", bins[i].mean); */
+            bins[i].center = f;
+            /* bins[i].center = 1 + i * (density - 1) / (BINS_N - 1); */
+            /* printf ("%f\n", bins[i].center); */
         }
 
         initialized = 1;
@@ -250,19 +277,21 @@ static void seed_vegetation(ElevationSeeds *seeds,
     /* Update the cluster centers. */
     
     for (i = 0 ; i < BINS_N ; i += 1) {
+#ifdef K_MEANS
         if (bins[i].total > 0) {
-            bins[i].mean = bins[i].sum / bins[i].total;
+            bins[i].center = bins[i].sum / bins[i].total;
         }
 
-        bins[i].total = 0;
         bins[i].sum = 0;
+#endif
+        
+        bins[i].total = 0;
 
-        /* assert (k == BINS_N - 1 || bins[k].mean <= bins[k + 1].mean); */
+        /* assert (k == BINS_N - 1 || bins[k].center <= bins[k + 1].center); */
     }
     
     glEnable (GL_MULTISAMPLE);
 
-//#define RASTERTIZER_DISCARD   
 #ifdef RASTERTIZER_DISCARD
     glEnable (GL_RASTERIZER_DISCARD);
 #endif
@@ -310,10 +339,11 @@ static void seed_vegetation(ElevationSeeds *seeds,
 
             for (k = 0 ; k < BINS_N ; k += 1) {
                 if(bins[k].fill > 0) {
-                    /* printf ("%f\n", bins[k].mean); */
+                    /* printf ("%f\n", bins[k].center); */
                     glBufferData (GL_ARRAY_BUFFER, highwater * SEED_SIZE, NULL, GL_STREAM_DRAW);
                     glBufferSubData (GL_ARRAY_BUFFER, 0, bins[k].fill * SEED_SIZE, bins[k].buffer);
-                    glDrawArraysInstanced(GL_PATCHES, 0, bins[k].fill, round(bins[k].mean));
+                    
+                    glDrawArraysInstanced(GL_PATCHES, 0, bins[k].fill, round(bins[k].center));
                 }
             }
 	}
@@ -327,11 +357,25 @@ static void seed_vegetation(ElevationSeeds *seeds,
     glDisable (GL_RASTERIZER_DISCARD);
 #endif
 
+#ifndef K_MEANS
+    {
+        double f, b;
+
+        if (!isinf(n_min)) {
+            b = pow(n_max / n_min, 1.0 / (BINS_N - 1));
+
+            for (i = 0, f = 1 ; i < BINS_N ; i += 1, f *= b) {
+                bins[i].center = n_min * f;
+            }
+        }
+    }
+#endif
+    
     seeds->triangles_n[0] = coarse;
     seeds->triangles_n[1] = fine;
     seeds->error = error;
 
-    /* _TRACE ("Area: %g\n", area); */
+    /* _TRACE ("Area: %g, n_min: %.1f, n_max: %.1f\n", area, n_min, n_max); */
 }
 
 @implementation ElevationSeeds
@@ -467,7 +511,7 @@ static void seed_vegetation(ElevationSeeds *seeds,
 
     for (i = 0 ; i < BINS_N ; i += 1) {
         lua_createtable (_L, 3, 0);
-        lua_pushnumber (_L, self->bins[i].mean);
+        lua_pushnumber (_L, self->bins[i].center);
         lua_rawseti (_L, -2, 1);
         lua_pushinteger (_L, self->bins[i].total);
         lua_rawseti (_L, -2, 2);

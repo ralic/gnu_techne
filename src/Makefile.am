@@ -16,15 +16,12 @@ bin_SCRIPTS = techne
 BUILT_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h			\
 		glsl/layout_vertex.h glsl/textured_fragment.h		\
 		glsl/splat_vertex.h glsl/splat_fragment.h		\
-		glsl/color.h glsl/rand.h \
-		glsl/vegetation_tesselation_control_header.h		\
-		glsl/vegetation_tesselation_evaluation_header.h		\
-		glsl/vegetation_geometry_header.h			\
-		glsl/vegetation_vertex.h glsl/vegetation_fragment.h	\
-		glsl/grass_tesselation_control.h \
-		glsl/grass_tesselation_evaluation.h \
-		glsl/grass_geometry.h \
-		glsl/transform_block.h glsl/preamble.h gl.h glx.h
+		glsl/color.h glsl/rand.h				\
+		glsl/vegetation_tesselation_control.h			\
+		glsl/vegetation_tesselation_evaluation.h		\
+		glsl/vegetation_geometry.h glsl/vegetation_vertex.h	\
+		glsl/vegetation_fragment.h glsl/transform_block.h	\
+		glsl/preamble.h gl.h glx.h
 SUFFIXES = .glsl.c
 $(BUILT_SOURCES): glsl/stringify
 .glsl.c.h: glsl/stringify
@@ -102,9 +99,6 @@ topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
 			     topography/atmosphere.h 			\
 			     topography/atmosphere.c			\
 			     topography/splat.h topography/splat.c	\
-			     topography/swatch.h topography/swatch.c	\
-			     topography/grass.h topography/grass.c	\
-			     topography/barren.h topography/barren.c	\
 			     topography/vegetation.h topography/vegetation.c
 topography_core_la_CFLAGS = ${AM_CFLAGS}
 topography_core_la_LDFLAGS = -module -avoid-version -no-undefined

@@ -23,7 +23,6 @@
 
 #include "techne.h"
 #include "texture.h"
-#include "swatch.h"
 #include "atmosphere.h"
 #include "splat.h"
 
@@ -35,9 +34,8 @@
     const char *private[] = {"base", "detail", "offset", "scale",
                              "power", "factor", "references", "weights",
                              "resolutions"};
-    
+
     ShaderMold *shader;
-    Node *child;
     int i;
         
 #include "glsl/color.h"	
@@ -52,7 +50,7 @@
 
     [super init];
 
-    asprintf (&header, "const int N = %d;\n", self->elevation->swatches);
+    asprintf (&header, "const int N = %d;\n", self->elevation->swatches_n);
         
     shader = [ShaderMold alloc];
         
@@ -88,19 +86,17 @@
 
     /* Initialize reference color uniforms. */
     
-    for (child = self->elevation->down, i = 0 ; child ; child = child->right) {
-        if ([child isKindOf: [Swatch class]]) {
-            Swatch *swatch = (Swatch *)child;
+    for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
+        elevation_SwatchDetail *swatch;
 
-            [self setSamplerUniform: "detail" to: swatch->detail->name atIndex: i];
+        swatch = &self->elevation->swatches[i];
+        
+        [self setSamplerUniform: "detail" to: swatch->detail->name atIndex: i];
             
-            glUniform2fv (self->locations.resolutions + i, 1,
-                          swatch->resolutions);
-            glUniform3fv (self->locations.references + i, 1, swatch->values);
-            glUniform3fv (self->locations.weights + i, 1, swatch->weights);
-
-            i += 1;
-        }
+        glUniform2fv (self->locations.resolutions + i, 1,
+                      swatch->resolution);
+        glUniform3fv (self->locations.references + i, 1, swatch->values);
+        glUniform3fv (self->locations.weights + i, 1, swatch->weights);
     }
 }
 

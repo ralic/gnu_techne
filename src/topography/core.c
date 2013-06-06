@@ -20,14 +20,10 @@
 #include "techne.h"
 #include "atmosphere.h"
 #include "elevation.h"
-#include "grass.h"
-#include "barren.h"
 
 int luaopen_topography_core (lua_State *L)
 {
-    Class classes[] = {[Elevation class], [Atmosphere class], [Grass class],
-                       [Barren class],
-                       NULL};
+    Class classes[] = {[Elevation class], [Atmosphere class], NULL};
 
     t_exportnodes (L, classes);
 

@@ -49,7 +49,7 @@ void main()
 #else
     {
         u = hash(floatBitsToUint(center.x), floatBitsToUint(center.y),
-                 gl_InstanceID);
+                 uint(gl_InstanceID));
     }
 #endif
     

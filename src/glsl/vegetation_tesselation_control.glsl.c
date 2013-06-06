@@ -1,5 +1,8 @@
 layout(vertices = 1) out;
 
+flat in int index[];
+patch out int index_tc;
+
 in vec3 position[], color[];
 flat in vec2 chance[];
 in float distance[];
@@ -8,8 +11,7 @@ patch out vec3 color_tc;
 patch out vec2 chance_tc;
 patch out float distance_tc, depth_tc;
 
-void Grass_control()
-{
+void main() {
     const float bias = 1, density = 16;
     
     vec3 p;

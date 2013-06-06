@@ -30,7 +30,6 @@
 #include "elevation.h"
 #include "vegetation.h"
 #include "splat.h"
-#include "swatch.h"
 #include "roam.h"
 
 static int construct(lua_State *L)
@@ -330,6 +329,111 @@ static int construct(lua_State *L)
     lua_settable (_L, 1);
 }
 
+-(int) _get_swatches
+{
+    int i, j;
+    
+    lua_createtable (_L, self->swatches_n, 0);
+    
+    for (i = 0 ; i < self->swatches_n ; i += 1) {
+        elevation_SwatchDetail *swatch;
+
+        swatch = &self->swatches[i];
+        
+        /* The texture. */
+
+        lua_rawgeti(_L, LUA_REGISTRYINDEX, swatch->reference);
+        lua_rawseti(_L, -2, 1);
+
+        /* The resolution. */
+        
+        lua_createtable (_L, 2, 0);
+
+        for (j = 0; j < 2 ; j += 1) {
+            lua_pushnumber(_L, swatch->resolution[j]);                
+            lua_rawseti(_L, -2, j + 1);
+        }
+        
+        lua_rawseti(_L, -2, 2);
+        
+        /* The reference color. */
+
+        lua_createtable (_L, 3, 0);
+
+        for (j = 0; j < 3 ; j += 1) {
+            if (swatch->weights[j] > 0) {
+                lua_pushnumber(_L, swatch->values[j]);
+            } else {
+                lua_pushnil(_L);
+            }
+                
+            lua_rawseti(_L, -2, j + 1);
+        }
+        
+        lua_rawseti(_L, -2, 3);
+    }
+
+    return 1;
+}
+
+-(void) _set_swatches
+{
+    int i, j, n;
+
+    n = lua_rawlen (_L, 3);
+
+    self->swatches_n = n;
+    self->swatches = realloc(self->swatches,
+                             n * sizeof(elevation_SwatchDetail));
+
+    for (i = 0 ; i < n ; i += 1) {
+        elevation_SwatchDetail *swatch;
+
+        swatch = &self->swatches[i];
+        lua_rawgeti (_L, 3, i + 1);
+
+        /* The texture. */
+
+        lua_rawgeti (_L, -1, 1);
+        swatch->detail = t_testtexture (_L, -1, GL_TEXTURE_2D);
+        swatch->reference = luaL_ref(_L, LUA_REGISTRYINDEX);
+
+        /* The resolution. */
+        
+        lua_rawgeti (_L, -1, 2);
+
+        for (j = 0 ; j < 2 ; j += 1) {
+            lua_pushinteger (_L, i + 1);
+            lua_gettable (_L, -2);
+            swatch->resolution[j] = lua_tonumber(_L, -1);
+            lua_pop (_L, 1);
+        }
+
+        lua_pop (_L, 1);
+
+        /* The reference color. */
+
+        lua_rawgeti (_L, -1, 3);
+
+        for (j = 0 ; j < 3 ; j += 1) {
+            lua_pushinteger (_L, j + 1);
+            lua_gettable (_L, -2);
+
+            if (lua_isnumber(_L, -1)) {
+                swatch->values[j] = lua_tonumber (_L, -1);
+                swatch->weights[j] = 1;
+            } else {
+                swatch->values[j] = 0;
+                swatch->weights[j] = 0;
+            }			    
+			
+            lua_pop(_L, 1);
+        }
+
+        lua_pop (_L, 2);
+    }
+}
+
 -(int) _get_separation
 {
     lua_pushnumber (_L, self->separation);
@@ -419,24 +523,6 @@ static int construct(lua_State *L)
 {
 }
 
--(void) adopt: (Node *)child
-{
-    [super adopt: child];
-
-    if ([child isKindOf: [Swatch class]]) {
-        self->swatches += 1;
-    }
-}
-
--(void) renounce: (Node *)child
-{
-    [super renounce: child];
-
-    if ([child isKindOf: [Swatch class]]) {
-        self->swatches -= 1;
-    }
-}
-
 -(void) free
 {
     roam_Tileset *tiles;
@@ -459,7 +545,6 @@ static int construct(lua_State *L)
     free (tiles->orders);
     free (tiles->scales);
     free (tiles->offsets);
-
     
     [super free];
 }

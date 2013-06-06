@@ -1,3 +1,8 @@
+layout(isolines, equal_spacing) in;
+
+patch in int index_tc;
+flat out int index_te;
+
 in vec3 position_tc[];
 patch in vec3 color_tc;
 patch in vec2 chance_tc;
@@ -11,7 +16,7 @@ flat out float depth_te;
 
 uniform sampler2D deflections;
 
-void Grass_evaluation()
+void main()
 {
     vec3 p, d, t;
     float phi, cosphi, sinphi;
@@ -24,7 +29,6 @@ void Grass_evaluation()
     cosphi = cos(phi);
     sinphi = sin(phi);
     c = 0;
-
 
     /* A stem segment. */
         

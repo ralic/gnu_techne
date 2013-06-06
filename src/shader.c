@@ -668,56 +668,54 @@ int t_add_global_block (const char *name, const char *declaration)
     } else {
 	t_print_warning("Program did not link.\n",
 			[self name]);
+    }
+    
+    glGetProgramiv(self->name, GL_INFO_LOG_LENGTH, &j);
 
-	glGetProgramiv(self->name, GL_INFO_LOG_LENGTH, &j);
+    if (j > 1) {
+        char buffer[j];
 
-	if (j > 1) {
-	    char buffer[j];
+        glGetProgramInfoLog (self->name, j, NULL, buffer);
+        t_print_warning("Linker output follows:\n%s\n", buffer);
+    }
 
-	    glGetProgramInfoLog (self->name, j, NULL, buffer);
-	    t_print_warning("Linker output follows:\n%s\n", buffer);
-	}
+    if (n > 0) {
+        unsigned int shaders[n];
 
-	if (n > 0) {
-	    unsigned int shaders[n];
+        glGetAttachedShaders (self->name, n, NULL, shaders);
 
-	    glGetAttachedShaders (self->name, n, NULL, shaders);
-
-	    for (i = 0 ; i < n ; i += 1) {
-		char *type;
+        for (i = 0 ; i < n ; i += 1) {
+            char *type;
 	    
-		glGetShaderiv(shaders[i], GL_SHADER_TYPE, &j);
+            glGetShaderiv(shaders[i], GL_SHADER_TYPE, &j);
 
-		switch (j) {
-		case GL_VERTEX_SHADER: type = "Vertex"; break;
-		case GL_FRAGMENT_SHADER: type = "Fragment"; break;
-		case GL_GEOMETRY_SHADER: type = "Geometry"; break;
-		case GL_TESS_CONTROL_SHADER: type = "Tesselation control"; break;
-		case GL_TESS_EVALUATION_SHADER: type = "Tesselation evaluation"; break;
-		default:assert(0);
-		}
+            switch (j) {
+            case GL_VERTEX_SHADER: type = "Vertex"; break;
+            case GL_FRAGMENT_SHADER: type = "Fragment"; break;
+            case GL_GEOMETRY_SHADER: type = "Geometry"; break;
+            case GL_TESS_CONTROL_SHADER: type = "Tesselation control"; break;
+            case GL_TESS_EVALUATION_SHADER: type = "Tesselation evaluation"; break;
+            default:assert(0);
+            }
 	    
-		glGetShaderiv(shaders[i], GL_COMPILE_STATUS, &j);
+            glGetShaderiv(shaders[i], GL_COMPILE_STATUS, &j);
 
-		if (j == GL_TRUE) {
-		    continue;
-		}
-	    
-		t_print_warning("%s shader %d did not compile "
-				"successfully.\n",
-				type, i + 1);
+            if (j != GL_TRUE) {
+                t_print_warning("%s shader %d did not compile "
+                                "successfully.\n",
+                                type, i + 1);
+            }
 
-		glGetShaderiv(shaders[i], GL_INFO_LOG_LENGTH, &j);
+            glGetShaderiv(shaders[i], GL_INFO_LOG_LENGTH, &j);
 
-		if (j > 1) {
-		    char buffer[j];
+            if (j > 1) {
+                char buffer[j];
 
-		    glGetShaderInfoLog (shaders[i], j, NULL, buffer);
-		    t_print_warning("Compiler output follows:\n%s\n",
-				    buffer);
-		}
-	    }
-	}
+                glGetShaderInfoLog (shaders[i], j, NULL, buffer);
+                t_print_warning("Compiler output follows:\n%s\n",
+                                buffer);
+            }
+        }
     }
     
     /* We need to query the program about its active uniforms.  This

@@ -1,4 +1,7 @@
 layout(lines) in;
+layout(triangle_strip, max_vertices = 4) out;
+              
+flat in int index_te[];
 
 in vec4 position_te[];
 in vec3 color_te[];
@@ -12,7 +15,7 @@ uniform grass_debug{
     int debug;
 };
 
-void Grass_geometry()
+void main()
 {
     mat4 PM, T;
     vec4 h;

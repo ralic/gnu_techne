@@ -38,10 +38,18 @@ typedef struct {
     double center, sum;
 } elevation_Bin;
 
+typedef struct {
+    Texture *detail;
+    int reference;
+
+    float values[3], weights[3], resolution[2];
+} elevation_SwatchDetail;
+
 @interface Elevation: Node {
 @public
     roam_Context context;
-    int swatches, *references;
+    elevation_SwatchDetail *swatches;
+    int swatches_n, *references;
     double separation, albedo;
 }
 
@@ -55,6 +63,8 @@ typedef struct {
 -(void) _set_separation;
 -(int) _get_albedo;
 -(void) _set_albedo;
+-(int) _get_swatches;
+-(void) _set_swatches;
 
 @end
 

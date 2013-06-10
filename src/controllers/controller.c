@@ -94,7 +94,7 @@
             ioctl(self->device, EVIOCSFF, &self->effect);
 
             event.type = EV_FF;
-            event.code = effect.id;
+            event.code = self->effect.id;
             event.value = 1;
 
             if (write(self->device, (const void*) &event, sizeof(event)) < 0) {

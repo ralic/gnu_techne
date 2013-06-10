@@ -126,5 +126,6 @@ void free_mesh(roam_Context *context_in);
 void *allocate_mesh(roam_Context *context_in);
 void calculate_tile_bounds(unsigned short *heights, unsigned short *bounds,
                            int size);
+void copy_setup_transform(roam_Context *context_in, float M[16]);
 
 #endif

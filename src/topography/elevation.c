@@ -403,7 +403,7 @@ static int construct(lua_State *L)
         lua_rawgeti (_L, -1, 2);
 
         for (j = 0 ; j < 2 ; j += 1) {
-            lua_pushinteger (_L, i + 1);
+            lua_pushinteger (_L, j + 1);
             lua_gettable (_L, -2);
             swatch->resolution[j] = lua_tonumber(_L, -1);
             lua_pop (_L, 1);

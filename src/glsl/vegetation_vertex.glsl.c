@@ -31,12 +31,12 @@ void main()
     int i, i_0, i_1;
 
     vec2 center;
-    const float phi = (sqrt(5) - 1.0) / 2.0;
     
     center = (apex.xy + left.xy + right.xy) / 3;
 
 #if 0
     {
+        const float phi = (sqrt(5) - 1.0) / 2.0;
         int i, a, b, c, p;
 
         i = gl_InstanceID + 1;
@@ -60,7 +60,7 @@ void main()
         sqrtux * u.y * right;
 
     /* ... */
-
+    
     uv = scale * c.xy - offset;
     texel = vec3(texture2D(base, uv));
     hsv = rgb_to_hsv(texel);

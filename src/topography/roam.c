@@ -28,6 +28,18 @@
 static roam_Context *context;
 static float viewport[4], transform[16], planes[6][4];
 
+void copy_setup_transform(roam_Context *context_in, float *M)
+{
+    roam_Tileset *tiles = &context_in->tileset;
+
+    t_load_identity_4(M);
+        
+    M[0] = tiles->resolution[0];
+    M[5] = tiles->resolution[1];
+    M[12] = -(1 << (tiles->depth - 1)) * tiles->size[0] * tiles->resolution[0];
+    M[13] = -(1 << (tiles->depth - 1)) * tiles->size[1] * tiles->resolution[1];
+}
+
 static void calculate_view_frustum()
 {
     float *T, (*pi)[4];

@@ -229,14 +229,46 @@ static void seed_subtree(roam_Triangle *n,
     }
 }
 
-static void seed_vegetation(ElevationSeeds *seeds,
-                            double density_in, double bias_in,
-                            unsigned int _ls, unsigned int _lo)
+void seed_tile (int i)
 {
-    roam_Tileset *tiles;
-    int viewport[4], i, j;
+    roam_Triangle *n_0, *n_1;
+    roam_Diamond *d, *p_0, *p_1;
+    float *b_0, *b_1, *a_0, *a_1;
+    float b_0r[3], b_1r[3], a_0r[3], a_1r[3];
+    int q;
+            
+    n_0 = context->roots[i][0];
+    n_1 = context->roots[i][1];
+    d = n_0->diamond;
+    p_0 = n_0->parent->diamond;
+    p_1 = n_1->parent->diamond;
+    q = is_primary(n_0);
 
-    t_copy_modelview (modelview);
+    b_0 = d->vertices[!q];
+    b_1 = d->vertices[q];
+    a_0 = p_0->center;
+    a_1 = p_1->center;
+
+    /* Calculate the distance from the eye to each vertex. */
+
+    t_transform_4RT3(b_0r, modelview, b_0);
+    t_transform_4RT3(b_1r, modelview, b_1);
+    t_transform_4RT3(a_0r, modelview, a_0);
+    t_transform_4RT3(a_1r, modelview, a_1);
+
+    seed_subtree(n_0, a_0r, b_0r, b_1r);
+    seed_subtree(n_1, a_1r, b_1r, b_0r);
+}
+
+void setup_seeding (roam_Context *context_in, elevation_Bin *bins_in,
+                    double horizon_in, double density_in, double bias_in)
+{
+    float M[16], N[16];
+    int viewport[4];
+
+    t_copy_modelview (M);
+    copy_setup_transform(context_in, N);
+    t_concatenate_4T (modelview, M, N);
     t_copy_projection (projection);
 
     glGetIntegerv(GL_VIEWPORT, viewport);
@@ -245,137 +277,12 @@ static void seed_vegetation(ElevationSeeds *seeds,
     coarse = fine = error = area = 0;
     n_min = 1.0 / 0.0;
     n_max = 0;
-    context = seeds->context;
-    bins = seeds->bins;
-    horizon = -seeds->horizon;        
+                    
+    context = context_in;
+    bins = bins_in;
+    horizon = horizon_in;        
     density = density_in;
     bias = bias_in;
-    tiles = &context->tileset;
-
-    glPatchParameteri(GL_PATCH_VERTICES, 1);
-    glUniform1f(_ls, ldexpf(1, -tiles->depth));
-
-    /* Initialize the bin centers using a power series.  This tends to
-     * make bin seed density ranges inversely proportional to the
-     * number of seeds that are expected to fall into them given a
-     * frustum viewing volume. */
-    
-    if (!initialized) {
-        double f, c;
-    
-        c = pow(density, 1.0 / (BINS_N - 1));
-
-        for (i = 0, f = 1 ; i < BINS_N ; i += 1, f *= c) {
-            bins[i].center = f;
-            /* bins[i].center = 1 + i * (density - 1) / (BINS_N - 1); */
-            /* printf ("%f\n", bins[i].center); */
-        }
-
-        initialized = 1;
-    }
-
-    /* Update the cluster centers. */
-    
-    for (i = 0 ; i < BINS_N ; i += 1) {
-#ifdef K_MEANS
-        if (bins[i].total > 0) {
-            bins[i].center = bins[i].sum / bins[i].total;
-        }
-
-        bins[i].sum = 0;
-#endif
-        
-        bins[i].total = 0;
-
-        /* assert (k == BINS_N - 1 || bins[k].center <= bins[k + 1].center); */
-    }
-    
-    glEnable (GL_MULTISAMPLE);
-
-#ifdef RASTERTIZER_DISCARD
-    glEnable (GL_RASTERIZER_DISCARD);
-#endif
-
-    for (i = 0 ; i < tiles->size[0] ; i += 1) {    
-	for (j = 0 ; j < tiles->size[1] ; j += 1) {
-            roam_Triangle *n_0, *n_1;
-            roam_Diamond *d, *p_0, *p_1;
-            float *b_0, *b_1, *a_0, *a_1;
-            float b_0r[3], b_1r[3], a_0r[3], a_1r[3];
-	    int q, k;
-            
-            for (k = 0 ; k < BINS_N ; k += 1) {
-                bins[k].total += bins[k].fill;
-                bins[k].fill = 0;
-            }
-
-            k = i * tiles->size[1] + j;
-
-            glUniform2f(_lo, j, i);
-            glBindTexture(GL_TEXTURE_2D, tiles->imagery[k]);
-            glPointSize(1);
-
-            n_0 = context->roots[k][0];
-            n_1 = context->roots[k][1];
-            d = n_0->diamond;
-            p_0 = n_0->parent->diamond;
-            p_1 = n_1->parent->diamond;
-            q = is_primary(n_0);
-
-            b_0 = d->vertices[!q];
-            b_1 = d->vertices[q];
-            a_0 = p_0->center;
-            a_1 = p_1->center;
-
-            /* Calculate the distance from the eye to each vertex. */
-
-            t_transform_4RT3(b_0r, modelview, b_0);
-            t_transform_4RT3(b_1r, modelview, b_1);
-            t_transform_4RT3(a_0r, modelview, a_0);
-            t_transform_4RT3(a_1r, modelview, a_1);
-
-            seed_subtree(n_0, a_0r, b_0r, b_1r);
-            seed_subtree(n_1, a_1r, b_1r, b_0r);
-
-            for (k = 0 ; k < BINS_N ; k += 1) {
-                if(bins[k].fill > 0) {
-                    /* printf ("%f\n", bins[k].center); */
-                    glBufferData (GL_ARRAY_BUFFER, highwater * SEED_SIZE, NULL, GL_STREAM_DRAW);
-                    glBufferSubData (GL_ARRAY_BUFFER, 0, bins[k].fill * SEED_SIZE, bins[k].buffer);
-                    
-                    glDrawArraysInstanced(GL_PATCHES, 0, bins[k].fill, round(bins[k].center));
-                }
-            }
-	}
-    }
-
-    /* _TRACE ("error: %f\n", error); */
-
-    glDisable (GL_MULTISAMPLE);
-    
-#ifdef RASTERTIZER_DISCARD
-    glDisable (GL_RASTERIZER_DISCARD);
-#endif
-
-#ifndef K_MEANS
-    {
-        double f, b;
-
-        if (!isinf(n_min)) {
-            b = pow(n_max / n_min, 1.0 / (BINS_N - 1));
-
-            for (i = 0, f = 1 ; i < BINS_N ; i += 1, f *= b) {
-                bins[i].center = n_min * f;
-            }
-        }
-    }
-#endif
-    
-    seeds->triangles_n[0] = coarse;
-    seeds->triangles_n[1] = fine;
-    seeds->error = error;
-
-    /* _TRACE ("Area: %g, n_min: %.1f, n_max: %.1f\n", area, n_min, n_max); */
 }
 
 @implementation ElevationSeeds
@@ -444,35 +351,139 @@ static void seed_vegetation(ElevationSeeds *seeds,
     self->locations.scale = glGetUniformLocation(parent->name, "scale");
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
 
+    {
+        unsigned int i;
+        float M[16];
+
+        copy_setup_transform(self->context, M);
+        
+        i = glGetUniformLocation(parent->name, "setup");
+        glUniformMatrix4fv (i, 1, GL_FALSE, M);
+    }
+
     self->units.base = [parent getUnitForSamplerUniform: "base"];
 }
 
 -(void) draw: (int)frame
 {
     roam_Tileset *tiles;
-    
+    int i, j;
+
     tiles = &self->context->tileset;
 
-    {
-        float M[16] = {tiles->resolution[0], 0, 0, 0,
-                       0, tiles->resolution[1], 0, 0,
-                       0, 0, 1, 0,
-                       -(1 << (tiles->depth - 1)) * tiles->size[0] * tiles->resolution[0],
-                       -(1 << (tiles->depth - 1)) * tiles->size[1] * tiles->resolution[1],
-                       0, 1};
-    
-        t_push_modelview (self->matrix, T_MULTIPLY);
-        t_load_modelview (M, T_MULTIPLY);
-    }
+    t_push_modelview (self->matrix, T_MULTIPLY);
 
     optimize_geometry(self->context, frame);
 
+    /* Seed the vegetation. */
+    
+    setup_seeding (self->context, self->bins,
+                   -self->horizon, self->density, self->bias);
+    
     glBindBuffer(GL_ARRAY_BUFFER, self->buffer);
     glBindVertexArray(self->name);
     glActiveTexture(GL_TEXTURE0 + self->units.base);
 
-    seed_vegetation (self, self->density, self->bias,
-                     self->locations.scale, self->locations.offset);
+    glPatchParameteri(GL_PATCH_VERTICES, 1);
+    glUniform1f(self->locations.scale, ldexpf(1, -tiles->depth));
+
+    /* Initialize the bin centers using a power series.  This tends to
+     * make bin seed density ranges inversely proportional to the
+     * number of seeds that are expected to fall into them given a
+     * frustum viewing volume. */
+    
+    if (!initialized) {
+        double f, c;
+    
+        c = pow(density, 1.0 / (BINS_N - 1));
+
+        for (i = 0, f = 1 ; i < BINS_N ; i += 1, f *= c) {
+            bins[i].center = f;
+            /* bins[i].center = 1 + i * (density - 1) / (BINS_N - 1); */
+            /* printf ("%f\n", bins[i].center); */
+        }
+
+        initialized = 1;
+    }
+
+    /* Update the cluster centers. */
+    
+    for (i = 0 ; i < BINS_N ; i += 1) {
+#ifdef K_MEANS
+        if (bins[i].total > 0) {
+            bins[i].center = bins[i].sum / bins[i].total;
+        }
+
+        bins[i].sum = 0;
+#endif
+        
+        bins[i].total = 0;
+
+        /* assert (k == BINS_N - 1 || bins[k].center <= bins[k + 1].center); */
+    }
+    
+    glEnable (GL_MULTISAMPLE);
+
+#ifdef RASTERTIZER_DISCARD
+    glEnable (GL_RASTERIZER_DISCARD);
+#endif
+
+    for (i = 0 ; i < tiles->size[0] ; i += 1) {    
+	for (j = 0 ; j < tiles->size[1] ; j += 1) {
+            int k, l;
+            
+            for (k = 0 ; k < BINS_N ; k += 1) {
+                bins[k].total += bins[k].fill;
+                bins[k].fill = 0;
+            }
+
+            l = i * tiles->size[1] + j;
+
+            seed_tile(l);
+            
+            for (k = 0 ; k < BINS_N ; k += 1) {
+                if(bins[k].fill > 0) {
+                    glUniform2f(self->locations.offset, j, i);
+                    glBindTexture(GL_TEXTURE_2D, tiles->imagery[l]);
+                    glPointSize(1);
+                    
+                    /* printf ("%f\n", bins[k].center); */
+                    glBufferData (GL_ARRAY_BUFFER, highwater * SEED_SIZE, NULL, GL_STREAM_DRAW);
+                    glBufferSubData (GL_ARRAY_BUFFER, 0, bins[k].fill * SEED_SIZE, bins[k].buffer);
+                    
+                    glDrawArraysInstanced(GL_PATCHES, 0, bins[k].fill, round(bins[k].center));
+                }
+            }
+	}
+    }
+
+    /* _TRACE ("error: %f\n", error); */
+
+    glDisable (GL_MULTISAMPLE);
+    
+#ifdef RASTERTIZER_DISCARD
+    glDisable (GL_RASTERIZER_DISCARD);
+#endif
+
+#ifndef K_MEANS
+    {
+        double f, b;
+
+        if (!isinf(n_min)) {
+            b = pow(n_max / n_min, 1.0 / (BINS_N - 1));
+
+            for (i = 0, f = 1 ; i < BINS_N ; i += 1, f *= b) {
+                bins[i].center = n_min * f;
+            }
+        }
+    }
+#endif
+    
+    self->triangles_n[0] = coarse;
+    self->triangles_n[1] = fine;
+    self->error = error;
+
+    /* _TRACE ("Area: %g, n_min: %.1f, n_max: %.1f\n", area, n_min, n_max); */
 
     t_pop_modelview ();
     

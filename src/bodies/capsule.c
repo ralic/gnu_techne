@@ -54,14 +54,14 @@
 
 -(void) _set_radius
 {
-    radius = lua_tonumber (_L, 3);
+    self->radius = lua_tonumber (_L, 3);
 
     dGeomCapsuleSetParams (self->geom, self->radius, self->height);
 }
 
 -(void) _set_length
 {
-    height = lua_tonumber (_L, 3);
+    self->height = lua_tonumber (_L, 3);
 
     dGeomCapsuleSetParams (self->geom, self->radius, self->height);
 }

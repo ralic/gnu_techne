@@ -89,7 +89,7 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
             abort();
         }
 
-        switch(target) {
+        switch(self->target) {
         case GL_TEXTURE_2D:
             if (texels->rank != 3) {
                 t_print_error("Texel data is of unsuitable rank.\n");

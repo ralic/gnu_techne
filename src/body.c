@@ -128,7 +128,7 @@ static void call_poststep_hook (dBodyID body)
 {
     [super toggle];
 
-    if (linked) {
+    if (self->linked) {
 	if (self->body) {
 	    dBodyEnable (self->body);
 	}

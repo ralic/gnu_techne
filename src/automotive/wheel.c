@@ -220,7 +220,7 @@ static dColliderFn * getCollider (int num)
     /* Pure lateral slip. */
     
     gamma_2 = self->gamma * self->gamma;
-    K_yalpha = lambda[3] * self->p_Ky1 * self->F_z0 * sin (self->p_Ky2 * atan(self->F_z / ((self->p_Ky3 + self->p_Ky4 * gamma_2) * self->F_z0))) / (1 + p_Ky5 * gamma_2);
+    K_yalpha = lambda[3] * self->p_Ky1 * self->F_z0 * sin (self->p_Ky2 * atan(self->F_z / ((self->p_Ky3 + self->p_Ky4 * gamma_2) * self->F_z0))) / (1 + self->p_Ky5 * gamma_2);
     
     /* The paper by Sharp has a division by the last term but the
        Pacejka in section 10.6.1 of Tyre and Vehicle Dynamics has a
@@ -251,7 +251,7 @@ static dColliderFn * getCollider (int num)
     D_t = lambda[5] * self->F_z * (data->radii[1] / self->F_z0) * (self->q_Dz1 + self->q_Dz2 * df_z) * (1 + self->q_Dz3 * fabs(self->gamma) + self->q_Dz4 * gamma_2);
     E_t = (self->q_Ez1 + self->q_Ez2 * df_z + self->q_Ez3 * df_z * df_z) * (1 + self->q_Ez5 * self->gamma * (2 / M_PI) * atan(B_t * self->beta_1 * self->C_t));
     B_r = (self->q_Bz9 + self->q_Bz10 * B_y * self->C_y) * lambda[3] / lambda[1];
-    D_r = lambda[1] * F_z * data->radii[1] * ((self->q_Dz8 + self->q_Dz9 * df_z) * self->gamma * lambda[6] + (self->q_Dz10 + self->q_Dz11 * df_z) * self->gamma * fabs(self->gamma)) / sqrt (1 + beta_2);
+    D_r = lambda[1] * self->F_z * data->radii[1] * ((self->q_Dz8 + self->q_Dz9 * df_z) * self->gamma * lambda[6] + (self->q_Dz10 + self->q_Dz11 * df_z) * self->gamma * fabs(self->gamma)) / sqrt (1 + beta_2);
 
     /* These are not strictly necessary it seems
        but are included for completeness when plotting. */
@@ -413,7 +413,7 @@ static dColliderFn * getCollider (int num)
 	    }
 	
 	    joint = dJointCreateContact (_WORLD, _GROUP, &contact);
-	    dJointSetFeedback (joint, &feedback);
+	    dJointSetFeedback (joint, &self->feedback);
 	    dJointAttach (joint,
 			  dGeomGetBody (data->contact.g1),
 			  dGeomGetBody (data->contact.g2));
@@ -463,7 +463,7 @@ static dColliderFn * getCollider (int num)
     data = dGeomGetClassData (self->geom);
 
     if (!data->airborne) {
-	self->F_z = dDOT(feedback.f1, data->contact.normal);
+	self->F_z = dDOT(self->feedback.f1, data->contact.normal);
     } else {
 	self->F_z = 0;
     }

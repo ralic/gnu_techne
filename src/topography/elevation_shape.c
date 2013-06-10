@@ -165,13 +165,9 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
     tiles = &self->context->tileset;
 
     {
-        float M[16] = {tiles->resolution[0], 0, 0, 0,
-                       0, tiles->resolution[1], 0, 0,
-                       0, 0, 1, 0,
-                       -(1 << (tiles->depth - 1)) * tiles->size[0] * tiles->resolution[0],
-                       -(1 << (tiles->depth - 1)) * tiles->size[1] * tiles->resolution[1],
-                       0, 1};
-    
+        float M[16];
+
+        copy_setup_transform (self->context, M);
         t_push_modelview (self->matrix, T_MULTIPLY);
         t_load_modelview (M, T_MULTIPLY);
     }

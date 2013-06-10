@@ -187,4 +187,9 @@
 	M[15] = 1;					\
     }
 
+#define t_load_zero_4(M)				\
+    {							\
+	memset (M, 0, 16 * sizeof(M[0]));		\
+    }
+
 #endif

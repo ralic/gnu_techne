@@ -159,7 +159,7 @@
 	}
 	lua_rawseti (_L, -2, 2);
 
-	lua_pushnumber (_L, bounce[j]);
+	lua_pushnumber (_L, self->bounce[j]);
 	lua_rawseti (_L, -2, 3);
 
 	lua_rawseti (_L, -2, j + 1);
@@ -370,7 +370,7 @@
                 /* The bounce. */
                 
 		lua_rawgeti (_L, -1, 3);
-		bounce[j] = lua_tonumber (_L, -1);
+		self->bounce[j] = lua_tonumber (_L, -1);
 		lua_pop (_L, 1);
 		    
 		dJointSetAMotorParam (self->joint,
@@ -391,7 +391,7 @@
 
 		dJointSetAMotorParam (self->joint,
 				      dParamBounce + dParamGroup * j,
-				      bounce[j]);
+				      self->bounce[j]);
 	    }
 
 	    lua_pop (_L, 1);

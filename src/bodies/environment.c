@@ -36,7 +36,7 @@
 
 -(void) toggle
 {
-    if (!linked) {
+    if (!self->linked) {
 	dSpaceAdd(_SPACE, (dGeomID)self->space);
     } else {
 	dSpaceRemove(_SPACE, (dGeomID)self->space);

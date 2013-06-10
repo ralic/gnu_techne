@@ -24,7 +24,7 @@ void main()
     color_g = color_te[0];
 
     z = depth_te[0];
-    h = 0.004 * vec4(plane_te[0][1], 0);
+    h = 0.001 * distance_te[0] * vec4(plane_te[0][1], 0);
     PM = projection * modelview;
     
 #if 0

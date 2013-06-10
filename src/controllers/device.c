@@ -43,8 +43,8 @@
 {
     luaL_unref (_L, LUA_REGISTRYINDEX, self->buttonpress);
     luaL_unref (_L, LUA_REGISTRYINDEX, self->buttonrelease);
-    luaL_unref (_L, LUA_REGISTRYINDEX, absolute);
-    luaL_unref (_L, LUA_REGISTRYINDEX, relative);
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->absolute);
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->relative);
 
     [super free];
 }
@@ -65,14 +65,14 @@
 
 -(int) _get_absolute
 {
-    lua_rawgeti(_L, LUA_REGISTRYINDEX, absolute);
+    lua_rawgeti(_L, LUA_REGISTRYINDEX, self->absolute);
 
     return 1;
 }
 
 -(int) _get_relative
 {
-    lua_rawgeti(_L, LUA_REGISTRYINDEX, relative);
+    lua_rawgeti(_L, LUA_REGISTRYINDEX, self->relative);
 
     return 1;
 }
@@ -91,13 +91,13 @@
 
 -(void) _set_absolute
 {
-    luaL_unref (_L, LUA_REGISTRYINDEX, absolute);
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->absolute);
     self->absolute = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 
 -(void) _set_relative
 {
-    luaL_unref (_L, LUA_REGISTRYINDEX, relative);
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->relative);
     self->relative = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 

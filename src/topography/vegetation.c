@@ -28,7 +28,68 @@
 #include "vegetation.h"
 #include "shader.h"
 
+#define N_K 32               /* Number of stiffness samples. */
+#define N_S 32               /* Number of blade segments. */
+#define K_0 2.1              /* Lower bound of stiffness parameter. */
+#define K_1 2.5              /* Upper bound of stiffness parameter. */
+
+static unsigned int deflections;
+
 @implementation Vegetation
+
++(void)initialize
+{
+    float *texels, x, y, k, theta_0, phi, l_i, A, Delta;
+    int i, j;
+
+    /* Calculate the deflection texture. */
+
+    texels = malloc(N_K * N_S * 3 * sizeof(float));
+
+    for (j = 0 ; j < N_K ; j += 1) {
+        x = y = theta_0 = 0;
+        k = K_0 + (K_1 - K_0) * (float)j / (N_K - 1);
+        
+        for (i = 0 ; i < N_S ; i += 1) {
+            texels[3 * ((N_S * j) + i) + 0] = x;
+            texels[3 * ((N_S * j) + i) + 1] = y;
+            texels[3 * ((N_S * j) + i) + 2] = theta_0;
+
+            if (i == N_S) {
+                break;
+            }
+            
+            l_i = (1 - (float)i / (N_S - 1));
+            A = l_i * l_i / k;
+            Delta = 1 - 4 / 2.42 * A * (M_PI / 2 - theta_0 - A);
+            phi = (1 - sqrt(Delta)) / (2 / 2.42 * A);
+
+            if (phi > M_PI / 2) {
+                phi = M_PI - phi;
+            }
+            
+            theta_0 += M_PI / 2 - theta_0 - phi;
+            x += sin(theta_0) / (N_S - 1);
+            y += cos(theta_0) / (N_S - 1);
+        }
+    }
+    
+    /* for (i = N_K / 2, j = 0 ; j < N_S ; j += 1) { */
+    /*     _TRACE ("%f, %f, %f\n", texels[3 * ((N_S * i) + j) + 0], texels[3 * ((N_S * i) + j) + 1], texels[3 * ((N_S * i) + j) + 2]); */
+    /* } */
+
+    glGenTextures (1, &deflections);
+    glBindTexture(GL_TEXTURE_2D, deflections);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, N_S, N_K, 0, GL_RGB,
+                 GL_FLOAT, texels);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    free (texels);
+}
 
 -(void)init
 {
@@ -86,8 +147,8 @@
     glUseProgram(self->name);
 
     self->locations.factor = glGetUniformLocation (self->name, "factor");
-    self->locations.references = glGetUniformLocation (name, "references");
-    self->locations.weights = glGetUniformLocation (name, "weights");
+    self->locations.references = glGetUniformLocation (self->name, "references");
+    self->locations.weights = glGetUniformLocation (self->name, "weights");
     self->locations.resolutions = glGetUniformLocation (self->name, "resolutions");
     self->locations.intensity = glGetUniformLocation (self->name, "intensity");
 
@@ -107,6 +168,8 @@
         glUniform3fv (self->locations.references + i, 1, swatch->values);
         glUniform3fv (self->locations.weights + i, 1, swatch->weights);
     }
+
+    [self setSamplerUniform: "deflections" to: deflections];
 }
 
 -(void)free

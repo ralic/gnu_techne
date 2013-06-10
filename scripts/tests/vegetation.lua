@@ -83,18 +83,11 @@ elevation = topography.elevation {
    albedo = 1.5,
    separation = 1,
 
-   topography.grass {
-      detail = green,
-      resolution = {1, 1},
-      reference = {0, .99, .99}
-                    },
-
-   topography.barren {
-      detail = red,
-      resolution = {1, 1},
-      reference = {120 / 360, .99, .99},
-                     },
-
+   swatches = {
+      {green, {1, 1}, {0, .99, .99}},
+      {red, {1, 1}, {120 / 360, .99, .99},},
+   },
+   
    tiles = {
       {
          {heights, nil, array.nuchars(base), {200, 0}}

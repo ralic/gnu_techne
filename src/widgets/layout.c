@@ -108,7 +108,7 @@ static ShaderMold *handle;
 
     /* Lay out the text. */
 	
-    pango_layout_set_markup (layout, self->text, -1);
+    pango_layout_set_markup (self->layout, self->text, -1);
     pango_layout_get_pixel_size (self->layout,
 				 &self->texels[0],
 				 &self->texels[1]);
@@ -126,7 +126,7 @@ static ShaderMold *handle;
     /* Draw the layout. */
 	
     pango_cairo_update_context (cairo, context);
-    pango_cairo_show_layout (cairo, layout);
+    pango_cairo_show_layout (cairo, self->layout);
 
     /* Convert from pre-multiplied alpha BGRA to RGBA. */
 	

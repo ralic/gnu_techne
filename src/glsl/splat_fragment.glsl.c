@@ -12,12 +12,11 @@ uniform vec3 direction, intensity, beta_r;
 
 void main()
 {
-    vec3 texel, tau, pigments[N], sum, hsv;
+    vec3 tau, pigments[N], sum, hsv;
     float C, cosine, phase_r, phase_p, rho, distances[N];
     int i;
 
-    texel = vec3(texture2D(base, uv));
-    hsv = rgb_to_hsv(texel);
+    hsv = vec3(texture2D(base, uv));
 
     /* Calculate the distance to each pigment. */
     
@@ -41,11 +40,10 @@ void main()
 
     /* Mix the final fragment color. */
     
-    texel = (texel.r + texel.g + texel.b) / 3.0 * sum;
     fragment = vec4(intensity * mix(50.0 * vec3(phase_r),
-                                    factor * texel,
+                                    factor * hsv.z * sum,
                                     tau), rho);
     
-    /* fragment = vec4(factor * texel, 1.0); */
+    /* fragment = fragment * 1e-9 + vec4(factor * vec3(texture2D(base, uv)), 1.0); */
     /* fragment = vec4(vec3(texture2D(base, uv)), 1.0); */
 }

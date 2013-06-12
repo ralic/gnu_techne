@@ -45,6 +45,41 @@ static int construct(lua_State *L)
     return 1;
 }
 
+void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
+{
+    double H, M, m, C;
+    int i, j;
+
+    for (i = 1, j = 0, M = rgb[0], m = rgb[0] ; i < 3 ; i += 1) {
+        if (rgb[i] > M) {
+            M = rgb[i];
+            j = i;
+        }
+
+        if (rgb[i] < m) {
+            m = rgb[i];
+        }
+    }
+         
+    C = M - m;
+
+    if (C > 0.0) {
+        if (j == 0) {
+            H = fmod(((double)rgb[1] - (double)rgb[2]) / C, 6.0) / 6.0;
+        } else if (j == 1) {
+            H = (((double)rgb[2] - (double)rgb[0]) / C + 2.0) / 6.0;
+        } else {
+            H = (((double)rgb[0] - (double)rgb[1]) / C + 4.0) / 6.0;
+        }
+    } else {
+        H = 0.0;
+    }
+
+    hsv[0] = H * 255;
+    hsv[1] = C / M * 255;
+    hsv[2] = M;
+}
+
 @implementation Elevation
 
 -(void) init
@@ -135,7 +170,7 @@ static int construct(lua_State *L)
                 lua_rawgeti(_L, -1, j + 1);
                 
                 if (!lua_isnil (_L, -1)) {
-                    array_Array *heights, *errors, *pixels;
+                    array_Array *heights, *errors, *rgb;
                     double c, delta;
 
                     k = i * tiles->size[1] + j;
@@ -254,18 +289,27 @@ static int construct(lua_State *L)
                     lua_rawgeti (_L, -1, 3);
 
                     if (!lua_isnil (_L, -1)) {
-                        pixels = array_testcompatible (_L, -1,
+                        unsigned char *hsv;
+
+                        rgb = array_testcompatible (_L, -1,
                                                        ARRAY_TYPE | ARRAY_RANK,
                                                        ARRAY_TNUCHAR, 3);
 
-                        if (!pixels) {
+                        if (!rgb) {
                             t_print_error("Array specified for elevation imagery is incompatible.\n");
                             abort();
                         }
 
-                        if (pixels->size[2] != 3) {
+                        if (rgb->size[2] != 3) {
                             t_print_error("Elevation imagery data must be specified in RGB format.\n");
                             abort();
+                        }
+                        
+                        hsv = malloc (rgb->length);
+
+                        for (i = 0 ; i < rgb->size[0] * rgb->size[1] ; i += 1) {
+                            rgb_to_hsv (&rgb->values.uchars[3 * i], &hsv[3 * i]);
+                            /* printf ("%d, %d, %d\n", hsv[3 * i + 0], hsv[3 * i + 1], hsv[3 * i + 2]); */
                         }
 
                         /* Create the texture object. */
@@ -277,10 +321,10 @@ static int construct(lua_State *L)
                     
                         glTexImage2D (GL_TEXTURE_2D, 0,
                                       GL_RGB,
-                                      pixels->size[0], pixels->size[1], 0,
+                                      rgb->size[0], rgb->size[1], 0,
                                       GL_RGB,
                                       GL_UNSIGNED_BYTE,
-                                      pixels->values.uchars);
+                                      hsv);
 
                         glGenerateMipmap (GL_TEXTURE_2D);
 
@@ -293,6 +337,8 @@ static int construct(lua_State *L)
                                         GL_MIRRORED_REPEAT);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
                                         GL_MIRRORED_REPEAT);
+
+                        free(hsv);
                     }
 
                     lua_pop (_L, 1);

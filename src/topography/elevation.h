@@ -22,21 +22,10 @@
 #include <ode/ode.h>
 
 #include "roam.h"
+#include "seeding.h"
 #include "shape.h"
 #include "body.h"
 #include "shader.h"
-
-#define BINS_N 32
-
-#define SEED_BUFFER_SIZE (10000)
-#define SEED_SIZE (3 * 3 * 4)
-#define VEGETATION_LEVEL_BIAS 0
-
-typedef struct {
-    char *buffer;
-    int total, fill, capacity;
-    double center, sum;
-} elevation_Bin;
 
 typedef struct {
     Texture *detail;
@@ -110,8 +99,8 @@ typedef struct {
 @interface ElevationSeeds: Shape {
 @public
     roam_Context *context;
-    elevation_Bin bins[BINS_N];
-
+    seeding_Context seeding;
+    
     struct {
         unsigned int scale, offset;
     } locations;
@@ -122,9 +111,6 @@ typedef struct {
 
     unsigned int buffer;
     int reference;
-
-    double density, bias, horizon, error;
-    int triangles_n[2];
 }
 
 -(int) _get_density;

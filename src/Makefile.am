@@ -95,6 +95,7 @@ topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
 			     topography/elevation_seeds.c		\
 			     topography/elevation.h 			\
 			     topography/roam.h topography/roam.c	\
+			     topography/seeding.h topography/seeding.c	\
 			     topography/bounds.c			\
 			     topography/atmosphere.h 			\
 			     topography/atmosphere.c			\

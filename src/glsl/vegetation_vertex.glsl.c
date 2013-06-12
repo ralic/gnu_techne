@@ -13,7 +13,6 @@ uniform float factor;
 uniform float scale;
 uniform vec2 offset;
 
-vec3 rgb_to_hsv (vec3);
 float hsv_distance (vec3, vec3, vec3, float);
 vec2 hash(unsigned int R, unsigned int L, unsigned int k);
 void srand(uvec2 seed);
@@ -25,7 +24,7 @@ uniform grass_debug{
 
 void main()
 {
-    vec3 texel, hsv, c, s, t;
+    vec3 hsv, c, s, t;
     vec2 uv, u;
     float dd, d_0, d_1, r, sqrtux;
     int i, i_0, i_1;
@@ -62,8 +61,7 @@ void main()
     /* ... */
     
     uv = scale * c.xy - offset;
-    texel = vec3(texture2D(base, uv));
-    hsv = rgb_to_hsv(texel);
+    hsv = vec3(texture2D(base, uv));
     
     for (i = 0, d_0 = d_1 = -1.0 / 0.0, i_0 = i_1 = -1 ; i < N ; i += 1) {
         float d;
@@ -110,5 +108,5 @@ void main()
     chance = rand();
     index = i;
     distance = r;
-    color = /* vec3(1, 0, 0) + 1e-9 *  */factor * intensity * (texel.r + texel.g + texel.b) / 3.0 * texture2D(detail[i], uv / resolutions[i]).rgb;
+    color = /* vec3(1, 0, 0) + 1e-9 *  */factor * intensity * hsv.z * texture2D(detail[i], uv / resolutions[i]).rgb;
 }

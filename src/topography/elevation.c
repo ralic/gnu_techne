@@ -290,6 +290,7 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
 
                     if (!lua_isnil (_L, -1)) {
                         unsigned char *hsv;
+                        int l;
 
                         rgb = array_testcompatible (_L, -1,
                                                        ARRAY_TYPE | ARRAY_RANK,
@@ -307,9 +308,9 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
                         
                         hsv = malloc (rgb->length);
 
-                        for (i = 0 ; i < rgb->size[0] * rgb->size[1] ; i += 1) {
-                            rgb_to_hsv (&rgb->values.uchars[3 * i], &hsv[3 * i]);
-                            /* printf ("%d, %d, %d\n", hsv[3 * i + 0], hsv[3 * i + 1], hsv[3 * i + 2]); */
+                        for (l = 0 ; l < rgb->size[0] * rgb->size[1] ; l += 1) {
+                            rgb_to_hsv (&rgb->values.uchars[3 * l], &hsv[3 * l]);
+                            /* printf ("%d, %d, %d\n", hsv[3 * l + 0], hsv[3 * l + 1], hsv[3 * l + 2]); */
                         }
 
                         /* Create the texture object. */

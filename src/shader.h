@@ -114,9 +114,9 @@ typedef struct {
 
 -(void)load;
 -(void)unload;
--(unsigned int) getUnitForSamplerUniform: (const char *)uniform;
--(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture;
--(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture
+-(unsigned int) getUnitForSamplerUniform: (const char *)uniform_name;
+-(void) setSamplerUniform: (const char *)uniform_name to: (unsigned int)texture;
+-(void) setSamplerUniform: (const char *)uniform_name to: (unsigned int)texture
                   atIndex: (int)j;
 
 @end

@@ -1073,22 +1073,32 @@ int t_add_global_block (const char *name, const char *declaration)
     [super free];
 }
 
--(unsigned int) getUnitForSamplerUniform: (const char *)uniform
+-(unsigned int) getUnitForSamplerUniform: (const char *)uniform_name
 {
     unsigned int i;
     
-    glGetUniformIndices(self->name, 1, &uniform, &i);
+    glGetUniformIndices(self->name, 1, &uniform_name, &i);
+
+    if (i == GL_INVALID_INDEX) {
+        t_print_warning("Sampler uniform '%s' is inactive.\n", uniform_name);
+        return 0;
+    }
+    
     return self->uniforms[i].sampler.unit;
 }
 
--(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture_name
+-(void) setSamplerUniform: (const char *)uniform_name to: (unsigned int)texture_name
 {
     shader_Sampler *sampler;
     shader_Texture *texture;
     unsigned int i;
     
-    glGetUniformIndices(self->name, 1, &uniform, &i);    
-    assert(i != GL_INVALID_INDEX);
+    glGetUniformIndices(self->name, 1, &uniform_name, &i);    
+
+    if (i == GL_INVALID_INDEX) {
+        t_print_warning("Sampler uniform '%s' is inactive.\n", uniform_name);
+        return;
+    }
     
     sampler = &self->uniforms[i].sampler;
     texture = &self->textures[sampler->index];
@@ -1102,15 +1112,19 @@ int t_add_global_block (const char *name, const char *declaration)
     texture->reference = LUA_REFNIL;
 }
 
--(void) setSamplerUniform: (const char *)uniform to: (unsigned int)texture_name
+-(void) setSamplerUniform: (const char *)uniform_name to: (unsigned int)texture_name
                   atIndex: (int)j
 {
     shader_Sampler *sampler;
     shader_Texture *texture;
     unsigned int i, *names;
     
-    glGetUniformIndices(self->name, 1, &uniform, &i);    
-    assert(i != GL_INVALID_INDEX);
+    glGetUniformIndices(self->name, 1, &uniform_name, &i);
+
+    if (i == GL_INVALID_INDEX) {
+        t_print_warning("Sampler uniform '%s' is inactive.\n", uniform_name);
+        return;
+    }
     
     sampler = &self->uniforms[i].sampler;
     texture = &self->textures[sampler->index];

@@ -9,9 +9,8 @@ patch in vec2 chance_tc;
 patch in float distance_tc, depth_tc;
 out vec4 position_te;
 out vec3 color_te;
-out float distance_te;
+out float distance_te, height_te;
 out mat2x3 plane_te;
-flat out int category_te;
 flat out float depth_te;
 
 uniform sampler2D deflections;
@@ -21,14 +20,12 @@ void main()
     vec3 p, d, t;
     float phi, cosphi, sinphi;
     float theta, costheta, sintheta;
-    int c;
     
     p = position_tc[0];
 
     phi = 2 * pi * chance_tc.x;
     cosphi = cos(phi);
     sinphi = sin(phi);
-    c = 0;
 
     /* A stem segment. */
         
@@ -47,5 +44,5 @@ void main()
     color_te = color_tc;
     distance_te = 1 + distance_tc + 0.5 * chance_tc.x;
     depth_te = depth_tc;
-    category_te = c;
+    height_te = gl_TessCoord.x;
 }

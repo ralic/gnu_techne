@@ -18,11 +18,12 @@ local graphics = require "graphics"
 local dynamics = require "dynamics"
 local bindings = require "bindings.basic"
 
-local defaultwidht, defaultheight, title
+local title, defaultwidth, defaultheight = ...
 
 techne.iterate = true
 
-graphics.window = {options.width or defaultwidth or 800,
+graphics.window = options.fullscreen and graphics.screen or
+                  {options.width or defaultwidth or 800,
                    options.height or defaultheight or 600}
 graphics.title = title or 'Techne'
 graphics.hide = false

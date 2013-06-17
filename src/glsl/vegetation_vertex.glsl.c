@@ -69,8 +69,8 @@ void main()
         d = 1 / pow(hsv_distance (hsv, references[i], weights[i]), 2);
         
         if (d > d_0) {
-            d_1 = d_0;
-            i_1 = i_0;
+            /* d_1 = d_0; */
+            /* i_1 = i_0; */
 
             d_0 = d;
             i_0 = i;
@@ -83,25 +83,24 @@ void main()
     /* ... */
 
     /* if (debug) { */
-        dd = d_1 / d_0;
+        /* dd = d_1 / d_0; */
 
-        if (dd > 0.75) {
-            u = rand();
+        /* if (dd > 0.75) { */
+        /*     u = rand(); */
 
-            if (u.x > 0.75 * dd) {
-                i = i_0;
-                r = 1 - dd;
-            } else {
-                i = i_1;
-                r = dd;
-            }
-        } else {
-            i = i_0;
-            r = 1 - dd;
-        }
-    /* } else { */
-    /*     i = i_0; */
-    /* } */
+        /*     if (u.x > 0.75 * dd) { */
+        /*         i = i_0; */
+        /*         r = 1 - dd; */
+        /*     } else { */
+        /*         i = i_1; */
+        /*         r = dd; */
+        /*     } */
+        /* } else { */
+        /*     i = i_0; */
+        /*     r = 1 - dd; */
+        /* } */
+        i = i_0;
+        r = 1 - d_1 / d_0;
         /* i = 2; */
         
     position = c;

@@ -26,7 +26,7 @@ local textures = require "textures"
 local units = require "units"
 local bindings = require "bindings.default"
 
-resources.dofile "utils/basic.lua"
+resources.dofile ("utils/basic.lua", "Vegetation test", 1024, 768)
 
 graphics.perspective = {units.degrees(50), 0.1, 10000}
 

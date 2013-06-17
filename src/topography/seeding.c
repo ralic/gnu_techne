@@ -89,6 +89,26 @@ static void project(float *r, float *s)
     s[1] = projection[5] * (r[1] + modelview[13]) / z;
 }
 
+static int cull(float *a_r, float *b_0r, float *b_1r)
+{
+    float u[3], v[3], a_e[3], n[3];
+    int i;
+
+    for (i = 0 ; i < 3 ; i += 1) {
+        u[i] = a_r[i] - b_0r[i];
+        v[i] = a_r[i] - b_1r[i];
+        a_e[i] = a_r[i] + modelview[12 + i];
+    }
+
+    /* No need to normalize since it doesn't affect the sign of the
+     * dot product. */
+    
+    t_cross(n, u, v);
+    
+    /* _TRACE ("%f\n", n_z); */
+    return t_dot_3(n, a_e) > 0;
+}
+
 static void seed_triangle(float *a, float *b_0, float *b_1,
                           float *a_r, float *b_0r, float *b_1r,
                           float *a_s, float *b_0s, float *b_1s,
@@ -211,15 +231,15 @@ static void seed_subtree(roam_Triangle *n,
         
         if (should_seed(z_a, z_0, z_1)) {
             if(!is_leaf(n)) {
-                float c_r[3];
+                float c_r[3], *c;
+
+                c = n->diamond->center;
                 
-                c_r[0] = 0.5 * (b_0r[0] + b_1r[0]);
-                c_r[1] = 0.5 * (b_0r[1] + b_1r[1]);
-                c_r[2] = 0.5 * (b_0r[2] + b_1r[2]);
+                t_transform_4RT3(c_r, modelview, c);
                 
                 seed_subtree(n->children[0], c_r, a_r, b_0r);
                 seed_subtree(n->children[1], c_r, b_1r, a_r);
-            } else {
+            } else if (!cull (a_r, b_0r, b_1r)) {
                 roam_Triangle *p;
                 roam_Diamond *d, *e;
                 float *a, *b_0, *b_1, a_s[2], b_0s[2], b_1s[2];
@@ -233,7 +253,7 @@ static void seed_subtree(roam_Triangle *n,
                 a = e->center;
                 b_0 = d->vertices[!i];
                 b_1 = d->vertices[i];
-
+                
                 project(a_r, a_s);
                 project(b_0r, b_0s);
                 project(b_1r, b_1s);

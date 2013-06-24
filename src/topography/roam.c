@@ -23,6 +23,8 @@
 #include "techne.h"
 #include "roam.h"
 
+#define CHECK_SANITY
+
 #define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 static roam_Context *context;
@@ -181,6 +183,8 @@ static void allocate_diamonds(roam_Diamond **d, int n)
     for(i = 0 ; i < n ; i += 1) {
         d[i] = (roam_Diamond *)t_allocate_pooled (context->pools[DIAMOND_POOL]);
     }
+
+    context->diamonds += n;
 }
 
 static void deallocate_diamonds(roam_Diamond **d, int n)
@@ -190,6 +194,8 @@ static void deallocate_diamonds(roam_Diamond **d, int n)
     for(i = 0 ; i < n ; i += 1) {
         t_free_pooled(context->pools[DIAMOND_POOL], d[i]);
     }
+
+    context->diamonds -= n;
 }
 
 static void initialize_diamond(roam_Diamond *d, roam_Triangle *n,
@@ -425,6 +431,8 @@ static void allocate_triangles(roam_Triangle **n, int k)
     for(i = 0 ; i < k ; i += 1) {
         n[i] = (roam_Triangle *)t_allocate_pooled (context->pools[TRIANGLE_POOL]);
     }
+
+    context->triangles += k;
 }
 
 static void deallocate_triangles(roam_Triangle **n, int k)
@@ -434,6 +442,8 @@ static void deallocate_triangles(roam_Triangle **n, int k)
     for(i = 0 ; i < k ; i += 1) {
 	t_free_pooled(context->pools[TRIANGLE_POOL], n[i]);
     }
+
+    context->triangles -= k;
 }
 
 static void initialize_triangle(roam_Triangle *c, roam_Diamond *d, roam_Triangle *p,
@@ -852,19 +862,6 @@ static void reclassify_subtree(roam_Triangle *n, int p)
 
 #if 0
 
-static void test_subtree(roam_Triangle *r)
-{
-    /* ... */
-    puts("**");
-    assert (!(r->cullbits & ALL_IN) || !(r->cullbits & OUT));
-    assert (!(r->cullbits & OUT) || r->cullbits == OUT);
-    
-    if(!is_leaf(r)) {
-	test_subtree(r->children[0]);
-	test_subtree(r->children[1]);
-    }
-}
-
 static int split_highest_pairs(lua_State *L)
 {
     roam_Diamond *d;
@@ -981,18 +978,39 @@ static void traverse_quadtree(roam_Triangle *n, roam_Triangle *m, int l)
 
 #endif
 
+#ifdef CHECK_SANITY
+static int test_subtree(roam_Triangle *r)
+{
+    assert (!((r->cullbits & ALL_IN) == ALL_IN) || !(r->cullbits & OUT));
+    assert (!(r->cullbits & OUT) || r->cullbits == OUT);
+
+    if(!is_leaf(r)) {
+	return test_subtree(r->children[0]) + test_subtree(r->children[1]);
+    } else {
+        if((r->cullbits & OUT) != OUT) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+#endif
+
 void optimize_geometry(roam_Context *context_in, int frame)
 {
     roam_Tileset *tiles;
     roam_Diamond *d = NULL, *d_0;
     float M[16], P[16];
+    long long int t_0, t;
     int i, j, delta, overlap;
-
+    
+    t_0 = t_get_cpu_time();
     context = context_in;
 
     /* Don't optimize more than once per frame. */
 
     assert(context->frame <= frame);
+    
     if (context->frame == frame) {
         return;
     }
@@ -1013,12 +1031,20 @@ void optimize_geometry(roam_Context *context_in, int frame)
     
     calculate_view_frustum();
 
+    /* Update the setup interval. */
+    
+    context->intervals[0] = (t = t_get_cpu_time()) - t_0, t_0 = t;
+
     /* Reclassify the mesh for the current frame. */
     
     for (i = 0 ; i < tiles->size[0] * tiles->size[1] ; i += 1) {
 	reclassify_subtree(context->roots[i][0], 0);
 	reclassify_subtree(context->roots[i][1], 0);
     }
+
+    /* Update the reclassification interval. */
+    
+    context->intervals[1] = (t = t_get_cpu_time()) - t_0, t_0 = t;
 
     /* Update the queue priorities... */
     
@@ -1033,7 +1059,11 @@ void optimize_geometry(roam_Context *context_in, int frame)
     context->minimum = i;
     context->maximum = j;
 
-#if 0
+    /* Update the queue reorder interval. */
+    
+    context->intervals[2] = (t = t_get_cpu_time()) - t_0, t_0 = t;
+
+#ifdef CHECK_SANITY
     /* Check queue integrity. */
     
     for(j = 0 ; j < 2 ; j += 1) {
@@ -1092,18 +1122,25 @@ void optimize_geometry(roam_Context *context_in, int frame)
     }
 
     context->frame = frame;
+
+    /* Update the split/merge interval. */
     
-    /* for (i = 0 ; i < context->size[0] * context->size[1] ; i += 1) { */
-    /* 	test_subtree(context->roots[i][0]); */
-    /* 	test_subtree(context->roots[i][1]); */
-    /* } */
-    
-#if 0
-    printf("%d culled, %d visible\n"
-           "Qs_max = %d, Qm_min = %d, |Qs| = %d, |Qm| = %d\n",
-	   context->culled, context->visible,
-           context->maximum, context->minimum,
-           context->queued[0], context->queued[1]);
+    context->intervals[3] = (t = t_get_cpu_time()) - t_0, t_0 = t;
+
+    assert(context->triangles >= context->culled + context->visible);
+    assert(context->queued[0] + context->queued[1] <= context->triangles);
+
+#ifdef CHECK_SANITY
+    {
+        int visible = 0;
+        
+        for (i = 0 ; i < tiles->size[0] * tiles->size[1] ; i += 1) {
+            visible += test_subtree(context->roots[i][0]);
+            visible += test_subtree(context->roots[i][1]);
+        }
+
+        assert (visible == context->visible);        
+    }
 #endif
 }
 
@@ -1120,6 +1157,8 @@ void *allocate_mesh(roam_Context *context_in)
 
     context->frame = 0;
     context->target = 5000;
+    context->triangles = 0;
+    context->diamonds = 0;
     context->culled = 0;
     context->visible = 0;
     context->queued[0] = 0;
@@ -1134,11 +1173,6 @@ void *allocate_mesh(roam_Context *context_in)
     context->pools[DIAMOND_POOL] = t_build_pool (DIAMOND_CHUNKING_FACTOR,
                                                  sizeof(roam_Diamond),
                                                  T_FREEABLE);
-
-    context->chunks[0] = 0;
-    context->chunks[1] = 0;
-    context->blocks[0] = 0;
-    context->blocks[1] = 0;
 
     context->roots = (roam_Triangle *(*)[2])calloc(context->tileset.size[0] *
                                                    context->tileset.size[1],

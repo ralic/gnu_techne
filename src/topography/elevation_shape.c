@@ -158,6 +158,62 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
     self->optimize = lua_toboolean (_L, 3);
 }
 
+-(int) _get_triangles
+{
+    lua_createtable (_L, 3, 0);
+
+    lua_pushinteger (_L, self->context->triangles);
+    lua_rawseti(_L, -2, 1);
+    
+    lua_pushinteger (_L, self->context->culled);
+    lua_rawseti(_L, -2, 1);
+
+    lua_pushinteger (_L, self->context->visible);
+    lua_rawseti(_L, -2, 1);
+
+    return 1;
+}
+
+-(void) _set_triangles
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_diamonds
+{
+    lua_createtable (_L, 3, 0);
+
+    lua_pushinteger (_L, self->context->diamonds);
+    lua_rawseti(_L, -2, 1);
+    
+    lua_pushinteger (_L, self->context->queued[0]);
+    lua_rawseti(_L, -2, 1);
+
+    lua_pushinteger (_L, self->context->queued[1]);
+    lua_rawseti(_L, -2, 1);
+
+    return 1;
+}
+
+-(void) _set_diamonds
+{
+    T_WARN_READONLY;
+}
+ 
+-(int) _get_profile
+{
+    int i;
+    
+    [super _get_profile];
+
+    for (i = 0 ; i < 4 ; i += 1) {
+        lua_pushnumber(_L, self->context->intervals[i] * 1e-9);
+        lua_rawseti(_L, -2, i + 1);
+    }
+    
+    return 1;
+}
+
 -(void) draw: (int)frame
 {
     roam_Tileset *tiles;

@@ -99,8 +99,10 @@ typedef struct {
     struct diamond *queues[2][QUEUE_SIZE];
     struct triangle *(*roots)[2];
 
-    int chunks[2], blocks[2], queued[2];
-    int culled, visible, drawn;
+    long long int intervals[4];
+    
+    int queued[2];
+    int triangles, diamonds, culled, visible;
     int minimum, maximum;
 
     int target, frame;

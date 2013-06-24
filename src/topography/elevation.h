@@ -79,6 +79,12 @@ typedef struct {
 -(int) _get_optimize;
 -(void) _set_optimize;
 
+-(int) _get_triangles;
+-(void) _set_triangles;
+
+-(int) _get_diamonds;
+-(void) _set_diamonds;
+
 @end
 
 @interface ElevationBody: Body {

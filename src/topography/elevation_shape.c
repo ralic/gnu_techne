@@ -40,6 +40,8 @@ static void draw_subtree(roam_Triangle *n)
 	    e = p->diamond;
 	    i = is_primary(n);
 
+            /* if ((n->cullbits & ALL_IN) == ALL_IN) return; */
+            
             memcpy (buffer + 9 * triangles_n,
                     d->vertices[!i], 3 * sizeof(float));
             memcpy (buffer + 9 * triangles_n + 3,

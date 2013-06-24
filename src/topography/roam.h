@@ -42,7 +42,9 @@
 
 /* Diamond flags */
 
-#define FLIPPED     (1 << 0)
+#define FLIPPED          (1 << 0)
+#define SPLIT_QUEUED     (1 << 1)
+#define MERGE_QUEUED     (1 << 2)
 
 #define is_locked(n) ((n)->diamond->level >=                \
                       (context->tileset.orders[(n)->index] << 1))
@@ -56,15 +58,20 @@
 #define is_pair(n) ((n)->neighbors[2] &&                    \
                     (n)->neighbors[2]->neighbors[2] == (n))
 
-#define is_flagged(d, mask) (((d)->flags & (mask)) != 0)
 #define is_fine(d) ((d)->level >= TREE_HEIGHT - 1 || (d)->error == 0.0)
 #define is_coarse(d) ((d)->level <= 0 || isinf((d)->error))
-#define is_queued(d) ((d) && (d)->queue)
+#define is_queued(d) ((d)->flags & (SPLIT_QUEUED | MERGE_QUEUED))
+#define is_queued_into(d, i) ((d->flags) & (SPLIT_QUEUED << i))
 #define is_visible(d) \
     (is_pair((d)->triangle) ?                                                \
      !((d)->triangle->cullbits &                                             \
        (d)->triangle->neighbors[2]->cullbits & OUT) :                        \
      !((d)->triangle->cullbits & OUT))
+#define is_allin(d)                                                     \
+    (is_pair((d)->triangle) ?                                           \
+     (((d)->triangle->cullbits &                                        \
+       (d)->triangle->neighbors[2]->cullbits & ALL_IN) == ALL_IN) :     \
+     (((d)->triangle->cullbits & ALL_IN)) == ALL_IN)
 
 #define is_splittable(d) ((d) && !is_queued(d) && !is_fine(d) && is_visible(d))
 #define is_mergeable(d) (d && !is_queued(d) && !is_coarse(d) &&               \
@@ -107,7 +114,7 @@ struct triangle {
 };
 
 struct diamond {
-    struct diamond *queue, *left, *right;
+    struct diamond *left, *right;
     struct triangle *triangle;
 
     float vertices[2][3], center[3];

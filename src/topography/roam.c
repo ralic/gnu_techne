@@ -93,16 +93,17 @@ static void calculate_view_frustum()
     /* Normalize the planes. */
 
     for(i = 0 ; i < 6 ; i += 1) {
-        float m;
+        float m, *pi_i;
 
-	m = sqrt(pi[i][0] * pi[i][0] +
-		 pi[i][1] * pi[i][1] +
-		 pi[i][2] * pi[i][2]);
+        pi_i = pi[i];
+	m = sqrt(pi_i[0] * pi_i[0] +
+		 pi_i[1] * pi_i[1] +
+		 pi_i[2] * pi_i[2]);
 
-	pi[i][0] /= m;
-	pi[i][1] /= m;
-	pi[i][2] /= m;
-	pi[i][3] /= m;
+	pi_i[0] /= m;
+	pi_i[1] /= m;
+	pi_i[2] /= m;
+	pi_i[3] /= m;
     }
 }
  
@@ -196,26 +197,26 @@ static void initialize_diamond(roam_Diamond *d, roam_Triangle *n,
 {
     double c[3], e;
 
-    if(l < TREE_HEIGHT - 1) {
-	c[0] = (v0[0] + v1[0]) * 0.5;
-	c[1] = (v0[1] + v1[1]) * 0.5;
+    d->left = NULL;
+    d->right = NULL;
+    d->triangle = n;
+    d->priority = 0;
+    d->level = l;
+    d->flags = 0;
+
+    c[0] = (v0[0] + v1[0]) * 0.5;
+    c[1] = (v0[1] + v1[1]) * 0.5;
+
+    if(d->level < (context->tileset.orders[n->index] << 1)) {
+        /* _TRACE ("%d, %d, %d, %f, %f\n", d->level, n->parent && n->parent->diamond->level, TREE_HEIGHT - 1, c[0], c[1]); */
 
 	look_up_sample (&context->tileset, (int)c[0], (int)c[1], &c[2], &e);
 
 	assert((nearbyint(c[0]) == c[0] && nearbyint(c[1]) == c[1]));
     } else {
-	c[0] = (v0[0] + v1[0]) * 0.5;
-	c[1] = (v0[1] + v1[1]) * 0.5;
 	c[2] = (v0[2] + v1[2]) * 0.5;
-
 	e = 0.0;
     }
-
-    d->left = NULL;
-    d->right = NULL;
-    
-    d->queue = NULL;
-    d->triangle = n;
 
     d->vertices[0][0] = v0[0];
     d->vertices[0][1] = v0[1];
@@ -229,11 +230,7 @@ static void initialize_diamond(roam_Diamond *d, roam_Triangle *n,
     d->center[1] = c[1];
     d->center[2] = c[2];
 
-    d->priority = 0;
     d->error = e;
-
-    d->level = l;
-    d->flags = 0;
 }
 
 static void flip_diamond(roam_Diamond *d)
@@ -286,34 +283,35 @@ static void prioritize_diamond(roam_Diamond *d)
 	dp_s[1] = 0.5 * h * (p_0[1] / p_0[2] - p_1[1] / p_1[2]);
 
 	i = (int)sqrt(dp_s[0] * dp_s[0] + dp_s[1] * dp_s[1]);
-    
-	if(is_visible(d)) {
-	    d->priority = CLAMP(i, 0, QUEUE_SIZE - 1);
-	} else {
-	    d->priority = (CLAMP(i, 0, QUEUE_SIZE - 1) + 1) >> 1;
-	}
+
+	if(!is_visible(d)) {
+	    d->priority = CLAMP((i + 1) >> 1, 0, QUEUE_SIZE - 1);
+	/* } else if (!is_allin(d)) { */
+        /*     d->priority = CLAMP(i + (TREE_HEIGHT - 1 - d->level), 0, QUEUE_SIZE - 1); */
+        } else {
+            d->priority = CLAMP(i, 0, QUEUE_SIZE - 1);
+        }
     }
 }
 
-static void queue_diamond(roam_Diamond *d, roam_Diamond **q, int i)
+static void queue_diamond(roam_Diamond *d, roam_Diamond **Q, int i)
 {
     d->left = NULL;
-    d->right = q[i];
+    d->right = Q[i];
 
-    if (q[i]) {
-	q[i]->left = d;
+    if (Q[i]) {
+	Q[i]->left = d;
     }
     
-    q[i] = d;
-    d->queue = q[i];
+    Q[i] = d;
 }
 
-static void dequeue_diamond(roam_Diamond *d, roam_Diamond **q, int i)
+static void dequeue_diamond(roam_Diamond *d, roam_Diamond **Q, int i)
 {
     if (d->left) {
 	d->left->right = d->right;
     } else {
-	q[i] = d->right;
+	Q[i] = d->right;
     }
 
     if (d->right) {
@@ -322,16 +320,19 @@ static void dequeue_diamond(roam_Diamond *d, roam_Diamond **q, int i)
 
     d->left = NULL;
     d->right = NULL;
-    d->queue = NULL;
 }
 
 static void queue_into_Qs(roam_Diamond *d)
 {
     roam_Diamond **Qs = context->queues[0];
-
+    
     if(is_splittable(d)) {
+        assert (!is_queued(d));
+
         prioritize_diamond(d);
         queue_diamond(d, Qs, d->priority);
+        
+        d->flags |= SPLIT_QUEUED;
 
         /* Update maximum split priority. */
 
@@ -341,6 +342,10 @@ static void queue_into_Qs(roam_Diamond *d)
 
         context->queued[0] += 1;
     }
+    
+    /* if (is_visible(d) && !is_allin(d)) { */
+    /*     _TRACE ("pr: %d, max: %d, sp: %d, q: %d, qs: %d, f: %d, v: %d\n", d->priority, context->maximum, is_splittable(d), is_queued(d), is_queued_into(d, 0), is_fine(d), is_visible(d)); */
+    /* } */
 }
 
 static void dequeue_from_Qs(roam_Diamond *d)
@@ -349,7 +354,12 @@ static void dequeue_from_Qs(roam_Diamond *d)
     int i;
 
     if(is_queued(d)) {
+        assert (is_queued_into(d, 0));
+        
         dequeue_diamond(d, Qs, d->priority);
+
+        d->flags &= ~SPLIT_QUEUED;
+        assert (!is_queued(d));
 
         /* Update maximum split priority. */
 
@@ -370,8 +380,12 @@ static void queue_into_Qm(roam_Diamond *d)
        Qm. */
 
     if(is_mergeable(d)) {
+        assert (!is_queued(d));
+
         prioritize_diamond(d);
         queue_diamond(d, Qm, d->priority);
+        
+        d->flags |= MERGE_QUEUED;
 
         /* Update minimum merge priority. */
 	
@@ -389,7 +403,12 @@ static void dequeue_from_Qm(roam_Diamond *d)
     int i;
 
     if(is_queued(d)) {
+        assert (is_queued_into(d, 1));
+        
         dequeue_diamond(d, Qm, d->priority);
+
+        d->flags &= ~MERGE_QUEUED;
+        assert (!is_queued(d));
 
         /* Update minimum merge priority. */
 
@@ -458,10 +477,8 @@ static void classify_triangle(roam_Triangle *n, int b)
     /* printf ("%f, %f, %d\n", n->diamond->error, n->parent->diamond->error, b); */
     /* assert (!(isinf(n->diamond->error)) || b == 0 || b == INVALID); */
 
-    if(b != OUT && b != ALL_IN) {
+    if(((b & OUT) != OUT) && ((b & ALL_IN) != ALL_IN)) {
         r_0 = n->diamond->error;
-
-	v[2] = n->diamond->center;
 
 	if (isinf (r_0)) {
 	    b = 0;
@@ -487,20 +504,22 @@ static void classify_triangle(roam_Triangle *n, int b)
 
 		    /* Take the minimum distance over all vertices. */
  
-		    for(l = 0, r_min = +1.0 / 0.0;
+		    for(l = 1, r_min = r[0];
 			l < 3;
 			r_min = r[l] < r_min ? r[l] : r_min, l += 1);
 
 		    /* And the maximum distance. */
 	       
-		    for(l = 0, r_max = -1.0 / 0.0;
+		    for(l = 1, r_max = r[0];
 			l < 3;
 			r_max = r[l] > r_max ? r[l] : r_max, l += 1);
-
-		    if (r_min > r_0 && r_max > -r_0) {
+                    
+		    if (r_min > r_0) {
+                        assert(r_max > -r_0);
 			b |= j;
-		    } else if(r_min < r_0 && r_max < -r_0) {
-			b = OUT;
+		    } else if(r_max < -r_0) {
+                        assert(r_min < r_0);
+                        b = OUT;
 		    }
 		}
 	    }
@@ -541,19 +560,23 @@ static void expand_triangle(roam_Triangle *p)
     if(p->neighbors[0]->neighbors[2] == c[0]) {
 	d[0] = p->neighbors[0]->diamond;
 	assert (d[0]->level == p->diamond->level + 1);
+
+        initialize_triangle(c[0], d[0], p,
+                            c[1], p->neighbors[2]->children[1], p->neighbors[0],
+                            p->index);
     } else {
 	assert (p->neighbors[0]->diamond->level == p->diamond->level);
 	allocate_diamonds(&d[0], 1);
+
+        initialize_triangle(c[0], d[0], p,
+                            c[1], p->neighbors[2]->children[1], p->neighbors[0],
+                            p->index);
 
 	initialize_diamond(d[0], c[0],
 			   p->parent->diamond->center,
 			   p->diamond->vertices[!i],
 			   p->diamond->level + 1);
     }
-
-    initialize_triangle(c[0], d[0], p,
-                        c[1], p->neighbors[2]->children[1], p->neighbors[0],
-			p->index);
 
     /* 
      * If the new triangle is at the finest cached level
@@ -567,25 +590,31 @@ static void expand_triangle(roam_Triangle *p)
     if(p->neighbors[1]->neighbors[2] == c[1]) {
 	d[1] = p->neighbors[1]->diamond;
 	assert (d[1]->level == p->diamond->level + 1);
+
+        initialize_triangle(c[1], d[1], p,
+                            p->neighbors[2]->children[0], c[0], p->neighbors[1],
+                            p->index);
     } else {
 	assert (p->neighbors[1]->diamond->level == p->diamond->level);
 	allocate_diamonds(&d[1], 1);
+
+        initialize_triangle(c[1], d[1], p,
+                            p->neighbors[2]->children[0], c[0], p->neighbors[1],
+                            p->index);
 
 	initialize_diamond(d[1], c[1],
 			   p->diamond->vertices[i],
 			   p->parent->diamond->center,
 			   p->diamond->level + 1);
     }
-
-    initialize_triangle(c[1], d[1], p,
-                        p->neighbors[2]->children[0], c[0], p->neighbors[1],
-			p->index);
     
     classify_triangle(c[1], p->cullbits);
     
     /* Update the book. */
     
-    context->visible += !is_out(c[0]) + !is_out(c[1]) - !is_out(p);
+    context->visible += (!(c[0]->cullbits & OUT) +
+                         !(c[1]->cullbits & OUT) -
+                         !(p->cullbits & OUT));
 }
 
 static void collapse_triangle(roam_Triangle *p)
@@ -633,7 +662,9 @@ static void collapse_triangle(roam_Triangle *p)
 
     /* Update the book. */
 
-    context->visible -= !is_out(c[0]) + !is_out(c[1]) - !is_out(p);
+    context->visible -= (!(c[0]->cullbits & OUT) +
+                         !(c[1]->cullbits & OUT) -
+                         !(p->cullbits & OUT));
 }
 
 static int split_triangle_pair(roam_Triangle *n)
@@ -769,9 +800,15 @@ static void reorder_queue(roam_Diamond **Q)
 
     while((d = l)) {
         prioritize_diamond(d);
-
+        
+        /* _TRACE ("%d\n", d->priority); */
 	dequeue_diamond (d, &l, 0);
 	queue_diamond (d, Q, d->priority);
+
+        /* if (d->priority == QUEUE_SIZE - 1 && d->queue == context->queues[0][d->priority]) { */
+        /*     _TRACE ("*** %d\n", */
+        /*             is_queued(d)); */
+        /* } */
     }
 }
 
@@ -788,8 +825,8 @@ static void reclassify_subtree(roam_Triangle *n, int p)
 	   then there's nothing more to be done for its
 	   subtree, it will still be correct. */
 
-        if ((f & n->cullbits) != OUT &&
-	    (f & n->cullbits) != ALL_IN) {
+        if ((f & n->cullbits & OUT) != OUT &&
+	    (f & n->cullbits & ALL_IN) != ALL_IN) {
             reclassify_subtree(n->children[0], n->cullbits);
             reclassify_subtree(n->children[1], n->cullbits);
         }
@@ -996,6 +1033,26 @@ void optimize_geometry(roam_Context *context_in, int frame)
     context->minimum = i;
     context->maximum = j;
 
+#if 0
+    /* Check queue integrity. */
+    
+    for(j = 0 ; j < 2 ; j += 1) {
+        for(i = 0 ; i < QUEUE_SIZE ; i += 1) {
+            roam_Diamond *b;
+        
+            for (b = context->queues[j][i] ; b ; b = b->right) {
+                assert(b->priority == i);
+                
+                if (j == 0) {
+                    assert(b->priority <= context->maximum);
+                } else {
+                    assert(b->priority >= context->minimum);
+                }
+            }
+        }
+    }
+#endif
+    
     /* Now split and/or merge until the queue priorities
        don't overlap and the target triangle count has
        (more or less) been reached.

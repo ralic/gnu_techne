@@ -1033,7 +1033,7 @@ void optimize_geometry(roam_Context *context_in, int frame)
 
     /* Update the setup interval. */
     
-    context->intervals[0] = (t = t_get_cpu_time()) - t_0, t_0 = t;
+    context->intervals[0] += (t = t_get_cpu_time()) - t_0, t_0 = t;
 
     /* Reclassify the mesh for the current frame. */
     
@@ -1044,7 +1044,7 @@ void optimize_geometry(roam_Context *context_in, int frame)
 
     /* Update the reclassification interval. */
     
-    context->intervals[1] = (t = t_get_cpu_time()) - t_0, t_0 = t;
+    context->intervals[1] += (t = t_get_cpu_time()) - t_0, t_0 = t;
 
     /* Update the queue priorities... */
     
@@ -1061,7 +1061,7 @@ void optimize_geometry(roam_Context *context_in, int frame)
 
     /* Update the queue reorder interval. */
     
-    context->intervals[2] = (t = t_get_cpu_time()) - t_0, t_0 = t;
+    context->intervals[2] += (t = t_get_cpu_time()) - t_0, t_0 = t;
 
 #ifdef CHECK_SANITY
     /* Check queue integrity. */
@@ -1125,7 +1125,7 @@ void optimize_geometry(roam_Context *context_in, int frame)
 
     /* Update the split/merge interval. */
     
-    context->intervals[3] = (t = t_get_cpu_time()) - t_0, t_0 = t;
+    context->intervals[3] += (t = t_get_cpu_time()) - t_0, t_0 = t;
 
     assert(context->triangles >= context->culled + context->visible);
     assert(context->queued[0] + context->queued[1] <= context->triangles);
@@ -1163,6 +1163,11 @@ void *allocate_mesh(roam_Context *context_in)
     context->visible = 0;
     context->queued[0] = 0;
     context->queued[1] = 0;
+
+    context->intervals[0] = 0;
+    context->intervals[1] = 0;
+    context->intervals[2] = 0;
+    context->intervals[3] = 0;
 
     context->minimum = QUEUE_SIZE - 1;
     context->maximum = 0;

@@ -166,10 +166,10 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
     lua_rawseti(_L, -2, 1);
     
     lua_pushinteger (_L, self->context->culled);
-    lua_rawseti(_L, -2, 1);
+    lua_rawseti(_L, -2, 2);
 
     lua_pushinteger (_L, self->context->visible);
-    lua_rawseti(_L, -2, 1);
+    lua_rawseti(_L, -2, 3);
 
     return 1;
 }
@@ -187,10 +187,10 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
     lua_rawseti(_L, -2, 1);
     
     lua_pushinteger (_L, self->context->queued[0]);
-    lua_rawseti(_L, -2, 1);
+    lua_rawseti(_L, -2, 2);
 
     lua_pushinteger (_L, self->context->queued[1]);
-    lua_rawseti(_L, -2, 1);
+    lua_rawseti(_L, -2, 3);
 
     return 1;
 }
@@ -208,7 +208,7 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
 
     for (i = 0 ; i < 4 ; i += 1) {
         lua_pushnumber(_L, self->context->intervals[i] * 1e-9);
-        lua_rawseti(_L, -2, i + 1);
+        lua_rawseti(_L, -2, i + 3);
     }
     
     return 1;

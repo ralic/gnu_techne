@@ -23,7 +23,7 @@ if not options.profile then
    return core
 end
 
-local topography, seedsprofiler
+local topography, seedsprofiler, shapeprofiler
 
 local function aggregate(bins)
    local sum = 0
@@ -96,6 +96,72 @@ Mean number of triangles visited: %d roam, %d fine
    end
 }
 
+shapeprofiler = primitives.graphic {
+   link = function(self)
+      local parent = self.parent
+
+      self.triangles = parent.triangles
+      self.diamonds = parent.diamonds
+
+      self.start = techne.iterations
+   end,
+   
+   draw = function(self)
+      local parent = self.parent
+
+      for i = 1, #self.triangles do
+         self.triangles[i] = self.triangles[i] + parent.triangles[i]
+      end
+      
+      for i = 1, #self.diamonds do
+         self.diamonds[i] = self.diamonds[i] + parent.diamonds[i]
+      end
+   end,
+
+   unlink = function(self)
+      local n
+
+      n = techne.iterations - self.start + 1
+
+      message(string.format([[
+Triangulation profile for node: %s
+ 
++----------------------+
+|  Triangles           |
++-----------+----------+-----------+
+|  Alloc'd  |  Culled  |  Visible  |
++-----------+----------+-----------+
+|% 11d|% 10d|% 11d|
++-----------+----------+-----------+
+ 
++---------------------+
+|  Diamonds           |
++-----------+---------+---------+
+|  Alloc'd  |  Split  |  Merge  |
++-----------+---------+---------+
+|% 11d|% 9d|% 9d|
++-----------+---------+---------+
+ 
++----------------+
+|  Times (ms)    |
++-------+--------+---------+------------+
+| Setup | Recull | Reorder | Tessellate |
++-------+--------+---------+------------+
+|% 7.1f|% 8.1f|% 9.1f|% 12.1f|
++-------+--------+---------+------------+
+]],
+                            tostring(self.parent),
+                            self.triangles[1] / n, self.triangles[2] / n,
+                            self.triangles[3] / n,
+                            self.diamonds[1] / n, self.diamonds[2] / n,
+                            self.diamonds[3] / n,
+                            1e3 * self.parent.profile[3] / n,
+                            1e3 * self.parent.profile[4] / n,
+                            1e3 * self.parent.profile[5] / n,
+                            1e3 * self.parent.profile[6] / n))
+   end
+}
+
 topography = {
    elevation = function (parameters)
       local elevation, oldmeta
@@ -117,6 +183,15 @@ topography = {
                                           seeds.profiler = seedsprofiler
 
                                           return seeds
+                                       end
+                                    elseif key == 'shape' then
+                                       return function(parameters)
+                                          local shape
+
+                                          shape = value(parameters)
+                                          shape.profiler = shapeprofiler
+                                          
+                                          return shape
                                        end
                                     else
                                        return value

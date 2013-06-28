@@ -27,8 +27,7 @@
     int reference_1;
 
     struct {
-        unsigned int references, weights, resolutions, colors, factor,
-            intensity;
+        unsigned int intensity, planes;
     } locations;
 }
 

@@ -42,13 +42,9 @@ void copy_setup_transform(roam_Context *context_in, float *M)
     M[13] = -(1 << (tiles->depth - 1)) * tiles->size[1] * tiles->resolution[1];
 }
 
-static void calculate_view_frustum()
+void calculate_view_frustum(float (*pi)[4], float *T)
 {
-    float *T, (*pi)[4];
     int i;
-
-    T = transform;
-    pi = planes;
 
     /* Left. */
 
@@ -1029,7 +1025,7 @@ void optimize_geometry(roam_Context *context_in, int frame)
     t_copy_projection(P);
     t_concatenate_4T(transform, P, M);
     
-    calculate_view_frustum();
+    calculate_view_frustum(planes, transform);
 
     /* Update the setup interval. */
     

@@ -9,6 +9,9 @@ uniform sampler2D base, detail[N];
 uniform vec3 intensity, references[N], weights[N];
 uniform vec2 resolutions[N];
 uniform float factor;
+uniform mat4 setup;
+
+uniform vec4 planes[5];
 
 uniform float scale;
 uniform vec2 offset;
@@ -24,6 +27,7 @@ uniform grass_debug{
 
 void main()
 {
+    vec4 c_s;
     vec3 hsv, c, s, t;
     vec2 uv, u;
     float dd, d_0, d_1, r, sqrtux;
@@ -58,19 +62,28 @@ void main()
         sqrtux * (1 - u.y) * left +
         sqrtux * u.y * right;
 
+    c_s = setup * vec4(c, 1);
+
+    for (i = 0 ; i < 5 ; i += 1) {
+        if (dot(c_s, planes[i]) < -0.1) {
+            index = -1;
+            return;
+        }
+    }
+    
     /* ... */
     
     uv = scale * c.xy - offset;
     hsv = vec3(texture2D(base, uv));
     
-    for (i = 0, d_0 = d_1 = -1.0 / 0.0, i_0 = i_1 = -1 ; i < N ; i += 1) {
+    for (i = 0, d_0 = d_1 = -1e128, i_0 = i_1 = -1 ; i < N ; i += 1) {
         float d;
         
         d = 1 / pow(hsv_distance (hsv, references[i], weights[i]), 2);
         
         if (d > d_0) {
-            /* d_1 = d_0; */
-            /* i_1 = i_0; */
+            d_1 = d_0;
+            i_1 = i_0;
 
             d_0 = d;
             i_0 = i;
@@ -103,7 +116,7 @@ void main()
         r = 1 - d_1 / d_0;
         /* i = 2; */
         
-    position = c;
+    position = vec3(c_s);
     chance = rand();
     index = i;
     distance = r;

@@ -23,7 +23,7 @@
 #include "techne.h"
 #include "roam.h"
 
-#define CHECK_SANITY
+//#define CHECK_SANITY
 
 #define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 

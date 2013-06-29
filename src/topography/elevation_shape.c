@@ -244,7 +244,8 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
     
     draw_geometry(self->context, vert, self->ranges);
 
-    assert(glUnmapBuffer(GL_ARRAY_BUFFER));
+    i = glUnmapBuffer(GL_ARRAY_BUFFER);
+    assert(i);
 
     /* Prepare to draw. */
     

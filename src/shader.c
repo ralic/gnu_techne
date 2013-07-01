@@ -31,15 +31,9 @@
 
 #define is_sampler(type)                                                \
     ((type >= GL_SAMPLER_1D && type <= GL_SAMPLER_2D_SHADOW) ||         \
-     (type >= GL_SAMPLER_1D_ARRAY && type <= GL_SAMPLER_CUBE_SHADOW) || \
+     (type == GL_SAMPLER_1D_ARRAY || type == GL_SAMPLER_2D_ARRAY) ||    \
      (type >= GL_INT_SAMPLER_1D &&                                      \
-      type <= GL_UNSIGNED_INT_SAMPLER_2D_ARRAY) ||                      \
-     (type >= GL_SAMPLER_2D_RECT &&                                     \
-      type <= GL_UNSIGNED_INT_SAMPLER_BUFFER) ||                        \
-     (type >= GL_SAMPLER_2D_MULTISAMPLE &&                              \
-      type <= GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY) ||          \
-     (type >= GL_SAMPLER_CUBE_MAP_ARRAY &&                              \
-      type <= GL_UNSIGNED_INT_SAMPLER_CUBE_MAP_ARRAY))
+      type <= GL_UNSIGNED_INT_SAMPLER_2D_ARRAY))
 
 static char *declarations;
 static struct {

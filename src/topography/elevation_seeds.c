@@ -138,7 +138,7 @@
     t_copy_projection(P);
     t_concatenate_4T(T, P, M);
     calculate_view_frustum(planes, T);
-    glUniform4fv(self->locations.planes, 5, (float *)planes);
+    glUniformMatrix4x3fv(self->locations.planes, 2, GL_TRUE, (float *)planes);
     
     glEnable (GL_MULTISAMPLE);
 

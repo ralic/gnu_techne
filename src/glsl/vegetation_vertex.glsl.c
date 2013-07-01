@@ -9,6 +9,9 @@ uniform sampler2D base, detail[N];
 uniform vec3 intensity, references[N], weights[N];
 uniform vec2 resolutions[N];
 uniform float factor;
+uniform mat4 setup;
+
+uniform mat4x3 planes[2];
 
 uniform float scale;
 uniform vec2 offset;
@@ -24,6 +27,7 @@ uniform grass_debug{
 
 void main()
 {
+    vec4 c_s;
     vec3 hsv, c, s, t;
     vec2 uv, u;
     float dd, d_0, d_1, r, sqrtux;
@@ -58,7 +62,16 @@ void main()
         sqrtux * (1 - u.y) * left +
         sqrtux * u.y * right;
 
-    /* ... */
+    /* Test the seed point against the frustum. */
+    c_s = setup * vec4(c, 1);
+
+    if (any(lessThan(planes[0] * c_s, vec3(-0.1))) ||
+        any(lessThan(planes[1] * c_s, vec3(-0.1)))) {
+        index = -1;
+        return;
+    }
+    
+    /* Find the seed type. */
     
     uv = scale * c.xy - offset;
     hsv = vec3(texture2D(base, uv));
@@ -69,8 +82,8 @@ void main()
         d = 1 / pow(hsv_distance (hsv, references[i], weights[i]), 2);
         
         if (d > d_0) {
-            /* d_1 = d_0; */
-            /* i_1 = i_0; */
+            d_1 = d_0;
+            i_1 = i_0;
 
             d_0 = d;
             i_0 = i;
@@ -80,8 +93,14 @@ void main()
         }
     }
     
-    /* ... */
 
+    /* Skip the rest if the seed is infertile. */
+    
+    if (i_0 != 0) {
+        index = -1;
+        return;
+    }
+    
     /* if (debug) { */
         /* dd = d_1 / d_0; */
 
@@ -103,7 +122,7 @@ void main()
         r = 1 - d_1 / d_0;
         /* i = 2; */
         
-    position = c;
+    position = vec3(c_s);
     chance = rand();
     index = i;
     distance = r;

@@ -95,7 +95,7 @@ static unsigned int deflections;
 {
     const char *private[] = {"base", "detail", "offset", "scale",
                              "factor", "references", "weights",
-                             "resolutions"};
+                             "resolutions", "planes"};
     char *header;
     ShaderMold *shader;
     int i;
@@ -125,7 +125,7 @@ static unsigned int deflections;
     shader = [ShaderMold alloc];
         
     [shader initWithHandle: NULL];
-    [shader declare: 8 privateUniforms: private];
+    [shader declare: 9 privateUniforms: private];
     [shader add: 4 sourceStrings: (const char *[4]){header, glsl_rand, glsl_color, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
 
     [shader addSourceString: glsl_vegetation_tesselation_control
@@ -146,27 +146,32 @@ static unsigned int deflections;
 
     glUseProgram(self->name);
 
-    self->locations.factor = glGetUniformLocation (self->name, "factor");
-    self->locations.references = glGetUniformLocation (self->name, "references");
-    self->locations.weights = glGetUniformLocation (self->name, "weights");
-    self->locations.resolutions = glGetUniformLocation (self->name, "resolutions");
-    self->locations.intensity = glGetUniformLocation (self->name, "intensity");
-
-    glUniform1f (self->locations.factor, self->elevation->albedo);
-
-    /* Initialize reference color uniforms. */
-    
-    for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
-        elevation_SwatchDetail *swatch;
-
-        swatch = &self->elevation->swatches[i];
+    {
+        unsigned int factor_l, references_l, weights_l, resolutions_l;
         
-        [self setSamplerUniform: "detail" to: swatch->detail->name atIndex: i];
+        factor_l = glGetUniformLocation (self->name, "factor");
+        references_l = glGetUniformLocation (self->name, "references");
+        weights_l = glGetUniformLocation (self->name, "weights");
+        resolutions_l = glGetUniformLocation (self->name, "resolutions");
+
+        self->locations.intensity = glGetUniformLocation (self->name, "intensity");
+        self->locations.planes = glGetUniformLocation (self->name, "planes");
+
+        glUniform1f (factor_l, self->elevation->albedo);
+
+        /* Initialize reference color uniforms. */
+        
+        for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
+            elevation_SwatchDetail *swatch;
+
+            swatch = &self->elevation->swatches[i];
+        
+            [self setSamplerUniform: "detail" to: swatch->detail->name atIndex: i];
             
-        glUniform2fv (self->locations.resolutions + i, 1,
-                      swatch->resolution);
-        glUniform3fv (self->locations.references + i, 1, swatch->values);
-        glUniform3fv (self->locations.weights + i, 1, swatch->weights);
+            glUniform2fv (resolutions_l + i, 1, swatch->resolution);
+            glUniform3fv (references_l + i, 1, swatch->values);
+            glUniform3fv (weights_l + i, 1, swatch->weights);
+        }
     }
 
     [self setSamplerUniform: "deflections" to: deflections];

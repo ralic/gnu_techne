@@ -97,6 +97,7 @@
     
     self->locations.scale = glGetUniformLocation(parent->name, "scale");
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
+    self->locations.planes = glGetUniformLocation(parent->name, "planes");
 
     {
         unsigned int i;
@@ -113,6 +114,7 @@
 
 -(void) draw: (int)frame
 {
+    float M[16], P[16], T[16], planes[6][4];
     roam_Tileset *tiles;
     int i, j;
 
@@ -131,6 +133,12 @@
 
     glPatchParameteri(GL_PATCH_VERTICES, 1);
     glUniform1f(self->locations.scale, ldexpf(1, -tiles->depth));
+
+    t_copy_modelview(M);
+    t_copy_projection(P);
+    t_concatenate_4T(T, P, M);
+    calculate_view_frustum(planes, T);
+    glUniformMatrix4x3fv(self->locations.planes, 2, GL_TRUE, (float *)planes);
     
     glEnable (GL_MULTISAMPLE);
 

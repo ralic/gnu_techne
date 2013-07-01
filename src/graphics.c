@@ -144,7 +144,7 @@ static void update_projection()
 	a = (double)width / height;
 	
 	/* Set planes based on frustum.  This will result in the same
-	 * matric as:
+	 * matrix as:
 	 *     gluPerspective (frustum[0], a, frustum[1], frustum[2]);
 	 *
 	 * Note: intentional absence of break at the end.

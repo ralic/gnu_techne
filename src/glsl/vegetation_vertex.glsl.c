@@ -63,6 +63,7 @@ void main()
         sqrtux * u.y * right;
 
     /* Test the seed point against the frustum. */
+
     c_s = setup * vec4(c, 1);
 
     if (any(lessThan(planes[0] * c_s, vec3(-0.1))) ||
@@ -76,7 +77,7 @@ void main()
     uv = scale * c.xy - offset;
     hsv = vec3(texture2D(base, uv));
     
-    for (i = 0, d_0 = d_1 = -1.0 / 0.0, i_0 = i_1 = -1 ; i < N ; i += 1) {
+    for (i = 0, d_0 = d_1 = -infinity, i_0 = i_1 = -1 ; i < N ; i += 1) {
         float d;
         
         d = 1 / pow(hsv_distance (hsv, references[i], weights[i]), 2);

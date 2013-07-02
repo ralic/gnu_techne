@@ -5,8 +5,7 @@ AM_CPPFLAGS = -x objective-c \
 	      -D_GNU_SOURCE -DGL_GLEXT_PROTOTYPES -DARRAYMATH_COLUMN_MAJOR\
 	      -DPKGDATADIR='"$(pkgdatadir)"' -DPKGLIBDIR='"$(pkglibdir)"' \
 	      -include common.h
-AM_CFLAGS = -Wall -Wno-shadow -Wno-div-by-zero -I$(top_srcdir)	\
-	    -I$(srcdir) ${LUA_CFLAGS}
+AM_CFLAGS = -Wall -Wno-div-by-zero -I$(top_srcdir) -I$(srcdir) ${LUA_CFLAGS}
 AM_LDADD = -lobjc -lm
 
 bin_SCRIPTS = techne

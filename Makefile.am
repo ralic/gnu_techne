@@ -1,7 +1,7 @@
 scriptsdir = ${pkgdatadir}/scripts
 
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = src
+SUBDIRS = src tools
 dist_doc_DATA = README
 dist_man1_MANS = doc/techne.1 doc/techne-browser.1
 

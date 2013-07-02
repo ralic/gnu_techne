@@ -82,6 +82,19 @@ PKG_CHECK_MODULES([WEBKIT], [webkit-1.0])
 dnl PKG_CHECK_MODULES([MAGICKWAND], [MagickWand])
 dnl PKG_CHECK_MODULES([GVC], [libgvc])
 
+dnl Check whether building of the tools was requested and add needed
+dnl dependencies.
+
+AC_ARG_WITH([tools], AS_HELP_STRING([--with-tools],
+                                    [Build development tools.]))
+
+if test "x$with_tools" = "xyes"; then
+   PKG_CHECK_MODULES([LIBPNG], [libpng])
+
+   AC_CONFIG_FILES([tools/Makefile])
+fi
+
+
 # Checks for library functions.
 
 AC_CHECK_FUNCS([backtrace wordexp ioctl asprintf])

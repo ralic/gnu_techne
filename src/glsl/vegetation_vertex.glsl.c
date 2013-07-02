@@ -66,8 +66,8 @@ void main()
 
     c_s = setup * vec4(c, 1);
 
-    if (any(lessThan(planes[0] * c_s, vec3(-0.1))) ||
-        any(lessThan(planes[1] * c_s, vec3(-0.1)))) {
+    if (any(lessThan(planes[0] * c_s, vec3(-0.2))) ||
+        any(lessThan(planes[1] * c_s, vec3(-0.2)))) {
         index = -1;
         return;
     }
@@ -77,10 +77,10 @@ void main()
     uv = scale * c.xy - offset;
     hsv = vec3(texture2D(base, uv));
     
-    for (i = 0, d_0 = d_1 = -infinity, i_0 = i_1 = -1 ; i < N ; i += 1) {
+    for (i = 0, d_0 = d_1 = -infinity ; i < N ; i += 1) {
         float d;
         
-        d = 1 / pow(hsv_distance (hsv, references[i], weights[i]), 2);
+        d = 1 / pow(hsv_distance (hsv, references[i], weights[i]), 5);
         
         if (d > d_0) {
             d_1 = d_0;
@@ -93,7 +93,6 @@ void main()
             i_1 = i;
         }
     }
-    
 
     /* Skip the rest if the seed is infertile. */
     

@@ -9,7 +9,8 @@ in float distance_te[], height_te[];
 in mat2x3 plane_te[];
 flat in float depth_te[];
 out vec3 color_g, normal_g;
-out float height_g;
+out vec2 uv_g;
+flat out int index_g;              
               
 uniform grass_debug{
     int debug;
@@ -34,21 +35,24 @@ void main()
 
     /* A flat leaf. */
 
+    index_g = index_te[0];
     normal_g = mat3(modelview) * plane_te[0][0];
-    height_g = height_te[0];
     
+    uv_g = vec2(1, height_te[0]);
     gl_Position = PM * position_te[0] + h;
     EmitVertex();
 
+    uv_g = vec2(0, height_te[0]);
     gl_Position = PM * position_te[0] - h;
     EmitVertex();
 
     normal_g = mat3(modelview) * plane_te[1][0];
-    height_g = height_te[1];
     
+    uv_g = vec2(1, height_te[1]);
     gl_Position = PM * position_te[1] + h;
     EmitVertex();
 
+    uv_g = vec2(0, height_te[1]);
     gl_Position = PM * position_te[1] - h;
     EmitVertex();
 

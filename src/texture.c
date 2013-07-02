@@ -141,6 +141,9 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
                           texels->size[0], texels->size[1], 0,
                           format, type, texels->values.any);
             break;
+        default:
+            t_print_error("Unsupported texture target.\n");
+            abort();
         }
 
         glGenerateMipmap (self->target);

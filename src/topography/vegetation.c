@@ -114,6 +114,12 @@ static unsigned int deflections;
     self->elevation = t_tonode (_L, -1);
     self->reference_1 = luaL_ref (_L, LUA_REGISTRYINDEX);
 
+    self->masks = malloc (self->elevation->swatches_n * sizeof(int));
+
+    for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
+        self->masks[i] = LUA_REFNIL;
+    }
+    
     [super init];
 
     /* Create the program. */
@@ -137,7 +143,7 @@ static unsigned int deflections;
     
     /* Add the fragment source. */
     
-    [shader addSourceString: glsl_vegetation_fragment for: T_FRAGMENT_STAGE];
+    [shader add: 2 sourceStrings: (const char *[2]){header, glsl_vegetation_fragment} for: T_FRAGMENT_STAGE];
     [shader link];
 
     [self load];
@@ -179,17 +185,49 @@ static unsigned int deflections;
 
 -(void)free
 {
+    int i;
+    
+    for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
+        luaL_unref(_L, LUA_REGISTRYINDEX, self->masks[i]);
+    }
+
+    free(self->masks);
+
     luaL_unref(_L, LUA_REGISTRYINDEX, self->reference_1);
 
     [super free];
+}
+
+-(int) _get_element
+{
+    return 0;
+}
+
+-(void) _set_element
+{
+    Texture *texture;
+    int n;
+    
+    n = lua_tointeger(_L, 2);
+
+    if (n > self->elevation->swatches_n) {
+        t_print_warning ("Ignoring configuration specified at index %d which is too large.\n");
+        return;
+    }
+
+    lua_rawgeti(_L, 3, 1);
+    texture = t_testtexture(_L, -1, GL_TEXTURE_2D);
+    self->masks[n - 1] = luaL_ref(_L, LUA_REGISTRYINDEX);
+
+    [self setSamplerUniform: "masks" to: texture->name atIndex: n - 1];
 }
 
 -(void) draw: (int)frame
 {
     Atmosphere *atmosphere;
 
-    /* glEnable (GL_CULL_FACE); */
     glEnable (GL_DEPTH_TEST);
+    glEnable (GL_SAMPLE_ALPHA_TO_COVERAGE);
     
     glUseProgram(self->name);
 
@@ -202,7 +240,7 @@ static unsigned int deflections;
     [super draw: frame];
 
     glDisable (GL_DEPTH_TEST);
-    /* glDisable (GL_CULL_FACE); */
+    glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
 }
 
 @end

@@ -38,11 +38,12 @@ void main()
 
     plane_te = mat2x3 (vec3(cosphi * costheta, costheta * sinphi, -sintheta),
                        vec3(-sinphi, cosphi,0));
-    position_te = vec4(p + /* 0.05 * (1 + distance_tc + 0.5 * chance_tc.x) */0.1 * d, 1);
+    position_te = vec4(p + distance_tc * (0.5 + 0.5 * chance_tc.x) * 0.2 * d, 1);
     /* position_te = vec4(p + vec3(0, 0, 0.03 * gl_TessCoord.x), 1); */
 
     color_te = color_tc;
     distance_te = 1 + distance_tc + 0.5 * chance_tc.x;
     depth_te = depth_tc;
     height_te = gl_TessCoord.x;
+    index_te = index_tc;
 }

@@ -60,10 +60,8 @@ int dTrackClass;
     int segments_n;
     
     double tessellation[2], scale[2];
-    int dirty;
+    int dirty, reference;
 }
-
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
 
 -(int) _get_scale;
 -(int) _get_tessellation;
@@ -74,9 +72,8 @@ int dTrackClass;
 @end
 
 @interface RacetrackBody: Body {
+    int reference;
 }
-
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t;
 
 -(int) _get_sampler;
 -(void) _set_sampler;

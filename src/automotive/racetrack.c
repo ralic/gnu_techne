@@ -26,34 +26,15 @@
 #include "topography/elevation.h"
 #include "wheel.h"
 
-static int constructbody(lua_State *L)
+static int construct(lua_State *L)
 {
-    Racetrack *track;
-    RacetrackBody *body;
-    
-    track = (Racetrack *)t_tonode (L, lua_upvalueindex(1));
-    body = [RacetrackBody alloc];
-    [body initWith: track->segments_n
-          segments: track->segments
-      andTolerance: track->tolerance];
+    Class class;
 
-    t_configurenode(L, 1);
+    lua_pushvalue(_L, lua_upvalueindex(1));
+    class = (Class)lua_touserdata(L, lua_upvalueindex (2));
 
-    return 1;
-}
-
-static int constructshape(lua_State *L)
-{
-    Racetrack *track;
-    RacetrackShape *shape;
-    
-    track = (Racetrack *)t_tonode (L, lua_upvalueindex(1));
-    shape = [RacetrackShape alloc];
-    [shape initWith: track->segments_n
-           segments: track->segments
-       andTolerance: track->tolerance];
-
-    t_configurenode(L, 1);
+    [[class alloc] init];
+    t_configurenode (_L, 1);
 
     return 1;
 }
@@ -1318,8 +1299,9 @@ static int sampler_index(lua_State *L)
 
 -(int) _get_body
 {
-    t_pushuserdata(_L, 1, self);
-    lua_pushcclosure(_L, constructbody, 1);
+    lua_pop (_L, 1);
+    lua_pushlightuserdata(_L, [RacetrackBody class]);
+    lua_pushcclosure(_L, construct, 2);
 
     return 1;
 }
@@ -1330,8 +1312,9 @@ static int sampler_index(lua_State *L)
 
 -(int) _get_shape
 {
-    t_pushuserdata(_L, 1, self);
-    lua_pushcclosure(_L, constructshape, 1);
+    lua_pop (_L, 1);
+    lua_pushlightuserdata(_L, [RacetrackShape class]);
+    lua_pushcclosure(_L, construct, 2);
 
     return 1;
 }
@@ -1351,8 +1334,9 @@ static int sampler_index(lua_State *L)
 
 @implementation RacetrackBody
 
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t
+-(void)init
 {
+    Racetrack *track;
     struct trackdata *data;
     
     if (!dTrackClass) {
@@ -1366,15 +1350,22 @@ static int sampler_index(lua_State *L)
 	dTrackClass = dCreateGeomClass (&class);
     }
 
+    /* Make a reference to the racetrack to make sure it's not
+     * collected. */
+
+    track = t_tonode (_L, -1);
+    
+    self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+
     self->geom = dCreateGeom (dTrackClass);
     dGeomSetData (self->geom, self);
 
     data = dGeomGetClassData (self->geom);
 
-    data->segments = malloc(10 * n * sizeof(double));
-    memcpy (data->segments, s, 10 * n * sizeof(double));
-    data->segments_n = n;
-    data->tolerance = t;
+    data->segments = malloc(10 * track->segments_n * sizeof(double));
+    memcpy (data->segments, track->segments, 10 * track->segments_n * sizeof(double));
+    data->segments_n = track->segments_n;
+    data->tolerance = track->tolerance;
     data->last = 0;
     
     data->tileset = NULL;
@@ -1456,8 +1447,17 @@ static int sampler_index(lua_State *L)
 
 @implementation RacetrackShape
 
--(void)initWith: (int)n segments: (double *)s andTolerance: (double)t
+-(void)init
 {
+    Racetrack *track;
+
+    /* Make a reference to the racetrack to make sure it's not
+     * collected. */
+
+    track = t_tonode (_L, -1);
+    
+    self->reference = luaL_ref (_L, LUA_REGISTRYINDEX);
+
     self->dirty = 1;
     
     self->scale[0] = 1;
@@ -1466,10 +1466,11 @@ static int sampler_index(lua_State *L)
     self->tessellation[0] = 2 * M_PI / 32;
     self->tessellation[1] = 0.1 / 10;
 
-    self->tolerance = t;
-    self->segments_n = n;
-    self->segments = malloc(10 * n * sizeof(double));
-    memcpy (self->segments, s, 10 * n * sizeof(double));
+    self->tolerance = track->tolerance;
+    self->segments_n = track->segments_n;
+    self->segments = malloc(10 * track->segments_n * sizeof(double));
+    memcpy (self->segments, track->segments,
+            10 * track->segments_n * sizeof(double));
     
     [super initWithMode: GL_TRIANGLE_STRIP];
 }

@@ -353,7 +353,12 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
 
         t_print_message ("Loaded a %d by %d tileset.\n",
                          tiles->size[0], tiles->size[1]);
-        
+
+        /* Calculate some derivative quantities. */
+
+        tiles->offset[0] = -(1 << (tiles->depth - 1)) * tiles->size[0] * tiles->resolution[0];
+        tiles->offset[1] = -(1 << (tiles->depth - 1)) * tiles->size[1] * tiles->resolution[1];
+            
         /* Create the base mesh.  */
 
         allocate_mesh (&self->context);

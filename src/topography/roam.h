@@ -46,8 +46,8 @@
 #define SPLIT_QUEUED     (1 << 1)
 #define MERGE_QUEUED     (1 << 2)
 
-#define is_locked(n) ((n)->diamond->level >=                \
-                      (context->tileset.orders[(n)->index] << 1))
+#define is_locked(d) (((d)->level >=                                    \
+                       (context->tileset.orders[(d)->triangle->tile] << 1)))
 
 #define is_leaf(n) (!(n)->children[0])
 #define is_out(n) ((n)->cullbits & OUT)
@@ -62,10 +62,10 @@
 #define is_coarse(d) ((d)->level <= 0 || isinf((d)->error))
 #define is_queued(d) ((d)->flags & (SPLIT_QUEUED | MERGE_QUEUED))
 #define is_queued_into(d, i) ((d->flags) & (SPLIT_QUEUED << i))
-#define is_visible(d) \
-    (is_pair((d)->triangle) ?                                                \
-     !((d)->triangle->cullbits &                                             \
-       (d)->triangle->neighbors[2]->cullbits & OUT) :                        \
+#define is_visible(d)                                                   \
+    (is_pair((d)->triangle) ?                                           \
+     !((d)->triangle->cullbits &                                        \
+       (d)->triangle->neighbors[2]->cullbits & OUT) :                   \
      !((d)->triangle->cullbits & OUT))
 #define is_allin(d)                                                     \
     (is_pair((d)->triangle) ?                                           \
@@ -88,7 +88,7 @@ typedef struct {
     int *orders;
 
     int size[2], depth;
-    double resolution[2];
+    double resolution[2], offset[2];
 } roam_Tileset;
 
 typedef struct {
@@ -112,7 +112,7 @@ struct triangle {
     struct diamond *diamond;
     struct triangle *neighbors[3], *children[2], *parent;
     unsigned char cullbits, flags;
-    unsigned short index;
+    unsigned short tile;
 };
 
 struct diamond {
@@ -136,6 +136,5 @@ void *allocate_mesh(roam_Context *context_in);
 void calculate_tile_bounds(unsigned short *heights, unsigned short *bounds,
                            int size);
 void calculate_view_frustum(float (*pi)[4], float *T);
-void copy_setup_transform(roam_Context *context_in, float M[16]);
 
 #endif

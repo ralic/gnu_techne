@@ -38,8 +38,8 @@ void copy_setup_transform(roam_Context *context_in, float *M)
         
     M[0] = tiles->resolution[0];
     M[5] = tiles->resolution[1];
-    M[12] = -(1 << (tiles->depth - 1)) * tiles->size[0] * tiles->resolution[0];
-    M[13] = -(1 << (tiles->depth - 1)) * tiles->size[1] * tiles->resolution[1];
+    M[12] = tiles->offset[0];
+    M[13] = tiles->offset[1];
 }
 
 void calculate_view_frustum(float (*pi)[4], float *T)
@@ -209,12 +209,21 @@ static void initialize_diamond(roam_Diamond *d, roam_Triangle *n,
     c[0] = (v0[0] + v1[0]) * 0.5;
     c[1] = (v0[1] + v1[1]) * 0.5;
 
-    if(d->level < (context->tileset.orders[n->index] << 1)) {
+    if(!is_locked(d)) {
+        double *r, *o;
+        int i_0, i_1;
+        
         /* _TRACE ("%d, %d, %d, %f, %f\n", d->level, n->parent && n->parent->diamond->level, TREE_HEIGHT - 1, c[0], c[1]); */
 
-	look_up_sample (&context->tileset, (int)c[0], (int)c[1], &c[2], &e);
+        r = context->tileset.resolution;
+        o = context->tileset.offset;
+        
+        i_0 = (c[0] - o[0]) / r[0];
+        i_1 = (c[1] - o[1]) / r[1];
+        
+	look_up_sample (&context->tileset, i_0, i_1, &c[2], &e);
 
-	assert((nearbyint(c[0]) == c[0] && nearbyint(c[1]) == c[1]));
+	/* assert((nearbyint(c[0]) == c[0] && nearbyint(c[1]) == c[1])); */
     } else {
 	c[2] = (v0[2] + v1[2]) * 0.5;
 	e = 0.0;
@@ -462,7 +471,7 @@ static void initialize_triangle(roam_Triangle *c, roam_Diamond *d, roam_Triangle
      * culling later on.
      */
     
-    c->index = i;
+    c->tile = i;
     c->flags = 0;
     c->cullbits = OUT;
 
@@ -569,14 +578,14 @@ static void expand_triangle(roam_Triangle *p)
 
         initialize_triangle(c[0], d[0], p,
                             c[1], p->neighbors[2]->children[1], p->neighbors[0],
-                            p->index);
+                            p->tile);
     } else {
 	assert (p->neighbors[0]->diamond->level == p->diamond->level);
 	allocate_diamonds(&d[0], 1);
 
         initialize_triangle(c[0], d[0], p,
                             c[1], p->neighbors[2]->children[1], p->neighbors[0],
-                            p->index);
+                            p->tile);
 
 	initialize_diamond(d[0], c[0],
 			   p->parent->diamond->center,
@@ -599,14 +608,14 @@ static void expand_triangle(roam_Triangle *p)
 
         initialize_triangle(c[1], d[1], p,
                             p->neighbors[2]->children[0], c[0], p->neighbors[1],
-                            p->index);
+                            p->tile);
     } else {
 	assert (p->neighbors[1]->diamond->level == p->diamond->level);
 	allocate_diamonds(&d[1], 1);
 
         initialize_triangle(c[1], d[1], p,
                             p->neighbors[2]->children[0], c[0], p->neighbors[1],
-                            p->index);
+                            p->tile);
 
 	initialize_diamond(d[1], c[1],
 			   p->diamond->vertices[i],
@@ -679,8 +688,8 @@ static int split_triangle_pair(roam_Triangle *n)
 
     /* Force-split the triangle's base neighbor if needed. */
 
-    if((is_pair(n) || split_triangle_pair(n->neighbors[2])) &&
-       !is_locked(n) && !is_locked(n->neighbors[2])) {
+    if(!is_locked(n->diamond) &&
+       (is_pair(n) || split_triangle_pair(n->neighbors[2]))) {
 
         /* At this point the situation should look like this:
 
@@ -1021,7 +1030,7 @@ void optimize_geometry(roam_Context *context_in, int frame)
 
     /* Combine the modelview and projection matrices. */
 
-    t_copy_modelview(M);
+    t_copy_modelview(M);    
     t_copy_projection(P);
     t_concatenate_4T(transform, P, M);
     
@@ -1123,7 +1132,6 @@ void optimize_geometry(roam_Context *context_in, int frame)
     
     context->intervals[3] += (t = t_get_cpu_time()) - t_0, t_0 = t;
 
-    assert(context->triangles >= context->culled + context->visible);
     assert(context->queued[0] + context->queued[1] <= context->triangles);
 
 #ifdef CHECK_SANITY
@@ -1145,6 +1153,7 @@ void *allocate_mesh(roam_Context *context_in)
     roam_Tileset *tiles;
     roam_Triangle *(*T)[4];
     roam_Diamond *(*D)[3];
+    double *r, *o;
     int i, j, d, s, t;
 
     context = context_in;
@@ -1194,6 +1203,9 @@ void *allocate_mesh(roam_Context *context_in)
     t = tiles->size[1];
     d = 1 << tiles->depth;
 
+    r = tiles->resolution;
+    o = tiles->offset;
+    
     /* Allocate all needed diamonds and triangles. */
 
     T = (roam_Triangle *(*)[4])calloc((s + 4) * (t + 4), sizeof(roam_Triangle *[4]));
@@ -1223,7 +1235,7 @@ void *allocate_mesh(roam_Context *context_in)
 	for (j = 0 ; j < t + 4 ; j += 1) {
 	    double e, h;
 	    float v[4][3];
-	    int i_c, i_r, i_l, i_t, i_b, i_p;
+	    int i_c, i_r, i_l, i_t, i_b, i_p, i_0, i_1;
 
 	    i_c = i * (t + 4) + j;
 	    i_r = i * (t + 4) + j + 1;
@@ -1265,25 +1277,37 @@ void *allocate_mesh(roam_Context *context_in)
 	    */
 
 	    /* Calculate the base mesh vertices. */
-	    
-	    v[0][0] = (j - 2) * d;
-	    v[0][1] = (i - 2) * d;
-	    look_up_sample (tiles, v[0][0], v[0][1], &h, &e);
+
+            i_0 = (j - 2) * d;
+            i_1 = (i - 2) * d;
+            
+	    v[0][0] = r[0] * i_0 + o[0];
+	    v[0][1] = r[1] * i_1 + o[1];
+	    look_up_sample (tiles, i_0, i_1, &h, &e);
 	    v[0][2] = h;
 
-	    v[1][0] = (j - 3) * d;
-	    v[1][1] = (i - 1) * d;
-	    look_up_sample (tiles, v[1][0], v[1][1], &h, &e);
+            i_0 = (j - 3) * d;
+            i_1 = (i - 1) * d;
+            
+	    v[1][0] = r[0] * i_0 + o[0];
+	    v[1][1] = r[1] * i_1 + o[1];
+	    look_up_sample (tiles, i_0, i_1, &h, &e);
 	    v[1][2] = h;
 
-	    v[2][0] = (j - 1) * d;
-	    v[2][1] = (i - 1) * d;
-	    look_up_sample (tiles, v[2][0], v[2][1], &h, &e);
+            i_0 = (j - 1) * d;
+            i_1 = (i - 1) * d;
+            
+	    v[2][0] = r[0] * i_0 + o[0];
+	    v[2][1] = r[1] * i_1 + o[1];
+	    look_up_sample (tiles, i_0, i_1, &h, &e);
 	    v[2][2] = h;
 
-	    v[3][0] = j * d;
-	    v[3][1] = (i - 2) * d;
-	    look_up_sample (tiles, v[3][0], v[3][1], &h, &e);
+            i_0 = j * d;
+            i_1 = (i - 2) * d;
+            
+	    v[3][0] = r[0] * i_0 + o[0];
+	    v[3][1] = r[1] * i_1 + o[1];
+	    look_up_sample (tiles, i_0, i_1, &h, &e);
 	    v[3][2] = h;
 
 	    /* Initialize base diamonds and triangles. */

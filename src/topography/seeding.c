@@ -280,12 +280,9 @@ void initialize_seeding (seeding_Context *seeding_in)
 void begin_seeding (seeding_Context *seeding_in, roam_Context *context_in)
 {
     seeding_Bin *b;
-    float M[16], N[16];
     int i, viewport[4];
 
-    t_copy_modelview (M);
-    copy_setup_transform(context_in, N);
-    t_concatenate_4T (modelview, M, N);
+    t_copy_modelview (modelview);
     t_copy_projection (projection);
 
     glGetIntegerv(GL_VIEWPORT, viewport);

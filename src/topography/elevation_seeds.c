@@ -99,22 +99,12 @@
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
     self->locations.planes = glGetUniformLocation(parent->name, "planes");
 
-    {
-        unsigned int i;
-        float M[16];
-
-        copy_setup_transform(self->context, M);
-        
-        i = glGetUniformLocation(parent->name, "setup");
-        glUniformMatrix4fv (i, 1, GL_FALSE, M);
-    }
-
     self->units.base = [parent getUnitForSamplerUniform: "base"];
 }
 
 -(void) draw: (int)frame
 {
-    float M[16], P[16], T[16], planes[6][4];
+    float q, M[16], P[16], T[16], planes[6][4];
     roam_Tileset *tiles;
     int i, j;
 
@@ -124,7 +114,6 @@
 
     /* Seed the vegetation. */
     
-    optimize_geometry(self->context, frame);
     begin_seeding (&self->seeding, self->context);
     
     glBindBuffer(GL_ARRAY_BUFFER, self->buffer);
@@ -132,7 +121,10 @@
     glActiveTexture(GL_TEXTURE0 + self->units.base);
 
     glPatchParameteri(GL_PATCH_VERTICES, 1);
-    glUniform1f(self->locations.scale, ldexpf(1, -tiles->depth));
+    
+    q = ldexpf(1, -tiles->depth);
+    glUniform2f(self->locations.scale,
+                q / tiles->resolution[0], q / tiles->resolution[1]);
 
     t_copy_modelview(M);
     t_copy_projection(P);
@@ -159,7 +151,10 @@
                  k += 1, b += 1) {
 
                 if(b->fill > 0) {
-                    glUniform2f(self->locations.offset, j, i);
+                    glUniform2f(self->locations.offset,
+                                -i + 0.5 * tiles->size[0],
+                                -j + 0.5 * tiles->size[1]);
+                    
                     glBindTexture(GL_TEXTURE_2D, tiles->imagery[l]);
                     glPointSize(1);
                     

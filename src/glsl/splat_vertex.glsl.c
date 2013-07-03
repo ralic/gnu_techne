@@ -1,17 +1,16 @@
-in vec4 positions;
+in vec3 positions;
 out vec3 eye;
 out vec2 uv;
 
-uniform float scale;
-uniform vec2 offset;
+uniform vec2 offset, scale;
 
 void main()
 {
     vec4 Mp;
 
-    Mp = modelview * positions;
+    Mp = modelview * vec4(positions, 1);
     
     gl_Position = projection * Mp;
     eye = vec3(Mp);
-    uv = scale * positions.xy - offset;
+    uv = scale * positions.xy + offset;
 }

@@ -48,7 +48,7 @@ static void draw_subtree(roam_Triangle *n)
                     d->vertices[i], 3 * sizeof(float));
             memcpy (buffer + 9 * triangles_n + 6,
                     e->center, 3 * sizeof(float));
-
+            
 	    triangles_n += 1;
 	}
     }
@@ -131,6 +131,7 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
 
     self->locations.scale = glGetUniformLocation(parent->name, "scale");
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
+
     self->units.base = [parent getUnitForSamplerUniform: "base"];
 }
 
@@ -217,23 +218,17 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
 -(void) draw: (int)frame
 {
     roam_Tileset *tiles;
-    float *vert;
+    float q, *vert;
     int i, j, l;
     
     tiles = &self->context->tileset;
 
-    {
-        float M[16];
-
-        copy_setup_transform (self->context, M);
-        t_push_modelview (self->matrix, T_MULTIPLY);
-        t_load_modelview (M, T_MULTIPLY);
-    }
+    t_push_modelview (self->matrix, T_MULTIPLY);
     
     if (self->optimize) {
         optimize_geometry(self->context, frame);
     }
-
+    
     l = 9 * self->context->target * sizeof(float);
     
     /* Update the vertex buffer object. */
@@ -252,13 +247,20 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
     glActiveTexture(GL_TEXTURE0 + self->units.base);
 
     glBindVertexArray(self->name);
-    glUniform1f(self->locations.scale, ldexpf(1, -tiles->depth));
+
+    q = ldexpf(1, -tiles->depth);
+    glUniform2f(self->locations.scale,
+                q / tiles->resolution[0],
+                q / tiles->resolution[1]);
     
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {
 	    int l, k = i * tiles->size[1] + j;
 
-            glUniform2f(self->locations.offset, j, i);
+            glUniform2f(self->locations.offset,
+                        -i + 0.5 * tiles->size[0],
+                        -j + 0.5 * tiles->size[1]);
+            
             glBindTexture(GL_TEXTURE_2D, tiles->imagery[k]);
 
             l = k > 0 ? self->ranges[k - 1] : 0;

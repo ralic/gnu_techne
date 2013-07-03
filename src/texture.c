@@ -109,13 +109,13 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
             t_print_error("Texel data specified for texture is of unsuitable type.\n");
             abort();
         }
-
+        
         switch(texels->size[texels->rank - 1]) {
         case 1:
-            format = GL_LUMINANCE;
+            format = GL_R;
             break;
         case 2:
-            format = GL_LUMINANCE_ALPHA;
+            format = GL_RG;
             break;
         case 3:
             format = GL_RGB;

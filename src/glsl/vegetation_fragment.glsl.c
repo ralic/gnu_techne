@@ -11,10 +11,11 @@ void main()
 
     texel = texture2D(masks[index_g], uv_g);
 
-    if (texel.a > 0) {
-        fragment = vec4(texel.rgb/* color_g */ * (0.65 * max(uv_g.x, 1) + 0.45 * abs(dot(mat3(modelview) * normalize(vec3(1, 1, 1)), normalize(normal_g))))/* * 1e-9 + vec3(1) */, 1);
-        /* fragment = vec4(vec3(height_g), 1); */
+    if (texel.g > 0) {
+        fragment = vec4((texel.r * color_g * (1.65 * clamp(uv_g.y, 0.2, 1.0) + 0.5 * abs(dot(mat3(modelview) * normalize(vec3(1, 1, 1)), normalize(normal_g)))))/* * 1e-9 + vec3(1) */, texel.g);
     } else {
         discard;
     }
+
+    /* fragment = vec4(vec3(uv_g.y), 1); */
 }

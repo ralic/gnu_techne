@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 	   "return array.uchars (%d, %d, %d, \"",
 	   width, height, depth);
 
-   for(i = 0 ; i < height ; i += 1) {
+   for(i = height - 1 ; i >= 0 ; i -= 1) {
        for(j = 0 ; j < width ; j += 1) {
 	   for(k = 0 ; k < depth ; k += 1) {
 	       fprintf(stdout, "\\%03d", rows[i][j * depth + k]);

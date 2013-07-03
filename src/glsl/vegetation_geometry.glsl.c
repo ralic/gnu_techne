@@ -20,12 +20,13 @@ void main()
 {
     mat4 PM, T;
     vec4 h;
-    float z;
+    float z, n;
     
     color_g = color_te[0];
 
     z = depth_te[0];
-    h = 0.001 * distance_te[0] * vec4(plane_te[0][1], 0);
+    n = 1 + floor(z * 0.3);
+    h = 0.5 * n * 0.001 * distance_te[0] * vec4(plane_te[0][1], 0);
     PM = projection * modelview;
     
     if (debug < 0)
@@ -38,7 +39,7 @@ void main()
     index_g = index_te[0];
     normal_g = mat3(modelview) * plane_te[0][0];
     
-    uv_g = vec2(1, height_te[0]);
+    uv_g = vec2(n, height_te[0]);
     gl_Position = PM * position_te[0] + h;
     EmitVertex();
 
@@ -48,7 +49,7 @@ void main()
 
     normal_g = mat3(modelview) * plane_te[1][0];
     
-    uv_g = vec2(1, height_te[1]);
+    uv_g = vec2(n, height_te[1]);
     gl_Position = PM * position_te[1] + h;
     EmitVertex();
 

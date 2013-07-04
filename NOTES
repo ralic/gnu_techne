@@ -69,4 +69,3 @@ TODO (ASAP):
 ============
 
 * Fix the chain node to properly reflect the velocity when the run changes.
-* Add support for setting clamp and filtering modes to the Texture Node.

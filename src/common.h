@@ -86,3 +86,5 @@
                                                                         \
         printf ("\033[0;31m  <<<<<<<<<<\n\033[0m\n");                   \
     }
+
+#define xstrnlcmp(literal, string, length) ((length != sizeof(literal) - 1) || memcmp(string, literal, length))

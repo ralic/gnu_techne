@@ -15,6 +15,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -64,6 +65,198 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
 {
     glDeleteTextures(1, &self->name);
     [super free];
+}
+
+-(int) _get_wrap
+{
+    const GLenum parameters[] = {GL_TEXTURE_WRAP_S,
+                                 GL_TEXTURE_WRAP_T,
+                                 GL_TEXTURE_WRAP_R};
+    int i, mode;
+    
+    lua_createtable(_L, 3, 0);
+
+    for (i = 0 ; i < 3 ; i += 1) {
+        glBindTexture(self->target, self->name);
+        glGetTexParameteriv(self->target, parameters[i], &mode);
+
+        switch (mode) {
+        case GL_CLAMP_TO_EDGE: lua_pushliteral(_L, "clamp"); break;
+        case GL_REPEAT: lua_pushliteral(_L, "repeat"); break;
+        case GL_MIRRORED_REPEAT: lua_pushliteral(_L, "mirror"); break;
+        default: assert(0);
+        }
+
+        lua_rawseti (_L, -2, i + 1);
+    }
+    
+    return 1;
+}
+
+-(void) _set_wrap
+{
+    const GLenum parameters[] = {GL_TEXTURE_WRAP_S,
+                                 GL_TEXTURE_WRAP_T,
+                                 GL_TEXTURE_WRAP_R};
+    const char *mode;
+    size_t l;
+    int i;
+
+    if (lua_istable(_L, 3)) {
+        glBindTexture(self->target, self->name);
+
+        for (i = 0 ; i < 3 ; i += 1) {
+            lua_rawgeti(_L, 3, i + 1);
+            mode = lua_tolstring(_L, -1, &l);
+
+            if (mode) {
+                if (!xstrnlcmp("clamp", mode, l)) {
+                    glTexParameteri(self->target, parameters[i],
+                                    GL_CLAMP_TO_EDGE);
+                } else if (!xstrnlcmp("repeat", mode, l)) {
+                    glTexParameteri(self->target, parameters[i],
+                                    GL_REPEAT);
+                } else if (!xstrnlcmp("mirror", mode, l)) {
+                    glTexParameteri(self->target, parameters[i],
+                                    GL_MIRRORED_REPEAT);
+                } else {
+                    t_print_warning("Invalid texture wrapping mode '%s'.\n",
+                                    mode);
+                }
+            }
+
+            lua_pop(_L, 1);
+        }
+    }
+}
+
+-(int) _get_lod
+{
+    float f;
+    int i;
+    
+    lua_createtable(_L, 3, 0);
+
+    glBindTexture(self->target, self->name);
+
+    glGetTexParameteriv(self->target, GL_TEXTURE_MIN_LOD, &i);
+    lua_pushinteger(_L, i);
+    lua_rawseti(_L, -2, 1);
+
+    glGetTexParameteriv(self->target, GL_TEXTURE_MAX_LOD, &i);
+    lua_pushinteger(_L, i);
+    lua_rawseti(_L, -2, 2);
+
+    glGetTexParameterfv(self->target, GL_TEXTURE_LOD_BIAS, &f);
+    lua_pushnumber(_L, f);
+    lua_rawseti(_L, -2, 3);
+
+    return 1;
+}
+
+-(void) _set_lod
+{
+    if (lua_istable(_L, 3)) {
+        glBindTexture(self->target, self->name);
+        
+        lua_rawgeti(_L, 3, 1);
+        if(lua_isnumber(_L, -1)) {
+            glTexParameteri(self->target, GL_TEXTURE_MIN_LOD,
+                            lua_tointeger (_L, -1));
+        }
+        lua_pop(_L, 1);
+
+        lua_rawgeti(_L, 3, 2);
+        if(lua_isnumber(_L, -1)) {
+            glTexParameteri(self->target, GL_TEXTURE_MAX_LOD,
+                            lua_tointeger (_L, -1));
+        }
+        lua_pop(_L, 1);
+
+        lua_rawgeti(_L, 3, 3);
+        if(lua_isnumber(_L, -1)) {
+            glTexParameterf(self->target, GL_TEXTURE_LOD_BIAS,
+                            lua_tonumber (_L, -1));
+        }
+        lua_pop(_L, 1);
+    }
+}
+
+-(int) _get_filter
+{
+    const GLenum parameters[] = {GL_TEXTURE_MIN_FILTER,
+                                 GL_TEXTURE_MAG_FILTER};
+    int i, mode;
+    
+    lua_createtable(_L, 3, 0);
+
+    for (i = 0 ; i < 2 ; i += 1) {
+        glBindTexture(self->target, self->name);
+        glGetTexParameteriv(self->target, parameters[i], &mode);
+
+        switch (mode) {
+        case GL_NEAREST: lua_pushliteral(_L, "nearest"); break;
+        case GL_LINEAR: lua_pushliteral(_L, "linear"); break;
+        case GL_NEAREST_MIPMAP_NEAREST:
+            lua_pushliteral(_L, "nearest-mipmap-nearest"); break;
+        case GL_LINEAR_MIPMAP_NEAREST:
+            lua_pushliteral(_L, "linear-mipmap-nearest"); break;
+        case GL_NEAREST_MIPMAP_LINEAR:
+            lua_pushliteral(_L, "nearest-mipmap-linear"); break;
+        case GL_LINEAR_MIPMAP_LINEAR:
+            lua_pushliteral(_L, "linear-mipmap-linear"); break;
+        default: assert(0);
+        }
+
+        lua_rawseti (_L, -2, i + 1);
+    }
+    
+    return 1;
+}
+
+-(void) _set_filter
+{
+    const GLenum parameters[] = {GL_TEXTURE_MIN_FILTER,
+                                 GL_TEXTURE_MAG_FILTER};
+    const char *mode;
+    size_t l;
+    int i;
+
+    if (lua_istable(_L, 3)) {
+        glBindTexture(self->target, self->name);
+
+        for (i = 0 ; i < 2 ; i += 1) {
+            lua_rawgeti(_L, 3, i + 1);
+            mode = lua_tolstring(_L, -1, &l);
+
+            if (mode) {
+                if (!xstrnlcmp("nearest", mode, l)) {
+                    glTexParameteri(self->target, parameters[i],
+                                    GL_NEAREST);
+                } else if (!xstrnlcmp("linear", mode, l)) {
+                    glTexParameteri(self->target, parameters[i],
+                                    GL_LINEAR);
+                } else if (!xstrnlcmp("nearest-mipmap-nearest", mode, l)) {
+                    glTexParameteri(self->target, parameters[i],
+                                    GL_NEAREST_MIPMAP_NEAREST);
+                } else if (!xstrnlcmp("linear-mipmap-nearest", mode, l)) {
+                    glTexParameteri(self->target, parameters[i],
+                                    GL_LINEAR_MIPMAP_NEAREST);
+                } else if (!xstrnlcmp("nearest-mipmap-linear", mode, l)) {
+                    glTexParameteri(self->target, parameters[i],
+                                    GL_NEAREST_MIPMAP_LINEAR);
+                } else if (!xstrnlcmp("linear-mipmap-linear", mode, l)) {
+                    glTexParameteri(self->target, parameters[i],
+                                    GL_LINEAR_MIPMAP_LINEAR);
+                } else {
+                    t_print_warning("Invalid texture filtering mode '%s'.\n",
+                                    mode);
+                }
+            }
+
+            lua_pop(_L, 1);
+        }
+    }
 }
 
 -(int) _get_texels
@@ -147,9 +340,6 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
         }
 
         glGenerateMipmap (self->target);
-
-        glTexParameteri(self->target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(self->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glBindTexture(self->target, 0);
     } else {
         glBindTexture(self->target, self->name);

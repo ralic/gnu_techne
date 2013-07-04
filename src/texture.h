@@ -31,6 +31,12 @@
 
 -(int) _get_texels;
 -(void) _set_texels;
+-(int) _get_wrap;
+-(void) _set_wrap;
+-(int) _get_filter;
+-(void) _set_filter;
+-(int) _get_lod;
+-(void) _set_lod;
 
 @end
 

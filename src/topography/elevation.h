@@ -122,8 +122,8 @@ typedef struct {
 -(int) _get_density;
 -(void) _set_density;
 
--(int) _get_bias;
--(void) _set_bias;
+-(int) _get_ceiling;
+-(void) _set_ceiling;
 
 -(int) _get_bins;
 -(void) _set_bins;

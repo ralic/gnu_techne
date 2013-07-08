@@ -84,9 +84,19 @@ static void project(float *r, float *s)
 {
     float z;
 
-    z = fmax(-(r[2] + modelview[14]) + seeding->bias, seeding->bias);
-    s[0] = aspect * projection[0] * (r[0] + modelview[12]) / z;
-    s[1] = projection[5] * (r[1] + modelview[13]) / z;
+    /* Push all vertices back by sqrt(2) to make sure that no seeded
+     * triangles span the near plane.  (The longest edge of a seeded
+     * triangle has a length of sqrt(2).) */
+    
+    z = -(r[2] + modelview[14]) + M_SQRT2;
+
+    /* Don't bother projecting points that are behind the near
+     * plane. */
+    
+    if (z >= 0) {
+        s[0] = (r[0] + modelview[12]) / z;
+        s[1] = (r[1] + modelview[13]) / z;
+    }
 }
 
 static int cull(float *a_r, float *b_0r, float *b_1r)
@@ -123,7 +133,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         z_a = a_r[2] + modelview[14];
         z_0 = b_0r[2] + modelview[14];
         z_1 = b_1r[2] + modelview[14];
-        
+
         if (should_seed(z_a, z_0, z_1)) {
             float c[3], c_r[3], c_s[2];
 
@@ -153,18 +163,24 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
         /* Project all vertices into screen space. */
 
+        assert(-(a_r[2] + modelview[14]) >= -M_SQRT2);
+        assert(-(b_0r[2] + modelview[14]) >= -M_SQRT2);
+        assert(-(b_1r[2] + modelview[14]) >= -M_SQRT2);
+
         /* Calculate the screen-space area of the triangle and
-         * multiply by density and bias to get the number of seeds. */
+         * multiply by density bias to get the number of seeds. */
         
-        for (i = 0 ; i < 2 ; i += 1) {
-            u[i] = b_0s[i] - a_s[i];
-            v[i] = b_1s[i] - a_s[i];
-        }
+        u[0] = aspect * projection[0] * (b_0s[0] - a_s[0]);
+        u[1] = projection[5] * (b_0s[1] - a_s[1]);
+            
+        v[0] = aspect * projection[0] * (b_1s[0] - a_s[0]);
+        v[1] = projection[5] * (b_1s[1] - a_s[1]);
 
         /* _TRACEM (4, 4, "f", projection); */
+        
         A = 0.5 * sqrt((u[0] * u[0] + u[1] * u[1]) *
                        (v[0] * v[0] + v[1] * v[1]));
-        n_0 = fmax(seeding->density * A, 1);
+        n_0 = fmin(seeding->ceiling, fmax(seeding->density * A, 1));
 
         if (n_min > n_0) {
             n_min = n_0;

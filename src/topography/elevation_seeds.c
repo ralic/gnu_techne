@@ -194,16 +194,16 @@
     self->seeding.density = lua_tonumber(_L, 3);
 }
 
--(int) _get_bias
+-(int) _get_ceiling
 {
-    lua_pushnumber(_L, self->seeding.bias);
+    lua_pushnumber(_L, self->seeding.ceiling);
 
     return 1;
 }
 
--(void) _set_bias
+-(void) _set_ceiling
 {
-    self->seeding.bias = lua_tonumber(_L, 3);
+    self->seeding.ceiling = lua_tonumber(_L, 3);
 }
 
 -(int) _get_bins

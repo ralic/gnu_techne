@@ -555,26 +555,32 @@ int t_add_global_block (const char *name, const char *declaration)
     }
     
     if (declarations) {
-	const char *source[n + 2];
+	const char *sources[n + 2];
 
-        source[0] = glsl_preamble;
-        source[1] = declarations;
+        sources[0] = glsl_preamble;
+        sources[1] = declarations;
 
         for (i = 0 ; i < n ; i += 1) {
-            source[i + 2] = strings[i];
+            char *source;
+
+            asprintf(&source, "#line 0 %d\n%s\n", i + 1, strings[i]);
+            sources[i + 2] = source;
         }
 
-	glShaderSource(shader, n + 2, source, NULL);
+	glShaderSource(shader, n + 2, sources, NULL);
     } else {
-	const char *source[n + 1];
+	const char *sources[n + 1];
 
-        source[0] = glsl_preamble;
+        sources[0] = glsl_preamble;
 
         for (i = 0 ; i < n ; i += 1) {
-            source[i + 1] = strings[i];
+            char *source;
+
+            asprintf(&source, "#line 0 %d\n%s\n", i + 1, strings[i]);
+            sources[i + 1] = source;
         }
 
-	glShaderSource(shader, n + 1, source, NULL);
+	glShaderSource(shader, n + 1, sources, NULL);
     }
     
     glCompileShader(shader);

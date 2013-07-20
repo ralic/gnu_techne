@@ -31,6 +31,7 @@ void main()
             texture2D(detail[i], uv / resolutions[i]).rgb;
     }
 
+    /* sum = texture2D(detail[2], uv / resolutions[2]).rgb; */
     /* Calculate aerial perspective. */
     
     cosine = dot(normalize(eye), direction);

@@ -73,9 +73,25 @@ static unsigned int deflections;
             y += cos(theta_0) / (N_S - 1);
         }
     }
-    
-    /* for (i = N_K / 2, j = 0 ; j < N_S ; j += 1) { */
-    /*     _TRACE ("%f, %f, %f\n", texels[3 * ((N_S * i) + j) + 0], texels[3 * ((N_S * i) + j) + 1], texels[3 * ((N_S * i) + j) + 2]); */
+
+    /* { */
+    /*     double s, x_0, y_0; */
+        
+    /*     for (j = 0 ; j < N_K ; j += 1) { */
+    /*         for (i = 0, s = x_0 = y_0 = 0 ; i < N_S ; i += 1) { */
+    /*             double x, y, dx, dy; */
+                
+    /*             x = texels[3 * ((N_S * j) + i) + 0]; */
+    /*             y = texels[3 * ((N_S * j) + i) + 1]; */
+
+    /*             dx = x - x_0; dy = y - y_0; */
+    /*             x_0 = x; y_0 = y; */
+
+    /*             s += sqrt(dx * dx + dy * dy); */
+    /*         } */
+
+    /*         _TRACE ("%f\n", s); */
+    /*     } */
     /* } */
 
     glGenTextures (1, &deflections);
@@ -95,10 +111,10 @@ static unsigned int deflections;
 {
     const char *private[] = {"base", "detail", "offset", "scale",
                              "factor", "references", "weights",
-                             "resolutions", "planes"};
+                             "resolutions", "planes", "clustering"};
     char *header;
     ShaderMold *shader;
-    int i;
+    int i, collect;
         
 #include "glsl/color.h"
 #include "glsl/rand.h"
@@ -122,21 +138,31 @@ static unsigned int deflections;
     
     [super init];
 
+    /* Are we profiling? */
+    
+    lua_getglobal (_L, "options");
+
+    lua_getfield (_L, -1, "profile");
+    collect = lua_toboolean (_L, -1);
+    lua_pop (_L, 2);
+
     /* Create the program. */
 
-    asprintf (&header, "const int N = %d;\n", self->elevation->swatches_n);
+    asprintf (&header, "const int N = %d;\n%s",
+              self->elevation->swatches_n,
+              collect ? "#define COLLECT_STATISTICS\n" : "");
 
     [self unload];
     
     shader = [ShaderMold alloc];
         
     [shader initWithHandle: NULL];
-    [shader declare: 9 privateUniforms: private];
+    [shader declare: 10 privateUniforms: private];
     [shader add: 4 sourceStrings: (const char *[4]){header, glsl_rand, glsl_color, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
 
     [shader addSourceString: glsl_vegetation_tesselation_control
                         for: T_TESSELATION_CONTROL_STAGE];
-    [shader addSourceString: glsl_vegetation_tesselation_evaluation
+    [shader add: 3 sourceStrings: (const char *[3]){header, glsl_rand, glsl_vegetation_tesselation_evaluation}
                         for: T_TESSELATION_EVALUATION_STAGE];
     [shader addSourceString: glsl_vegetation_geometry
                         for: T_GEOMETRY_STAGE];

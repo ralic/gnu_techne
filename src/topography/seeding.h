@@ -25,13 +25,13 @@
 
 typedef struct {
     char *buffer;
-    int total, fill, capacity;
+    int patches, fill, capacity, triangles;
     double center, sum;
 } seeding_Bin;
 
 typedef struct {
     seeding_Bin bins[BINS_N];
-    double density, ceiling, horizon, error;
+    double density, ceiling, horizon, error, clustering[2];
     int triangles_n[2];
 } seeding_Context;
 

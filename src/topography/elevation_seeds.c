@@ -46,6 +46,10 @@
 
     self->context = &elevation->context;
     self->seeding.horizon = -100;
+    self->seeding.density = 10000;
+    self->seeding.ceiling = 1000;
+    self->seeding.clustering[0] = 1.0 / 0.0;
+    self->seeding.clustering[1] = 0.0;
 
     initialize_seeding(&self->seeding);
 
@@ -98,6 +102,7 @@
     self->locations.scale = glGetUniformLocation(parent->name, "scale");
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
     self->locations.planes = glGetUniformLocation(parent->name, "planes");
+    self->locations.clustering = glGetUniformLocation(parent->name, "clustering");
 
     self->units.base = [parent getUnitForSamplerUniform: "base"];
 }
@@ -106,6 +111,7 @@
 {
     float q, M[16], P[16], T[16], planes[6][4];
     roam_Tileset *tiles;
+    seeding_Bin *b;
     int i, j;
 
     tiles = &self->context->tileset;
@@ -138,9 +144,14 @@
     glEnable (GL_RASTERIZER_DISCARD);
 #endif
 
+    for (i = 0, b = &self->seeding.bins[0];
+         i < BINS_N;
+         i += 1, b += 1) {
+        b->patches = 0;
+    }
+    
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {
-            seeding_Bin *b;
             int k, l, n;
 
             l = i * tiles->size[1] + j;
@@ -151,23 +162,42 @@
                  k += 1, b += 1) {
 
                 if(b->fill > 0) {
+                    double r, *C;
+                    
                     glUniform2f(self->locations.offset,
                                 -i + 0.5 * tiles->size[0],
                                 -j + 0.5 * tiles->size[1]);
                     
                     glBindTexture(GL_TEXTURE_2D, tiles->imagery[l]);
                     glPointSize(1);
-                    
-                    /* printf ("%f\n", b->center); */
-                    glBufferData (GL_ARRAY_BUFFER, n * SEED_SIZE, NULL, GL_STREAM_DRAW);
-                    glBufferSubData (GL_ARRAY_BUFFER, 0, b->fill * SEED_SIZE, b->buffer);
-                    
-                    glDrawArraysInstanced(GL_PATCHES, 0, b->fill, round(b->center));
+
+                    glBufferData (GL_ARRAY_BUFFER, n * SEED_SIZE, NULL,
+                                  GL_STREAM_DRAW);
+                    glBufferSubData (GL_ARRAY_BUFFER, 0,
+                                     b->fill * SEED_SIZE, b->buffer);
+
+                    C = self->seeding.clustering;
+                    r = round(b->center / C[0]);
+
+                    if (r >= 1.0) {
+                        glUniform3f(self->locations.clustering,
+                                    C[0], C[1],
+                                    r * C[0] / self->seeding.ceiling);
+                        glDrawArraysInstanced(GL_PATCHES, 0, b->fill, r);
+
+                        b->patches += b->fill * r;
+                    } else {
+                        glUniform3f(self->locations.clustering,
+                                    round(b->center), C[1], 0);
+                        glDrawArraysInstanced(GL_PATCHES, 0, b->fill, 1);
+                        
+                        b->patches += b->fill;
+                    }
                 }
             }
 	}
     }
-
+    
     /* _TRACE ("error: %f\n", seeding->error); */
 
     glDisable (GL_MULTISAMPLE);
@@ -206,6 +236,36 @@
     self->seeding.ceiling = lua_tonumber(_L, 3);
 }
 
+-(int) _get_clustering
+{
+    int i;
+    
+    lua_createtable (_L, 2, 0);
+
+    for (i = 0 ; i < 2 ; i += 1) {
+        lua_pushnumber (_L, self->seeding.clustering[i]);
+        lua_rawseti (_L, -2, i + 1);
+    }
+    
+    return 1;
+}
+
+-(void) _set_clustering
+{
+    int i;
+    
+    if(lua_istable(_L, 3)) {
+        for (i = 0 ; i < 2 ; i += 1) {
+            lua_rawgeti (_L, 3, i + 1);
+            self->seeding.clustering[i] = lua_tonumber (_L, -1);
+            lua_pop(_L, 1);
+        }
+    } else {
+        self->seeding.clustering[0] = 1.0 / 0.0;
+        self->seeding.clustering[1] = 0.0;
+    }
+}
+
 -(int) _get_bins
 {
     int i;
@@ -217,13 +277,15 @@
 
         b = &self->seeding.bins[i];
         
-        lua_createtable (_L, 3, 0);
+        lua_createtable (_L, 4, 0);
         lua_pushnumber (_L, b->center);
         lua_rawseti (_L, -2, 1);
-        lua_pushinteger (_L, b->total);
+        lua_pushinteger (_L, b->triangles);
         lua_rawseti (_L, -2, 2);
-        lua_pushinteger (_L, b->capacity);
+        lua_pushinteger (_L, b->patches);
         lua_rawseti (_L, -2, 3);
+        lua_pushinteger (_L, b->capacity);
+        lua_rawseti (_L, -2, 4);
 
         lua_rawseti (_L, -2, i + 1);
     }

@@ -159,7 +159,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         seeding_Bin *bins;    
         char *p;
         double A, n_0, u[2], v[2];
-        int i, j;
+        int j;
 
         /* Project all vertices into screen space. */
 
@@ -180,7 +180,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         
         A = 0.5 * sqrt((u[0] * u[0] + u[1] * u[1]) *
                        (v[0] * v[0] + v[1] * v[1]));
-        n_0 = fmin(seeding->ceiling, fmax(seeding->density * A, 1));
+        n_0 = fmin(seeding->ceiling, fmax(seeding->density * A, 5));
 
         if (n_min > n_0) {
             n_min = n_0;
@@ -317,14 +317,14 @@ void begin_seeding (seeding_Context *seeding_in, roam_Context *context_in)
     
     for (i = 0, b = &seeding->bins[0] ; i < BINS_N ; i += 1, b += 1) {
 #ifdef K_MEANS
-        if (b->total > 0) {
-            b->center = b->sum / b->total;
+        if (b->triangles > 0) {
+            b->center = b->sum / b->triangles;
         }
 
         b->sum = 0;
 #endif
         
-        b->total = 0;
+        b->triangles = 0;
 
         /* assert (k == BINS_N - 1 || bins[k].center <= bins[k + 1].center); */
     }
@@ -342,7 +342,7 @@ int seed_tile (int i)
     /* Update the bins. */
     
     for (j = 0, b = &seeding->bins[0] ; j < BINS_N ; j += 1, b += 1) {
-        b->total += b->fill;
+        b->triangles += b->fill;
         b->fill = 0;
     }
             

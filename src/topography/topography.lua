@@ -25,73 +25,119 @@ end
 
 local topography, seedsprofiler, shapeprofiler
 
-local function aggregate(bins)
-   local sum = 0
+vegetationprofiler = primitives.graphic {
+   link = function(self)
+      local parent = self.parent
+
+      self.initial = {techne.iterations,
+                      parent.culled,
+                      parent.infertile,
+                      parent.drawn,
+                      parent.segments}
+   end,
    
-   for i, bin in ipairs(bins) do
-      sum = sum + math.round(bin[1]) * bin[2]
+   -- draw = function(self)
+   --    trace (self.parent.culled)
+   -- end,
+   
+   unlink = function(self)
+      if self.initial[2] then 
+         local parent = self.parent
+         local c = 1 / (techne.iterations - self.initial[1])
+         local s, t, q, r
+         
+         s = c * (parent.culled - self.initial[2])
+         t = c * (parent.infertile - self.initial[3])
+         q = c * (parent.drawn - self.initial[4])
+         r = c * (parent.segments - self.initial[5])
+         
+         message(string.format([[
+
+Vegetation profile for node: %s
+ 
++----------------------------------------------+
+| Seeds                                        |
++----------+-----------+-----------+-----------+----------+
+|  Culled  | Infertile |   Drawn   |   Total   | Segments |
++----------+-----------+-----------+-----------+----------+
+|% 10.0f|% 11.0f|% 11.0f|% 11.0f|% 10.0f|
++----------+-----------+-----------+-----------+----------+
+]],
+                               tostring(self.parent), s, t, q, s + t + q, r))
+      end
    end
-
-   return sum
-end
-
+}
+              
 seedsprofiler = primitives.graphic {
    link = function(self)
       local parent = self.parent
 
-      self.triangles = parent.triangles
-      self.error = parent.error
-      self.bins = parent.bins
-      self.seeds = aggregate(parent.bins)
-      self.start = techne.iterations
+      self.iterations = 0
+      self.triangles = {0, 0}
+      self.error = 0
+      self.bins = {}
+
+      for i = 1, #parent.bins do
+         self.bins[i] = {0, 0, 0, 0}
+      end
    end,
    
    draw = function(self)
       local parent = self.parent
+      local patches = 0
       
-      for i, bin in ipairs(self.bins) do
-         bin[1] = bin[1] + parent.bins[i][1]
-         bin[2] = bin[2] + parent.bins[i][2]
-         bin[3] = parent.bins[i][3]
+      for i = 1, #parent.bins do
+         self.bins[i][1] = self.bins[i][1] + parent.bins[i][1]
+         self.bins[i][2] = self.bins[i][2] + parent.bins[i][2]
+         self.bins[i][3] = self.bins[i][3] + parent.bins[i][3]
+         self.bins[i][4] = parent.bins[i][4]
+
+         patches = patches + parent.bins[i][2]
       end
-
-      self.seeds = self.seeds + aggregate(parent.bins)
-
+      
       self.triangles[1] = self.triangles[1] + parent.triangles[1]
       self.triangles[2] = self.triangles[2] + parent.triangles[2]
-      self.error = self.error + parent.error
+
+      if parent.error > 0 then
+         self.error = self.error + math.sqrt(parent.error / patches)
+      end
+
+      self.iterations = self.iterations + 1
    end,
 
    unlink = function(self)
-      local n
+      local c, cummulative
 
-      n = techne.iterations - self.start + 1
+      c = 1 / self.iterations
       
       message(string.format([[
+
 Seed profile for node: %s
-Mean seed count per iteration: %.1f
 Within-cluster RMS error: %.1f
 Mean number of triangles visited: %d roam, %d fine
 
-                  +----------------------+
-                  |         Seeds        |
-+------+----------+----------+-----------+
-| Bin  |  Center  |   Mean   |  Alloc'd  |
-+------+----------+----------+-----------+
++-----+--------+-----------+---------+------------+---------+
+| Bin | Center | Triangles | Patches | Cum. Pat.  | Alloc'd |
++-----+--------+-----------+---------+------------+---------+
 ]],
-                            tostring(self.parent),
-                            self.seeds / n, math.sqrt(self.error / self.seeds),
-                            self.triangles[1] / n, self.triangles[2] / n))
+                            tostring(self.parent), self.error,
+                            c * self.triangles[1], c * self.triangles[2]))
 
-      for i, bin in ipairs(self.bins) do
+      cummulative = 0
+      
+      for i = 1, #self.bins do
+         cummulative = cummulative + self.bins[i][3]
+         
          message(string.format([[
-|% 6d|% 10.1f|% 10d|% 11d|
+|% 5d|% 8.1f|% 11d|% 9d|% 12d|% 9d|
 ]],
-                               i, bin[1] / n, bin[2] / n, bin[3]))
+                               i, c * self.bins[i][1], c * self.bins[i][2],
+                               c * self.bins[i][3], c * cummulative,
+                               self.bins[i][4]))
       end
       
       message([[
-+------+----------+----------+-----------+
++-----+--------+-----------+---------+------------+---------+
 ]])
    end
 }
@@ -124,6 +170,7 @@ shapeprofiler = primitives.graphic {
       n = techne.iterations - self.start + 1
 
       message(string.format([[
+
 Triangulation profile for node: %s
  
 +----------------------------------+-------------------------------+          
@@ -134,8 +181,8 @@ Triangulation profile for node: %s
 |% 11d|% 10d|% 11d|% 11d|% 9d|% 9d|                
 +-----------+----------+-----------+-----------+---------+---------+
  
-+----------------+
-|  Times (ms)    |
++---------------------------------------+
+|  Times (ms)                           |
 +-------+--------+---------+------------+
 | Setup | Recull | Reorder | Tessellate |
 +-------+--------+---------+------------+
@@ -184,6 +231,15 @@ topography = {
                                           shape.profiler = shapeprofiler
                                           
                                           return shape
+                                       end
+                                    elseif key == 'vegetation' then
+                                       return function(parameters)
+                                          local vegetation
+
+                                          vegetation = value(parameters)
+                                          vegetation.profiler = vegetationprofiler
+                                          
+                                          return vegetation
                                        end
                                     else
                                        return value

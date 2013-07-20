@@ -108,7 +108,7 @@ typedef struct {
     seeding_Context seeding;
     
     struct {
-        unsigned int scale, offset, planes;
+        unsigned int scale, offset, planes, clustering;
     } locations;
 
     struct {
@@ -124,6 +124,9 @@ typedef struct {
 
 -(int) _get_ceiling;
 -(void) _set_ceiling;
+
+-(int) _get_clustering;
+-(void) _set_clustering;
 
 -(int) _get_bins;
 -(void) _set_bins;

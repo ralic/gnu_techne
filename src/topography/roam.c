@@ -493,7 +493,7 @@ static void classify_triangle(roam_Triangle *n, int b)
     /* assert (!(isinf(n->diamond->error)) || b == 0 || b == INVALID); */
 
     if(((b & OUT) != OUT) && ((b & ALL_IN) != ALL_IN)) {
-        r_0 = n->diamond->error;
+        r_0 = fmax(n->diamond->error, 0.1);
 
 	if (isinf (r_0)) {
 	    b = 0;

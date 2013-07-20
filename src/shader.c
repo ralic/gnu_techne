@@ -563,7 +563,7 @@ int t_add_global_block (const char *name, const char *declaration)
         for (i = 0 ; i < n ; i += 1) {
             char *source;
 
-            asprintf(&source, "#line 0 %d\n%s\n", i + 1, strings[i]);
+            asprintf(&source, "#line 1 %d\n%s\n", i + 1, strings[i]);
             sources[i + 2] = source;
         }
 
@@ -576,7 +576,7 @@ int t_add_global_block (const char *name, const char *declaration)
         for (i = 0 ; i < n ; i += 1) {
             char *source;
 
-            asprintf(&source, "#line 0 %d\n%s\n", i + 1, strings[i]);
+            asprintf(&source, "#line 1 %d\n%s\n", i + 1, strings[i]);
             sources[i + 1] = source;
         }
 
@@ -806,6 +806,7 @@ int t_add_global_block (const char *name, const char *declaration)
                 
                 uniform->counter.buffer = buffer_indices[i];
                 uniform->counter.offset = offsets[i];
+                /* _TRACE ("%d: b = %d, offset = %d\n", i, buffer_indices[i], offsets[i]); */
             } else {
                 uniform->basic.kind = SHADER_BASIC_UNIFORM;
                 

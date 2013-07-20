@@ -7,6 +7,6 @@ out vec4 colors;
 
 void main()
 {
-    gl_Position = projection * modelview * positions;
+    gl_Position = transform * positions;
     colors = color;
 }

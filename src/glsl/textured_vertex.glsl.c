@@ -4,6 +4,6 @@ out vec2 uv;
 
 void main()
 {
-    gl_Position = projection * modelview * positions;
+    gl_Position = transform * positions;
     uv = mapping;
 }

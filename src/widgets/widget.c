@@ -20,8 +20,6 @@
 #include "algebra.h"
 #include "widget.h"
 
-static int drawlayout = -1;
-
 static void recurse (Node *root)
 {
     Node *child, *next;
@@ -42,16 +40,6 @@ static void recurse (Node *root)
 {
     [super init];
 
-    if (drawlayout < 0) {
-	/* Get the configuration. */
-    
-	lua_getglobal (_L, "options");
-
-	lua_getfield (_L, -1, "drawlayout");
-	drawlayout = lua_toboolean (_L, -1);
-	lua_pop (_L, 2);
-    }
-
     self->align[0] = 0;
     self->align[1] = 0;
     
@@ -62,8 +50,6 @@ static void recurse (Node *root)
     self->padding[1] = 0;
     self->padding[2] = 0;
     self->padding[3] = 0;
-
-    self->debug = drawlayout;
 }
 
 -(void) measure

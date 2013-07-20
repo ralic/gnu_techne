@@ -47,6 +47,9 @@ static Graphics* instance;
 #define PROJECTION_SIZE (sizeof(float[16]))
 #define MODELVIEW_OFFSET (PROJECTION_OFFSET + PROJECTION_SIZE)
 #define MODELVIEW_SIZE (sizeof(float[16]))
+#define TRANSFORM_OFFSET (MODELVIEW_OFFSET + MODELVIEW_SIZE)
+#define TRANSFORM_SIZE (sizeof(float[16]))
+#define UNIFORM_BUFFER_SIZE (TRANSFORM_OFFSET + TRANSFORM_SIZE)
 #define PROJECTION_STACK_DEPTH 8
 #define MODELVIEW_STACK_DEPTH 8
 
@@ -182,17 +185,24 @@ static void update_projection()
 
 #define SET_PROJECTION(matrix)						\
     {									\
+        float T[16];                                                    \
+                                                                        \
+        t_concatenate_4T(T, matrix, modelviews[modelviews_n]);          \
+                                                                        \
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
+                                                                        \
 	glBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,		\
 			PROJECTION_SIZE, (matrix));			\
+	glBufferSubData(GL_UNIFORM_BUFFER, TRANSFORM_OFFSET,		\
+			TRANSFORM_SIZE, T);                             \
 									\
 	if(0) {								\
-		float M[16];						\
+            float M[16];						\
 									\
-		glGetBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET, \
-				   PROJECTION_SIZE, &M);		\
+            glGetBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,    \
+                               PROJECTION_SIZE, &M);                    \
 									\
-		_TRACEM(4, 4, ".5f", M);				\
+            _TRACEM(4, 4, ".5f", M);                                    \
 	}								\
     }
 
@@ -225,9 +235,15 @@ void t_copy_projection(float *matrix)
 
 #define SET_MODELVIEW(matrix)						\
     {									\
+        float T[16];                                                    \
+                                                                        \
+        t_concatenate_4T(T, projections[projections_n], matrix);        \
+                                                                        \
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
 	glBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,		\
 			MODELVIEW_SIZE, (matrix));			\
+	glBufferSubData(GL_UNIFORM_BUFFER, TRANSFORM_OFFSET,		\
+			TRANSFORM_SIZE, T);                             \
 									\
 	if(0) {								\
 		float M[16];						\
@@ -614,7 +630,7 @@ static void draw (Node *root)
 	/* Create the global shading context buffer object. */
     
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof (float[16]), NULL,
+	glBufferData(GL_UNIFORM_BUFFER, UNIFORM_BUFFER_SIZE, NULL,
 		     GL_DYNAMIC_DRAW);
 
 	/* Initialize the values. */

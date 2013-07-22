@@ -67,8 +67,8 @@ static char *title;
 
 static unsigned int buffer;
 
-static float modelviews[MODELVIEW_STACK_DEPTH][16];
-static float projections[PROJECTION_STACK_DEPTH][16];
+static double modelviews[MODELVIEW_STACK_DEPTH][16];
+static double projections[PROJECTION_STACK_DEPTH][16];
 static int modelviews_n, projections_n;
 
 /* Context flags. */
@@ -136,10 +136,10 @@ static void APIENTRY debug_callback (GLenum source,
 
 static void update_projection()
 {
-    float P[16];
+    double P[16];
     double a;
     
-    memset (P, 0, sizeof (float[16]));
+    memset (P, 0, sizeof (double[16]));
 
     switch (projection) {
     case FRUSTUM:
@@ -184,19 +184,26 @@ static void update_projection()
 
 #define SET_PROJECTION(P)						\
     {									\
-        float T[16];                                                    \
+        double T[16];                                                   \
+        float T_f[16], P_f[16];                                         \
+        int i;                                                          \
                                                                         \
         t_concatenate_4T(T, (P), modelviews[modelviews_n]);             \
+                                                                        \
+        for (i = 0 ; i < 16 ; i += 1) {                                 \
+            P_f[i] = P[i];                                              \
+            T_f[i] = T[i];                                              \
+        }                                                               \
                                                                         \
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
                                                                         \
 	glBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,		\
-			PROJECTION_SIZE, (P));                          \
+			PROJECTION_SIZE, P_f);                          \
 	glBufferSubData(GL_UNIFORM_BUFFER, TRANSFORM_OFFSET,		\
-			TRANSFORM_SIZE, T);                             \
+			TRANSFORM_SIZE, T_f);                           \
 									\
 	if(0) {								\
-            float M[16];						\
+            double M[16];						\
 									\
             glGetBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,    \
                                PROJECTION_SIZE, &M);                    \
@@ -205,15 +212,15 @@ static void update_projection()
 	}								\
     }
 
-void t_load_projection (float *matrix)
+void t_load_projection (double *matrix)
 {
     assert (projections_n > 0);
 
-    memcpy(projections[projections_n], matrix, 16 * sizeof(float));
+    memcpy(projections[projections_n], matrix, 16 * sizeof(double));
     SET_PROJECTION(matrix);
 }
 
-void t_push_projection (float *matrix)
+void t_push_projection (double *matrix)
 {
     assert (projections_n < PROJECTION_STACK_DEPTH);
     projections_n += 1;
@@ -227,25 +234,32 @@ void t_pop_projection ()
     SET_PROJECTION(projections[projections_n]);
 }
 
-void t_copy_projection(float *matrix)
+void t_copy_projection(double *matrix)
 {
-    memcpy(matrix, projections[projections_n], 16 * sizeof(float));
+    memcpy(matrix, projections[projections_n], 16 * sizeof(double));
 }
 
 #define SET_MODELVIEW(M)						\
     {									\
-        float T[16];                                                    \
+        double T[16];                                                   \
+        float T_f[16], M_f[16];                                         \
+        int i;                                                          \
                                                                         \
         t_concatenate_4T(T, projections[projections_n], (M));           \
                                                                         \
+        for (i = 0 ; i < 16 ; i += 1) {                                 \
+            M_f[i] = M[i];                                              \
+            T_f[i] = T[i];                                              \
+        }                                                               \
+                                                                        \
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
 	glBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,		\
-			MODELVIEW_SIZE, (M));                           \
+			MODELVIEW_SIZE, M_f);                           \
 	glBufferSubData(GL_UNIFORM_BUFFER, TRANSFORM_OFFSET,		\
-			TRANSFORM_SIZE, T);                             \
+			TRANSFORM_SIZE, T_f);                           \
 									\
 	if(0) {								\
-		float N[16];						\
+		double N[16];						\
 									\
 		glGetBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET, \
 				   MODELVIEW_SIZE, &N);                 \
@@ -254,23 +268,23 @@ void t_copy_projection(float *matrix)
 	}								\
     }
 
-void t_load_modelview (float *matrix, t_Enumerated mode)
+void t_load_modelview (double *matrix, t_Enumerated mode)
 {
     assert (modelviews_n > 0);
 
     if (mode == T_MULTIPLY) {
-	float M[16];
+	double M[16];
 	
 	t_concatenate_4T(M, modelviews[modelviews_n], matrix);
-	memcpy(modelviews[modelviews_n], M, 16 * sizeof(float));
+	memcpy(modelviews[modelviews_n], M, 16 * sizeof(double));
     } else {
-	memcpy(modelviews[modelviews_n], matrix, 16 * sizeof(float));
+	memcpy(modelviews[modelviews_n], matrix, 16 * sizeof(double));
     }
 
     SET_MODELVIEW(modelviews[modelviews_n]);
 }
 
-void t_push_modelview (float *matrix, t_Enumerated mode)
+void t_push_modelview (double *matrix, t_Enumerated mode)
 {
     assert (modelviews_n < MODELVIEW_STACK_DEPTH);
 
@@ -278,7 +292,7 @@ void t_push_modelview (float *matrix, t_Enumerated mode)
 	t_concatenate_4T(modelviews[modelviews_n + 1],
                          modelviews[modelviews_n], matrix);
     } else {
-	memcpy(modelviews[modelviews_n + 1], matrix, 16 * sizeof(float));
+	memcpy(modelviews[modelviews_n + 1], matrix, 16 * sizeof(double));
     }
     
     modelviews_n += 1;
@@ -292,9 +306,9 @@ void t_pop_modelview ()
     SET_MODELVIEW(modelviews[modelviews_n]);
 }
 
-void t_copy_modelview(float *matrix)
+void t_copy_modelview(double *matrix)
 {
-    memcpy(matrix, modelviews[modelviews_n], 16 * sizeof(float));
+    memcpy(matrix, modelviews[modelviews_n], 16 * sizeof(double));
 }
 
 void t_get_pointer (int *x, int *y)
@@ -620,7 +634,7 @@ static void draw (Node *root)
     {
 #include "glsl/transform_block.h"
 
-	float I[16];
+	double I[16];
 
 	/* Register the transform uniform block. */
 	

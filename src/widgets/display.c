@@ -63,7 +63,7 @@
 -(void) draw: (int)frame
 {
     int v[4];
-    float M[16];
+    double M[16];
 
     [self arrange];
 

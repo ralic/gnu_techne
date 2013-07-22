@@ -480,7 +480,7 @@ static ShaderMold *handle;
 
 -(void) draw: (int)frame
 {
-    float M[16];
+    double M[16];
     
     [super draw: frame];
 

@@ -13,6 +13,8 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+require 'bindings'
+
 local math = require "math"
 local array = require "array"
 local resources = require "resources"
@@ -21,6 +23,7 @@ local primitives = require "primitives"
 local topography = require "topography"
 local shading = require "shading"
 local units = require "units"
+local bindings = require 'bindings.default'
 
 resources.dofile "utils/basic.lua"
 
@@ -40,7 +43,10 @@ elevation = topography.elevation {
 }
 
 root = primitives.root {
-   orbit = resources.dofile ("utils/orbit.lua", -1000, 0, 0),
+   orbit = resources.dofile ("utils/orbit.lua", {
+                                radius = -1000,
+                                azimuth = units.degrees(0),
+                                elevation = units.degrees(0)}),
 
    wireframe = shading.wireframe {
       shader = shading.flat {

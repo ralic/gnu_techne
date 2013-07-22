@@ -135,6 +135,5 @@ void free_mesh(roam_Context *context_in);
 void *allocate_mesh(roam_Context *context_in);
 void calculate_tile_bounds(unsigned short *heights, unsigned short *bounds,
                            int size);
-void calculate_view_frustum(float (*pi)[4], float *T);
 
 #endif

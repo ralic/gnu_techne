@@ -28,7 +28,7 @@
 #define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 static roam_Context *context;
-static float viewport[4], transform[16], planes[6][4];
+static double viewport[4], transform[16], planes[6][4];
 
 void copy_setup_transform(roam_Context *context_in, float *M)
 {
@@ -42,7 +42,7 @@ void copy_setup_transform(roam_Context *context_in, float *M)
     M[13] = tiles->offset[1];
 }
 
-void calculate_view_frustum(float (*pi)[4], float *T)
+void calculate_view_frustum(double (*pi)[4], double *T)
 {
     int i;
 
@@ -91,7 +91,7 @@ void calculate_view_frustum(float (*pi)[4], float *T)
     /* Normalize the planes. */
 
     for(i = 0 ; i < 6 ; i += 1) {
-        float m, *pi_i;
+        double *pi_i, m;
 
         pi_i = pi[i];
 	m = sqrt(pi_i[0] * pi_i[0] +
@@ -252,8 +252,8 @@ static void flip_diamond(roam_Diamond *d)
 
 static void prioritize_diamond(roam_Diamond *d)
 {
-    float e, w, h;
-    float *C, p_w[3], p_c[3], dp_c[3], dp_s[2], p_0[3], p_1[3];
+    double e, w, h;
+    double *C, p_w[3], p_c[3], dp_c[3], dp_s[2], p_0[3], p_1[3];
     int i;
     
     e = d->error;
@@ -485,8 +485,8 @@ static void initialize_triangle(roam_Triangle *c, roam_Diamond *d, roam_Triangle
 
 static void classify_triangle(roam_Triangle *n, int b)
 {
-    float (*p)[4], *v[3];
-    double r_0, r_min, r_max, r[3];
+    float *v[3];
+    double (*p)[4], r_0, r_min, r_max, r[3];
     int i, j, k, l;
 
     /* printf ("%f, %f, %d\n", n->diamond->error, n->parent->diamond->error, b); */
@@ -1005,7 +1005,7 @@ void optimize_geometry(roam_Context *context_in, int frame)
 {
     roam_Tileset *tiles;
     roam_Diamond *d = NULL, *d_0;
-    float M[16], P[16];
+    double M[16], P[16];
     long long int t_0, t;
     int i, j, delta, overlap;
     
@@ -1026,14 +1026,14 @@ void optimize_geometry(roam_Context *context_in, int frame)
 
     context->culled = 0;
 
-    glGetFloatv(GL_VIEWPORT, viewport);
+    glGetDoublev(GL_VIEWPORT, viewport);
 
     /* Combine the modelview and projection matrices. */
 
     t_copy_modelview(M);    
     t_copy_projection(P);
     t_concatenate_4T(transform, P, M);
-    
+
     calculate_view_frustum(planes, transform);
 
     /* Update the setup interval. */

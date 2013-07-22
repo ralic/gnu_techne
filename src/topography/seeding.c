@@ -39,9 +39,8 @@
 
 static roam_Context *context;
 static seeding_Context *seeding;
-static float modelview[16], projection[16];
-static double aspect;
-static double n_min, n_max;
+static double modelview[16], projection[16];
+static double aspect, n_min, n_max;
 static int highwater;
 
 static void recenter_bins(double d)

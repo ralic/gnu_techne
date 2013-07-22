@@ -63,8 +63,8 @@ static Observer *instance;
     
     {
 	double *R, *r;
-	float f[3], s[3], u[3];
-	float M[16];
+	double f[3], s[3], u[3];
+	double M[16];
     
 	R = self->rotation;
 	r = self->translation;

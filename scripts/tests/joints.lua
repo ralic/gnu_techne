@@ -30,7 +30,10 @@ graphics.perspective = {units.degrees(50), 0.1, 10000}
 dynamics.gravity = {0, 0, -9.81}
 
 root = primitives.root {
-   orbit = resources.dofile ("utils/orbit.lua", -10, units.degrees(0), units.degrees(60)),
+   orbit = resources.dofile ("utils/orbit.lua", {
+                                radius = -10,
+                                azimuth = units.degrees(0),
+                                elevation = units.degrees(60)}),
 
    environment = bodies.environment {
       plane = bodies.plane {},

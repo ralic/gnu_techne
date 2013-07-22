@@ -493,8 +493,7 @@ static void calculate_sky_color(double azimuth, double elevation,
 
 -(void) draw: (int)frame
 {
-    float M[16];
-    float phi, theta_0, x, y, z;
+    double M[16], phi, theta_0, x, y, z;
 
     /* Update the texture if needed. */
     
@@ -671,8 +670,7 @@ static void calculate_sky_color(double azimuth, double elevation,
 
 -(void) draw: (int)frame
 {
-    float M[16], P[16];
-    double rho;
+    double M[16], P[16], rho;
     
     [super draw: frame];
     

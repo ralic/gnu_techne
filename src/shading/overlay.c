@@ -35,7 +35,7 @@
 
 -(void) draw: (int)frame
 {
-    float M[16];
+    double M[16];
     int v[4];
 
     glGetIntegerv (GL_VIEWPORT, v);

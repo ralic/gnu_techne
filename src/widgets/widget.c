@@ -175,7 +175,7 @@ static void recurse (Node *root)
 -(void) draw: (int)frame
 {
     double *d, *m, *p, *a, *A;
-    float M[16];
+    double M[16];
     
     d = self->offset;
     m = self->content;

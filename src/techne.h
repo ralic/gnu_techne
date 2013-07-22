@@ -62,15 +62,15 @@ void t_reset_pool (void *p);
 void t_flush_pool (void *p);
 void t_free_pool (void *p);
 
-void t_load_projection (float *matrix);
-void t_push_projection (float *matrix);
+void t_load_projection (double *matrix);
+void t_push_projection (double *matrix);
 void t_pop_projection ();
-void t_copy_projection(float *matrix);
+void t_copy_projection(double *matrix);
 
-void t_load_modelview (float *matrix, t_Enumerated mode);
-void t_push_modelview (float *matrix, t_Enumerated mode);
+void t_load_modelview (double *matrix, t_Enumerated mode);
+void t_push_modelview (double *matrix, t_Enumerated mode);
 void t_pop_modelview ();
-void t_copy_modelview(float *matrix);
+void t_copy_modelview(double *matrix);
 
 void t_get_pointer (int *x, int *y);
 void t_warp_pointer (int x, int y);

@@ -473,7 +473,7 @@ static void initialize_triangle(roam_Triangle *c, roam_Diamond *d, roam_Triangle
 static void classify_triangle(roam_Triangle *n, int b)
 {
     float *v[3];
-    double (*p)[4], r_0, r_min, r_max, r[3];
+    double (*pi)[4], r_0, r_min, r_max, r[3];
     int i, j, k, l;
 
     /* printf ("%f, %f, %d\n", n->diamond->error, n->parent->diamond->error, b); */
@@ -485,8 +485,6 @@ static void classify_triangle(roam_Triangle *n, int b)
 	if (isinf (r_0)) {
 	    b = 0;
 	} else {
-	    p = context->planes;
-	
 	    v[0] = n->diamond->vertices[0];
 	    v[1] = n->diamond->vertices[1];
 	    v[2] = n->parent->diamond->center;
@@ -495,13 +493,15 @@ static void classify_triangle(roam_Triangle *n, int b)
 	       the triangle against the planes its parent
 	       wasn't IN. */
 
-	    for (i = 0, j = 1 ; i < 6 && b != OUT ; i += 1, j <<= 1) {
+	    for (i = 0, j = 1, pi = context->planes;
+                 i < 6 && b != OUT;
+                 i += 1, j <<= 1, pi += 1) {
 		if (!(b & j)) {
 		    for(k = 0 ; k < 3 ; k += 1) {
-			r[k] = (p[i][0] * v[k][0] +
-				p[i][1] * v[k][1] +
-				p[i][2] * v[k][2] +
-				p[i][3]);
+			r[k] = ((*pi)[0] * v[k][0] +
+				(*pi)[1] * v[k][1] +
+				(*pi)[2] * v[k][2] +
+				(*pi)[3]);
 		    }
 
 		    /* Take the minimum and maximum distance over all

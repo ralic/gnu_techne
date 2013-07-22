@@ -30,7 +30,6 @@ vegetationprofiler = primitives.graphic {
       local parent = self.parent
 
       self.initial = {techne.iterations,
-                      parent.culled,
                       parent.infertile,
                       parent.drawn,
                       parent.segments}
@@ -44,12 +43,11 @@ vegetationprofiler = primitives.graphic {
       if self.initial[2] then 
          local parent = self.parent
          local c = 1 / (techne.iterations - self.initial[1])
-         local s, t, q, r
+         local s, t, q
          
-         s = c * (parent.culled - self.initial[2])
-         t = c * (parent.infertile - self.initial[3])
-         q = c * (parent.drawn - self.initial[4])
-         r = c * (parent.segments - self.initial[5])
+         s = c * (parent.infertile - self.initial[2])
+         t = c * (parent.drawn - self.initial[3])
+         q = c * (parent.segments - self.initial[4])
          
          message(string.format([[
 
@@ -57,13 +55,13 @@ Vegetation profile for node: %s
  
 +----------------------------------------------+
 | Seeds                                        |
-+----------+-----------+-----------+-----------+----------+
-|  Culled  | Infertile |   Drawn   |   Total   | Segments |
-+----------+-----------+-----------+-----------+----------+
-|% 10.0f|% 11.0f|% 11.0f|% 11.0f|% 10.0f|
-+----------+-----------+-----------+-----------+----------+
++-----------+-----------+-----------+----------+
+| Infertile |   Drawn   |   Total   | Segments |
++-----------+-----------+-----------+----------+
+|% 11.0f|% 11.0f|% 11.0f|% 10.0f|
++-----------+-----------+-----------+----------+
 ]],
-                               tostring(self.parent), s, t, q, s + t + q, r))
+                               tostring(self.parent), s, t, s + t, q))
       end
    end
 }

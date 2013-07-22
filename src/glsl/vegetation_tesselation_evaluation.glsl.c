@@ -13,7 +13,7 @@ flat out int index_te;
 flat out float depth_te;
                                 
 #ifdef COLLECT_STATISTICS
-layout(binding = 0, offset = 12) uniform atomic_uint segments;
+layout(binding = 0, offset = 8) uniform atomic_uint segments;
 #endif
                                 
 uniform sampler2D deflections;
@@ -25,7 +25,7 @@ vec2 rand();
 void main()
 {
     vec3 p, d, t;
-    vec2 u;
+    vec2 u, v;
     float phi, theta, h_0;
     
     u = hash(floatBitsToUint(position_tc[0].xy),
@@ -49,7 +49,8 @@ void main()
     }
     
     u = rand();
-
+    v = rand();
+    
     /* Update the statistics. */
 
 #ifdef COLLECT_STATISTICS
@@ -58,7 +59,7 @@ void main()
 
     /* Calculate and set ouput values. */
 
-    h_0 = 0.25 + (0.75 * distance_tc * u.x);
+    h_0 = 0.15 + (0.85 * distance_tc * v.x);
     t = vec3(texture(deflections, vec2(gl_TessCoord.x, h_0 + (1 - h_0) * u.y)));
     phi = 2 * pi * u.x;
     theta = t.b;
@@ -72,7 +73,7 @@ void main()
     /* position_te = vec4(p + vec3(0, 0, 0.03 * gl_TessCoord.x), 1); */
     
     color_te = color_tc;
-    distance_te = 0.75 * distance_tc + 0.25 * u.x;
+    distance_te = 0.75 * distance_tc + 0.25 * v.y;
     depth_te = depth_tc;
     height_te = gl_TessCoord.x;
     index_te = index_tc;

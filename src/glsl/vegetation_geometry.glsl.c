@@ -29,7 +29,7 @@ void main()
     
     z = depth_te[0];
     n = floor(pow(z, 0.75));
-    h = 0.5 * n * 0.005 * distance_te[0] * vec4(plane_te[0][1], 0);
+    h = 0.5 * n * 0.0035 * distance_te[0] * vec4(plane_te[0][1], 0);
 
     /* A flat leaf. */
 

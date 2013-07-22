@@ -157,7 +157,7 @@ static unsigned int deflections;
     shader = [ShaderMold alloc];
         
     [shader initWithHandle: NULL];
-    [shader declare: 10 privateUniforms: private];
+    [shader declare: 9 privateUniforms: private];
     [shader add: 4 sourceStrings: (const char *[4]){header, glsl_rand, glsl_color, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
 
     [shader addSourceString: glsl_vegetation_tesselation_control

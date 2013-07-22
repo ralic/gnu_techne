@@ -129,18 +129,19 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
                           float *a_s, float *b_0s, float *b_1s,
                           unsigned char bits, unsigned char level)
 {
-    if (level < TREE_HEIGHT - 1) {
-        double z_a, z_0, z_1;
-        int i, j;
+    int i, j;
 
-        if ((bits & ALL_IN) != ALL_IN) {
-            for (i = 0, j = 1 ; i < 5 ; i += 1, j <<= 1) {
-                double *pi, u, v, w, r_min, r_max;
+    if ((bits & ALL_IN) != ALL_IN) {
+        double r_min, r_max;
+        
+        for (i = 0, j = 1 ; i < 6 ; i += 1, j <<= 1) {
+            if (bits & j) {
+                continue;
+            }
+
+            if (j != FAR) {
+                double *pi, u, v, w;
             
-                if (bits & j) {
-                    continue;
-                }
-
                 pi = context->planes[i];
             
                 u = t_dot_43(pi, a);
@@ -155,16 +156,18 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
                 } else if(r_max < 0) {
                     return;
                 }
-
-                if (j == NEAR && !(bits & FAR)) {
-                   if (r_min > 0 && r_min < -seeding->horizon) {
-                       bits |= FAR;
-                   } else if(r_max < 0 || r_max > -seeding->horizon) {
-                       return;
-                   }
+            } else {
+                if (r_max < -seeding->horizon) {
+                    bits |= FAR;
+                } else if(r_min > -seeding->horizon) {
+                    return;
                 }
             }
         }
+    }
+
+    if (level < TREE_HEIGHT - 1) {
+        double z_a, z_0, z_1;
 
         /* This is not a fine triangle, so calculate the depths of the
          * vertices to test whether to descend any further. */

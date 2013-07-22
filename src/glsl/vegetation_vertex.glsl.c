@@ -23,9 +23,8 @@ uniform grass_debug{
 };
 
 #ifdef COLLECT_STATISTICS
-layout(binding = 0) uniform atomic_uint culled;
-layout(binding = 0) uniform atomic_uint infertile;
-layout(binding = 0) uniform atomic_uint drawn;
+layout(binding = 0, offset = 0) uniform atomic_uint infertile;
+layout(binding = 0, offset = 4) uniform atomic_uint drawn;
 #endif
 
 void main()

@@ -57,8 +57,6 @@ static enum {
     ORTHOGRAPHIC, PERSPECTIVE, FRUSTUM
 } projection;
 
-static float matrix[16];
-
 static int width = 640, height = 480;
 static int hide = 1, cursor = 1, decorate = 1;
 static int frames;
@@ -138,9 +136,10 @@ static void APIENTRY debug_callback (GLenum source,
 
 static void update_projection()
 {
+    float P[16];
     double a;
     
-    memset (matrix, 0, sizeof (float[16]));
+    memset (P, 0, sizeof (float[16]));
 
     switch (projection) {
     case FRUSTUM:
@@ -161,38 +160,38 @@ static void update_projection()
 	planes[0] = planes[2] * a;
 	planes[1] = planes[3] * a;
     case PERSPECTIVE:
-	matrix[0] = 2 * planes[4] / (planes[1] - planes[0]);
-	matrix[8] = (planes[1] + planes[0]) / (planes[1] - planes[0]);
-	matrix[5] = 2 * planes[4] / (planes[3] - planes[2]);
-	matrix[9] = (planes[3] + planes[2]) / (planes[3] - planes[2]);
-	matrix[10] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
-	matrix[14] = -2 * planes[5] * planes[4] / (planes[5] - planes[4]);
-	matrix[11] = -1;
+	P[0] = 2 * planes[4] / (planes[1] - planes[0]);
+	P[8] = (planes[1] + planes[0]) / (planes[1] - planes[0]);
+	P[5] = 2 * planes[4] / (planes[3] - planes[2]);
+	P[9] = (planes[3] + planes[2]) / (planes[3] - planes[2]);
+	P[10] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
+	P[14] = -2 * planes[5] * planes[4] / (planes[5] - planes[4]);
+	P[11] = -1;
 	break;
     case ORTHOGRAPHIC:
-	matrix[0] = 2 / (planes[1] - planes[0]);
-	matrix[12] = -(planes[1] + planes[0]) / (planes[1] - planes[0]);
-	matrix[5] = 2 / (planes[3] - planes[2]);
-	matrix[13] = -(planes[3] + planes[2]) / (planes[3] - planes[2]);
-	matrix[10] = -2 / (planes[5] - planes[4]);
-	matrix[14] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
-	matrix[15] = 1;	
+	P[0] = 2 / (planes[1] - planes[0]);
+	P[12] = -(planes[1] + planes[0]) / (planes[1] - planes[0]);
+	P[5] = 2 / (planes[3] - planes[2]);
+	P[13] = -(planes[3] + planes[2]) / (planes[3] - planes[2]);
+	P[10] = -2 / (planes[5] - planes[4]);
+	P[14] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
+	P[15] = 1;	
 	break;
     }
     
-    t_load_projection(matrix);
+    t_load_projection(P);
 }
 
-#define SET_PROJECTION(matrix)						\
+#define SET_PROJECTION(P)						\
     {									\
         float T[16];                                                    \
                                                                         \
-        t_concatenate_4T(T, matrix, modelviews[modelviews_n]);          \
+        t_concatenate_4T(T, (P), modelviews[modelviews_n]);             \
                                                                         \
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
                                                                         \
 	glBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,		\
-			PROJECTION_SIZE, (matrix));			\
+			PROJECTION_SIZE, (P));                          \
 	glBufferSubData(GL_UNIFORM_BUFFER, TRANSFORM_OFFSET,		\
 			TRANSFORM_SIZE, T);                             \
 									\
@@ -210,7 +209,7 @@ void t_load_projection (float *matrix)
 {
     assert (projections_n > 0);
 
-    memcpy(projections + projections_n, matrix, 16 * sizeof(float));
+    memcpy(projections[projections_n], matrix, 16 * sizeof(float));
     SET_PROJECTION(matrix);
 }
 
@@ -230,28 +229,28 @@ void t_pop_projection ()
 
 void t_copy_projection(float *matrix)
 {
-    memcpy(matrix, projections + projections_n, 16 * sizeof(float));
+    memcpy(matrix, projections[projections_n], 16 * sizeof(float));
 }
 
-#define SET_MODELVIEW(matrix)						\
+#define SET_MODELVIEW(M)						\
     {									\
         float T[16];                                                    \
                                                                         \
-        t_concatenate_4T(T, projections[projections_n], matrix);        \
+        t_concatenate_4T(T, projections[projections_n], (M));           \
                                                                         \
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
 	glBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,		\
-			MODELVIEW_SIZE, (matrix));			\
+			MODELVIEW_SIZE, (M));                           \
 	glBufferSubData(GL_UNIFORM_BUFFER, TRANSFORM_OFFSET,		\
 			TRANSFORM_SIZE, T);                             \
 									\
 	if(0) {								\
-		float M[16];						\
+		float N[16];						\
 									\
 		glGetBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET, \
-				   MODELVIEW_SIZE, &M);                 \
+				   MODELVIEW_SIZE, &N);                 \
 									\
-		_TRACEM(4, 4, ".5f", M);				\
+		_TRACEM(4, 4, ".5f", N);				\
 	}								\
     }
 
@@ -295,7 +294,7 @@ void t_pop_modelview ()
 
 void t_copy_modelview(float *matrix)
 {
-    memcpy(matrix, modelviews + modelviews_n, 16 * sizeof(float));
+    memcpy(matrix, modelviews[modelviews_n], 16 * sizeof(float));
 }
 
 void t_get_pointer (int *x, int *y)

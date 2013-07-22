@@ -10,7 +10,6 @@ uniform vec3 intensity, references[N], weights[N];
 uniform vec2 resolutions[N];
 uniform float factor;
 
-uniform mat4x3 planes[2];
 uniform vec2 offset, scale;
 
 float hsv_distance (vec3, vec3, vec3, float);
@@ -52,18 +51,6 @@ void main()
     /* Test the seed point against the frustum. */
 
     c_4 = vec4(c, 1);
-
-    r_0 = vec3(-sqrt(0.6 + clustering[1] * clustering[1]));
-    
-    if (any(lessThan(planes[0] * c_4, r_0)) ||
-        any(lessThan(planes[1] * c_4, r_0))) {
-#ifdef COLLECT_STATISTICS
-        atomicCounterIncrement(culled);
-#endif
-
-        index = -1;
-        return;
-    }
     
     /* Find the seed type. */
     

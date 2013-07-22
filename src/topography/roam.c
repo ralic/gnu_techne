@@ -28,21 +28,8 @@
 #define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 static roam_Context *context;
-static double viewport[4], transform[16], planes[6][4];
 
-void copy_setup_transform(roam_Context *context_in, float *M)
-{
-    roam_Tileset *tiles = &context_in->tileset;
-
-    t_load_identity_4(M);
-        
-    M[0] = tiles->resolution[0];
-    M[5] = tiles->resolution[1];
-    M[12] = tiles->offset[0];
-    M[13] = tiles->offset[1];
-}
-
-void calculate_view_frustum(double (*pi)[4], double *T)
+static void calculate_view_frustum(double (*pi)[4], double *T)
 {
     int i;
 
@@ -104,7 +91,7 @@ void calculate_view_frustum(double (*pi)[4], double *T)
 	pi_i[3] /= m;
     }
 }
- 
+
 void switch_to_context(roam_Context *context_in)
 {
     context = context_in;
@@ -171,7 +158,7 @@ void look_up_sample(roam_Tileset *tiles, int i, int j, double *h, double *e)
 	}
     }
 }
-
+ 
 static void allocate_diamonds(roam_Diamond **d, int n)
 {
     int i;
@@ -265,9 +252,9 @@ static void prioritize_diamond(roam_Diamond *d)
 	p_w[1] = d->center[1];
 	p_w[2] = 0.5 * (d->vertices[0][2] + d->vertices[1][2]);
 
-	C = transform;    
-	w = viewport[2];
-	h = viewport[3];
+	C = context->transform;    
+	w = context->viewport[2];
+	h = context->viewport[3];
 
 	/* Project the point to screen space. */
 
@@ -498,7 +485,7 @@ static void classify_triangle(roam_Triangle *n, int b)
 	if (isinf (r_0)) {
 	    b = 0;
 	} else {
-	    p = planes;
+	    p = context->planes;
 	
 	    v[0] = n->diamond->vertices[0];
 	    v[1] = n->diamond->vertices[1];
@@ -517,14 +504,12 @@ static void classify_triangle(roam_Triangle *n, int b)
 				p[i][3]);
 		    }
 
-		    /* Take the minimum distance over all vertices. */
+		    /* Take the minimum and maximum distance over all
+                     * vertices. */
  
-		    for(l = 1, r_min = r[0];
-			l < 3;
-			r_min = r[l] < r_min ? r[l] : r_min, l += 1);
-
-		    /* And the maximum distance. */
-	       
+                    r_min = fmin(r[0], fmin(r[1], r[2]));
+                    r_max = fmax(r[0], fmax(r[1], r[2]));
+                    
 		    for(l = 1, r_max = r[0];
 			l < 3;
 			r_max = r[l] > r_max ? r[l] : r_max, l += 1);
@@ -1005,7 +990,6 @@ void optimize_geometry(roam_Context *context_in, int frame)
 {
     roam_Tileset *tiles;
     roam_Diamond *d = NULL, *d_0;
-    double M[16], P[16];
     long long int t_0, t;
     int i, j, delta, overlap;
     
@@ -1026,15 +1010,10 @@ void optimize_geometry(roam_Context *context_in, int frame)
 
     context->culled = 0;
 
-    glGetDoublev(GL_VIEWPORT, viewport);
+    glGetDoublev(GL_VIEWPORT, context->viewport);
+    t_copy_transform(context->transform);
 
-    /* Combine the modelview and projection matrices. */
-
-    t_copy_modelview(M);    
-    t_copy_projection(P);
-    t_concatenate_4T(transform, P, M);
-
-    calculate_view_frustum(planes, transform);
+    calculate_view_frustum(context->planes, context->transform);
 
     /* Update the setup interval. */
     

@@ -101,7 +101,6 @@
     
     self->locations.scale = glGetUniformLocation(parent->name, "scale");
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
-    self->locations.planes = glGetUniformLocation(parent->name, "planes");
     self->locations.clustering = glGetUniformLocation(parent->name, "clustering");
 
     self->units.base = [parent getUnitForSamplerUniform: "base"];
@@ -109,8 +108,7 @@
 
 -(void) draw: (int)frame
 {
-    double q/* , M[16], P[16], T[16] */;
-    /* float planes[6][4]; */
+    double q;
     roam_Tileset *tiles;
     seeding_Bin *b;
     int i, j;
@@ -132,12 +130,6 @@
     q = ldexpf(1, -tiles->depth);
     glUniform2f(self->locations.scale,
                 q / tiles->resolution[0], q / tiles->resolution[1]);
-
-    /* t_copy_modelview(M); */
-    /* t_copy_projection(P); */
-    /* t_concatenate_4T(T, P, M); */
-    /* calculate_view_frustum(planes, T); */
-    /* glUniformMatrix4x3fv(self->locations.planes, 2, GL_TRUE, (float *)planes); */
     
     glEnable (GL_MULTISAMPLE);
 

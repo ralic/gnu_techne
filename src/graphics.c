@@ -69,6 +69,7 @@ static unsigned int buffer;
 
 static double modelviews[MODELVIEW_STACK_DEPTH][16];
 static double projections[PROJECTION_STACK_DEPTH][16];
+static double transform[16];
 static int modelviews_n, projections_n;
 
 /* Context flags. */
@@ -184,15 +185,14 @@ static void update_projection()
 
 #define SET_PROJECTION(P)						\
     {									\
-        double T[16];                                                   \
         float T_f[16], P_f[16];                                         \
         int i;                                                          \
                                                                         \
-        t_concatenate_4T(T, (P), modelviews[modelviews_n]);             \
+        t_concatenate_4T(transform, (P), modelviews[modelviews_n]);     \
                                                                         \
         for (i = 0 ; i < 16 ; i += 1) {                                 \
             P_f[i] = P[i];                                              \
-            T_f[i] = T[i];                                              \
+            T_f[i] = transform[i];                                      \
         }                                                               \
                                                                         \
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
@@ -214,22 +214,23 @@ static void update_projection()
 
 void t_load_projection (double *matrix)
 {
-    assert (projections_n > 0);
-
     memcpy(projections[projections_n], matrix, 16 * sizeof(double));
+
     SET_PROJECTION(matrix);
 }
 
 void t_push_projection (double *matrix)
 {
-    assert (projections_n < PROJECTION_STACK_DEPTH);
     projections_n += 1;
+    assert (projections_n < PROJECTION_STACK_DEPTH);
+
     t_load_projection(matrix);
 }
 
 void t_pop_projection ()
 {
     projections_n -= 1;
+    assert (projections_n >= 0);
 
     SET_PROJECTION(projections[projections_n]);
 }
@@ -241,15 +242,14 @@ void t_copy_projection(double *matrix)
 
 #define SET_MODELVIEW(M)						\
     {									\
-        double T[16];                                                   \
         float T_f[16], M_f[16];                                         \
         int i;                                                          \
                                                                         \
-        t_concatenate_4T(T, projections[projections_n], (M));           \
+        t_concatenate_4T(transform, projections[projections_n], (M));   \
                                                                         \
         for (i = 0 ; i < 16 ; i += 1) {                                 \
             M_f[i] = M[i];                                              \
-            T_f[i] = T[i];                                              \
+            T_f[i] = transform[i];                                      \
         }                                                               \
                                                                         \
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
@@ -270,8 +270,6 @@ void t_copy_projection(double *matrix)
 
 void t_load_modelview (double *matrix, t_Enumerated mode)
 {
-    assert (modelviews_n > 0);
-
     if (mode == T_MULTIPLY) {
 	double M[16];
 	
@@ -286,8 +284,6 @@ void t_load_modelview (double *matrix, t_Enumerated mode)
 
 void t_push_modelview (double *matrix, t_Enumerated mode)
 {
-    assert (modelviews_n < MODELVIEW_STACK_DEPTH);
-
     if (mode == T_MULTIPLY) {
 	t_concatenate_4T(modelviews[modelviews_n + 1],
                          modelviews[modelviews_n], matrix);
@@ -296,12 +292,15 @@ void t_push_modelview (double *matrix, t_Enumerated mode)
     }
     
     modelviews_n += 1;
+    assert (modelviews_n < MODELVIEW_STACK_DEPTH);
+
     SET_MODELVIEW(modelviews[modelviews_n]);
 }
 
 void t_pop_modelview ()
 {
     modelviews_n -= 1;
+    assert (modelviews_n >= 0);
 
     SET_MODELVIEW(modelviews[modelviews_n]);
 }
@@ -309,6 +308,11 @@ void t_pop_modelview ()
 void t_copy_modelview(double *matrix)
 {
     memcpy(matrix, modelviews[modelviews_n], 16 * sizeof(double));
+}
+
+void t_copy_transform(double *matrix)
+{
+    memcpy(matrix, transform, 16 * sizeof(double));
 }
 
 void t_get_pointer (int *x, int *y)
@@ -649,8 +653,8 @@ static void draw (Node *root)
 	/* Initialize the values. */
 
 	t_load_identity_4 (I);
-	t_push_projection (I);
-	t_push_modelview (I, T_LOAD);
+	t_load_projection (I);
+	t_load_modelview (I, T_LOAD);
     }
 
     instance = self;
@@ -769,7 +773,7 @@ static void draw (Node *root)
 		/* Set planes based on frustum. */
 
 		update_projection();
-	    }		
+	    }	       
 
 	    t_pushuserdata (_L, 1, self);
 	    t_callhook (_L, configure, 1, 0);

@@ -111,7 +111,7 @@ static unsigned int deflections;
 {
     const char *private[] = {"base", "detail", "offset", "scale",
                              "factor", "references", "weights",
-                             "resolutions", "planes", "clustering"};
+                             "resolutions", "clustering"};
     char *header;
     ShaderMold *shader;
     int i, collect;
@@ -187,7 +187,6 @@ static unsigned int deflections;
         resolutions_l = glGetUniformLocation (self->name, "resolutions");
 
         self->locations.intensity = glGetUniformLocation (self->name, "intensity");
-        self->locations.planes = glGetUniformLocation (self->name, "planes");
 
         glUniform1f (factor_l, self->elevation->albedo);
 

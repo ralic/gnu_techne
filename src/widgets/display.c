@@ -72,10 +72,10 @@
     
     glGetIntegerv (GL_VIEWPORT, v);
     t_load_orthographic(M,
-			-(double)v[2] / v[3] * 0.5,
-			(double)v[2] / v[3] * 0.5,
-			-0.5, 0.5,
-			0, 1);
+        		-(double)v[2] / v[3] * 0.5,
+        		(double)v[2] / v[3] * 0.5,
+        		-0.5, 0.5,
+        		0, 1);
 
     t_push_projection(M);
 

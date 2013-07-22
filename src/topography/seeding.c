@@ -23,6 +23,7 @@
 #include "algebra.h"
 #include "techne.h"
 
+float foo;
 //#define K_MEANS
 
 /* Check whether a triangle is within the seedable depth range.  The
@@ -36,6 +37,11 @@
     (z_1 < 0 && z_1 > seeding->horizon) ||      \
     z_a * z_0 < 0 ||                            \
     z_0 * z_1 < 0
+
+#define should_seed1(z_a, z_0, z_1)  \
+    (z_a > seeding->horizon) ||      \
+    (z_0 > seeding->horizon) ||      \
+    (z_1 > seeding->horizon)
 
 static roam_Context *context;
 static seeding_Context *seeding;
@@ -98,7 +104,7 @@ static void project(float *r, float *s)
     }
 }
 
-static int cull(float *a_r, float *b_0r, float *b_1r)
+static int backfacing(float *a_r, float *b_0r, float *b_1r)
 {
     float u[3], v[3], a_e[3], n[3];
     int i;
@@ -121,10 +127,44 @@ static int cull(float *a_r, float *b_0r, float *b_1r)
 static void seed_triangle(float *a, float *b_0, float *b_1,
                           float *a_r, float *b_0r, float *b_1r,
                           float *a_s, float *b_0s, float *b_1s,
-                          int level)
+                          unsigned char bits, unsigned char level)
 {
     if (level < TREE_HEIGHT - 1) {
         double z_a, z_0, z_1;
+        int i, j;
+
+        if ((bits & ALL_IN) != ALL_IN) {
+            for (i = 0, j = 1 ; i < 5 ; i += 1, j <<= 1) {
+                double *pi, u, v, w, r_min, r_max;
+            
+                if (bits & j) {
+                    continue;
+                }
+
+                pi = context->planes[i];
+            
+                u = t_dot_43(pi, a);
+                v = t_dot_43(pi, b_0);
+                w = t_dot_43(pi, b_1);
+
+                r_min = fmin(u, fmin(v, w));
+                r_max = fmax(u, fmax(v, w));
+
+                if (r_min > 0) {
+                    bits |= j;
+                } else if(r_max < 0) {
+                    return;
+                }
+
+                if (j == NEAR && !(bits & FAR)) {
+                   if (r_min > 0 && r_min < -seeding->horizon) {
+                       bits |= FAR;
+                   } else if(r_max < 0 || r_max > -seeding->horizon) {
+                       return;
+                   }
+                }
+            }
+        }
 
         /* This is not a fine triangle, so calculate the depths of the
          * vertices to test whether to descend any further. */
@@ -132,6 +172,10 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         z_a = a_r[2] + modelview[14];
         z_0 = b_0r[2] + modelview[14];
         z_1 = b_1r[2] + modelview[14];
+
+        /* _TRACE ("%f\n", fmax(fmax(z_a, z_0), z_1)); */
+        /* if (foo > fmax(fmax(z_a, z_0), z_1)) */
+        /*     foo = fmax(fmax(z_a, z_0), z_1); */
 
         if (should_seed(z_a, z_0, z_1)) {
             float c[3], c_r[3], c_s[2];
@@ -151,8 +195,10 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
             /* _TRACE ("%f\n", fabs(z_c - 0.5 * (z_0 + z_1))); */
             
-            seed_triangle(c, a, b_0, c_r, a_r, b_0r, c_s, a_s, b_0s, level + 1);
-            seed_triangle(c, b_1, a, c_r, b_1r, a_r, c_s, b_1s, a_s, level + 1);
+            seed_triangle(c, a, b_0, c_r, a_r, b_0r, c_s, a_s, b_0s,
+                          bits, level + 1);
+            seed_triangle(c, b_1, a, c_r, b_1r, a_r, c_s, b_1s, a_s,
+                          bits, level + 1);
         }
     } else {
         seeding_Bin *bins;    
@@ -179,7 +225,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         
         A = 0.5 * sqrt((u[0] * u[0] + u[1] * u[1]) *
                        (v[0] * v[0] + v[1] * v[1]));
-        n_0 = fmin(seeding->ceiling, fmax(seeding->density * A, 5));
+        n_0 = fmin(seeding->ceiling, fmax(seeding->density * A, 1));
 
         if (n_min > n_0) {
             n_min = n_0;
@@ -254,7 +300,7 @@ static void seed_subtree(roam_Triangle *n,
                 
                 seed_subtree(n->children[0], c_r, a_r, b_0r);
                 seed_subtree(n->children[1], c_r, b_1r, a_r);
-            } else if (!cull (a_r, b_0r, b_1r)) {
+            } else if (!backfacing (a_r, b_0r, b_1r)) {
                 roam_Triangle *p;
                 roam_Diamond *d, *e;
                 float *a, *b_0, *b_1, a_s[2], b_0s[2], b_1s[2];
@@ -273,7 +319,8 @@ static void seed_subtree(roam_Triangle *n,
                 project(b_0r, b_0s);
                 project(b_1r, b_1s);
                 
-                seed_triangle (a, b_0, b_1, a_r, b_0r, b_1r, a_s, b_0s, b_1s, d->level);
+                seed_triangle (a, b_0, b_1, a_r, b_0r, b_1r, a_s, b_0s, b_1s,
+                               0, d->level);
 
                 seeding->triangles_n[0] += 1;
             }
@@ -375,4 +422,6 @@ void finish_seeding ()
 #ifndef K_MEANS
     recenter_bins(n_max / n_min);
 #endif
+/* _TRACE ("%f\n", foo); */
+
 }

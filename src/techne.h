@@ -71,6 +71,7 @@ void t_load_modelview (double *matrix, t_Enumerated mode);
 void t_push_modelview (double *matrix, t_Enumerated mode);
 void t_pop_modelview ();
 void t_copy_modelview(double *matrix);
+void t_copy_transform(double *matrix);
 
 void t_get_pointer (int *x, int *y);
 void t_warp_pointer (int x, int y);

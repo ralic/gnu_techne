@@ -28,6 +28,10 @@
 #define t_dot_3(u, v) ((u)[0] * (v)[0] + (u)[1] * (v)[1] + (u)[2] * (v)[2])
 #define t_length_3(u) (sqrt(t_dot_3(u, u)))
 
+/* r = u . (v, 1), where u a 4-vector and v a 3-vector. */
+
+#define t_dot_43(u, v) ((u)[0] * (v)[0] + (u)[1] * (v)[1] + (u)[2] * (v)[2] + (u[3]))
+
 #define t_normalize_3(v)			\
     {						\
 	typeof(v[0]) m, *_v = v;		\

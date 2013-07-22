@@ -27,7 +27,7 @@
     int reference_1, *masks;
 
     struct {
-        unsigned int intensity, planes;
+        unsigned int intensity;
     } locations;
 }
 

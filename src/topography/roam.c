@@ -90,6 +90,8 @@ static void calculate_view_frustum(double (*pi)[4], double *T)
 	pi_i[2] /= m;
 	pi_i[3] /= m;
     }
+
+    /* _TRACE ("%f\n", pi[4][3] - t_dot_3(pi[4], pi[5]) * pi[5][3]); */
 }
 
 void switch_to_context(roam_Context *context_in)
@@ -472,19 +474,21 @@ static void initialize_triangle(roam_Triangle *c, roam_Diamond *d, roam_Triangle
 
 static void classify_triangle(roam_Triangle *n, int b)
 {
-    float *v[3];
-    double (*pi)[4], r_0, r_min, r_max, r[3];
     int i, j, k, l;
 
     /* printf ("%f, %f, %d\n", n->diamond->error, n->parent->diamond->error, b); */
     /* assert (!(isinf(n->diamond->error)) || b == 0 || b == INVALID); */
 
     if(((b & OUT) != OUT) && ((b & ALL_IN) != ALL_IN)) {
+        double r_0;
+        
         r_0 = fmax(n->diamond->error, 0.1);
 
 	if (isinf (r_0)) {
 	    b = 0;
 	} else {
+            float *v[3];
+            
 	    v[0] = n->diamond->vertices[0];
 	    v[1] = n->diamond->vertices[1];
 	    v[2] = n->parent->diamond->center;
@@ -493,15 +497,16 @@ static void classify_triangle(roam_Triangle *n, int b)
 	       the triangle against the planes its parent
 	       wasn't IN. */
 
-	    for (i = 0, j = 1, pi = context->planes;
+	    for (i = 0, j = 1;
                  i < 6 && b != OUT;
-                 i += 1, j <<= 1, pi += 1) {
+                 i += 1, j <<= 1) {
 		if (!(b & j)) {
+                    double *pi, r_min, r_max, r[3];
+                    
+                    pi = context->planes[i];
+                    
 		    for(k = 0 ; k < 3 ; k += 1) {
-			r[k] = ((*pi)[0] * v[k][0] +
-				(*pi)[1] * v[k][1] +
-				(*pi)[2] * v[k][2] +
-				(*pi)[3]);
+			r[k] = t_dot_43(pi, v[k]);
 		    }
 
 		    /* Take the minimum and maximum distance over all

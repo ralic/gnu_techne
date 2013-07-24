@@ -688,8 +688,9 @@ static void run()
 
 -(void) init
 {
-    [super init];
     self->index = 2;
+
+    [super init];
 
     lua_pushstring (_L, "network");
     lua_setfield (_L, -2, "tag");

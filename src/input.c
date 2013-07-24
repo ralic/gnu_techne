@@ -50,8 +50,9 @@ static void recurse (Node *root)
 
 -(void) init
 {
-    [super init];
     self->index = 1;
+
+    [super init];
     
     lua_pushstring (_L, "input");
     lua_setfield (_L, -2, "tag");

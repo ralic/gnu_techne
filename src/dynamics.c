@@ -350,8 +350,9 @@ void t_convert_to_spring(double erp, double cfm, double *k_s, double *k_d)
 @implementation Dynamics
 -(void) init
 {
-    [super init];
     self->index = 3;
+
+    [super init];
 
     lua_pushstring (_L, "dynamics");
     lua_setfield (_L, -2, "tag");

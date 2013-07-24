@@ -1119,18 +1119,11 @@ static void link_node(Node *node)
 	*head = node;
     } else {
 	/* Find where to insert the node.  Nodes are ordered according to
-	 * index in ascending order.  Nodes with no index are unordered
-	 * and come last in the list. */
+	 * index in ascending order. */
 
-	if (isnan(node->index)) {
-	    for (l = (*head)->left, r = *head;
-		 r && !isnan(r->index);
-		 l = r, r = r->right);
-	} else {
-	    for (l = (*head)->left, r = *head;
-		 r && r->index < node->index;
-		 l = r, r = r->right);
-	}
+        for (l = (*head)->left, r = *head;
+             r && r->index < node->index;
+             l = r, r = r->right);
     
 	assert (r || l);
 
@@ -1412,7 +1405,6 @@ static void unlink_node (Node *node)
     self->up = NULL;
     self->down = NULL;
 
-    self->index = NAN;
     self->rawaccess = 0;
     self->linked = 0;
     self->key.reference = LUA_REFNIL;
@@ -1935,11 +1927,7 @@ static void unlink_node (Node *node)
 
 -(int) _get_index
 {
-    if (!isnan(self->index)) {
-	lua_pushnumber(_L, self->index);
-    } else {
-	lua_pushnil (_L);
-    }
+    lua_pushnumber(_L, self->index);
 
     return 1;
 }
@@ -1949,7 +1937,7 @@ static void unlink_node (Node *node)
     if (lua_type(_L, 3) == LUA_TNUMBER) {
 	self->index = lua_tonumber(_L, 3);
     } else {
-	self->index = NAN;
+	self->index = 0;
     }
 
     unlink_node(self);

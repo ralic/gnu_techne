@@ -269,6 +269,8 @@ static void calculate_sky_color(double azimuth, double elevation,
 
     const char *private[1] = {"texture"};
 
+    self->index = 1;
+    
     [super init];
     
     /* If this is the first instance create the program. */
@@ -291,8 +293,6 @@ static void calculate_sky_color(double azimuth, double elevation,
 
     /* Initialize the object. */
 
-    self->index = 1;
-    
     self->size[0] = 0;
     self->size[1] = 0;
 

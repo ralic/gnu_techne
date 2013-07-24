@@ -474,8 +474,9 @@ static void draw (Node *root)
 	
     lua_pop (_L, 2);
 
-    [super init];
     self->index = 4;
+
+    [super init];
 
     lua_pushstring (_L, "graphics");
     lua_setfield (_L, -2, "tag");

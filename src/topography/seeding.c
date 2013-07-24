@@ -259,7 +259,6 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         seeding->triangles_n[1] += 1;
     }
 }
-static int foo;
 
 static void seed_subtree(roam_Triangle *n,
                          float *a_r, float *b_0r, float *b_1r)
@@ -274,7 +273,6 @@ static void seed_subtree(roam_Triangle *n,
         z_min = fmin(z_a, fmin(z_0, z_1));
         z_max = fmax(z_a, fmax(z_0, z_1));
         
-        if(!foo) return;
         if (z_max < 0 || z_min > -seeding->horizon) {
             return;
         }
@@ -409,5 +407,4 @@ void finish_seeding ()
 #ifndef K_MEANS
     recenter_bins(n_max / n_min);
 #endif
-    foo += 1;
 }

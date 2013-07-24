@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "array/array.h"
+#include "algebra.h"
 #include "transform.h"
 #include "techne.h"
 
@@ -46,18 +47,16 @@ static void recurse (Node *root)
 
 -(void) init
 {
-    int i, j;
+    int i;
     
     [super init];
 
     self->transform = LUA_REFNIL;
-    
-    for (i = 0 ; i < 3 ; i += 1) {
-	for (j = 0 ; j < 3 ; j += 1) {
-	    self->orientation[i * 3 + j] = i == j ? 1 : 0;
-	    self->rotation[i * 3 + j] = i == j ? 1 : 0;
-	}
 
+    t_load_identity_3(self->orientation);
+    t_load_identity_3(self->rotation);
+       
+    for (i = 0 ; i < 3 ; i += 1) {
 	self->position[i] = 0;
 	self->translation[i] = 0;
     }
@@ -171,7 +170,6 @@ static void recurse (Node *root)
 {
     Transform *parent;
     double *r, *R, *p, *W;
-    int i, j;
 
     parent = [self parentTransform];
 
@@ -182,19 +180,9 @@ static void recurse (Node *root)
 	r = parent->translation;
 	R = parent->rotation;
 
-	for (i = 0 ; i < 3 ; i += 1) {
-	    for (j = 0 ; j < 3 ; j += 1) {
-		self->rotation[i * 3 + j] = R[i * 3] * W[j] +
-		                            R[i * 3 + 1] * W[j + 3] +
-		                            R[i * 3 + 2] * W[j + 6];
-	    }
-
-	    self->translation[i] = R[i * 3] * p[0] +
-		                   R[i * 3 + 1] * p[1] +
-		                   R[i * 3 + 2] * p[2] +
-		                   r[i]; 
-	}
-    
+        t_concatenate_3(self->rotation, R, W);
+        t_transform_3H(self->translation, R, p, r);
+     
 	[self transformCustom];
     } else {
 	[self transformAsRoot];

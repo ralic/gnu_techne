@@ -20,12 +20,13 @@ uniform sampler2D deflections;
 uniform vec3 clustering;
 
 vec2 hash(uvec2 U, unsigned int k);
-vec2 rand();
+vec4 rand4();
                                 
 void main()
 {
     vec3 p, d, t;
-    vec2 u, v;
+    vec2 u;
+    vec4 v;
     float phi, theta, h_0;
     
     u = hash(floatBitsToUint(position_tc[0].xy),
@@ -48,8 +49,7 @@ void main()
             sqrtux * u.y * right_tc;
     }
     
-    u = rand();
-    v = rand();
+    v = rand4();
     
     /* Update the statistics. */
 
@@ -59,9 +59,9 @@ void main()
 
     /* Calculate and set ouput values. */
 
-    h_0 = 0.15 + (0.85 * distance_tc * v.x);
-    t = vec3(texture(deflections, vec2(gl_TessCoord.x, h_0 + (1 - h_0) * u.y)));
-    phi = 2 * pi * u.x;
+    h_0 = 0.15 + (0.85 * distance_tc * v.z);
+    t = vec3(texture(deflections, vec2(gl_TessCoord.x, h_0 + (1 - h_0) * v.y)));
+    phi = 2 * pi * v.x;
     theta = t.b;
     d = vec3(cos(phi), sin(phi), 1) * t.rrg;
 
@@ -73,7 +73,7 @@ void main()
     /* position_te = vec4(p + vec3(0, 0, 0.03 * gl_TessCoord.x), 1); */
     
     color_te = color_tc;
-    distance_te = 0.75 * distance_tc + 0.25 * v.y;
+    distance_te = 0.75 * distance_tc + 0.25 * v.w;
     depth_te = depth_tc;
     height_te = gl_TessCoord.x;
     index_te = index_tc;

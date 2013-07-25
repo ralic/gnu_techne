@@ -14,8 +14,6 @@ uniform vec2 offset, scale;
 
 float hsv_distance (vec3, vec3, vec3, float);
 vec2 hash(unsigned int R, unsigned int L, unsigned int k);
-void srand(uvec2 seed);
-vec2 rand(void);
 
 uniform vec3 clustering;
 uniform grass_debug{

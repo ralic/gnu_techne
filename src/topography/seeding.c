@@ -180,15 +180,12 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         /* _TRACE ("%f\n", fmax(fmax(z_a, z_0), z_1)); */
 
         /* Interpolate the center vertex in object and rotated
-         * space and recurse. */
-            
-        c[0] = 0.5 * (b_0[0] + b_1[0]);
-        c[1] = 0.5 * (b_0[1] + b_1[1]);
-        c[2] = 0.5 * (b_0[2] + b_1[2]);
-    
-        c_r[0] = 0.5 * (b_0r[0] + b_1r[0]);
-        c_r[1] = 0.5 * (b_0r[1] + b_1r[1]);
-        c_r[2] = 0.5 * (b_0r[2] + b_1r[2]);
+         * space, project to screen space and recurse. */
+
+        for (i = 0 ; i < 3 ; i += 1) {
+            c[i] = 0.5 * (b_0[i] + b_1[i]);    
+            c_r[i] = 0.5 * (b_0r[i] + b_1r[i]);
+        }
 
         project (c_r, c_s);
 
@@ -219,8 +216,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
         /* _TRACEM (4, 4, "f", projection); */
         
-        A = 0.5 * sqrt((u[0] * u[0] + u[1] * u[1]) *
-                       (v[0] * v[0] + v[1] * v[1]));
+        A = 0.5 * fabs(u[0] * v[1] - u[1] * v[0]);
         n_0 = fmin(seeding->ceiling, fmax(seeding->density * A, 1));
 
         if (n_min > n_0) {
@@ -264,24 +260,29 @@ static void seed_subtree(roam_Triangle *n,
                          float *a_r, float *b_0r, float *b_1r)
 {
     if(!is_out(n)) {
-        double z_a, z_0, z_1, z_min, z_max;
+        double z_a, z_0, z_1, z_min;
+
+        /* Culling for ROAM triangles has mostly been done.  We only
+         * need to check against the far (seeding) plane.  */
         
         z_a = -(a_r[2] + modelview[14]);
         z_0 = -(b_0r[2] + modelview[14]);
         z_1 = -(b_1r[2] + modelview[14]);
 
         z_min = fmin(z_a, fmin(z_0, z_1));
-        z_max = fmax(z_a, fmax(z_0, z_1));
-        
-        if (z_max < 0 || z_min > -seeding->horizon) {
+
+        if (z_min > -seeding->horizon) {
             return;
         }
         
         if(!is_leaf(n)) {
             float c_r[3], *c;
 
+            /* Transform the center vertex to rotated space.  A simple
+             * interpolation won't do here as the center vertex is
+             * offset by the heightmap. */
+            
             c = n->diamond->center;
-                
             t_transform_4RT3(c_r, modelview, c);
                 
             seed_subtree(n->children[0], c_r, a_r, b_0r);
@@ -300,7 +301,10 @@ static void seed_subtree(roam_Triangle *n,
             a = e->center;
             b_0 = d->vertices[!i];
             b_1 = d->vertices[i];
-                
+
+            /* Subdivide this leaf ROAM triangle further until we've
+             * reached the finest level. */
+            
             project(a_r, a_s);
             project(b_0r, b_0s);
             project(b_1r, b_1s);
@@ -389,7 +393,7 @@ int seed_tile (int i)
     a_0 = p_0->center;
     a_1 = p_1->center;
 
-    /* Calculate the distance from the eye to each vertex. */
+    /* Transform the base vertices of the tile to rotated space. */
 
     t_transform_4RT3(b_0r, modelview, b_0);
     t_transform_4RT3(b_1r, modelview, b_1);

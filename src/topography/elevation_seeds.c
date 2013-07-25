@@ -175,7 +175,7 @@
                     if (r >= 1.0) {
                         glUniform3f(self->locations.clustering,
                                     C[0], C[1],
-                                    r * C[0] / self->seeding.ceiling);
+                                    self->seeding.ceiling / C[0] - r);
                         glDrawArraysInstanced(GL_PATCHES, 0, b->fill, r);
 
                         b->patches += b->fill * r;

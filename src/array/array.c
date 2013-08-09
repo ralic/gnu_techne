@@ -659,7 +659,7 @@ static void fromuserdata (lua_State *L, int index, array_Array *array)
     construct (L, array);
 }
 
-static void fromzeros (lua_State *L, array_Array *array)
+static void fromnothing (lua_State *L, array_Array *array)
 {
     int i, l;
 
@@ -669,7 +669,6 @@ static void fromzeros (lua_State *L, array_Array *array)
     array->length = l * sizeof_element (array->type);
     array->values.any = malloc (array->length);
 
-    zero_elements (array, 0, l);
     construct (L, array);
 }
 
@@ -981,7 +980,7 @@ void array_toarrayv (lua_State *L, int index, array_Type type,
         lua_rawseti(L, -2, 1);
         lua_setuservalue(L, -2);
     } else {
-	fromzeros (L, &array);
+	fromnothing (L, &array);
     }
 }
 
@@ -1189,4 +1188,206 @@ array_Array *array_adjust (lua_State *L, int index, void *defaults, int rank, ..
     va_end(ap);
 
     return array_adjustv (L, index, defaults, rank, size);
+}
+
+static void cut (array_Array *source, array_Array *sink, int from, int to,
+                 int l, int m, int d, int *range)
+{
+    int i;
+       
+    if (d < source->rank - 1) {
+       int s, t;
+
+       s = l / source->size[d];
+       t = m / sink->size[d];
+       
+       for (i = 0 ; i < range[1] - range[0] + 1 ; i += 1) {
+           cut (source, sink,
+                from + (range[0] - 1 + i) * s,
+                to + i * t,
+                s, t, d + 1, range + 2);
+       }
+    } else {
+       copy_elements (sink, source, to, from + (range[0] - 1),
+                       (range[1] - range[0] + 1));
+    }
+}
+
+array_Array *array_slicev (lua_State *L, int index, int *slices)
+{
+    array_Array *array, slice;
+
+    array = array_testarray (L, index);
+
+    {
+        int i, j, l, m, wrapped[2 * array->rank];
+        
+        slice.size = malloc (array->rank * sizeof (int));
+        memcpy (slice.size, array->size, array->rank * sizeof (int));
+        memcpy (wrapped, slices, 2 * array->rank * sizeof (int));
+
+        for (j = 0, l = 1, m = 1 ; j < array->rank ; j += 1) {
+            int *b;
+
+            b = &wrapped[2 * j];
+            
+            /* Wrap around negative indices and check slice ranges
+             * against source array bounds. */
+       
+            for (i = 0 ; i < 2 ; i += 1) {
+                if (b[i] < 0) {
+                    b[i] += array->size[j] + 1;
+                }
+           
+                if (b[i] < 1 || b[i] > array->size[j]) {
+                    lua_pushfstring (L,
+                                     "Invalid slice range specified "
+                                     "(%d is more than %d an therefore "
+                                     "out of bounds).", b[i], array->size[j]); 
+           
+                    lua_error (L);
+                }
+            }
+
+            /* Check slice range ordering. */
+
+            if (b[1] < b[0]) {
+                lua_pushfstring (L,
+                                 "Invalid slice range specified (%d < %d).",
+                                 b[1], b[0]);
+           
+                lua_error (L);
+            }
+       
+            slice.size[j] = b[1] - b[0] + 1;
+
+            l *= array->size[j];
+            m *= slice.size[j];
+        }
+    
+        slice.length = m * sizeof_element (array->type);
+        slice.values.any = malloc (slice.length);
+        slice.type = array->type;
+        slice.rank = array->rank;
+        slice.free = FREE_BOTH;
+
+        cut (array, &slice, 0, 0, l, m, 0, wrapped);
+    }
+
+    return construct (L, &slice);
+}
+
+array_Array *array_slice (lua_State *L, int index, ...)
+{
+    array_Array *array, *sliced;
+    
+    array = array_testarray (L, index);
+
+    {
+        va_list ap;
+        int j, slices[2 * array->rank];
+        
+        va_start (ap, index);
+
+        for (j = 0 ; j < array->rank ; j += 1) {
+            slices[2 * j] = va_arg(ap, int);
+            slices[2 * j + 1] = va_arg(ap, int);
+        }
+   
+        va_end(ap);
+
+        sliced = array_slicev (L, index, slices);
+    }
+
+    return sliced;
+}
+
+array_Array *array_transposev (lua_State *L, int index, int *indices)
+{
+    array_Array *array, transposed;
+    int i, n;
+
+    array = array_testarray (L, index);
+
+    transposed.free = FREE_BOTH;
+    transposed.length = array->length;
+    transposed.type = array->type;
+    transposed.rank = array->rank;
+    transposed.values.any = malloc (transposed.length);
+    transposed.size = calloc (array->rank, sizeof (int));
+
+    for (i = 0 ; i < array->rank ; i += 1) {
+        int j;
+
+        j = indices[i];
+        
+        if (j < 0 || j >= transposed.rank) {
+            lua_pushfstring (L,
+                             "Index %d is out of range for given array.",
+                             j + 1);
+            lua_error (L);
+        }
+            
+        transposed.size[i] = array->size[j];
+    }
+
+    for (i = 0 ; i < transposed.rank ; i += 1) {
+        if (transposed.size[i] == 0) {
+            lua_pushstring (L,
+                            "Specified indices do not form a permutation "
+                            "of the array's indices.");
+            lua_error (L);            
+        }
+    }
+    
+    n = transposed.length / sizeof_element (transposed.type);
+
+    for (i = 0 ; i < n ; i += 1) {
+        int i_a, j, k, l, permuted[transposed.rank];
+
+        /* The index i traverses the transposed matrix.  Break it up
+         * into separate indices along each dimension and permute them
+         * according to the map. */
+        
+        for (j = array->rank - 1, k = i;
+             j >= 0;
+             k /= transposed.size[j], j -= 1) {
+            permuted[indices[j]] = k % transposed.size[j];
+        }
+
+        /* Calculate an index into the original array.  */
+
+        for (j = array->rank - 1, i_a = 0, l = 1;
+             j >= 0;
+             i_a += permuted[j] * l, l *= array->size[j], j -= 1);
+
+        assert(i_a >= 0 && i_a < n);
+        copy_elements(&transposed, array, i, i_a, 1);
+    }
+
+    return construct (L, &transposed);
+}
+
+array_Array *array_transpose (lua_State *L, int index, ...)
+{
+    array_Array *array, *transposed;
+    
+    array = array_testarray (L, index);
+
+    {
+        va_list ap;
+        int j, indices[array->rank];
+        
+        va_start (ap, index);
+
+        for (j = 0 ; j < array->rank ; j += 1) {
+            indices[j] = va_arg(ap, int);
+        }
+   
+        va_end(ap);
+
+        transposed = array_transposev (L, index, indices);
+    }
+
+    return transposed;
 }

@@ -105,5 +105,9 @@ void array_initialize (array_Array *array, array_Type type, void *values, int ra
 array_Array *array_pusharray (lua_State *L, array_Array *array);
 array_Array *array_adjustv (lua_State *L, int index, void *defaults, int rank, int *size);
 array_Array *array_adjust (lua_State *L, int index, void *defaults, int rank, ...);
+array_Array *array_slicev (lua_State *L, int index, int *slices);
+array_Array *array_slice (lua_State *L, int index, ...);
+array_Array *array_transposev (lua_State *L, int index, int *indices);
+array_Array *array_transpose (lua_State *L, int index, ...);
 
 #endif

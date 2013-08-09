@@ -189,13 +189,100 @@ DEFINE_OPERATION(multiply, MUL)
 DEFINE_OPERATION(subtract, SUB)
 DEFINE_OPERATION(divide, DIV)
 
+#define COMPARE(FUNC, OPERATOR, TYPE)                                   \
+    static void FUNC (TYPE *A, TYPE *B, int *C, int n)                  \
+    {                                                                   \
+	int i;                                                          \
+	                                                                \
+	for (i = 0 ; i < n ; i += 1) {                                  \
+	    C[i] = A[i] OPERATOR B[i];                                  \
+	}                                                               \
+    }
+
+#define DEFINE_COMPARISON(OPERATION, OPERATOR)                          \
+    COMPARE(OPERATION##_doubles, OPERATOR, double)                      \
+        COMPARE(OPERATION##_floats, OPERATOR, float)                    \
+                                                                        \
+    COMPARE(OPERATION##_ulongs, OPERATOR, unsigned long)                \
+    COMPARE(OPERATION##_longs, OPERATOR, signed long)                   \
+    COMPARE(OPERATION##_uints, OPERATOR, unsigned int)                  \
+    COMPARE(OPERATION##_ints, OPERATOR, signed int)                     \
+    COMPARE(OPERATION##_ushorts, OPERATOR, unsigned short)              \
+    COMPARE(OPERATION##_shorts, OPERATOR, signed short)                 \
+    COMPARE(OPERATION##_uchars, OPERATOR, unsigned char)                \
+    COMPARE(OPERATION##_chars, OPERATOR, signed char)                   \
+									\
+    int arraymath_##OPERATION (lua_State *L)                            \
+    {									\
+	array_Array *A, *B, *C;						\
+	int j, l;							\
+									\
+	A = lua_touserdata (L, -2);					\
+	B = lua_touserdata (L, -1);					\
+									\
+	C = array_createarrayv (L, ARRAY_TINT, NULL, A->rank, A->size);	\
+									\
+	for (j = 0, l = 1; j < A->rank ; l *= A->size[j], j += 1);	\
+									\
+	switch (abs(A->type)) {						\
+	case ARRAY_TDOUBLE:						\
+	    OPERATION##_doubles (A->values.doubles, B->values.doubles,	\
+				 C->values.ints, l);                    \
+                break;							\
+	case ARRAY_TFLOAT:						\
+	    OPERATION##_floats (A->values.floats, B->values.floats,	\
+				C->values.ints, l);                     \
+                break;							\
+	case ARRAY_TULONG:						\
+	    OPERATION##_ulongs (A->values.ulongs, B->values.ulongs,	\
+				C->values.ints, l);                     \
+                break;							\
+	case ARRAY_TLONG:						\
+	    OPERATION##_longs (A->values.longs, B->values.longs,	\
+			       C->values.ints, l);			\
+                break;							\
+	case ARRAY_TUINT:						\
+	    OPERATION##_uints (A->values.uints, B->values.uints,	\
+			       C->values.ints, l);			\
+                break;							\
+	case ARRAY_TINT:						\
+	    OPERATION##_ints (A->values.ints, B->values.ints,		\
+			      C->values.ints, l);			\
+                break;							\
+	case ARRAY_TUSHORT:						\
+	    OPERATION##_ushorts (A->values.ushorts, B->values.ushorts,	\
+				 C->values.ints, l);                    \
+                break;							\
+	case ARRAY_TSHORT:						\
+	    OPERATION##_shorts (A->values.shorts, B->values.shorts,	\
+				C->values.ints, l);                     \
+                break;							\
+	case ARRAY_TUCHAR:						\
+	    OPERATION##_uchars (A->values.uchars, B->values.uchars,	\
+				C->values.ints, l);                     \
+                break;							\
+	case ARRAY_TCHAR:						\
+	    OPERATION##_chars (A->values.chars, B->values.chars,	\
+			       C->values.ints, l);			\
+                break;							\
+	}								\
+    									\
+	return 1;							\
+    }
+
+DEFINE_COMPARISON(greater, >)
+DEFINE_COMPARISON(greaterequal, >=)
+DEFINE_COMPARISON(less, <)
+DEFINE_COMPARISON(lessequal, <=)
+DEFINE_COMPARISON(equal, ==)
+
 #define SCALE(FUNC, TYPE)					\
     static void FUNC (TYPE *A, lua_Number c, TYPE *B, int n)	\
     {								\
 	int i;							\
 								\
 	for (i = 0 ; i < n ; i += 1) {				\
-	    B[i] = c * A[i];					\
+	    B[i] = fmin(255, c * A[i]);                         \
 	}							\
     }
 
@@ -310,7 +397,7 @@ int arraymath_offset (lua_State *L)
     A = lua_touserdata (L, -2);
     d = lua_tonumber (L, -1);
 
-    for (j = 0 ,l = 1; j < A->rank ; l *= A->size[j], j += 1);
+    for (j = 0, l = 1; j < A->rank ; l *= A->size[j], j += 1);
 
     B = array_createarrayv (L, A->type, NULL, A->rank, A->size);
 
@@ -375,6 +462,106 @@ int arraymath_offset (lua_State *L)
 	break;
     case ARRAY_TNCHAR:
 	offset_norm_nchars (A->values.chars, d, B->values.chars, l,
+                            CHAR_MAX);
+	break;
+    }
+
+    return 1;
+}
+
+int arraymath_scaleoffset (lua_State *L)
+{
+    array_Array *A, *B;
+    lua_Number c, d;
+    int j, l;
+
+    A = lua_touserdata (L, -3);
+    c = lua_tonumber (L, -2);
+    d = lua_tonumber (L, -1);
+
+    for (j = 0, l = 1; j < A->rank ; l *= A->size[j], j += 1);
+
+    B = array_createarrayv (L, A->type, NULL, A->rank, A->size);
+
+    switch (A->type) {
+    case ARRAY_TDOUBLE:
+	scale_doubles (A->values.doubles, c, B->values.doubles, l);
+	offset_doubles (B->values.doubles, d, B->values.doubles, l);
+	break;
+    case ARRAY_TFLOAT:
+	scale_floats (A->values.floats, c, B->values.floats, l);
+	offset_floats (B->values.floats, d, B->values.floats, l);
+	break;
+    case ARRAY_TULONG:
+	scale_ulongs (A->values.ulongs, c, B->values.ulongs, l);
+	offset_ulongs (B->values.ulongs, d, B->values.ulongs, l);
+	break;
+    case ARRAY_TLONG:
+	scale_longs (A->values.longs, c, B->values.longs, l);
+	offset_longs (B->values.longs, d, B->values.longs, l);
+	break;
+    case ARRAY_TUINT:
+	scale_uints (A->values.uints, c, B->values.uints, l);
+	offset_uints (B->values.uints, d, B->values.uints, l);
+	break;
+    case ARRAY_TINT:
+	scale_ints (A->values.ints, c, B->values.ints, l);
+	offset_ints (B->values.ints, d, B->values.ints, l);
+	break;
+    case ARRAY_TUSHORT:
+	scale_ushorts (A->values.ushorts, c, B->values.ushorts, l);
+	offset_ushorts (B->values.ushorts, d, B->values.ushorts, l);
+	break;
+    case ARRAY_TSHORT:
+	scale_shorts (A->values.shorts, c, B->values.shorts, l);
+	offset_shorts (B->values.shorts, d, B->values.shorts, l);
+	break;
+    case ARRAY_TUCHAR:
+	scale_uchars (A->values.uchars, c, B->values.uchars, l);
+	offset_uchars (B->values.uchars, d, B->values.uchars, l);
+	break;
+    case ARRAY_TCHAR:
+	scale_chars (A->values.chars, c, B->values.chars, l);
+	offset_chars (B->values.chars, d, B->values.chars, l);
+	break;
+    case ARRAY_TNULONG:
+	scale_ulongs (A->values.ulongs, c, B->values.ulongs, l);
+	offset_norm_nulongs (B->values.ulongs, d, B->values.ulongs, l,
+                             ULONG_MAX);
+	break;
+    case ARRAY_TNLONG:
+	scale_longs (A->values.longs, c, B->values.longs, l);
+	offset_norm_nlongs (B->values.longs, d, B->values.longs, l,
+                            LONG_MAX);
+	break;
+    case ARRAY_TNUINT:
+	scale_uints (A->values.uints, c, B->values.uints, l);
+	offset_norm_nuints (B->values.uints, d, B->values.uints, l,
+                            UINT_MAX);
+	break;
+    case ARRAY_TNINT:
+	scale_ints (A->values.ints, c, B->values.ints, l);
+	offset_norm_nints (B->values.ints, d, B->values.ints, l,
+                           INT_MAX);
+	break;
+    case ARRAY_TNUSHORT:
+	scale_ushorts (A->values.ushorts, c, B->values.ushorts, l);
+	offset_norm_nushorts (B->values.ushorts, d, B->values.ushorts, l,
+                              USHRT_MAX);
+	break;
+    case ARRAY_TNSHORT:
+	scale_shorts (A->values.shorts, c, B->values.shorts, l);
+	offset_norm_nshorts (B->values.shorts, d, B->values.shorts, l,
+                             SHRT_MAX);
+	break;
+    case ARRAY_TNUCHAR:
+	scale_uchars (A->values.uchars, c, B->values.uchars, l);
+	offset_norm_nuchars (B->values.uchars, d, B->values.uchars, l,
+                             UCHAR_MAX);
+	break;
+    case ARRAY_TNCHAR:
+	scale_chars (A->values.chars, c, B->values.chars, l);
+	offset_norm_nchars (B->values.chars, d, B->values.chars, l,
                             CHAR_MAX);
 	break;
     }
@@ -633,6 +820,105 @@ int arraymath_range (lua_State *L)
     lua_pushnumber (L, M);
     
     return 2;
+}
+
+#define SUM(FUNC, TYPE)                                                 \
+    static void FUNC##_2 (TYPE *A, TYPE *S, int n)                      \
+    {                                                                   \
+        int i;                                                          \
+                                                                        \
+        *S = A[0];                                                      \
+                                                                        \
+        for (i = 1 ; i < n ; i += 1) {                                  \
+            *S += A[i];                                                 \
+        }                                                               \
+    }                                                                   \
+                                                                        \
+    static void FUNC (TYPE *A, TYPE *S, lua_Number *s, int k, int n)    \
+    {                                                                   \
+        int i;                                                          \
+                                                                        \
+        if(k < n) {                                                     \
+            for (i = 0 ; i < n / k ; i += 1) {                          \
+                FUNC##_2(&A[i * k], &S[i], k);                          \
+            }                                                           \
+        } else {                                                        \
+            TYPE a;                                                     \
+                                                                        \
+            FUNC##_2(A, &a, k);                                         \
+            *s = (lua_Number)a;                                         \
+        }                                                               \
+    }
+
+SUM(sum_doubles, double)
+SUM(sum_floats, float)
+
+SUM(sum_ulongs, unsigned long)
+SUM(sum_longs, signed long)
+SUM(sum_uints, unsigned int)
+SUM(sum_ints, signed int)
+SUM(sum_ushorts, unsigned short)
+SUM(sum_shorts, signed short)
+SUM(sum_uchars, unsigned char)
+SUM(sum_chars, signed char)
+
+int arraymath_sum (lua_State *L)
+{
+    array_Array *A, *S;
+    lua_Number s;
+    void *p;
+        int j, l, k;
+
+    A = lua_touserdata (L, -1);
+
+    for (j = 0, l = 1; j < A->rank ; l *= A->size[j], j += 1);
+    k = A->size[A->rank - 1];
+
+    if (A->rank > 1) {
+        S = array_createarrayv (L, A->type, NULL, A->rank - 1, A->size);
+        p = S->values.any;
+    } else {
+        p = NULL;
+    }
+
+    switch (A->type) {
+    case ARRAY_TDOUBLE:
+        sum_doubles (A->values.doubles, p, &s, k, l);
+        break;
+    case ARRAY_TFLOAT:
+        sum_floats (A->values.floats, p, &s, k, l);
+        break;
+    case ARRAY_TULONG: case ARRAY_TNULONG:
+        sum_ulongs (A->values.ulongs, p, &s, k, l);
+        break;
+    case ARRAY_TLONG: case ARRAY_TNLONG:
+        sum_longs (A->values.longs, p, &s, k, l);
+        break;
+    case ARRAY_TUINT: case ARRAY_TNUINT:
+        sum_uints (A->values.uints, p, &s, k, l);
+        break;
+    case ARRAY_TINT: case ARRAY_TNINT:
+        sum_ints (A->values.ints, p, &s, k, l);
+        break;
+    case ARRAY_TUSHORT: case ARRAY_TNUSHORT:
+        sum_ushorts (A->values.ushorts, p, &s, k, l);
+        break;
+    case ARRAY_TSHORT: case ARRAY_TNSHORT:
+        sum_shorts (A->values.shorts, p, &s, k, l);
+        break;
+    case ARRAY_TUCHAR: case ARRAY_TNUCHAR:
+        sum_uchars (A->values.uchars, p, &s, k, l);
+        break;
+    case ARRAY_TCHAR: case ARRAY_TNCHAR:
+        sum_chars (A->values.chars, p, &s, k, l);
+        break;
+    }
+
+    if (A->rank == 1) {
+        lua_pushnumber (L, s);
+    }
+    
+    return 1;
 }
 
 #define COMBINE(FUNC, TYPE)						\

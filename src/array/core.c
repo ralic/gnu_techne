@@ -101,19 +101,6 @@ static int copy (lua_State *L)
     return 1;
 }
 
-static int set (lua_State *L)
-{
-    double c;
-    
-    array_checkarray (L, 1);
-    c = luaL_checknumber (L, 2);
-
-    array_set (L, 1, c);
-    lua_pop (L, 1);
-    
-    return 1;
-}
-
 static int dump (lua_State *L)
 {
     array_Array *array;
@@ -166,14 +153,56 @@ static int adjust (lua_State *L)
     return 1;
 }
 
+static int slice (lua_State *L)
+{
+    array_Array *array;
+    int j;
+
+    array = array_checkarray (L, 1);
+
+    {
+        int slices[array->rank * 2];
+
+        for (j = 0 ; j < array->rank * 2 ; j += 1) {
+            slices[j] = luaL_checknumber (L, j + 2);
+        }
+       
+        array_slicev (L, 1, slices);
+    }           
+    
+    return 1;
+}
+
+static int transpose (lua_State *L)
+{
+    array_Array *array;
+    int j;
+
+    array = array_checkarray (L, 1);
+
+    {
+        int indices[array->rank];
+
+        for (j = 0 ; j < array->rank ; j += 1) {
+            indices[j] = luaL_checkinteger (L, j + 2) - 1;
+        }
+       
+        array_transposev (L, 1, indices);
+    }           
+    
+    return 1;
+}
+
+
 int luaopen_array_core (lua_State *L)
 {
     const luaL_Reg api[] = {    
 	{"copy", copy},
-	{"set", set},
 	{"dump", dump},
 	{"cast", cast},
 	{"adjust", adjust},        
+        {"slice", slice},
+        {"transpose", transpose},
 	    
 	{NULL, NULL}
     };

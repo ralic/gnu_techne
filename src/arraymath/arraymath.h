@@ -28,11 +28,21 @@ int arraymath_add(lua_State *L);
 int arraymath_multiply(lua_State *L);
 int arraymath_subtract(lua_State *L);
 int arraymath_divide(lua_State *L);
+
+int arraymath_greater(lua_State *L);
+int arraymath_greaterequal(lua_State *L);
+int arraymath_less(lua_State *L);
+int arraymath_lessequal(lua_State *L);
+int arraymath_equal(lua_State *L);
+
 int arraymath_scale(lua_State *L);
 int arraymath_offset(lua_State *L);
+int arraymath_scaleoffset (lua_State *L);
 int arraymath_raise(lua_State *L);
 int arraymath_range(lua_State *L);
+int arraymath_sum (lua_State *L);
 void arraymath_combine(lua_State *L);
+
 double arraymath_dot(lua_State *L);
 void arraymath_cross(lua_State *L);
 double arraymath_length(lua_State *L);

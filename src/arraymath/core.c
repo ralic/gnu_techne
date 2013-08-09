@@ -120,6 +120,12 @@ DEFINE_OPERATION_WRAPPER(multiply)
 DEFINE_OPERATION_WRAPPER(subtract)
 DEFINE_OPERATION_WRAPPER(divide)
 
+DEFINE_OPERATION_WRAPPER(greater)
+DEFINE_OPERATION_WRAPPER(greaterequal)
+DEFINE_OPERATION_WRAPPER(less)
+DEFINE_OPERATION_WRAPPER(lessequal)
+DEFINE_OPERATION_WRAPPER(equal)
+
 static int combine (lua_State *L)
 {
     array_checkarray (L, 1);
@@ -153,6 +159,15 @@ static int range (lua_State *L)
     return 2;
 }
 
+static int sum (lua_State *L)
+{
+    array_checkarray (L, 1);
+
+    arraymath_sum(L);
+    
+    return 1;
+}
+
 static int scale (lua_State *L)
 {
     array_checkarray (L, 1);
@@ -169,6 +184,17 @@ static int offset (lua_State *L)
     luaL_checknumber (L, 2);
 
     arraymath_offset(L);
+    
+    return 1;
+}
+
+static int scaleoffset (lua_State *L)
+{
+    array_checkarray (L, 1);
+    luaL_checknumber (L, 2);
+    luaL_checknumber (L, 3);
+
+    arraymath_scaleoffset(L);
     
     return 1;
 }
@@ -641,10 +667,19 @@ int luaopen_arraymath_core (lua_State *L)
 	{"multiply", multiply},
 	{"subtract", subtract},
 	{"divide", divide},
+
+        {"greater", greater},
+        {"greaterequal", greaterequal},
+        {"less", less},
+        {"lessequal", lessequal},
+        {"equal", equal},
+
 	{"scale", scale},
 	{"offset", offset},
+	{"scaleoffset", scaleoffset},
 	{"raise", raise},
 	{"range", range},
+	{"sum", sum},
 	{"combine", combine},
 	    
 	{"dot", dot},

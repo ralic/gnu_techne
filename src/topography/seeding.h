@@ -31,7 +31,7 @@ typedef struct {
 
 typedef struct {
     seeding_Bin bins[BINS_N];
-    double density, ceiling, horizon, error, clustering[2];
+    double density, ceiling, horizon, error, clustering;
     int triangles_n[2];
 } seeding_Context;
 

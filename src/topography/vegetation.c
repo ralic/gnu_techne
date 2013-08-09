@@ -179,8 +179,9 @@ static unsigned int deflections;
     glUseProgram(self->name);
 
     {
-        unsigned int factor_l, references_l, weights_l, resolutions_l;
+        unsigned int factor_l, references_l, weights_l, resolutions_l, power_l;
         
+        power_l = glGetUniformLocation (self->name, "power");
         factor_l = glGetUniformLocation (self->name, "factor");
         references_l = glGetUniformLocation (self->name, "references");
         weights_l = glGetUniformLocation (self->name, "weights");
@@ -189,6 +190,7 @@ static unsigned int deflections;
         self->locations.intensity = glGetUniformLocation (self->name, "intensity");
 
         glUniform1f (factor_l, self->elevation->albedo);
+        glUniform1f (power_l, self->elevation->separation);
 
         /* Initialize reference color uniforms. */
         
@@ -253,7 +255,13 @@ static unsigned int deflections;
 
     glEnable (GL_DEPTH_TEST);
     glEnable (GL_SAMPLE_ALPHA_TO_COVERAGE);
+    glEnable (GL_SAMPLE_ALPHA_TO_ONE);
+
+    /* glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); */
+    /* glEnable (GL_BLEND); */
     
+    glEnable (GL_MULTISAMPLE);
+
     glUseProgram(self->name);
 
     atmosphere = [Atmosphere instance];
@@ -266,6 +274,10 @@ static unsigned int deflections;
 
     glDisable (GL_DEPTH_TEST);
     glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
+    glDisable (GL_SAMPLE_ALPHA_TO_ONE);
+
+    glDisable (GL_MULTISAMPLE);
+    /* glDisable (GL_BLEND); */
 }
 
 @end

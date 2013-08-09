@@ -36,7 +36,7 @@ vegetationprofiler = primitives.graphic {
    end,
    
    -- draw = function(self)
-   --    trace (self.parent.culled)
+   --    trace (self.parent.segments)
    -- end,
    
    unlink = function(self)

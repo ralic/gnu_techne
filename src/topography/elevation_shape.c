@@ -230,7 +230,10 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
     }
     
     l = 9 * self->context->target * sizeof(float);
-    
+
+    glPolygonOffset(1, 1);
+    glEnable (GL_POLYGON_OFFSET_FILL);
+
     /* Update the vertex buffer object. */
     
     glBindBuffer (GL_ARRAY_BUFFER, self->buffer);
@@ -268,6 +271,8 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
             glDrawArrays (self->mode, 3 * l, 3 * (self->ranges[k] - l));
         }
     }
+    
+    glDisable (GL_POLYGON_OFFSET_FILL);
     
     t_pop_modelview ();
     

@@ -269,7 +269,7 @@ static void calculate_sky_color(double azimuth, double elevation,
 
     const char *private[1] = {"texture"};
 
-    self->index = 1;
+    self->index = 1.0 / 0.0;
     
     [super init];
     

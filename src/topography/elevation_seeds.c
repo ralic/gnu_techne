@@ -48,8 +48,7 @@
     self->seeding.horizon = -100;
     self->seeding.density = 10000;
     self->seeding.ceiling = 1000;
-    self->seeding.clustering[0] = 1.0 / 0.0;
-    self->seeding.clustering[1] = 0.0;
+    self->seeding.clustering = 1.0;
 
     initialize_seeding(&self->seeding);
 
@@ -131,8 +130,6 @@
     glUniform2f(self->locations.scale,
                 q / tiles->resolution[0], q / tiles->resolution[1]);
     
-    glEnable (GL_MULTISAMPLE);
-
 #ifdef RASTERTIZER_DISCARD
     glEnable (GL_RASTERIZER_DISCARD);
 #endif
@@ -155,7 +152,7 @@
                  k += 1, b += 1) {
 
                 if(b->fill > 0) {
-                    double r, *C;
+                    double r, C;
                     
                     glUniform2f(self->locations.offset,
                                 -i + 0.5 * tiles->size[0],
@@ -170,18 +167,16 @@
                                      b->fill * SEED_SIZE, b->buffer);
 
                     C = self->seeding.clustering;
-                    r = round(b->center / C[0]);
+                    r = round(b->center / C);
 
                     if (r >= 1.0) {
-                        glUniform3f(self->locations.clustering,
-                                    C[0], C[1],
-                                    self->seeding.ceiling / C[0] - r);
+                        glUniform1f(self->locations.clustering, C);
                         glDrawArraysInstanced(GL_PATCHES, 0, b->fill, r);
 
                         b->patches += b->fill * r;
                     } else {
-                        glUniform3f(self->locations.clustering,
-                                    round(b->center), C[1], 0);
+                        glUniform1f(self->locations.clustering,
+                                    round(b->center));
                         glDrawArraysInstanced(GL_PATCHES, 0, b->fill, 1);
                         
                         b->patches += b->fill;
@@ -193,8 +188,6 @@
     
     /* _TRACE ("error: %f\n", seeding->error); */
 
-    glDisable (GL_MULTISAMPLE);
-    
 #ifdef RASTERTIZER_DISCARD
     glDisable (GL_RASTERIZER_DISCARD);
 #endif
@@ -231,32 +224,14 @@
 
 -(int) _get_clustering
 {
-    int i;
-    
-    lua_createtable (_L, 2, 0);
-
-    for (i = 0 ; i < 2 ; i += 1) {
-        lua_pushnumber (_L, self->seeding.clustering[i]);
-        lua_rawseti (_L, -2, i + 1);
-    }
+    lua_pushnumber (_L, self->seeding.clustering);
     
     return 1;
 }
 
 -(void) _set_clustering
 {
-    int i;
-    
-    if(lua_istable(_L, 3)) {
-        for (i = 0 ; i < 2 ; i += 1) {
-            lua_rawgeti (_L, 3, i + 1);
-            self->seeding.clustering[i] = lua_tonumber (_L, -1);
-            lua_pop(_L, 1);
-        }
-    } else {
-        self->seeding.clustering[0] = 1.0 / 0.0;
-        self->seeding.clustering[1] = 0.0;
-    }
+    self->seeding.clustering = lua_tonumber (_L, 3);
 }
 
 -(int) _get_bins

@@ -43,6 +43,169 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
     return object;
 }
 
+static void map_array_to_texture (array_Array *array,
+                                  GLenum *gltype, GLenum *internal,
+                                  GLenum *format)
+    
+{
+    const GLenum formats[][3][5][2] = {
+        /* R */
+
+        {            
+            {
+                {GL_R32F, GL_RED}, {GL_NONE, GL_NONE}, 
+                {GL_R32I, GL_RED_INTEGER}, {GL_R32UI, GL_RED_INTEGER},
+                {GL_NONE, GL_NONE}
+            },
+
+            {
+                {GL_R16F, GL_RED}, {GL_R16, GL_RED}, 
+                {GL_R16I, GL_RED_INTEGER}, {GL_R16UI, GL_RED_INTEGER},
+                {GL_R16_SNORM, GL_RED}
+            },
+
+            {
+                {GL_NONE, GL_NONE}, {GL_R8, GL_RED}, 
+                {GL_R8I, GL_RED_INTEGER}, {GL_R8UI, GL_RED_INTEGER},
+                {GL_R8_SNORM, GL_RED}
+            },
+        },
+
+        {
+            /* RG */
+            
+            {
+                {GL_RG32F, GL_RG}, {GL_NONE, GL_NONE}, 
+                {GL_RG32I, GL_RG_INTEGER}, {GL_RG32UI, GL_RG_INTEGER},
+                {GL_NONE, GL_NONE}
+            },
+
+            {
+                {GL_RG16F, GL_RG}, {GL_RG16, GL_RG}, 
+                {GL_RG16I, GL_RG_INTEGER}, {GL_RG16UI, GL_RG_INTEGER},
+                {GL_RG16_SNORM, GL_RG}
+            },
+
+            {
+                {GL_NONE, GL_NONE}, {GL_RG8, GL_RG}, 
+                {GL_RG8I, GL_RG_INTEGER}, {GL_RG8UI, GL_RG_INTEGER},
+                {GL_RG8_SNORM, GL_RG}
+            },
+        },
+
+        {
+            /* RGB */
+            
+            {
+                {GL_RGB32F, GL_RGB}, {GL_NONE, GL_NONE}, 
+                {GL_RGB32I, GL_RGB_INTEGER}, {GL_RGB32UI, GL_RGB_INTEGER},
+                {GL_NONE, GL_NONE}
+            },
+
+            {
+                {GL_RGB16F, GL_RGB}, {GL_RGB16, GL_RGB}, 
+                {GL_RGB16I, GL_RGB_INTEGER}, {GL_RGB16UI, GL_RGB_INTEGER},
+                {GL_RGB16_SNORM, GL_RGB}
+            },
+
+            {
+                {GL_NONE, GL_NONE}, {GL_RGB8, GL_RGB}, 
+                {GL_RGB8I, GL_RGB_INTEGER}, {GL_RGB8UI, GL_RGB_INTEGER},
+                {GL_RGB8_SNORM, GL_RGB}
+            },
+        },
+            
+        {
+            /* RGBA */
+                
+            {
+                {GL_RGBA32F, GL_RGBA}, {GL_NONE, GL_NONE}, 
+                {GL_RGBA32I, GL_RGBA_INTEGER}, {GL_RGBA32UI, GL_RGBA_INTEGER},
+                {GL_NONE, GL_NONE}
+            },
+
+            {
+                {GL_RGBA16F, GL_RGBA}, {GL_RGBA16, GL_RGBA}, 
+                {GL_RGBA16I, GL_RGBA_INTEGER}, {GL_RGBA16UI, GL_RGBA_INTEGER},
+                {GL_RGBA16_SNORM, GL_RGBA}
+            },
+
+            {
+                {GL_NONE, GL_NONE}, {GL_RGBA8, GL_RGBA}, 
+                {GL_RGBA8I, GL_RGBA_INTEGER}, {GL_RGBA8UI, GL_RGBA_INTEGER},
+                {GL_RGBA8_SNORM, GL_RGBA}
+            },
+        }
+    };
+
+    int l, m, n;
+    const GLenum *pair;
+
+    switch(array->type) {
+    case ARRAY_TUCHAR:
+        *gltype = GL_UNSIGNED_BYTE; m = 2; n = 3; break;
+    case ARRAY_TNUCHAR:
+        *gltype = GL_UNSIGNED_BYTE; m = 2; n = 1; break;
+    case ARRAY_TCHAR:
+        *gltype = GL_BYTE; m = 2; n = 2; break;
+    case ARRAY_TNCHAR:
+        *gltype = GL_BYTE; m = 2; n = 4; break;
+    case ARRAY_TUSHORT:
+        *gltype = GL_UNSIGNED_SHORT; m = 1; n = 3; break;
+    case ARRAY_TNUSHORT:
+        *gltype = GL_UNSIGNED_SHORT; m = 1; n = 1; break;
+    case ARRAY_TSHORT:
+        *gltype = GL_SHORT; m = 1; n = 2; break;
+    case ARRAY_TNSHORT:
+        *gltype = GL_SHORT; m = 1; n = 4; break;
+    case ARRAY_TUINT:
+        *gltype = GL_UNSIGNED_INT; m = 0; n = 3; break;
+    case ARRAY_TNUINT:
+        *gltype = GL_UNSIGNED_INT; m = 0; n = 1; break;
+    case ARRAY_TINT:
+        *gltype = GL_INT; m = 0; n = 2; break;
+    case ARRAY_TNINT:
+        *gltype = GL_INT; m = 0; n = 4; break;
+    case ARRAY_TFLOAT:
+        *gltype = GL_FLOAT; m = 0; n = 0; break;
+    default:
+        t_print_error("Texel data specified for texture is of unsuitable type.\n");
+        abort();
+    }
+
+    l = array->size[array->rank - 1] - 1;
+    pair = formats[l][m][n];
+
+    *internal = pair[0];
+    *format = pair[1];
+}
+
+static void complete_if_needed(Texture *texture)
+{
+    int mode, base, max;
+    
+    glBindTexture(texture->target, texture->name);
+    glGetTexParameteriv(texture->target, GL_TEXTURE_MIN_FILTER, &mode);
+    glGetTexParameteriv(texture->target, GL_TEXTURE_BASE_LEVEL, &base);
+    glGetTexParameteriv(texture->target, GL_TEXTURE_MAX_LEVEL, &max);
+
+    if (mode != GL_NEAREST && mode != GL_LINEAR && base == max) {
+        int i, width;
+        
+        glTexParameteri(texture->target, GL_TEXTURE_MAX_LEVEL, 1000);
+        glGenerateMipmap(texture->target);
+
+        for(i = base, width = 1 ; width > 0 ; i += 1) {
+            glGetTexLevelParameteriv(texture->target, i, GL_TEXTURE_WIDTH,
+                                     &width);
+        }
+        
+        glTexParameteri(texture->target, GL_TEXTURE_MAX_LEVEL, i - 2);
+    }
+
+    glBindTexture(texture->target, 0);
+}
+
 @implementation Texture
 
 -(void)initWithTarget: (GLenum)target_in andName: (unsigned int)name_in
@@ -133,18 +296,17 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
 -(int) _get_lod
 {
     float f;
-    int i;
     
     lua_createtable(_L, 3, 0);
 
     glBindTexture(self->target, self->name);
 
-    glGetTexParameteriv(self->target, GL_TEXTURE_MIN_LOD, &i);
-    lua_pushinteger(_L, i);
+    glGetTexParameterfv(self->target, GL_TEXTURE_MIN_LOD, &f);
+    lua_pushnumber(_L, f);
     lua_rawseti(_L, -2, 1);
 
-    glGetTexParameteriv(self->target, GL_TEXTURE_MAX_LOD, &i);
-    lua_pushinteger(_L, i);
+    glGetTexParameterfv(self->target, GL_TEXTURE_MAX_LOD, &f);
+    lua_pushnumber(_L, f);
     lua_rawseti(_L, -2, 2);
 
     glGetTexParameterfv(self->target, GL_TEXTURE_LOD_BIAS, &f);
@@ -161,15 +323,15 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
         
         lua_rawgeti(_L, 3, 1);
         if(lua_isnumber(_L, -1)) {
-            glTexParameteri(self->target, GL_TEXTURE_MIN_LOD,
-                            lua_tointeger (_L, -1));
+            glTexParameterf(self->target, GL_TEXTURE_MIN_LOD,
+                            lua_tonumber (_L, -1));
         }
         lua_pop(_L, 1);
 
         lua_rawgeti(_L, 3, 2);
         if(lua_isnumber(_L, -1)) {
-            glTexParameteri(self->target, GL_TEXTURE_MAX_LOD,
-                            lua_tointeger (_L, -1));
+            glTexParameterf(self->target, GL_TEXTURE_MAX_LOD,
+                            lua_tonumber (_L, -1));
         }
         lua_pop(_L, 1);
 
@@ -256,98 +418,168 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
 
             lua_pop(_L, 1);
         }
+
+        complete_if_needed(self);
     }
 }
 
 -(int) _get_texels
 {
-    T_WARN_WRITEONLY;
+    int i, base, max, rank;
+    
+    glBindTexture(self->target, self->name);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-    lua_pushnil(_L);
+    glGetTexParameteriv(self->target, GL_TEXTURE_BASE_LEVEL, &base);
+    glGetTexParameteriv(self->target, GL_TEXTURE_MAX_LEVEL, &max);
+
+    switch(self->target)  {
+    case GL_TEXTURE_2D: rank = 3; break;
+    default: assert(0);
+    }
+    
+    lua_newtable(_L);
+
+    for (i = base ; i <= max ; i += 1) {
+        GLenum internal, format, gltype;
+        array_Type type;
+        array_Array *array;
+        int channels[4][2], size[4], n;
+
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_WIDTH,
+                                 &size[0]);
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_HEIGHT,
+                                 &size[1]);
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_DEPTH,
+                                 &size[2]);
+        
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_RED_TYPE,
+                                 &channels[0][0]);
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_RED_SIZE,
+                                 &channels[0][1]);
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_GREEN_TYPE,
+                                 &channels[1][0]);
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_GREEN_SIZE,
+                                 &channels[1][1]);
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_BLUE_TYPE,
+                                 &channels[2][0]);
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_BLUE_SIZE,
+                                 &channels[2][1]);
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_ALPHA_TYPE,
+                                 &channels[3][0]);
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_ALPHA_SIZE,
+                                 &channels[3][1]);
+
+        /* Figure out the array type. */
+        
+        switch (channels[0][0]) {
+        case GL_FLOAT: type = ARRAY_TFLOAT; break;
+        case GL_SIGNED_NORMALIZED: type = ARRAY_TNCHAR; break;
+        case GL_UNSIGNED_NORMALIZED: type = ARRAY_TNUCHAR; break;
+        case GL_INT: type = ARRAY_TCHAR; break;
+        case GL_UNSIGNED_INT: type = ARRAY_TUCHAR; break;
+        }
+
+        if (type != ARRAY_TFLOAT) {
+            n = channels[0][1] / 8;
+        
+            if (type > 0) {
+                type -= 2 * ((n > 3 ? 3 : n) - 1);
+            }  else {
+                type += 2 * ((n > 3 ? 3 : n) - 1);
+            }
+        }
+        
+        /* Count the number of channels. */
+        
+        for(n = 0 ; channels[n][0] != GL_NONE ; n += 1);
+        size[rank - 1] = n;
+
+        array = array_createarrayv(_L, type, NULL, rank, size);
+        map_array_to_texture(array, &gltype, &internal, &format);
+
+        glGetTexImage(self->target, i, format, gltype, array->values.any);
+        lua_rawseti(_L, 3, i + 1);
+    }
     
     return 1;
 }
 
 -(void) _set_texels
 {
-    array_Array *texels;
+    int base, max;
     
-    if (!lua_isnil (_L, -1)) {
-        GLenum type, format;
+    if (!lua_istable (_L, 3)) {
+        t_print_error("Invalid value specified for texel data.\n");
+        abort();
+    }
+
+    base = 1000;
+    max = 0;
+
+    glBindTexture(self->target, self->name);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    
+    lua_pushnil(_L);
+    
+    while (lua_next(_L, 3)) {
+        array_Array *texels;
+        GLenum type, internal, format;
+        int i;
         
-        texels = array_testarray (_L, -1);
+        i = lua_tointeger(_L, -2) - 1;
 
-        if (!texels) {
-            t_print_error("Invalid value specified for texel data.\n");
-            abort();
-        }
+        if (!lua_isnil(_L, -1)) {
+            texels = array_testarray (_L, -1);
 
-        switch(self->target) {
-        case GL_TEXTURE_2D:
-            if (texels->rank != 3) {
-                t_print_error("Texel data is of unsuitable rank.\n");
+            if (!texels) {
+                t_print_error("Invalid value specified for texel data at level %d.\n", i);
                 abort();
             }
-            break;
-        }
 
-        switch(texels->type) {
-        case ARRAY_TUCHAR:case ARRAY_TNUCHAR:
-            type = GL_UNSIGNED_BYTE;
-            break;
-        case ARRAY_TCHAR:case ARRAY_TNCHAR:
-            type = GL_BYTE;
-            break;
-        default:
-            t_print_error("Texel data specified for texture is of unsuitable type.\n");
-            abort();
-        }
-        
-        switch(texels->size[texels->rank - 1]) {
-        case 1:
-            format = GL_R;
-            break;
-        case 2:
-            format = GL_RG;
-            break;
-        case 3:
-            format = GL_RGB;
-            break;
-        case 4:
-            format = GL_RGBA;
-            break;
-        default:
-            t_print_error("Texel data specified for texture is of unsuitable size.\n");
-            abort();
-        }
+            switch(self->target) {
+            case GL_TEXTURE_2D:
+                if (texels->rank != 3) {
+                    t_print_error("Texel data at level %d is of unsuitable rank.\n", i);
+                    abort();
+                }
+                break;
+            }
 
-        /* Create the texture object. */
-	
-        glGetError();
-        glBindTexture(self->target, self->name);
-                    
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        
-        switch(self->target) {
-        case GL_TEXTURE_2D:
-            glTexImage2D (self->target, 0, format,
-                          texels->size[0], texels->size[1], 0,
-                          format, type, texels->values.any);
-            break;
-        default:
-            t_print_error("Unsupported texture target.\n");
-            abort();
-        }
+            map_array_to_texture(texels, &type, &internal, &format);
+            /* Create the texture object. */
+	                    
+            switch(self->target) {
+            case GL_TEXTURE_2D:
+                glTexImage2D (self->target, i, internal,
+                              texels->size[0], texels->size[1], 0,
+                              format, type, texels->values.any);
+                break;
+            default:
+                t_print_error("Unsupported texture target.\n");
+                abort();
+            }
 
-        glGenerateMipmap (self->target);
-        glBindTexture(self->target, 0);
-    } else {
-        glBindTexture(self->target, self->name);
-        glTexImage2D (self->target, 0, GL_RGB,
-                      0, 0, 0, GL_RGB,
-                      GL_UNSIGNED_BYTE,
-                      NULL);
+            lua_pop(_L, 1);
+
+            if (base > i) {
+                base = i;
+            }
+
+            if (max < i) {
+                max = i;
+            }
+        } else {
+            glTexImage2D (self->target, i, GL_RGB,
+                          0, 0, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        }
     }
+
+    glTexParameteri(self->target, GL_TEXTURE_BASE_LEVEL, base);
+    glTexParameteri(self->target, GL_TEXTURE_MAX_LEVEL, max);
+    glBindTexture(self->target, 0);
+
+    complete_if_needed(self);
 }
 
 @end

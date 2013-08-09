@@ -18,12 +18,20 @@
 #define _TEXTURE_H_
 
 #include "gl.h"
+
+#include "array/array.h"
 #include "node.h"
 
 @interface Texture: Node {
 @public
     unsigned int name;
     GLenum target;
+
+    struct {
+        int rank;
+        GLenum format;
+        array_Type type;
+    } template;
 }
 
 -(void)initWithTarget: (GLenum)target_in andName: (unsigned int)name_in;

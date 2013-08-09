@@ -16,18 +16,13 @@ debug=0
 for arg in "$@"; do
     if [ "$arg" = "--debug" ]; then
 	debug=1
-    elif [ "$arg" = "--trace" ]; then
-	debug=1
-	commands="set confirm off\nrun\nbt\n"
     else
 	args+=("$arg")
     fi
 done
 
-if [ "$debug" -eq 1 -a -n "$commands" ]; then
-    echo -e "$commands" | gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts ${args[*]}
-elif [ "$debug" -eq 1 ]; then
-    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts ${args[*]}
+if [ "$debug" -eq 1 ]; then
+    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts "${args[*]}"
 else
     ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts "${args[@]}"
 fi

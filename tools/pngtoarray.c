@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
    fprintf(stdout,
 	   "local array = require \"array\"\n\n"
-	   "return array.uchars (%d, %d, %d, \"",
+	   "return array.nuchars (%d, %d, %d, \"",
 	   width, height, depth);
 
    for(i = height - 1 ; i >= 0 ; i -= 1) {

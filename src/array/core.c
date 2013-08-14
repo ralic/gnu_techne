@@ -156,15 +156,59 @@ static int adjust (lua_State *L)
 static int slice (lua_State *L)
 {
     array_Array *array;
-    int j;
+    int j, n;
 
     array = array_checkarray (L, 1);
 
-    {
-        int slices[array->rank * 2];
+    for (j = 0, n = 0 ; j < array->rank ; j += 1) {
+        /* If no slices are specified along a dimension assume one
+         * range with all elements. */
+        
+        if (lua_isnoneornil(L, 2 + j)) {
+            n += 1;
+        } else {
+            luaL_checktype(L, 2 + j, LUA_TTABLE);    
+            n += lua_rawlen(L, 2 + j);
+        }
+    }
 
-        for (j = 0 ; j < array->rank * 2 ; j += 1) {
-            slices[j] = luaL_checknumber (L, j + 2);
+    {
+        int k, l, slices[array->rank + 2 * n];
+
+        /* Iterate through each dimension and gather all slices. */
+        
+        for (j = 0, l = array->rank ; j < array->rank ; j += 1) {
+            if (lua_isnoneornil(L, 2 + j)) {
+                slices[j] = 1;
+                slices[l] = 1;
+                slices[l + 1] = array->size[j];
+                l += 2;
+            } else {
+                slices[j] = lua_rawlen(L, 2 + j);
+
+                for (k = 0 ; k < slices[j] ; k += 1, l += 2) {
+                    lua_rawgeti(L, 2 + j, k + 1);
+
+                    if (lua_isnumber(L, -1)) {
+                        slices[l] = slices[l + 1] = lua_tointeger (L, -1);
+                    } else if (lua_istable(L, -1)) {
+                        lua_rawgeti(L, -1, 1);
+                        slices[l] = lua_tointeger (L, -1);
+                        lua_pop(L, 1);
+
+                        lua_rawgeti(L, -1, 2);
+                        slices[l + 1] = lua_tointeger (L, -1);
+                        lua_pop(L, 1);
+                    } else {
+                        lua_pushstring (L,
+                                        "Slice elements must be integers or"
+                                        "integer pairs inside tables.");
+                        lua_error (L);
+                    }
+                    
+                    lua_pop(L, 1);
+                }
+            }
         }
        
         array_slicev (L, 1, slices);

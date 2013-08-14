@@ -1191,78 +1191,101 @@ array_Array *array_adjust (lua_State *L, int index, void *defaults, int rank, ..
 }
 
 static void cut (array_Array *source, array_Array *sink, int from, int to,
-                 int l, int m, int d, int *range)
+                 int l, int m, int d, int *counts, int *ranges)
 {
-    int i;
-       
+    int i, j, k;
+
     if (d < source->rank - 1) {
        int s, t;
 
        s = l / source->size[d];
        t = m / sink->size[d];
-       
-       for (i = 0 ; i < range[1] - range[0] + 1 ; i += 1) {
-           cut (source, sink,
-                from + (range[0] - 1 + i) * s,
-                to + i * t,
-                s, t, d + 1, range + 2);
+
+       for (j = 0, k = 0 ; j < counts[0] ; j += 1) {
+           int *range;
+
+           range = &ranges[2 * j];
+           
+           for (i = 0 ; i < range[1] - range[0] + 1 ; i += 1, k += 1) {
+               cut (source, sink,
+                    from + (range[0] - 1 + i) * s,
+                    to + k * t,
+                    s, t, d + 1, &counts[1], &ranges[2 * counts[0]]);
+           }
        }
     } else {
-       copy_elements (sink, source, to, from + (range[0] - 1),
-                       (range[1] - range[0] + 1));
+        for (j = 0, k = 0 ; j < counts[0] ; j += 1) {
+           int *range;
+
+           range = &ranges[2 * j];
+           
+           copy_elements (sink, source, to + k, from + (range[0] - 1),
+                          (range[1] - range[0] + 1));
+           k += (range[1] - range[0] + 1);
+       }
     }
 }
 
 array_Array *array_slicev (lua_State *L, int index, int *slices)
 {
     array_Array *array, slice;
+    int i, n;
 
     array = array_testarray (L, index);
 
+    for (i = 0, n = 0;
+         i < array->rank;
+         n += slices[i], i += 1);
+
     {
-        int i, j, l, m, wrapped[2 * array->rank];
+        int j, k, l, m, p, wrapped[array->rank + 2 * n];
         
         slice.size = malloc (array->rank * sizeof (int));
         memcpy (slice.size, array->size, array->rank * sizeof (int));
-        memcpy (wrapped, slices, 2 * array->rank * sizeof (int));
+        memcpy (wrapped, slices, (array->rank + 2 * n) * sizeof (int));
 
-        for (j = 0, l = 1, m = 1 ; j < array->rank ; j += 1) {
-            int *b;
+        /* Wrap around negative indices and check slice ranges against
+         * source array bounds.  Also calculate sizes for the sliced
+         * array. */
 
-            b = &wrapped[2 * j];
+        for (k = 0, p = array->rank, l = m = 1 ; k < array->rank ; k += 1) {
+            slice.size[k] = 0;
             
-            /* Wrap around negative indices and check slice ranges
-             * against source array bounds. */
-       
-            for (i = 0 ; i < 2 ; i += 1) {
-                if (b[i] < 0) {
-                    b[i] += array->size[j] + 1;
-                }
+            for (j = 0 ; j < wrapped[k] ; j += 1, p += 2) {
+                int *b;
+
+                b = &wrapped[p];
+            
+                for (i = 0 ; i < 2 ; i += 1) {
+                    if (b[i] < 0) {
+                        b[i] += array->size[k] + 1;
+                    }
            
-                if (b[i] < 1 || b[i] > array->size[j]) {
+                    if (b[i] < 1 || b[i] > array->size[k]) {
+                        lua_pushfstring (L,
+                                         "Slice range %d along dimension %d "
+                                         "is invalid (%d is out of bounds).",
+                                         j + 1, k + 1, b[i]); 
+           
+                        lua_error (L);
+                    }
+                }
+
+                /* Check slice range ordering. */
+
+                if (b[1] < b[0]) {
                     lua_pushfstring (L,
-                                     "Invalid slice range specified "
-                                     "(%d is more than %d an therefore "
-                                     "out of bounds).", b[i], array->size[j]); 
+                                     "Invalid slice range specified (%d < %d).",
+                                     b[1], b[0]);
            
                     lua_error (L);
                 }
+
+                slice.size[k] += b[1] - b[0] + 1;
             }
 
-            /* Check slice range ordering. */
-
-            if (b[1] < b[0]) {
-                lua_pushfstring (L,
-                                 "Invalid slice range specified (%d < %d).",
-                                 b[1], b[0]);
-           
-                lua_error (L);
-            }
-       
-            slice.size[j] = b[1] - b[0] + 1;
-
-            l *= array->size[j];
-            m *= slice.size[j];
+            l *= array->size[k];
+            m *= slice.size[k];
         }
     
         slice.length = m * sizeof_element (array->type);
@@ -1271,7 +1294,7 @@ array_Array *array_slicev (lua_State *L, int index, int *slices)
         slice.rank = array->rank;
         slice.free = FREE_BOTH;
 
-        cut (array, &slice, 0, 0, l, m, 0, wrapped);
+        cut (array, &slice, 0, 0, l, m, 0, &wrapped[0], &wrapped[array->rank]);
     }
 
     return construct (L, &slice);
@@ -1280,23 +1303,31 @@ array_Array *array_slicev (lua_State *L, int index, int *slices)
 array_Array *array_slice (lua_State *L, int index, ...)
 {
     array_Array *array, *sliced;
+    va_list ap;
     
     array = array_testarray (L, index);
-
-    {
-        va_list ap;
-        int j, slices[2 * array->rank];
         
-        va_start (ap, index);
+    {
+        int i, n, counts[array->rank];
 
-        for (j = 0 ; j < array->rank ; j += 1) {
-            slices[2 * j] = va_arg(ap, int);
-            slices[2 * j + 1] = va_arg(ap, int);
+        va_start (ap, index);
+        
+        for (i = 0, n = 1;
+             i < array->rank;
+             counts[i] = va_arg(ap, int), n += counts[i], i += 1);
+        
+        {
+            int j, slices[array->rank + 2 * n];
+
+            for (j = 0 ; j < n ; j += 1) {
+                slices[2 * j] = va_arg(ap, int);
+                slices[2 * j + 1] = va_arg(ap, int);
+            }
+
+            sliced = array_slicev (L, index, slices);
         }
    
         va_end(ap);
-
-        sliced = array_slicev (L, index, slices);
     }
 
     return sliced;

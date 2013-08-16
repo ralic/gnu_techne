@@ -14,3 +14,11 @@
 	* Released version 0.2 with the following changes:
 	  - Fixed a couple of completion and pretty-printing glitches.
 	  - Added support for completing file names.
+
+2013-08-14  Dimitris Papavasileiou  <dpapavas@gmail.com>
+
+	* Released version 0.3 with the following changes:
+	  - Changed pretty-printing to always honour __tostring
+	    metamethods.
+	  - Modified the completion generator to return file name
+	    completion only if nothing else matches.

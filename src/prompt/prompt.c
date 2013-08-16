@@ -113,15 +113,15 @@ static char *logfile;
 #define absolute(_L, _i) (_i < 0 ? lua_gettop (_L) + _i + 1 : _i)
 
 static int colorize = 1;
-static char *colors[] = {"\033[0m",
-			 "\033[0;31m",
-			 "\033[1;31m",
-			 "\033[0;32m",
-			 "\033[1;32m",
-			 "\033[0;33m",
-			 "\033[1;33m",
-			 "\033[1m",
-			 "\033[22m"};
+static const char *colors[] = {"\033[0m",
+                               "\033[0;31m",
+                               "\033[1;31m",
+                               "\033[0;32m",
+                               "\033[1;32m",
+                               "\033[0;33m",
+                               "\033[1;33m",
+                               "\033[1m",
+                               "\033[22m"};
 
 #define COLOR(i) (colorize ? colors[i] : "")
 	
@@ -180,7 +180,7 @@ static char *keyword_completions (const char *text, int state)
 static char *table_key_completions (const char *text, int state)
 {
     static const char *c, *token;
-    static char operator;
+    static char oper;
     
     if (state == 0) {
 	/* Scan to the beginning of the to-be-completed token. */
@@ -190,7 +190,7 @@ static char *table_key_completions (const char *text, int state)
 	     c -= 1);
 
 	if (c > text) {
-	    operator = *c;
+	    oper = *c;
 	    token = c + 1;
 
 	    /* Get the iterable value, the keys of which we wish to
@@ -208,7 +208,7 @@ static char *table_key_completions (const char *text, int state)
 		return NULL;
 	    }
 	} else {
-	    operator = 0;
+	    oper = 0;
 	    token = text;
 	    
 	    lua_pushglobaltable(_L);
@@ -249,8 +249,8 @@ static char *table_key_completions (const char *text, int state)
 	 * numeric keys too. */
 	
 	if (lua_type (_L, -1) == LUA_TSTRING ||
-	    (operator == '[' && lua_type (_L, -1) == LUA_TNUMBER)) {
-	    if (operator == '[') {
+	    (oper == '[' && lua_type (_L, -1) == LUA_TNUMBER)) {
+	    if (oper == '[') {
 		if (lua_type (_L, -1) == LUA_TNUMBER) {
 		    lua_Number n;
 		    int i;
@@ -287,7 +287,7 @@ static char *table_key_completions (const char *text, int state)
 		char *match;
 
 		if (token > text) {
-		    match = malloc ((token - text) + l + 1);
+		    match = (char *)malloc ((token - text) + l + 1);
 		    strncpy (match, text, token - text);
 		    strcpy (match + (token - text), candidate);
 		} else {
@@ -372,7 +372,7 @@ static char *generator (const char *text, int state)
 		
 		n = strlen (match) + 1;
 	    
-		match = realloc (match, n + start - text);
+		match = (char *)realloc (match, n + start - text);
 		memmove (match + (start - text), match, n);
 		strncpy (match, text, start - text);
 	    }
@@ -489,9 +489,9 @@ static int length, offset, indent, column, linewidth, ancestors;
 #define dump_literal(s) (check_fit(sizeof(s) - 1), strcpy (dump + offset, s), offset += sizeof(s) - 1, column += width(s))
 #define dump_character(c) (check_fit(1), dump[offset] = c, offset += 1, column += 1)
 
-static int width (char *s)
+static int width (const char *s)
 {
-    char *c;
+    const char *c;
     int n, discard = 0;
 
     /* Calculate the printed width of the chunk s ignoring escape
@@ -520,7 +520,7 @@ static void check_fit (int size)
     
     if (offset + size + 1 > length) {
 	length = offset + size + 1;
-	dump = realloc (dump, length * sizeof (char));
+	dump = (char *)realloc (dump, length * sizeof (char));
     }
 }
 
@@ -562,7 +562,7 @@ static void break_line ()
     column = indent;
 }
 
-static void dump_string (char *s, int n)
+static void dump_string (const char *s, int n)
 {
     int l;
     
@@ -617,7 +617,7 @@ static void describe (lua_State *L, int index)
 
 	/* Scan the string to decide how to print it. */
 	
-	for (i = 0, score = n, started = 0 ; i < n ; i += 1) {
+	for (i = 0, score = n, started = 0 ; i < (int)n ; i += 1) {
 	    if (s[i] == '\n' || s[i] == '\t' ||
 		s[i] == '\v' || s[i] == '\r') {
 		/* These characters show up better in a long sting so
@@ -676,7 +676,7 @@ static void describe (lua_State *L, int index)
 
 	    dump_literal ("\"");
 
-	    for (i = 0 ; i < n ; i += 1) {
+	    for (i = 0 ; i < (int)n ; i += 1) {
 		if (s[i] == '"' || s[i] == '\\') {
 		    dump_literal ("\\");
 		    dump_character (s[i]);
@@ -985,10 +985,10 @@ int luap_call (lua_State *L, int n) {
     return status;
 }
 
-void luap_setprompts(lua_State *L, const char *single, char *multi)
+void luap_setprompts(lua_State *L, const char *single, const char *multi)
 {
-    prompts[0] = realloc (prompts[0], strlen (single) + 16);
-    prompts[1] = realloc (prompts[1], strlen (multi) + 16);
+    prompts[0] = (char *)realloc (prompts[0], strlen (single) + 16);
+    prompts[1] = (char *)realloc (prompts[1], strlen (multi) + 16);
 #ifdef HAVE_LIBREADLINE
     sprintf (prompts[0], "\001%s\002%s\001%s\002",
 	     COLOR(6), single, COLOR(0));
@@ -1010,7 +1010,7 @@ void luap_sethistory(lua_State *L, const char *file)
     if (words.we_wordc != 1) {
 	logfile = NULL;
     } else {
-	logfile = realloc (logfile, strlen(words.we_wordv[0]) + 1);
+	logfile = (char *)realloc (logfile, strlen(words.we_wordv[0]) + 1);
 	strcpy (logfile, words.we_wordv[0]);
     }
 
@@ -1028,7 +1028,7 @@ void luap_setcolor(lua_State *L, int enable)
 
 void luap_setname(lua_State *L, const char *name)
 {
-    chunkname = realloc (chunkname, strlen(name) + 2);
+    chunkname = (char *)realloc (chunkname, strlen(name) + 2);
     chunkname[0] = '=';
     strcpy (chunkname + 1, name);
 }
@@ -1036,7 +1036,7 @@ void luap_setname(lua_State *L, const char *name)
 void luap_enter(lua_State *L)
 {
     int incomplete = 0, s = 0, t = 0, l;
-    char *line, *new;
+    char *line, *prepended;
 
     /* Save the state since it needs to be passed to some readline
      * callbacks. */
@@ -1090,7 +1090,7 @@ void luap_enter(lua_State *L)
 	    s += strlen (line) + 1;
 
 	    if (s > t) {
-		buffer = realloc (buffer, s + 1);
+		buffer = (char *)realloc (buffer, s + 1);
 		t = s;
 	    }
 		    
@@ -1100,7 +1100,7 @@ void luap_enter(lua_State *L)
 	    s = strlen (line);
 
 	    if (s > t) {
-		buffer = realloc (buffer, s + 1);
+		buffer = (char *)realloc (buffer, s + 1);
 		t = s;
 	    }
 		    
@@ -1110,9 +1110,9 @@ void luap_enter(lua_State *L)
 	/* Try to execute the line with a return prepended first.  If
 	 * this works we can show returned values. */
 
-	l = asprintf (&new, "return %s", buffer);
+	l = asprintf (&prepended, "return %s", buffer);
 
-	if (luaL_loadbuffer(_L, new, l, chunkname) == LUA_OK) {
+	if (luaL_loadbuffer(_L, prepended, l, chunkname) == LUA_OK) {
 	    execute();
 		
 	    incomplete = 0;
@@ -1137,7 +1137,7 @@ void luap_enter(lua_State *L)
 		 * for more input.  If not then just print the error
 		 * message.*/
 		
-		if (n > k &&
+		if ((int)n > k &&
 		    !strncmp (message + n - k, EOF_MARKER, k)) {
 		    incomplete = 1;
 		} else {

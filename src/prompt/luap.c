@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Papavasileiou Dimitris
+/* Copyright (C) 2013 Papavasileiou Dimitris
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -46,14 +46,14 @@
 #define COPYRIGHT LUA_COPYRIGHT
 #endif
 
-#define LUAP_VERSION "0.2"
+#define LUAP_VERSION "0.3"
 
 static int interactive = 0, colorize = 1;
 
 static void greet()
 {
     fprintf(stdout, "%s" COPYRIGHT "\n%s"
-	    "luap " LUAP_VERSION " Copyright (C) 2012 Dimitris Papavasiliou\n",
+	    "luap " LUAP_VERSION " Copyright (C) 2013 Dimitris Papavasiliou\n",
 	    colorize ? "\033[1m" : "",
 	    colorize ? "\033[0m" : "");
 }	    

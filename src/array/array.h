@@ -91,9 +91,9 @@ array_Array *array_checkcompatible (lua_State *L, int index, int what, ...);
 array_Array *array_testcompatible (lua_State *L, int index, int what, ...);
 void array_copy (lua_State *L, int index);
 void array_set (lua_State *L, int index, lua_Number c);
-void array_cast (lua_State *L, int index, int rank, ...);
+void array_reshape (lua_State *L, int index, int rank, ...);
 void array_toarray (lua_State *L, int index, array_Type type, int rank, ...);
-void array_castv (lua_State *L, int index, int rank, int *size);
+void array_reshapev (lua_State *L, int index, int rank, int *size);
 void array_toarrayv (lua_State *L, int index, array_Type type, int rank, int *size);
 array_Array *array_createarrayv (lua_State *L, array_Type type, void *values,
                                  int rank, int *size);
@@ -109,5 +109,6 @@ array_Array *array_slicev (lua_State *L, int index, int *slices);
 array_Array *array_slice (lua_State *L, int index, ...);
 array_Array *array_transposev (lua_State *L, int index, int *indices);
 array_Array *array_transpose (lua_State *L, int index, ...);
+array_Array *array_cast (lua_State *L, array_Type type);
 
 #endif

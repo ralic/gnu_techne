@@ -282,7 +282,7 @@ DEFINE_COMPARISON(equal, ==)
 	int i;							\
 								\
 	for (i = 0 ; i < n ; i += 1) {				\
-	    B[i] = fmin(255, c * A[i]);                         \
+	    B[i] = c * A[i];                                    \
 	}							\
     }
 
@@ -356,17 +356,6 @@ int arraymath_scale (lua_State *L)
 	}							\
     }
 
-#define OFFSET_NORM(FUNC, TYPE)					\
-    static void FUNC (TYPE *A, lua_Number d, TYPE *B, int n,    \
-                      const double c)                           \
-    {								\
-	int i;							\
-								\
-	for (i = 0 ; i < n ; i += 1) {				\
-	    B[i] = (TYPE)((d + (A[i] / c)) * c);                \
-	}							\
-    }
-
 OFFSET(offset_doubles, double)
 OFFSET(offset_floats, float)
 
@@ -378,15 +367,6 @@ OFFSET(offset_ushorts, unsigned short)
 OFFSET(offset_shorts, signed short)
 OFFSET(offset_uchars, unsigned char)
 OFFSET(offset_chars, signed char)
-
-OFFSET_NORM(offset_norm_nulongs, unsigned long)
-OFFSET_NORM(offset_norm_nlongs, signed long)
-OFFSET_NORM(offset_norm_nuints, unsigned int)
-OFFSET_NORM(offset_norm_nints, signed int)
-OFFSET_NORM(offset_norm_nushorts, unsigned short)
-OFFSET_NORM(offset_norm_nshorts, signed short)
-OFFSET_NORM(offset_norm_nuchars, unsigned char)
-OFFSET_NORM(offset_norm_nchars, signed char)
 
 int arraymath_offset (lua_State *L)
 {
@@ -433,36 +413,28 @@ int arraymath_offset (lua_State *L)
 	offset_chars (A->values.chars, d, B->values.chars, l);
 	break;
     case ARRAY_TNULONG:
-	offset_norm_nulongs (A->values.ulongs, d, B->values.ulongs, l,
-                             ULONG_MAX);
+	offset_ulongs (A->values.ulongs, d * ULONG_MAX, B->values.ulongs, l);
 	break;
     case ARRAY_TNLONG:
-	offset_norm_nlongs (A->values.longs, d, B->values.longs, l,
-                            LONG_MAX);
+	offset_longs (A->values.longs, d * LONG_MAX, B->values.longs, l);
 	break;
     case ARRAY_TNUINT:
-	offset_norm_nuints (A->values.uints, d, B->values.uints, l,
-                            UINT_MAX);
+	offset_uints (A->values.uints, d * UINT_MAX, B->values.uints, l);
 	break;
     case ARRAY_TNINT:
-	offset_norm_nints (A->values.ints, d, B->values.ints, l,
-                           INT_MAX);
+	offset_ints (A->values.ints, d * INT_MAX, B->values.ints, l);
 	break;
     case ARRAY_TNUSHORT:
-	offset_norm_nushorts (A->values.ushorts, d, B->values.ushorts, l,
-                              USHRT_MAX);
+	offset_ushorts (A->values.ushorts, d * USHRT_MAX, B->values.ushorts, l);
 	break;
     case ARRAY_TNSHORT:
-	offset_norm_nshorts (A->values.shorts, d, B->values.shorts, l,
-                             SHRT_MAX);
+	offset_shorts (A->values.shorts, d * SHRT_MAX, B->values.shorts, l);
 	break;
     case ARRAY_TNUCHAR:
-	offset_norm_nuchars (A->values.uchars, d, B->values.uchars, l,
-                             UCHAR_MAX);
+	offset_uchars (A->values.uchars, d * UCHAR_MAX, B->values.uchars, l);
 	break;
     case ARRAY_TNCHAR:
-	offset_norm_nchars (A->values.chars, d, B->values.chars, l,
-                            CHAR_MAX);
+	offset_chars (A->values.chars, d * CHAR_MAX, B->values.chars, l);
 	break;
     }
 
@@ -526,43 +498,35 @@ int arraymath_scaleoffset (lua_State *L)
 	break;
     case ARRAY_TNULONG:
 	scale_ulongs (A->values.ulongs, c, B->values.ulongs, l);
-	offset_norm_nulongs (B->values.ulongs, d, B->values.ulongs, l,
-                             ULONG_MAX);
+	offset_ulongs (B->values.ulongs, d * ULONG_MAX, B->values.ulongs, l);
 	break;
     case ARRAY_TNLONG:
 	scale_longs (A->values.longs, c, B->values.longs, l);
-	offset_norm_nlongs (B->values.longs, d, B->values.longs, l,
-                            LONG_MAX);
+	offset_longs (B->values.longs, d * LONG_MAX, B->values.longs, l);
 	break;
     case ARRAY_TNUINT:
 	scale_uints (A->values.uints, c, B->values.uints, l);
-	offset_norm_nuints (B->values.uints, d, B->values.uints, l,
-                            UINT_MAX);
+	offset_uints (B->values.uints, d * UINT_MAX, B->values.uints, l);
 	break;
     case ARRAY_TNINT:
 	scale_ints (A->values.ints, c, B->values.ints, l);
-	offset_norm_nints (B->values.ints, d, B->values.ints, l,
-                           INT_MAX);
+	offset_ints (B->values.ints, d * INT_MAX, B->values.ints, l);
 	break;
     case ARRAY_TNUSHORT:
 	scale_ushorts (A->values.ushorts, c, B->values.ushorts, l);
-	offset_norm_nushorts (B->values.ushorts, d, B->values.ushorts, l,
-                              USHRT_MAX);
+	offset_ushorts (B->values.ushorts, d * USHRT_MAX, B->values.ushorts, l);
 	break;
     case ARRAY_TNSHORT:
 	scale_shorts (A->values.shorts, c, B->values.shorts, l);
-	offset_norm_nshorts (B->values.shorts, d, B->values.shorts, l,
-                             SHRT_MAX);
+	offset_shorts (B->values.shorts, d * SHRT_MAX, B->values.shorts, l);
 	break;
     case ARRAY_TNUCHAR:
 	scale_uchars (A->values.uchars, c, B->values.uchars, l);
-	offset_norm_nuchars (B->values.uchars, d, B->values.uchars, l,
-                             UCHAR_MAX);
+	offset_uchars (B->values.uchars, d * UCHAR_MAX, B->values.uchars, l);
 	break;
     case ARRAY_TNCHAR:
 	scale_chars (A->values.chars, c, B->values.chars, l);
-	offset_norm_nchars (B->values.chars, d, B->values.chars, l,
-                            CHAR_MAX);
+	offset_chars (B->values.chars, d * CHAR_MAX, B->values.chars, l);
 	break;
     }
 

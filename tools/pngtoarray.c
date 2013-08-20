@@ -14,20 +14,44 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <png.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
+#include <png.h>
 
 int main(int argc, char **argv)
 {
    png_structp png;
    png_infop info;
    png_bytep *rows;
-   int width, height, depth, i, j, k;
+   int width, height, depth, i, j, k, raw = 0;
    FILE *fp;
 
-   if(argv[1]) {
-       fp = fopen(argv[1], "rb");
+   opterr = 0;
+     
+   while ((k = getopt (argc, argv, "r")) != -1)
+       switch (k)
+       {
+       case 'r':
+           raw = 1;
+           break;
+       case '?':
+           if (isprint (optopt)) {
+               fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+           } else {
+               fprintf (stderr,
+                        "Unknown option character `\\x%x'.\n",
+                        optopt);
+           }
+           
+           return 1;
+       default:
+           abort ();
+       }
+
+   if(argv[optind]) {
+       fp = fopen(argv[optind], "rb");
    } else {
        fp = stdin;
    }
@@ -83,10 +107,12 @@ int main(int argc, char **argv)
    depth = png_get_channels(png, info);
    rows = png_get_rows(png, info);
 
-   fprintf(stdout,
-	   "local array = require \"array\"\n\n"
-	   "return array.nuchars (%d, %d, %d, \"",
-	   width, height, depth);
+   if (!raw) {
+       fputs("local array = require \"array\"\n\n"
+             "return ", stdout);
+   }
+   
+   fprintf(stdout, "array.nuchars (%d, %d, %d, \"", width, height, depth);
 
    for(i = height - 1 ; i >= 0 ; i -= 1) {
        for(j = 0 ; j < width ; j += 1) {
@@ -96,7 +122,11 @@ int main(int argc, char **argv)
        }
    }
 
-   fprintf(stdout, "\");\n");
+   fputs("\")", stdout);
+
+   if (!raw) {
+       fputc('\n', stdout);
+   }
    
    /* Clean up. */
    

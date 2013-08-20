@@ -38,6 +38,7 @@ int arraymath_equal(lua_State *L);
 int arraymath_scale(lua_State *L);
 int arraymath_offset(lua_State *L);
 int arraymath_scaleoffset (lua_State *L);
+int arraymath_clamp (lua_State *L);
 int arraymath_raise(lua_State *L);
 int arraymath_range(lua_State *L);
 int arraymath_sum (lua_State *L);

@@ -533,6 +533,77 @@ int arraymath_scaleoffset (lua_State *L)
     return 1;
 }
 
+#define CLAMP(FUNC, TYPE)					\
+    static void FUNC (TYPE *A, lua_Number a, lua_Number b, TYPE *B, int n) \
+    {								\
+	int i;							\
+								\
+	for (i = 0 ; i < n ; i += 1) {				\
+	    B[i] = A[i] <= a ? a : (A[i] >= b ? b : A[i]);      \
+	}							\
+    }
+
+CLAMP(clamp_doubles, double)
+CLAMP(clamp_floats, float)
+CLAMP(clamp_ulongs, unsigned long)
+CLAMP(clamp_longs, signed long)
+CLAMP(clamp_uints, unsigned int)
+CLAMP(clamp_ints, signed int)
+CLAMP(clamp_ushorts, unsigned short)
+CLAMP(clamp_shorts, signed short)
+CLAMP(clamp_uchars, unsigned char)
+CLAMP(clamp_chars, signed char)
+
+int arraymath_clamp (lua_State *L)
+{
+    array_Array *A, *B;
+    lua_Number a, b;
+    int j, l;
+
+    A = lua_touserdata (L, -3);
+    a = lua_tonumber (L, -2);
+    b = lua_tonumber (L, -1);
+
+    for (j = 0 ,l = 1; j < A->rank ; l *= A->size[j], j += 1);
+
+    B = array_createarrayv (L, A->type, NULL, A->rank, A->size);
+
+    switch (abs(A->type)) {
+    case ARRAY_TDOUBLE:
+	clamp_doubles (A->values.doubles, a, b, B->values.doubles, l);
+	break;
+    case ARRAY_TFLOAT:
+	clamp_floats (A->values.floats, a, b, B->values.floats, l);
+	break;
+    case ARRAY_TULONG:
+	clamp_ulongs (A->values.ulongs, a, b, B->values.ulongs, l);
+	break;
+    case ARRAY_TLONG:
+	clamp_longs (A->values.longs, a, b, B->values.longs, l);
+	break;
+    case ARRAY_TUINT:
+	clamp_uints (A->values.uints, a, b, B->values.uints, l);
+	break;
+    case ARRAY_TINT:
+	clamp_ints (A->values.ints, a, b, B->values.ints, l);
+	break;
+    case ARRAY_TUSHORT:
+	clamp_ushorts (A->values.ushorts, a, b, B->values.ushorts, l);
+	break;
+    case ARRAY_TSHORT:
+	clamp_shorts (A->values.shorts, a, b, B->values.shorts, l);
+	break;
+    case ARRAY_TUCHAR:
+	clamp_uchars (A->values.uchars, a, b, B->values.uchars, l);
+	break;
+    case ARRAY_TCHAR:
+	clamp_chars (A->values.chars, a, b, B->values.chars, l);
+	break;
+    }
+
+    return 1;
+}
+
 #define RAISE(FUNC, TYPE)                                               \
     static void FUNC (TYPE *A, lua_Number e, TYPE *B, int n)            \
     {                                                                   \

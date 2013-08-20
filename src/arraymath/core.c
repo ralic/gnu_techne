@@ -199,6 +199,16 @@ static int scaleoffset (lua_State *L)
     return 1;
 }
 
+static int clamp (lua_State *L)
+{
+    array_checkarray (L, 1);
+    luaL_checknumber (L, 2);
+
+    arraymath_clamp(L);
+    
+    return 1;
+}
+
 /* Linear algebra API. */
 
 static int dot (lua_State *L)
@@ -677,6 +687,7 @@ int luaopen_arraymath_core (lua_State *L)
 	{"scale", scale},
 	{"offset", offset},
 	{"scaleoffset", scaleoffset},
+	{"clamp", clamp},
 	{"raise", raise},
 	{"range", range},
 	{"sum", sum},

@@ -201,7 +201,7 @@ DEFINE_OPERATION(divide, DIV)
 
 #define DEFINE_COMPARISON(OPERATION, OPERATOR)                          \
     COMPARE(OPERATION##_doubles, OPERATOR, double)                      \
-        COMPARE(OPERATION##_floats, OPERATOR, float)                    \
+    COMPARE(OPERATION##_floats, OPERATOR, float)                        \
                                                                         \
     COMPARE(OPERATION##_ulongs, OPERATOR, unsigned long)                \
     COMPARE(OPERATION##_longs, OPERATOR, signed long)                   \
@@ -802,7 +802,7 @@ int arraymath_range (lua_State *L)
     {                                                                   \
         int i;                                                          \
                                                                         \
-        if(k < n) {                                                     \
+        if(S) {                                                         \
             for (i = 0 ; i < n / k ; i += 1) {                          \
                 FUNC##_2(&A[i * k], &S[i], k);                          \
             }                                                           \
@@ -831,7 +831,7 @@ int arraymath_sum (lua_State *L)
     array_Array *A, *S;
     lua_Number s;
     void *p;
-        int j, l, k;
+    int j, l, k;
 
     A = lua_touserdata (L, -1);
 

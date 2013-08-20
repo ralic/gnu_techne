@@ -109,6 +109,5 @@ array_Array *array_slicev (lua_State *L, int index, int *slices);
 array_Array *array_slice (lua_State *L, int index, ...);
 array_Array *array_transposev (lua_State *L, int index, int *indices);
 array_Array *array_transpose (lua_State *L, int index, ...);
-array_Array *array_cast (lua_State *L, array_Type type);
 
 #endif

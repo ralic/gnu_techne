@@ -67,14 +67,6 @@ static int create (lua_State *L)
     return 1;
 }
 
-static int cast (lua_State *L)
-{
-    array_checkarray (L, 1);
-    array_cast(L, lua_tointeger (L, lua_upvalueindex(1)));
-    
-    return 1;
-}
-
 static int reshape (lua_State *L)
 {
     int n, j;
@@ -339,80 +331,6 @@ int luaopen_array_core (lua_State *L)
     lua_pushinteger (L, ARRAY_TNCHAR);
     lua_pushcclosure (L, create, 1);
     lua_setfield (L, -2, "nchars");    
-
-    /* Cast an array object to a different type. */
-    
-    lua_pushinteger (L, ARRAY_TDOUBLE);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "todoubles");
-    
-    lua_pushinteger (L, ARRAY_TFLOAT);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "tofloats");
-    
-    lua_pushinteger (L, ARRAY_TULONG);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "toulongs");
-    
-    lua_pushinteger (L, ARRAY_TLONG);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "tolongs");
-    
-    lua_pushinteger (L, ARRAY_TUINT);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "touints");
-    
-    lua_pushinteger (L, ARRAY_TINT);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "toints");
-    
-    lua_pushinteger (L, ARRAY_TUSHORT);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "toushorts");
-    
-    lua_pushinteger (L, ARRAY_TSHORT);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "toshorts");
-    
-    lua_pushinteger (L, ARRAY_TUCHAR);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "touchars");
-    
-    lua_pushinteger (L, ARRAY_TCHAR);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "tochars");    
-    
-    lua_pushinteger (L, ARRAY_TNULONG);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "tonulongs");
-    
-    lua_pushinteger (L, ARRAY_TNLONG);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "tonlongs");
-    
-    lua_pushinteger (L, ARRAY_TNUINT);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "tonuints");
-    
-    lua_pushinteger (L, ARRAY_TNINT);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "tonints");
-    
-    lua_pushinteger (L, ARRAY_TNUSHORT);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "tonushorts");
-    
-    lua_pushinteger (L, ARRAY_TNSHORT);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "tonshorts");
-    
-    lua_pushinteger (L, ARRAY_TNUCHAR);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "tonuchars");
-    
-    lua_pushinteger (L, ARRAY_TNCHAR);
-    lua_pushcclosure (L, cast, 1);
-    lua_setfield (L, -2, "tonchars");    
     
     return 1;
 }

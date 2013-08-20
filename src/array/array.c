@@ -659,6 +659,167 @@ static void fromuserdata (lua_State *L, int index, array_Array *array)
     construct (L, array);
 }
 
+#define CAST1(A, B, FACTOR, N)                                          \
+    {                                                                   \
+        int i;                                                          \
+                                                                        \
+        if (FACTOR != 1) {                                              \
+            for (i = 0 ; i < N ; i += 1) {                              \
+                A[i] = FACTOR * B[i];                                   \
+            }                                                           \
+        } else {                                                        \
+            for (i = 0 ; i < N ; i += 1) {                              \
+                A[i] = B[i];                                            \
+            }                                                           \
+        }                                                               \
+    }
+
+#define CAST2(A, B, FACTORA, N)                                         \
+    switch (B->type) {                                                  \
+    case ARRAY_TDOUBLE:                                                 \
+        CAST1(A, B->values.doubles, FACTORA, N);                        \
+        break;                                                          \
+    case ARRAY_TFLOAT:                                                  \
+        CAST1(A, B->values.floats, FACTORA, N);                         \
+        break;                                                          \
+    case ARRAY_TULONG:                                                  \
+        CAST1(A, B->values.ulongs, FACTORA, N);                         \
+        break;                                                          \
+    case ARRAY_TNULONG:                                                 \
+        CAST1(A, B->values.ulongs, FACTORA / (double)ULONG_MAX, N);     \
+        break;                                                          \
+    case ARRAY_TLONG:                                                   \
+        CAST1(A, B->values.longs, FACTORA, N);                          \
+        break;                                                          \
+    case ARRAY_TNLONG:                                                  \
+        CAST1(A, B->values.longs, FACTORA / (double)LONG_MAX, N);       \
+        break;                                                          \
+    case ARRAY_TUINT:                                                   \
+        CAST1(A, B->values.uints, FACTORA, N);                          \
+        break;                                                          \
+    case ARRAY_TNUINT:                                                  \
+        CAST1(A, B->values.uints, FACTORA / (double)UINT_MAX, N);       \
+        break;                                                          \
+    case ARRAY_TINT:                                                    \
+        CAST1(A, B->values.ints, FACTORA, N);                           \
+        break;                                                          \
+    case ARRAY_TNINT:                                                   \
+        CAST1(A, B->values.ints, FACTORA / (double)INT_MAX, N);         \
+        break;                                                          \
+    case ARRAY_TUSHORT:                                                 \
+        CAST1(A, B->values.ushorts, FACTORA, N);                        \
+        break;                                                          \
+    case ARRAY_TNUSHORT:                                                \
+        CAST1(A, B->values.ushorts, FACTORA / (double)USHRT_MAX, N);    \
+        break;                                                          \
+    case ARRAY_TSHORT:                                                  \
+        CAST1(A, B->values.shorts, FACTORA, N);                         \
+        break;                                                          \
+    case ARRAY_TNSHORT:                                                 \
+        CAST1(A, B->values.shorts, FACTORA / (double)SHRT_MAX, N);      \
+        break;                                                          \
+    case ARRAY_TUCHAR:                                                  \
+        CAST1(A, B->values.uchars, FACTORA, N);                         \
+        break;                                                          \
+    case ARRAY_TNUCHAR:                                                 \
+        CAST1(A, B->values.uchars, FACTORA / (double)UCHAR_MAX, N);     \
+        break;                                                          \
+    case ARRAY_TCHAR:                                                   \
+        CAST1(A, B->values.chars, FACTORA, N);                          \
+        break;                                                          \
+    case ARRAY_TNCHAR:                                                  \
+        CAST1(A, B->values.chars, FACTORA / (double)CHAR_MAX, N);       \
+        break;                                                          \
+    }
+
+static void fromarray (lua_State *L, int index, array_Array *array)
+{
+    array_Array *B;
+    int i, n;
+    
+    B = lua_touserdata (L, index);
+
+    if (array->rank == 0) {
+	array->rank = B->rank;
+	array->size = malloc (B->rank * sizeof(int));
+        memcpy(array->size, B->size, B->rank * sizeof(int));
+    } else if (B->rank != array->rank) {
+	lua_pushstring (L, "Initialization from table of incompatible rank.");
+	lua_error (L);
+    }
+
+    for (i = 0, n = 1; i < B->rank ; n *= B->size[i], i += 1) {
+        if (array->size[i] != B->size[i]) {
+            lua_pushstring (L,
+                            "Initialization from table of incompatible size.");
+            lua_error (L);
+        }    
+    }
+
+    array->free = FREE_BOTH;
+    array->length = n * sizeof_element (array->type);
+    array->values.any = malloc (array->length);
+    
+    switch (array->type) {
+    case ARRAY_TDOUBLE:
+        CAST2(array->values.doubles, B, 1, n);
+        break;
+    case ARRAY_TFLOAT:
+        CAST2(array->values.floats, B, 1, n);
+        break;
+    case ARRAY_TULONG:
+        CAST2(array->values.ulongs, B, 1, n);
+        break;
+    case ARRAY_TNULONG:
+        CAST2(array->values.ulongs, B, ULONG_MAX, n);
+        break;
+    case ARRAY_TLONG:
+        CAST2(array->values.longs, B, 1, n);
+        break;
+    case ARRAY_TNLONG:
+        CAST2(array->values.longs, B, LONG_MAX, n);
+        break;
+    case ARRAY_TUINT:
+        CAST2(array->values.uints, B, 1, n);
+        break;
+    case ARRAY_TNUINT:
+        CAST2(array->values.uints, B, UINT_MAX, n);
+        break;
+    case ARRAY_TINT:
+        CAST2(array->values.ints, B, 1, n);
+        break;
+    case ARRAY_TNINT:
+        CAST2(array->values.ints, B, INT_MAX, n);
+        break;
+    case ARRAY_TUSHORT:
+        CAST2(array->values.ushorts, B, 1, n);
+        break;
+    case ARRAY_TNUSHORT:
+        CAST2(array->values.ushorts, B, USHRT_MAX, n);
+        break;
+    case ARRAY_TSHORT:
+        CAST2(array->values.shorts, B, 1, n);
+        break;
+    case ARRAY_TNSHORT:
+        CAST2(array->values.shorts, B, SHRT_MAX, n);
+        break;
+    case ARRAY_TUCHAR:
+        CAST2(array->values.uchars, B, 1, n);
+        break;
+    case ARRAY_TNUCHAR:
+        CAST2(array->values.uchars, B, UCHAR_MAX, n);
+        break;
+    case ARRAY_TCHAR:
+        CAST2(array->values.chars, B, 1, n);
+        break;
+    case ARRAY_TNCHAR:
+        CAST2(array->values.chars, B, CHAR_MAX, n);
+        break;
+    }
+
+    construct (L, array);
+}
+
 static void fromnothing (lua_State *L, array_Array *array)
 {
     int i, l;
@@ -941,7 +1102,7 @@ void array_toarrayv (lua_State *L, int index, array_Type type,
 	    
 	    array.size = malloc (sizeof (int));
 	    array.size[0] = lua_rawlen(L, index) / sizeof_element (array.type);
-	} else if (lua_type(L, index) == LUA_TTABLE) {
+	} else if (lua_type(L, index) == LUA_TTABLE || testarray(L, index)) {
 	    array.rank = 0;
 	    array.size = NULL;
 	} else {
@@ -969,6 +1130,8 @@ void array_toarrayv (lua_State *L, int index, array_Type type,
         lua_setuservalue(L, -2);
     } else if (lua_type(L, index) == LUA_TTABLE) {
 	fromtable (L, index, &array);
+    } else if (testarray(L, index)) {
+        fromarray(L, index, &array);
     } else if (lua_type(L, index) == LUA_TUSERDATA) {
 	fromuserdata (L, index, &array);
 
@@ -1421,147 +1584,4 @@ array_Array *array_transpose (lua_State *L, int index, ...)
     }
 
     return transposed;
-}
-
-#define CAST1(A, B, FACTOR, N)                                          \
-    {                                                                   \
-        int i;                                                          \
-                                                                        \
-        if (FACTOR != 1) {                                              \
-            for (i = 0 ; i < N ; i += 1) {                              \
-                A[i] = FACTOR * B[i];                                   \
-            }                                                           \
-        } else {                                                        \
-            for (i = 0 ; i < N ; i += 1) {                              \
-                A[i] = B[i];                                            \
-            }                                                           \
-        }                                                               \
-    }
-
-#define CAST2(A, B, FACTORA, N)                                         \
-    switch (B->type) {                                                  \
-    case ARRAY_TDOUBLE:                                                 \
-        CAST1(A, B->values.doubles, FACTORA, N);                        \
-        break;                                                          \
-    case ARRAY_TFLOAT:                                                  \
-        CAST1(A, B->values.floats, FACTORA, N);                         \
-        break;                                                          \
-    case ARRAY_TULONG:                                                  \
-        CAST1(A, B->values.ulongs, FACTORA, N);                         \
-        break;                                                          \
-    case ARRAY_TNULONG:                                                 \
-        CAST1(A, B->values.ulongs, FACTORA / (double)ULONG_MAX, N);     \
-        break;                                                          \
-    case ARRAY_TLONG:                                                   \
-        CAST1(A, B->values.longs, FACTORA, N);                          \
-        break;                                                          \
-    case ARRAY_TNLONG:                                                  \
-        CAST1(A, B->values.longs, FACTORA / (double)LONG_MAX, N);       \
-        break;                                                          \
-    case ARRAY_TUINT:                                                   \
-        CAST1(A, B->values.uints, FACTORA, N);                          \
-        break;                                                          \
-    case ARRAY_TNUINT:                                                  \
-        CAST1(A, B->values.uints, FACTORA / (double)UINT_MAX, N);       \
-        break;                                                          \
-    case ARRAY_TINT:                                                    \
-        CAST1(A, B->values.ints, FACTORA, N);                           \
-        break;                                                          \
-    case ARRAY_TNINT:                                                   \
-        CAST1(A, B->values.ints, FACTORA / (double)INT_MAX, N);         \
-        break;                                                          \
-    case ARRAY_TUSHORT:                                                 \
-        CAST1(A, B->values.ushorts, FACTORA, N);                        \
-        break;                                                          \
-    case ARRAY_TNUSHORT:                                                \
-        CAST1(A, B->values.ushorts, FACTORA / (double)USHRT_MAX, N);    \
-        break;                                                          \
-    case ARRAY_TSHORT:                                                  \
-        CAST1(A, B->values.shorts, FACTORA, N);                         \
-        break;                                                          \
-    case ARRAY_TNSHORT:                                                 \
-        CAST1(A, B->values.shorts, FACTORA / (double)SHRT_MAX, N);      \
-        break;                                                          \
-    case ARRAY_TUCHAR:                                                  \
-        CAST1(A, B->values.uchars, FACTORA, N);                         \
-        break;                                                          \
-    case ARRAY_TNUCHAR:                                                 \
-        CAST1(A, B->values.uchars, FACTORA / (double)UCHAR_MAX, N);     \
-        break;                                                          \
-    case ARRAY_TCHAR:                                                   \
-        CAST1(A, B->values.chars, FACTORA, N);                          \
-        break;                                                          \
-    case ARRAY_TNCHAR:                                                  \
-        CAST1(A, B->values.chars, FACTORA / (double)CHAR_MAX, N);       \
-        break;                                                          \
-    }
-
-array_Array *array_cast (lua_State *L, array_Type type)
-{
-    array_Array *A, *B;
-    int i, n;
-    
-    B = lua_touserdata (L, 1);
-    A = array_createarrayv (L, type, NULL, B->rank, B->size);
-
-    for (i = 0, n = 1; i < B->rank ; n *= B->size[i], i += 1);
-    
-    switch (A->type) {
-    case ARRAY_TDOUBLE:
-        CAST2(A->values.doubles, B, 1, n);
-        break;
-    case ARRAY_TFLOAT:
-        CAST2(A->values.floats, B, 1, n);
-        break;
-    case ARRAY_TULONG:
-        CAST2(A->values.ulongs, B, 1, n);
-        break;
-    case ARRAY_TNULONG:
-        CAST2(A->values.ulongs, B, ULONG_MAX, n);
-        break;
-    case ARRAY_TLONG:
-        CAST2(A->values.longs, B, 1, n);
-        break;
-    case ARRAY_TNLONG:
-        CAST2(A->values.longs, B, LONG_MAX, n);
-        break;
-    case ARRAY_TUINT:
-        CAST2(A->values.uints, B, 1, n);
-        break;
-    case ARRAY_TNUINT:
-        CAST2(A->values.uints, B, UINT_MAX, n);
-        break;
-    case ARRAY_TINT:
-        CAST2(A->values.ints, B, 1, n);
-        break;
-    case ARRAY_TNINT:
-        CAST2(A->values.ints, B, INT_MAX, n);
-        break;
-    case ARRAY_TUSHORT:
-        CAST2(A->values.ushorts, B, 1, n);
-        break;
-    case ARRAY_TNUSHORT:
-        CAST2(A->values.ushorts, B, USHRT_MAX, n);
-        break;
-    case ARRAY_TSHORT:
-        CAST2(A->values.shorts, B, 1, n);
-        break;
-    case ARRAY_TNSHORT:
-        CAST2(A->values.shorts, B, SHRT_MAX, n);
-        break;
-    case ARRAY_TUCHAR:
-        CAST2(A->values.uchars, B, 1, n);
-        break;
-    case ARRAY_TNUCHAR:
-        CAST2(A->values.uchars, B, UCHAR_MAX, n);
-        break;
-    case ARRAY_TCHAR:
-        CAST2(A->values.chars, B, 1, n);
-        break;
-    case ARRAY_TNCHAR:
-        CAST2(A->values.chars, B, CHAR_MAX, n);
-        break;
-    }
-
-    return A;
 }

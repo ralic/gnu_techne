@@ -16,6 +16,8 @@
 -- An adaptatiob of the heightmap module
 -- Copyright (C) 2011 Marc Lepage
 
+local math = require "math"
+
 local max, random = math.max, math.random
 local size, roughness = ...
 local width, height = size, size

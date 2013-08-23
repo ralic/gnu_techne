@@ -36,7 +36,6 @@ local initial = {parameters.radius,
 local current = {parameters.radius,
                  parameters.azimuth,
                  parameters.elevation}
-local zoom = false
 local sensitivity = 3
 local compliance = {1000000, 150000}
 local mass = {
@@ -136,26 +135,15 @@ local orbit = primitives.transform {
             },
          }
 
-         bindings['[Rubberband]drag-absolute-axis-0'] = function(sequence, value)
-            if not zoom then
-               update(self, nil,
-                      initial[2] - math.ldexp(units.degrees(value), -sensitivity))
-            end
+         bindings['[Rubberband]down-button-1'] = function(sequence, button)
+            initial = {current[1], current[2], current[3]}
          end
 
-         bindings['[Rubberband]drag-absolute-axis-1'] = function(sequence, value)
-            if zoom then
-               update(self, initial[1] - math.ldexp(value, -sensitivity))
-            else
-               update(self, nil, nil,
-                      initial[3] - math.ldexp(units.degrees(value), -sensitivity))
-            end
+         bindings['[Rubberband]down-button-3'] = function(sequence, button)
+            initial = {current[1], current[2], current[3]}
          end
-      end,
-
-      rubberband = controllers['Rubberband'] {},
-      pointer = controllers['Core pointer'] {
-         relative = function(self, axis, value)
+         
+         bindings['[Rubberband]relative-axis-0'] = function(sequence, value)
             sensitivity = math.clamp (sensitivity + value, 1, 10)
 
             info.timer = primitives.timer {
@@ -170,28 +158,24 @@ local orbit = primitives.transform {
                   self.period = nil
                end
             }
-         end,
-
-         buttonrelease = function (self, button)
-            if button == 1 or button == 3 then
-               self.parent.rubberband.engaged = false
-            end         
-         end,
-
-         buttonpress = function (self, button)
-            if button == 1 then
-               initial = {current[1], current[2], current[3]}
-               zoom = false
-
-               self.parent.rubberband.engaged = true
-            elseif button == 3 then
-               initial = {current[1], current[2], current[3]}
-               zoom = true
-
-               self.parent.rubberband.engaged = true
-            end         
          end
-                                            }
+
+         bindings['[Rubberband]drag-absolute-axis-0'] = function(sequence, value, button)
+            if button == 1 then
+               update(self, nil,
+                      initial[2] - math.ldexp(units.degrees(value), -sensitivity))
+            end
+         end
+
+         bindings['[Rubberband]drag-absolute-axis-1'] = function(sequence, value, button)
+            if button == 3 then
+               update(self, initial[1] - math.ldexp(value, -sensitivity))
+            elseif button == 1 then
+               update(self, nil, nil,
+                      initial[3] - math.ldexp(units.degrees(value), -sensitivity))
+            end
+         end
+      end,
    }
 }
 

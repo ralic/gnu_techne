@@ -143,7 +143,7 @@ for name, device in pairs(controllers) do
          motion(self, prefix, "relative", next(buttons), axis, value)
       end,
      
-                       }
+   }
 end
 
 bindings[root] = root

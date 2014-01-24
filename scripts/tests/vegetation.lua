@@ -13,8 +13,9 @@
 -- You should have received a copy of the GNU General Public License    
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+require "bindings"
+
 local io = require "io"
-local math = require "math"
 local array = require "array"
 local arraymath = require "arraymath"
 local resources = require "resources"
@@ -63,18 +64,22 @@ for i = 1, 128 do
 end
 
 local red = textures.planar {
-   texels = array.nuchars {
-      {{1, 0, 0},{1, 0, 0}},
-      {{1, 0, 0},{1, 0, 0}}
-                          }
-                            }
+   texels = {
+      array.nuchars {
+         {{1, 0, 0},{1, 0, 0}},
+         {{1, 0, 0},{1, 0, 0}}
+      }
+   }
+}
 
 local green = textures.planar {
-   texels = array.nuchars {
-      {{0, 1, 0},{0, 1, 0}},
-      {{0, 1, 0},{0, 1, 0}}
-                          }
-                              }
+   texels = {
+      array.nuchars {
+         {{0, 1, 0},{0, 1, 0}},
+         {{0, 1, 0},{0, 1, 0}}
+      }
+   }
+}
 
 elevation = topography.elevation {
    depth = 12,
@@ -84,8 +89,8 @@ elevation = topography.elevation {
    separation = 1,
 
    swatches = {
-      {green, {1, 1}, {0, .99, .99}},
-      {red, {1, 1}, {120 / 360, .99, .99},},
+      {green, {1, 1}, green, {1, 1}, green, {1, 1}, {0, .99, .99}},
+      {red, {1, 1}, red, {1, 1}, red, {1, 1}, {120 / 360, .99, .99},},
    },
    
    tiles = {

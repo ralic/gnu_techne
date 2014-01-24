@@ -1,13 +1,12 @@
 in vec3 apex, left, right;
 
-out vec3 position, color;
+out vec3 position;
+out vec4 color;
 out float distance;
 flat out int index, instance;
-flat out vec3 apex_v, left_v, right_v, st_v;
+flat out vec3 apex_v, left_v, right_v, stratum_v;
 
-uniform sampler2D base, detail[N];
-uniform vec3 intensity, references[N], weights[N];
-uniform vec2 resolutions[N];
+uniform vec3 intensity;
 uniform float factor;
 
 uniform vec2 offset, scale;
@@ -15,7 +14,7 @@ uniform vec2 offset, scale;
 float hsv_distance (vec3, vec3, vec3, float);
 vec2 hash(unsigned int R, unsigned int L, unsigned int k);
 
-uniform float power;
+uniform float instances;
 
 uniform grass_debug{
     int debug;
@@ -28,7 +27,7 @@ layout(binding = 0, offset = 4) uniform atomic_uint drawn;
 
 void main()
 {
-    vec3 hsv, c, s, t, r_0;
+    vec3 rgb, hsv, c, s, t, r_0;
     vec2 uv, u, a;
     float d_0, d_1, r, sqrtux, l;
     int i, i_0, i_1;
@@ -65,12 +64,13 @@ void main()
     /* Find the seed type. */
     
     uv = fma(scale, c.xy, offset);
-    hsv = vec3(texture2D(base, uv));
+    rgb = compose(uv);
+    hsv = rgb_to_hsv(rgb);
     
     for (i = 0, d_0 = d_1 = -infinity, i_0 = -1 ; i < N ; i += 1) {
         float d;
         
-        d = 1 / pow(hsv_distance (hsv, references[i], weights[i]), power);
+        d = splat_distance(hsv, i, 0);
         
         if (d > d_0) {
             d_1 = d_0;
@@ -84,20 +84,36 @@ void main()
         }
     }
 
-    /* Skip the rest if the seed is infertile. */
+    vec2 z = rand2();
+    float z_0 = d_1 / (d_0 + d_1);
     
-    if (i_0 != 0) {
+    if (/* debug > 0 &&  */z.x < z_0 && i_0 > 0) {
+        if (i_1 > 0 || d_0 < 1000) {
 #ifdef COLLECT_STATISTICS
-        atomicCounterIncrement(infertile);
+            atomicCounterIncrement(infertile);
 #endif
 
-        index = -1;
-        return;
+            index = -1;
+            return;
+        }
+
+        i = i_1;
+        r = max(0, d_1 / d_0 - 1);
+    } else {
+        /* Skip the rest if the seed is infertile. */
+    
+        if (i_0 > 0 || d_0 < 1000) {
+#ifdef COLLECT_STATISTICS
+            atomicCounterIncrement(infertile);
+#endif
+
+            index = -1;
+            return;
+        }
+
+        i = i_0;
+        r = 1 - d_1 / d_0;
     }
-
-    i = i_0;
-    r = 1 - d_1 / d_0;
-
     /* i = 0; r = 1; */
 
 #ifdef COLLECT_STATISTICS
@@ -108,8 +124,10 @@ void main()
     index = i;
     instance = gl_InstanceID;
     distance = r;
-    color = /* vec3(1, 0, 0) + 1e-9 *  */factor * intensity * hsv.z * texture2D(detail[i], uv / resolutions[i]).rgb;
+    const float transition = 0.3;
+    color = vec4(factor * intensity * rgb,
+                 min(1, 1 / transition - gl_InstanceID / (transition * instances)));
 
     apex_v = apex; left_v = left; right_v = right;
-    st_v = vec3(a, l);
+    stratum_v = vec3(a, l);
 }

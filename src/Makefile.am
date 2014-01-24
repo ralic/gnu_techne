@@ -20,7 +20,7 @@ BUILT_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h			\
 		glsl/vegetation_tesselation_evaluation.h		\
 		glsl/vegetation_geometry.h glsl/vegetation_vertex.h	\
 		glsl/vegetation_fragment.h glsl/transform_block.h	\
-		glsl/preamble.h gl.h glx.h
+		glsl/preamble.h glsl/splatting.h gl.h glx.h
 SUFFIXES = .glsl.c
 $(BUILT_SOURCES): glsl/stringify
 .glsl.c.h: glsl/stringify

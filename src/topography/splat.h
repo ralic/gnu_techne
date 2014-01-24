@@ -26,9 +26,7 @@
     int reference_1;
 
     struct {
-        unsigned int power, references, weights, resolutions;
-        unsigned int turbidity, factor, beta_p;
-        unsigned int direction, intensity, beta_r;
+        unsigned int turbidity, beta_p, direction, intensity, beta_r;
     } locations;
 }
 @end

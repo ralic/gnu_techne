@@ -45,41 +45,6 @@ static int construct(lua_State *L)
     return 1;
 }
 
-void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
-{
-    double H, M, m, C;
-    int i, j;
-
-    for (i = 1, j = 0, M = rgb[0], m = rgb[0] ; i < 3 ; i += 1) {
-        if (rgb[i] > M) {
-            M = rgb[i];
-            j = i;
-        }
-
-        if (rgb[i] < m) {
-            m = rgb[i];
-        }
-    }
-         
-    C = M - m;
-
-    if (C > 0.0) {
-        if (j == 0) {
-            H = fmod(((double)rgb[1] - (double)rgb[2]) / C, 6.0) / 6.0;
-        } else if (j == 1) {
-            H = (((double)rgb[2] - (double)rgb[0]) / C + 2.0) / 6.0;
-        } else {
-            H = (((double)rgb[0] - (double)rgb[1]) / C + 4.0) / 6.0;
-        }
-    } else {
-        H = 0.0;
-    }
-
-    hsv[0] = H * 255;
-    hsv[1] = C / M * 255;
-    hsv[2] = M;
-}
-
 @implementation Elevation
 
 -(void) init
@@ -289,9 +254,6 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
                     lua_rawgeti (_L, -1, 3);
 
                     if (!lua_isnil (_L, -1)) {
-                        unsigned char *hsv;
-                        int l;
-
                         rgb = array_testcompatible (_L, -1,
                                                        ARRAY_TYPE | ARRAY_RANK,
                                                        ARRAY_TNUCHAR, 3);
@@ -304,13 +266,6 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
                         if (rgb->size[2] != 3) {
                             t_print_error("Elevation imagery data must be specified in RGB format.\n");
                             abort();
-                        }
-                        
-                        hsv = malloc (rgb->length);
-
-                        for (l = 0 ; l < rgb->size[0] * rgb->size[1] ; l += 1) {
-                            rgb_to_hsv (&rgb->values.uchars[3 * l], &hsv[3 * l]);
-                            /* printf ("%d, %d, %d\n", hsv[3 * l + 0], hsv[3 * l + 1], hsv[3 * l + 2]); */
                         }
 
                         /* Create the texture object. */
@@ -325,7 +280,7 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
                                       rgb->size[0], rgb->size[1], 0,
                                       GL_RGB,
                                       GL_UNSIGNED_BYTE,
-                                      hsv);
+                                      rgb->values.uchars);
 
                         glGenerateMipmap (GL_TEXTURE_2D);
 
@@ -338,8 +293,6 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
                                         GL_MIRRORED_REPEAT);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
                                         GL_MIRRORED_REPEAT);
-
-                        free(hsv);
                     }
 
                     lua_pop (_L, 1);
@@ -389,24 +342,27 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
     
     for (i = 0 ; i < self->swatches_n ; i += 1) {
         elevation_SwatchDetail *swatch;
+        int k;
 
         swatch = &self->swatches[i];
         
-        /* The texture. */
+        /* The detail textures. */
 
-        lua_rawgeti(_L, LUA_REGISTRYINDEX, swatch->reference);
-        lua_rawseti(_L, -2, 1);
+        for (k = 0 ; k < 3 ; k += 1) {
+            lua_rawgeti(_L, LUA_REGISTRYINDEX, swatch->references[k]);
+            lua_rawseti(_L, -2, 2 * k + 1);
 
-        /* The resolution. */
+            /* The resolution. */
         
-        lua_createtable (_L, 2, 0);
+            lua_createtable (_L, 2, 0);
 
-        for (j = 0; j < 2 ; j += 1) {
-            lua_pushnumber(_L, swatch->resolution[j]);                
-            lua_rawseti(_L, -2, j + 1);
+            for (j = 0; j < 2 ; j += 1) {
+                lua_pushnumber(_L, swatch->resolutions[k][j]);
+                lua_rawseti(_L, -2, j + 1);
+            }
+
+            lua_rawseti(_L, -2, 2 * k + 2);
         }
-        
-        lua_rawseti(_L, -2, 2);
         
         /* The reference color. */
 
@@ -422,7 +378,7 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
             lua_rawseti(_L, -2, j + 1);
         }
         
-        lua_rawseti(_L, -2, 3);
+        lua_rawseti(_L, -2, 7);
     }
 
     return 1;
@@ -440,32 +396,35 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
 
     for (i = 0 ; i < n ; i += 1) {
         elevation_SwatchDetail *swatch;
+        int k;
 
         swatch = &self->swatches[i];
         lua_rawgeti (_L, 3, i + 1);
 
-        /* The texture. */
+        /* The detail texture. */
 
-        lua_rawgeti (_L, -1, 1);
-        swatch->detail = t_testtexture (_L, -1, GL_TEXTURE_2D);
-        swatch->reference = luaL_ref(_L, LUA_REGISTRYINDEX);
+        for (k = 0 ; k < 3 ; k += 1) {
+            lua_rawgeti (_L, -1, 2 * k + 1);
+            swatch->detail[k] = t_totexture (_L, -1, GL_TEXTURE_2D);
+            swatch->references[k] = luaL_ref(_L, LUA_REGISTRYINDEX);
 
-        /* The resolution. */
+            /* The resolution. */
         
-        lua_rawgeti (_L, -1, 2);
+            lua_rawgeti (_L, -1, 2 * k + 2);
 
-        for (j = 0 ; j < 2 ; j += 1) {
-            lua_pushinteger (_L, j + 1);
-            lua_gettable (_L, -2);
-            swatch->resolution[j] = lua_tonumber(_L, -1);
+            for (j = 0 ; j < 2 ; j += 1) {
+                lua_pushinteger (_L, j + 1);
+                lua_gettable (_L, -2);
+                swatch->resolutions[k][j] = lua_tonumber(_L, -1);
+                lua_pop (_L, 1);
+            }
+
             lua_pop (_L, 1);
         }
 
-        lua_pop (_L, 1);
-
         /* The reference color. */
 
-        lua_rawgeti (_L, -1, 3);
+        lua_rawgeti (_L, -1, 7);
 
         for (j = 0 ; j < 3 ; j += 1) {
             lua_pushinteger (_L, j + 1);
@@ -489,7 +448,7 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
 -(int) _get_separation
 {
     lua_pushnumber (_L, self->separation);
-
+ 
     return 1;
 }
 
@@ -588,8 +547,16 @@ void rgb_to_hsv (unsigned char *rgb, unsigned char *hsv)
         luaL_unref (_L, LUA_REGISTRYINDEX, self->references[i]);
     }
 
+    for (i = 0 ; i < self->swatches_n ; i += 1) {
+        glDeleteTextures (1, &self->swatches[i].detail[0]->name);
+        glDeleteTextures (1, &self->swatches[i].detail[1]->name);
+        luaL_unref (_L, LUA_REGISTRYINDEX, self->swatches[i].references[0]);
+        luaL_unref (_L, LUA_REGISTRYINDEX, self->swatches[i].references[1]);
+    }
+
     free_mesh(&self->context);
-    
+
+    free (self->swatches);
     free (self->references);
     free (tiles->samples);
     free (tiles->bounds);

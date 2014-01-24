@@ -117,6 +117,7 @@ static unsigned int deflections;
     int i, collect;
         
 #include "glsl/color.h"
+#include "glsl/splatting.h"
 #include "glsl/rand.h"
 #include "glsl/vegetation_vertex.h"
 #include "glsl/vegetation_tesselation_control.h"
@@ -158,7 +159,7 @@ static unsigned int deflections;
         
     [shader initWithHandle: NULL];
     [shader declare: 9 privateUniforms: private];
-    [shader add: 4 sourceStrings: (const char *[4]){header, glsl_rand, glsl_color, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
+    [shader add: 5 sourceStrings: (const char *[5]){header, glsl_rand, glsl_color, glsl_splatting, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
 
     [shader addSourceString: glsl_vegetation_tesselation_control
                         for: T_TESSELATION_CONTROL_STAGE];
@@ -179,9 +180,9 @@ static unsigned int deflections;
     glUseProgram(self->name);
 
     {
-        unsigned int factor_l, references_l, weights_l, resolutions_l, power_l;
+        unsigned int factor_l, references_l, weights_l, resolutions_l, separation_l;
         
-        power_l = glGetUniformLocation (self->name, "power");
+        separation_l = glGetUniformLocation (self->name, "separation");
         factor_l = glGetUniformLocation (self->name, "factor");
         references_l = glGetUniformLocation (self->name, "references");
         weights_l = glGetUniformLocation (self->name, "weights");
@@ -190,18 +191,26 @@ static unsigned int deflections;
         self->locations.intensity = glGetUniformLocation (self->name, "intensity");
 
         glUniform1f (factor_l, self->elevation->albedo);
-        glUniform1f (power_l, self->elevation->separation);
+        glUniform1f (separation_l, self->elevation->separation);
 
         /* Initialize reference color uniforms. */
         
         for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
             elevation_SwatchDetail *swatch;
+            int j;
 
             swatch = &self->elevation->swatches[i];
-        
-            [self setSamplerUniform: "detail" to: swatch->detail->name atIndex: i];
+
+
+            for (j = 0 ; j < 3 ; j += 1) {
+                [self setSamplerUniform: "detail"
+                                     to: swatch->detail[j]->name
+                                atIndex: 3 * i + j];
+
+                glUniform2fv (resolutions_l + 3 * i + j, 1,
+                              swatch->resolutions[j]);
+            }
             
-            glUniform2fv (resolutions_l + i, 1, swatch->resolution);
             glUniform3fv (references_l + i, 1, swatch->values);
             glUniform3fv (weights_l + i, 1, swatch->weights);
         }

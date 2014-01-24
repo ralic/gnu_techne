@@ -224,7 +224,7 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
     tiles = &self->context->tileset;
 
     t_push_modelview (self->matrix, T_MULTIPLY);
-    
+
     if (self->optimize) {
         optimize_geometry(self->context, frame);
     }

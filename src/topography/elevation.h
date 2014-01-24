@@ -28,10 +28,11 @@
 #include "shader.h"
 
 typedef struct {
-    Texture *detail;
-    int reference;
-
-    float values[3], weights[3], resolution[2];
+    Texture *detail[3];
+    int references[3];
+    float resolutions[3][2];
+    
+    float values[3], weights[3];
 } elevation_SwatchDetail;
 
 @interface Elevation: Node {
@@ -39,7 +40,7 @@ typedef struct {
     roam_Context context;
     elevation_SwatchDetail *swatches;
     int swatches_n, *references;
-    double separation, albedo;
+    float separation, albedo;
 }
 
 -(int) _get_shape;
@@ -108,7 +109,7 @@ typedef struct {
     seeding_Context seeding;
     
     struct {
-        unsigned int scale, offset, clustering;
+        unsigned int scale, offset, clustering, instances;
     } locations;
 
     struct {

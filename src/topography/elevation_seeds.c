@@ -101,6 +101,7 @@
     self->locations.scale = glGetUniformLocation(parent->name, "scale");
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
     self->locations.clustering = glGetUniformLocation(parent->name, "clustering");
+    self->locations.instances = glGetUniformLocation(parent->name, "instances");
 
     self->units.base = [parent getUnitForSamplerUniform: "base"];
 }
@@ -171,12 +172,14 @@
 
                     if (r >= 1.0) {
                         glUniform1f(self->locations.clustering, C);
+                        glUniform1f(self->locations.instances, k == BINS_N - 1 ? 1.0 / 0.0 : r);
                         glDrawArraysInstanced(GL_PATCHES, 0, b->fill, r);
 
                         b->patches += b->fill * r;
                     } else {
                         glUniform1f(self->locations.clustering,
                                     round(b->center));
+                        glUniform1f(self->locations.instances, 1);
                         glDrawArraysInstanced(GL_PATCHES, 0, b->fill, 1);
                         
                         b->patches += b->fill;

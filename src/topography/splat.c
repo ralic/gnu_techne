@@ -32,13 +32,16 @@
 {
     char *header;
     const char *private[] = {"base", "detail", "offset", "scale",
-                             "power", "factor", "references", "weights",
+                             "separation", "factor", "references", "weights",
                              "resolutions"};
 
     ShaderMold *shader;
-    int i;
-        
+    unsigned int separation_l, references_l, weights_l, resolutions_l, factor_l;
+    int i, j;
+
+    
 #include "glsl/color.h"	
+#include "glsl/splatting.h"
 #include "glsl/splat_vertex.h"	
 #include "glsl/splat_fragment.h"	
 
@@ -57,20 +60,20 @@
     [shader initWithHandle: NULL];
     [shader declare: 9 privateUniforms: private];
     [shader addSourceString: glsl_splat_vertex for: T_VERTEX_STAGE];
-    [shader add: 3 sourceStrings: (const char *[3]){header, glsl_color, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
+    [shader add: 4 sourceStrings: (const char *[4]){header, glsl_color, glsl_splatting, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
     [shader link];
 
     [self load];
 
     /* Get uniform locations. */
 
-    self->locations.power = glGetUniformLocation (self->name, "power");
-    self->locations.references = glGetUniformLocation (self->name, "references");
-    self->locations.weights = glGetUniformLocation (self->name, "weights");
-    self->locations.resolutions = glGetUniformLocation (self->name, "resolutions");
+    separation_l = glGetUniformLocation (self->name, "separation");
+    references_l = glGetUniformLocation (self->name, "references");
+    weights_l = glGetUniformLocation (self->name, "weights");
+    resolutions_l = glGetUniformLocation (self->name, "resolutions");
+    factor_l = glGetUniformLocation (self->name, "factor");
 
     self->locations.turbidity = glGetUniformLocation (self->name, "turbidity");
-    self->locations.factor = glGetUniformLocation (self->name, "factor");
     self->locations.beta_p = glGetUniformLocation (self->name, "beta_p");
     self->locations.beta_r = glGetUniformLocation (self->name, "beta_r");
     self->locations.direction = glGetUniformLocation (self->name, "direction");
@@ -81,8 +84,8 @@
      * be loaded beforehand. */
 
     glUseProgram(self->name);
-    glUniform1f(self->locations.power, self->elevation->separation);
-    glUniform1f (self->locations.factor, self->elevation->albedo);
+    glUniform1f (separation_l, self->elevation->separation);
+    glUniform1f (factor_l, self->elevation->albedo);
 
     /* Initialize reference color uniforms. */
     
@@ -90,13 +93,17 @@
         elevation_SwatchDetail *swatch;
 
         swatch = &self->elevation->swatches[i];
-        
-        [self setSamplerUniform: "detail" to: swatch->detail->name atIndex: i];
-            
-        glUniform2fv (self->locations.resolutions + i, 1,
-                      swatch->resolution);
-        glUniform3fv (self->locations.references + i, 1, swatch->values);
-        glUniform3fv (self->locations.weights + i, 1, swatch->weights);
+
+        for (j = 0 ; j < 3 ; j += 1) {
+            [self setSamplerUniform: "detail"
+                                 to: swatch->detail[j]->name atIndex: 3 * i + j];
+
+            glUniform2fv (resolutions_l + 3 * i + j, 1,
+                          swatch->resolutions[j]);
+        }
+
+        glUniform3fv (references_l + i, 1, swatch->values);
+        glUniform3fv (weights_l + i, 1, swatch->weights);
     }
 }
 

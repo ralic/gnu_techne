@@ -16,10 +16,9 @@
 local array = require 'array'
 local arraymath = require 'arraymath.core'
 
--- Arrays created without being initialized from a table or string
--- default to zero anyway.  This is just syntactic sugar.
-
-arraymath.zero = array.doubles
+function arraymath.zero(...)
+   return arraymath.scale(array.doubles(...), 0)
+end
 
 function arraymath.tensor(u, v)
    return arraymath.matrixmultiply(array.cast(#u, 1, u), array.cast (1, #v, v))
@@ -47,7 +46,7 @@ function arraymath.fromnode(node, vector)
 end
 
 function arraymath.tonode(node, vector)
-   return arraymath.apply (arraymath.transpose(node.orientation), vector)
+   return arraymath.apply (array.transpose(node.orientation), vector)
 end
 
 function arraymath.concatenate(...)
@@ -60,6 +59,18 @@ function arraymath.concatenate(...)
       M = arraymath.matrixmultiply(M, matrices[i])
    end
    
+   return M
+end
+
+function arraymath.minimum(A)
+   local m, _ = arraymath.range(A)
+
+   return m
+end
+
+function arraymath.maximum(A)
+   local _, M = arraymath.range(A)
+
    return M
 end
 

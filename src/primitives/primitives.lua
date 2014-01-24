@@ -72,7 +72,7 @@ function primitives.gimbal (parameters)
    node = primitives.transform {
       machinery = primitives.transform {
          transform = function (self)
-            self.parent.orientation = arraymath.transpose(self.ancestors[2].orientation)
+            self.parent.orientation = array.transpose(self.ancestors[2].orientation)
          end,
                                        }
                           }

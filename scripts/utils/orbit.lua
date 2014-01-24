@@ -15,6 +15,7 @@
 
 local string = require "string"
 local math = require "math"
+local array = require "array"
 local arraymath = require "arraymath"
 local units = require "units"
 local primitives = require "primitives"
@@ -100,9 +101,9 @@ local orbit = primitives.transform {
 
          p = self.parent.position or {0, 0, 0}
          R_p = self.parent.orientation or arraymath.diagonal(3, 1)
-         R_pT = arraymath.transpose(R_p)
+         R_pT = array.transpose(R_p)
          R = arraymath.concatenate(R_p, arraymath.euler (0, rest[3], rest[2]))
-         RT = arraymath.transpose(R)
+         RT = array.transpose(R)
 
          -- Configure the rig.
 

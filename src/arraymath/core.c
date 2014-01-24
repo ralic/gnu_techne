@@ -275,23 +275,6 @@ static int distance (lua_State *L)
     return 1;
 }
 
-static int transpose (lua_State *L)
-{
-    array_Array *A;
-
-    A = checkreal(L, 1);
-    checkrank (L, 1, 2);
-
-    if (A->size[0] != A->size[1]) {
-	lua_pushstring (L, "Matrix is not square.");
-	lua_error (L);
-    }
-
-    arraymath_transpose(L);
-    
-    return 1;
-}
-
 static int matrix_multiply (lua_State *L)
 {
     array_Array *A, *B;
@@ -588,7 +571,7 @@ static int rotation (lua_State *L)
 	c = cos(theta);
 	c_1 = 1.0 - c;
 	s = sin(theta);
-
+        
 	M[I(0, 0)] = c + u[0] * u[0] * c_1;
 	M[I(0, 1)] = u[0] * u[1] * c_1 - u[2] * s;
 	M[I(0, 2)] = u[0] * u[2] * c_1 + u[1] * s;
@@ -698,7 +681,6 @@ int luaopen_arraymath_core (lua_State *L)
 	{"length", length},
 	{"normalize", normalize},
 	{"distance", distance},
-	{"transpose", transpose},
 	{"matrixmultiply", matrix_multiply},
 	{"matrixmultiplyadd", matrix_multiplyadd},
 	    

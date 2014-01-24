@@ -23,6 +23,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include <lua.h>
 #include <lualib.h>
@@ -787,7 +788,7 @@ RANGE_NORM(range_nchars, signed char)
 int arraymath_range (lua_State *L)
 {
     array_Array *A;
-    lua_Number m, M;
+    lua_Number m = 0, M = 0;
     int j, l;
 
     A = lua_touserdata (L, -1);
@@ -849,6 +850,8 @@ int arraymath_range (lua_State *L)
     case ARRAY_TNCHAR:
 	range_nchars (A->values.chars, &m, &M, l, CHAR_MAX);
 	break;
+    default:
+        assert(0);
     }
 
     lua_pushnumber (L, m);
@@ -900,7 +903,7 @@ SUM(sum_chars, signed char)
 int arraymath_sum (lua_State *L)
 {
     array_Array *A, *S;
-    lua_Number s;
+    lua_Number s = 0;
     void *p;
     int j, l, k;
 
@@ -947,6 +950,8 @@ int arraymath_sum (lua_State *L)
     case ARRAY_TCHAR: case ARRAY_TNCHAR:
         sum_chars (A->values.chars, p, &s, k, l);
         break;
+    default:
+        assert(0);
     }
 
     if (A->rank == 1) {
@@ -1228,42 +1233,6 @@ array_Array *arraymath_normalize (lua_State *L)
     }
 
     lua_remove (L, -2);
-    
-    return B;
-}
-
-#define TRANSPOSE(FUNC, TYPE)						\
-    static void FUNC (TYPE *A, TYPE *B, int n, int m)			\
-    {									\
-	int i, j;							\
-									\
-	for (i = 0 ; i < n ; i += 1) {					\
-	    for (j = 0 ; j < m ; j += 1) {				\
-		B[j * n + i] = A[i * m + j];				\
-	    }								\
-	}								\
-    }
-
-TRANSPOSE(transpose_doubles, double)
-TRANSPOSE(transpose_floats, float)
-
-array_Array *arraymath_transpose (lua_State *L)
-{
-    array_Array *A, *B;
-
-    A = lua_touserdata (L, -1);
-    B = array_createarray (L, A->type, NULL,
-                           A->rank, A->size[1], A->size[0]);
-
-    if (A->type == ARRAY_TDOUBLE) {
-	transpose_doubles (A->values.doubles,
-			   B->values.doubles,
-			   A->size[0], A->size[1]);
-    } else {
-	transpose_floats (A->values.floats,
-			  B->values.floats,
-			  A->size[0], A->size[1]);
-    }
     
     return B;
 }

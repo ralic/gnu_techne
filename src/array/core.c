@@ -84,7 +84,7 @@ static int reshape (lua_State *L)
 	int size[n];
 
 	for (j = 0 ; j < n ; j += 1) {
-	    size[j] = lua_tonumber (L, j + 1);
+	    size[j] = lua_tointeger (L, j + 1);
 	}
 	
 	array_reshapev (L, n + 1, n, size);
@@ -224,15 +224,32 @@ static int transpose (lua_State *L)
 
     array = array_checkarray (L, 1);
 
+    if (array->rank == 1) {
+        array = array_reshape(L, 1, 2, 1, array->size[0]);
+        lua_replace(L, 1);
+    }
+
     {
         int indices[array->rank];
 
-        for (j = 0 ; j < array->rank ; j += 1) {
-            indices[j] = luaL_checkinteger (L, j + 2) - 1;
+        if (lua_gettop(L) == 1) {
+            /* If indices are not explicitly defined just swap the
+             * first two. */
+            
+            indices[0] = 1;
+            indices[1] = 0;
+
+            for (j = 2 ; j < array->rank ; j += 1) {
+                indices[j] = j;
+            }
+        } else {
+            for (j = 0 ; j < array->rank ; j += 1) {
+                indices[j] = luaL_checkinteger (L, j + 2) - 1;
+            }
         }
-       
+        
         array_transposev (L, 1, indices);
-    }           
+    }
     
     return 1;
 }

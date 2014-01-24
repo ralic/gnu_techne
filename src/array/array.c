@@ -301,6 +301,11 @@ static array_Array *construct (lua_State *L, array_Array *array)
 {
     array_Array *new;
 
+    assert(array->rank > 0);
+    assert(array->length >= 0);
+    assert(array->size);
+    assert(array->values.any);;
+           
     new = (array_Array *)lua_newuserdata(L, sizeof(array_Array));
     *new = *array;
 
@@ -361,12 +366,17 @@ static int __gc (lua_State *L)
 
 static int __tostring (lua_State *L)
 {
+    const char *typenames[] = {"double", "float", "unsigned long", "long",
+                               "unsigned int", "int", "unsigned short",
+                               "short", "unsigned char", "char"};
     array_Array *array;
     int i;
     
     array = lua_touserdata(L, 1);
 
-    lua_pushfstring (L, "<array[%d", array->size[0]);
+    lua_pushfstring (L, "<%s%s array[%d",
+                     array->type < 0 ? "normalized " : "",
+                     typenames[abs(array->type) - 1], array->size[0]);
 
     for (i = 1 ; i < array->rank ; i += 1) {
 	lua_pushfstring (L, ", %d", array->size[i]);
@@ -446,6 +456,7 @@ static int __index (lua_State *L)
 	    subarray.free = FREE_NOTHING;
 	    subarray.rank = array->rank - 1;
 	    subarray.size = &array->size[1];
+            subarray.length = array->length / array->size[0];
 	    subarray.values.any = reference_element(array, (i - 1) * d);
 
 	    construct (L, &subarray);
@@ -546,7 +557,7 @@ static int __newindex (lua_State *L)
     return 0;
 }
 
-static int fromtable (lua_State *L, int index, array_Array *array)
+static array_Array *fromtable (lua_State *L, int index, array_Array *array)
 {
     array_Array *subarray;
     int i, l, r, h;
@@ -626,12 +637,11 @@ static int fromtable (lua_State *L, int index, array_Array *array)
     array->values.any = malloc (array->length);
 
     dump (L, index, array, 0, 0);
-    construct (L, array);
 
-    return 1;
+    return construct (L, array);
 }
 
-static void fromstring (lua_State *L, int index, array_Array *array)
+static array_Array *fromstring (lua_State *L, int index, array_Array *array)
 {
     int i, l;
 
@@ -647,16 +657,16 @@ static void fromstring (lua_State *L, int index, array_Array *array)
 	lua_error (L);
     }
 
-    construct (L, array);
+    return construct (L, array);
 }
 
-static void fromuserdata (lua_State *L, int index, array_Array *array)
+static array_Array *fromuserdata (lua_State *L, int index, array_Array *array)
 {
     array->free = FREE_SIZE;
     array->length = lua_rawlen(L, index);
     array->values.any = (void *)lua_touserdata (L, index);
 
-    construct (L, array);
+    return construct (L, array);
 }
 
 #define CAST1(A, B, FACTOR, N)                                          \
@@ -732,7 +742,7 @@ static void fromuserdata (lua_State *L, int index, array_Array *array)
         break;                                                          \
     }
 
-static void fromarray (lua_State *L, int index, array_Array *array)
+static array_Array *fromarray (lua_State *L, int index, array_Array *array)
 {
     array_Array *B;
     int i, n;
@@ -817,10 +827,10 @@ static void fromarray (lua_State *L, int index, array_Array *array)
         break;
     }
 
-    construct (L, array);
+    return construct (L, array);
 }
 
-static void fromnothing (lua_State *L, array_Array *array)
+static array_Array *fromnothing (lua_State *L, array_Array *array)
 {
     int i, l;
 
@@ -830,7 +840,7 @@ static void fromnothing (lua_State *L, array_Array *array)
     array->length = l * sizeof_element (array->type);
     array->values.any = malloc (array->length);
 
-    construct (L, array);
+    return construct (L, array);
 }
 
 static int typeerror (lua_State *L, int narg, const char *tname) {
@@ -1074,8 +1084,8 @@ array_Array *array_createarray (lua_State *L, array_Type type,
     return array_createarrayv (L, type, values, rank, size);
 }
 
-void array_toarrayv (lua_State *L, int index, array_Type type,
-		     int rank, int *size)
+array_Array *array_toarrayv (lua_State *L, int index, array_Type type,
+                             int rank, int *size)
 {
     array_Array array;
     int j;
@@ -1119,7 +1129,9 @@ void array_toarrayv (lua_State *L, int index, array_Type type,
     }
 
     if (lua_type(L, index) == LUA_TSTRING) {
-	fromstring (L, index, &array);
+        array_Array *result;
+        
+	result = fromstring (L, index, &array);
 
         /* Make a reference to the string since we're pointing
          * into its memory. */
@@ -1128,12 +1140,14 @@ void array_toarrayv (lua_State *L, int index, array_Type type,
         lua_pushvalue(L, index);
         lua_rawseti(L, -2, 1);
         lua_setuservalue(L, -2);
+
+        return result;
     } else if (lua_type(L, index) == LUA_TTABLE) {
-	fromtable (L, index, &array);
+	return fromtable (L, index, &array);
     } else if (testarray(L, index)) {
-        fromarray(L, index, &array);
+        return fromarray(L, index, &array);
     } else if (lua_type(L, index) == LUA_TUSERDATA) {
-	fromuserdata (L, index, &array);
+	return fromuserdata (L, index, &array);
 
         /* Make a reference to the userdata since we're pointing
          * into its memory. */
@@ -1143,11 +1157,11 @@ void array_toarrayv (lua_State *L, int index, array_Type type,
         lua_rawseti(L, -2, 1);
         lua_setuservalue(L, -2);
     } else {
-	fromnothing (L, &array);
+	return fromnothing (L, &array);
     }
 }
 
-void array_toarray (lua_State *L, int index, array_Type type, int rank, ...)
+array_Array *array_toarray (lua_State *L, int index, array_Type type, int rank, ...)
 {
     va_list ap;
     int j, size[rank];
@@ -1160,10 +1174,10 @@ void array_toarray (lua_State *L, int index, array_Type type, int rank, ...)
    
     va_end(ap);
 
-    array_toarrayv (L, index, type, rank, size);
+    return array_toarrayv (L, index, type, rank, size);
 }
 
-void array_reshapev (lua_State *L, int index, int rank, int *size)
+array_Array *array_reshapev (lua_State *L, int index, int rank, int *size)
 {
     array_Array reshaped, *array;
     int j, l, m;
@@ -1199,10 +1213,10 @@ void array_reshapev (lua_State *L, int index, int rank, int *size)
     lua_rawseti(L, -2, 1);
     lua_setuservalue(L, -2);
 
-    construct (L, &reshaped);
+    return construct (L, &reshaped);
 }
 
-void array_reshape (lua_State *L, int index, int rank, ...)
+array_Array *array_reshape (lua_State *L, int index, int rank, ...)
 {
     va_list ap;
     int j, size[rank];
@@ -1215,10 +1229,10 @@ void array_reshape (lua_State *L, int index, int rank, ...)
    
     va_end(ap);
 
-    array_reshapev (L, index, rank, size);
+    return array_reshapev (L, index, rank, size);
 }
 
-void array_copy (lua_State *L, int index)
+array_Array *array_copy (lua_State *L, int index)
 {
     array_Array *array, copy;
     int i, d;
@@ -1240,10 +1254,10 @@ void array_copy (lua_State *L, int index)
     copy.values.any = malloc (copy.length);
     copy_elements(&copy, array, 0, 0, d);
 
-    construct (L, &copy);
+    return construct (L, &copy);
 }
 
-void array_set (lua_State *L, int index, lua_Number c)
+array_Array *array_set (lua_State *L, int index, lua_Number c)
 {
     array_Array *array;
     int i, d;
@@ -1257,6 +1271,8 @@ void array_set (lua_State *L, int index, lua_Number c)
     for (i = 0 ; i < d ; i += 1) {
 	write_element (array, i, c);
     }
+
+    return array;
 }
 
 static void adjust(array_Array *source, array_Array *sink, void *defaults,
@@ -1495,7 +1511,7 @@ array_Array *array_slice (lua_State *L, int index, ...)
 
     return sliced;
 }
-
+#include <errno.h>
 array_Array *array_transposev (lua_State *L, int index, int *indices)
 {
     array_Array *array, transposed;
@@ -1508,6 +1524,7 @@ array_Array *array_transposev (lua_State *L, int index, int *indices)
     transposed.type = array->type;
     transposed.rank = array->rank;
     transposed.values.any = malloc (transposed.length);
+    assert(transposed.values.any);
     transposed.size = calloc (array->rank, sizeof (int));
 
     for (i = 0 ; i < array->rank ; i += 1) {

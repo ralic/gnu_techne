@@ -74,7 +74,8 @@ nobase_pkglib_LTLIBRARIES = array/core.la arraymath/core.la		\
 			    primitives/core.la controllers/core.la	\
 			    shapes/core.la widgets/core.la		\
 			    automotive/core.la shading/core.la 		\
-			    topography/core.la textures/core.la
+			    topography/core.la textures/core.la 	\
+			    aeronautics/core.la
 
 pkglib_LTLIBRARIES = misc/physics.la meteorology.la
 
@@ -86,7 +87,7 @@ dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    widgets/widgets.lua misc/serialize.lua		\
 		    shading/shading.lua controllers/controllers.lua 	\
 		    topography/topography.lua textures/textures.lua	\
-		    staging/staging.lua
+		    staging/staging.lua aeronautics/aeronautics.lua
 
 topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
 			     topography/elevation_body.c 		\
@@ -221,5 +222,12 @@ meteorology_la_CFLAGS = ${AM_CFLAGS}
 meteorology_la_LDFLAGS = -module -avoid-version -no-undefined
 meteorology_la_LIBADD = ${AM_LDADD}
 techne_bin_LDADD += meteorology.la
+
+aeronautics_core_la_SOURCES = aeronautics/core.c aeronautics/airplane.c	\
+			      aeronautics/airplane.h
+
+aeronautics_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
+aeronautics_core_la_LDFLAGS = -module -avoid-version -no-undefined -L$(mybindir)
+aeronautics_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
 
 CLEANFILES = $(bin_SCRIPTS) $(BUILT_SOURCES) opengl.c gl.h glx.h

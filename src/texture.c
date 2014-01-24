@@ -43,6 +43,22 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
     return object;
 }
 
+Texture *t_totexture (lua_State *L, int index, GLenum target)
+{
+    Texture *texture;
+
+    texture = t_testtexture(L, index, target);
+
+    if(!texture) {
+	lua_pushfstring (L,
+			 "Texture expected, got %s).",
+			 lua_typename (L, lua_type (L, index)));
+	lua_error (L);
+    }
+
+    return texture;
+}
+
 static void map_array_to_texture (array_Array *array,
                                   GLenum *gltype, GLenum *internal,
                                   GLenum *format)
@@ -447,9 +463,9 @@ static void complete_if_needed(Texture *texture)
         int channels[4][2], size[4], n;
 
         glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_WIDTH,
-                                 &size[0]);
-        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_HEIGHT,
                                  &size[1]);
+        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_HEIGHT,
+                                 &size[0]);
         glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_DEPTH,
                                  &size[2]);
         
@@ -478,6 +494,7 @@ static void complete_if_needed(Texture *texture)
         case GL_UNSIGNED_NORMALIZED: type = ARRAY_TNUCHAR; break;
         case GL_INT: type = ARRAY_TCHAR; break;
         case GL_UNSIGNED_INT: type = ARRAY_TUCHAR; break;
+        default: assert(0);
         }
 
         if (type != ARRAY_TFLOAT) {
@@ -525,10 +542,11 @@ static void complete_if_needed(Texture *texture)
     while (lua_next(_L, 3)) {
         array_Array *texels;
         GLenum type, internal, format;
-        int i;
+        int i, h;
         
         i = lua_tointeger(_L, -2) - 1;
-
+        h = lua_gettop(_L);
+        
         if (!lua_isnil(_L, -1)) {
             texels = array_testarray (_L, -1);
 
@@ -547,6 +565,7 @@ static void complete_if_needed(Texture *texture)
             }
 
             map_array_to_texture(texels, &type, &internal, &format);
+
             /* Create the texture object. */
 	                    
             switch(self->target) {
@@ -573,13 +592,15 @@ static void complete_if_needed(Texture *texture)
             glTexImage2D (self->target, i, GL_RGB,
                           0, 0, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
         }
+
+        lua_settop(_L, h - 1);
     }
 
     glTexParameteri(self->target, GL_TEXTURE_BASE_LEVEL, base);
     glTexParameteri(self->target, GL_TEXTURE_MAX_LEVEL, max);
     glBindTexture(self->target, 0);
 
-    complete_if_needed(self);
+    /* complete_if_needed(self); */
 }
 
 @end

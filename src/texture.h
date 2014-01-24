@@ -49,5 +49,6 @@
 @end
 
 Texture *t_testtexture (lua_State *L, int index, GLenum target_in);
+Texture *t_totexture (lua_State *L, int index, GLenum target);
 
 #endif

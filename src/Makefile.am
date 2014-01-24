@@ -75,7 +75,7 @@ nobase_pkglib_LTLIBRARIES = array/core.la arraymath/core.la		\
 			    shapes/core.la widgets/core.la		\
 			    automotive/core.la shading/core.la 		\
 			    topography/core.la textures/core.la 	\
-			    aeronautics/core.la
+			    aeronautics/core.la	staging/core.la
 
 pkglib_LTLIBRARIES = misc/physics.la meteorology.la
 
@@ -229,5 +229,10 @@ aeronautics_core_la_SOURCES = aeronautics/core.c aeronautics/airplane.c	\
 aeronautics_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 aeronautics_core_la_LDFLAGS = -module -avoid-version -no-undefined -L$(mybindir)
 aeronautics_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
+
+staging_core_la_SOURCES = staging/core.c staging/bezier.c staging/bezier.h
+staging_core_la_CFLAGS = ${AM_CFLAGS}
+staging_core_la_LDFLAGS = -module -avoid-version -no-undefined
+staging_core_la_LIBADD = ${AM_LDADD}
 
 CLEANFILES = $(bin_SCRIPTS) $(BUILT_SOURCES) opengl.c gl.h glx.h

@@ -39,7 +39,8 @@ int luaopen_joints_core (lua_State *L)
 		       [Doublehinge class], [Doubleball class],
 		       [Linear class], [Angular class], [Euler class],
 		       [Universal class], [Gearing class], [Contact class],
-		       [Slider class], [Spherical class], NULL};
+		       [Slider class], [Spherical class], [Joint class],
+                       NULL};
 
     t_exportnodes (L, classes);
     

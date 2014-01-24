@@ -144,7 +144,7 @@
     
     lua_newtable (_L);
         
-    for(j = 0 ; j < 3 ; j += 1) {
+    for(j = 0 ; j < self->degrees ; j += 1) {
 	lua_newtable (_L);
 
 	lua_newtable (_L);
@@ -187,7 +187,6 @@
 
 -(void) _set_axes
 {
-    array_Array *arrays[3];
     int i, j;
     
     if(!lua_isnil (_L, 3)) {
@@ -197,18 +196,20 @@
 
 	dJointSetLMotorNumAxes (self->joint, self->degrees);
 	    
-	for(j = 0 ; j < 3 ; j += 1) {
+	for(j = 0 ; j < self->degrees ; j += 1) {
+            array_Array *array;
+            
 	    lua_pushinteger (_L, j + 1);
 	    lua_gettable (_L, 3);
-	    arrays[j] = array_checkcompatible (_L, -1,
-                                               ARRAY_TYPE | ARRAY_RANK |
-                                               ARRAY_SIZE,
-                                               ARRAY_TDOUBLE, 1, 3);
-	    dSafeNormalize3 (arrays[j]->values.doubles);
+	    array = array_checkcompatible (_L, -1,
+                                           ARRAY_TYPE | ARRAY_RANK |
+                                           ARRAY_SIZE,
+                                           ARRAY_TDOUBLE, 1, 3);
+	    dSafeNormalize3 (array->values.doubles);
 	    lua_pop (_L, 1);
 
 	    for (i = 0 ; i < 3 ; i += 1) {
-		self->axes[j][i] = arrays[j]->values.doubles[i];
+		self->axes[j][i] = array->values.doubles[i];
 	    }
 	}
 
@@ -223,7 +224,7 @@
     int j;
 
     if(lua_istable (_L, 3)) {
-	for(j = 0 ; j < 3 ; j += 1) {
+	for(j = 0 ; j < self->degrees ; j += 1) {
 	    if(lua_istable (_L, 3)) {
 		lua_rawgeti (_L, 3, j + 1);
 		self->relative[j] = lua_tonumber (_L, -1);
@@ -246,7 +247,7 @@
     int i, j;
     
     if(lua_istable (_L, 3)) {
-	for(j = 0 ; j < 3 ; j += 1) {
+	for(j = 0 ; j < self->degrees ; j += 1) {
 	    lua_rawgeti (_L, 3, j + 1);
 		
 	    if(lua_istable (_L, -1)) {
@@ -289,7 +290,7 @@
     }
 	
     if(lua_istable (_L, 3)) {
-	for(j = 0 ; j < 3 ; j += 1) {
+	for(j = 0 ; j < self->degrees ; j += 1) {
 	    lua_rawgeti (_L, 3, j + 1);
 		
 	    if(lua_istable (_L, -1)) {
@@ -372,7 +373,7 @@
     int j;
     
     if(lua_istable (_L, 3)) {
-	for(j = 0 ; j < 3 ; j += 1) {
+	for(j = 0 ; j < self->degrees ; j += 1) {
 	    lua_rawgeti (_L, 3, j + 1);
 	    self->tolerance[j] = lua_tonumber (_L, -1);
                 

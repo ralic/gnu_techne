@@ -15,6 +15,34 @@
 
 local core = require 'joints.core'
 
+core.composite = function (parameters)
+   local composite
+
+   composite = core.joint{
+      attach = function (self, child)
+         for _, child in pairs (self.children) do
+            if child.pedigree["joint"] then
+               trace(child, self.pair)
+               child.bodies = self.pair
+            end
+         end
+      end,
+
+      adopt = function (self, child)
+         if child.pedigree["joint"] then
+            trace(child, self.pair)
+            child.bodies = self.pair
+         end
+      end
+   }
+
+   for k, v in pairs(parameters) do
+      composite[k] = v
+   end
+
+   return composite
+end
+
 if not options.drawjoints then
    return core
 end
@@ -37,257 +65,254 @@ local lightgoldenrod = {0.8441, 0.8667, 0.6463}
 local yellowgreen = {0.2805, 0.6223, 0.0164}
 local darkseagreen = {0.2319, 0.5084, 0.2559}
 
-return {
-   hinge = function (parameters)
-      local hinge
+local joints = {}
 
-      hinge = core.hinge (parameters)
+for k, v in pairs(core) do
+   joints[k] = v
+end
 
-      hinge.schematic = primitives.node {
-         shaft = shading.flat {
-            color = lightgoldenrod,
+joints.hinge = function (parameters)
+   local hinge
 
-            draw = function (self)
-               local a, d, c, e
+   hinge = core.hinge (parameters)
 
-               d = self.bias or 0.1
-               c = self.gain or 1 / 628
+   hinge.schematic = primitives.node {
+      shaft = shading.flat {
+         color = lightgoldenrod,
 
-               a = hinge.anchor
-               e = arraymath.combine(a, hinge.axis, 1, d + c * hinge.rate)
-
-               self.lines.positions = array.doubles {a, e}
-               self.points.positions = array.doubles {a, e}
-            end,
-
-            lines = shapes.line {},
-            points = shapes.points {},
-                              },
-
-         arms = shading.flat {
-            color = ivory3,
-
-            draw = function (self) 
-               local a, b, pair
-
-               pair = hinge.pair
-               
-               if pair then
-                  local positions = {}
-
-                  a = pair[1] and pair[1].position
-                  b = pair[2] and pair[2].position
-
-                  if a and b then
-                     self.lines.positions = array.doubles{a,
-                                                          hinge.anchor,
-                                                          b}
-
-                     self.points.positions = array.doubles{a, b}
-                  elseif a then
-                     self.lines.positions = array.doubles{hinge.anchor, a}
-                     self.points.positions = array.doubles{a}
-                  elseif b then
-                     self.lines.positions = array.doubles{hinge.anchor, b}
-                     self.points.positions = array.doubles{b}
-                  end
-               end
-            end,
-
-            lines = shapes.line {},
-            points = shapes.points {},
-                             }
-                                        }
-      return hinge
-   end,
-
-   slider = function (parameters)
-      local slider
-
-      slider = core.slider (parameters)
-
-      slider.schematic = primitives.graphic {
          draw = function (self)
-            local a, b, L, l, h, x, d, stops, pair
+            local a, d, c, e
 
-            stops = slider.stops
-            pair = slider.pair
+            d = self.bias or 0.1
+            c = self.gain or 1 / 628
 
-            if not pair then
-               return
-            end
+            a = hinge.anchor
+            e = arraymath.combine(a, hinge.axis, 1, d + c * hinge.rate)
 
-            a = pair[1] and pair[1].position
-            b = pair[2] and pair[2].position
-            x = slider.axis
-            d = slider.position
-            l, h = table.unpack(stops[1])
+            self.lines.positions = array.doubles {a, e}
+            self.points.positions = array.doubles {a, e}
+         end,
 
-            if l ~= -1 / 0 or h ~= 1 / 0 then
-               if math.abs(d - l) < 1e-3 * (h - l) then
-                  self.tube.color = red
-               else
-                  self.tube.color = gold
-               end
+         lines = shapes.line {},
+         points = shapes.points {},
+      },
 
-               if math.abs(d - h) < 1e-3 * (h - l) then
-                  self.rod.color = red
-               else
-                  self.rod.color = white
-               end
-            end
+      arms = shading.flat {
+         color = ivory3,
 
-            if a and b then
-               L = arraymath.dot (arraymath.subtract(b, a), x)
-               c = arraymath.combine (a, x, 1, L)
-               e = arraymath.combine(a, x, 1, -d)
+         draw = function (self) 
+            local a, b, pair
+
+            pair = hinge.pair
             
-               self.rod.lines.positions = array.doubles {a, e}
-               self.tube.lines.positions = array.doubles {e, c}
-            elseif a then
-               e = arraymath.combine(a, x, 1, -d)
+            if pair then
+               local positions = {}
 
-               self.rod.lines.positions = array.doubles {a, e}
-               self.tube.lines.positions = nil
-            else
-               e = arraymath.combine(b, x, 1, d)
+               a = pair[1] and pair[1].position
+               b = pair[2] and pair[2].position
 
-               self.rod.lines.positions = nil
-               self.tube.lines.positions = array.doubles {e, b}
+               if a and b then
+                  self.lines.positions = array.doubles{a,
+                                                       hinge.anchor,
+                                                       b}
+
+                  self.points.positions = array.doubles{a, b}
+               elseif a then
+                  self.lines.positions = array.doubles{hinge.anchor, a}
+                  self.points.positions = array.doubles{a}
+               elseif b then
+                  self.lines.positions = array.doubles{hinge.anchor, b}
+                  self.points.positions = array.doubles{b}
+               end
             end
          end,
 
-         rod = shading.flat {
-            color = white,
+         lines = shapes.line {},
+         points = shapes.points {},
+      }
+   }
+   
+   return hinge
+end
 
-            lines = shapes.line {},
-            points = shapes.points {},
-                            },
+joints.slider = function (parameters)
+   local slider
 
-         tube = shading.flat {
-            color = gold,
+   slider = core.slider (parameters)
 
-            lines = shapes.line {},
-            points = shapes.points {},
-                             }
-                                            }
+   slider.schematic = primitives.graphic {
+      draw = function (self)
+         local a, b, L, l, h, x, d, stops, pair
 
-      return slider
-   end,
+         stops = slider.stops
+         pair = slider.pair
 
-   universal = function (parameters)
-      local universal
+         if not pair then
+            return
+         end
 
-      universal = core.universal (parameters)
+         a = pair[1] and pair[1].position
+         b = pair[2] and pair[2].position
+         x = slider.axis
+         d = slider.position
+         l, h = table.unpack(stops[1])
 
-      universal.schematic = primitives.node {
-	 shafts = shading.flat {
-	    color = yellowgreen,
+         if l ~= -1 / 0 or h ~= 1 / 0 then
+            if math.abs(d - l) < 1e-3 * (h - l) then
+               self.tube.color = red
+            else
+               self.tube.color = gold
+            end
 
-	    draw = function (self)
-	       local a, d, c, e, f, x, y
+            if math.abs(d - h) < 1e-3 * (h - l) then
+               self.rod.color = red
+            else
+               self.rod.color = white
+            end
+         end
 
-	       d = self.bias or 0.1
-	       c = self.gain or 1 / 628
+         if a and b then
+            L = arraymath.dot (arraymath.subtract(b, a), x)
+            c = arraymath.combine (a, x, 1, L)
+            e = arraymath.combine(a, x, 1, -d)
+            
+            self.rod.lines.positions = array.doubles {a, e}
+            self.tube.lines.positions = array.doubles {e, c}
+         elseif a then
+            e = arraymath.combine(a, x, 1, -d)
 
-	       a = universal.anchor
-	       x, y = table.unpack(universal.axes)
-	       e = arraymath.combine(a, x, 1, d + c * universal.rates[1])
+            self.rod.lines.positions = array.doubles {a, e}
+            self.tube.lines.positions = nil
+         else
+            e = arraymath.combine(b, x, 1, d)
 
-	       f = arraymath.combine(a, y, 1, d + c * universal.rates[2])
+            self.rod.lines.positions = nil
+            self.tube.lines.positions = array.doubles {e, b}
+         end
+      end,
 
-	       self.lines.positions = array.doubles {f, a, e}
-	       self.points.positions = array.doubles {f, a, e}
-	    end,
+      rod = shading.flat {
+         color = white,
 
-	    lines = shapes.line {},
-	    points = shapes.points {},
-                               },
+         lines = shapes.line {},
+         points = shapes.points {},
+      },
 
-	 arms = shading.flat {
-	    color = darkseagreen,
+      tube = shading.flat {
+         color = gold,
 
-	    draw = function (self) 
-	       local a, b, pair
+         lines = shapes.line {},
+         points = shapes.points {},
+      }
+   }
 
-	       pair = universal.pair
-	       
-	       if pair then
-		  local positions = {}
+   return slider
+end
 
-		  a = pair[1] and pair[1].position
-		  b = pair[2] and pair[2].position
+joints.universal = function (parameters)
+   local universal
 
-		  if a and b then
-		     self.lines.positions = array.doubles{a,
-							  universal.anchor,
-							  b}
+   universal = core.universal (parameters)
 
-		     self.points.positions = array.doubles{a, b}
-		  elseif a then
-		     self.lines.positions = array.doubles{universal.anchor, a}
-		     self.points.positions = array.doubles{a}
-		  elseif b then
-		     self.lines.positions = array.doubles{universal.anchor, b}
-		     self.points.positions = array.doubles{b}
-		  end
-	       end
-	    end,
+   universal.schematic = primitives.node {
+      shafts = shading.flat {
+         color = yellowgreen,
 
-	    lines = shapes.line {},
-	    points = shapes.points {},
-			     }
-					    }
-      return universal
-   end,
+         draw = function (self)
+            local a, d, c, e, f, x, y
 
-   spherical = function (parameters)
-      local spherical
+            d = self.bias or 0.1
+            c = self.gain or 1 / 628
 
-      spherical = core.spherical (parameters)
+            a = universal.anchor
+            x, y = table.unpack(universal.axes)
+            e = arraymath.combine(a, x, 1, d + c * universal.rates[1])
 
-      spherical.schematic = primitives.node {
-	 arms = shading.flat {
-	    color = darkseagreen,
+            f = arraymath.combine(a, y, 1, d + c * universal.rates[2])
 
-	    draw = function (self) 
-	       local a, b, pair
+            self.lines.positions = array.doubles {f, a, e}
+            self.points.positions = array.doubles {f, a, e}
+         end,
 
-	       pair = spherical.pair
+         lines = shapes.line {},
+         points = shapes.points {},
+      },
 
-	       if pair then
-		  local positions
+      arms = shading.flat {
+         color = darkseagreen,
 
-		  a = pair[1] and pair[1].position
-		  b = pair[2] and pair[2].position
+         draw = function (self) 
+            local a, b, pair
 
-		  if a and b then
-		     positions = array.doubles{a, spherical.anchor, b}
-		  elseif a then
-		     positions = array.doubles{spherical.anchor, a}
-		  elseif b then
-		     positions = array.doubles{spherical.anchor, b}
-		  end
+            pair = universal.pair
+            
+            if pair then
+               local positions = {}
 
-                  self.lines.positions = positions
-                  self.points.positions = positions
-	       end
-	    end,
+               a = pair[1] and pair[1].position
+               b = pair[2] and pair[2].position
 
-	    lines = shapes.line {},
-	    points = shapes.points {},
-			     }
-					    }
-      return spherical
-   end,
+               if a and b then
+                  self.lines.positions = array.doubles{a,
+                                                       universal.anchor,
+                                                       b}
 
-   angular = core.angular,
-   planar = core.planar,
-   clamp = core.clamp,
-   contact = core.contact,
-   euler = core.euler,
-   gearing = core.gearing,
-   doublehinge = core.doublehinge,
-   doubleball = core.doubleball,
-   linear = core.linear,
-       }
+                  self.points.positions = array.doubles{a, b}
+               elseif a then
+                  self.lines.positions = array.doubles{universal.anchor, a}
+                  self.points.positions = array.doubles{a}
+               elseif b then
+                  self.lines.positions = array.doubles{universal.anchor, b}
+                  self.points.positions = array.doubles{b}
+               end
+            end
+         end,
+
+         lines = shapes.line {},
+         points = shapes.points {},
+      }
+   }
+   return universal
+end
+
+joints.spherical = function (parameters)
+   local spherical
+
+   spherical = core.spherical (parameters)
+
+   spherical.schematic = primitives.node {
+      arms = shading.flat {
+         color = darkseagreen,
+
+         draw = function (self) 
+            local a, b, pair
+
+            pair = spherical.pair
+
+            if pair then
+               local positions
+
+               a = pair[1] and pair[1].position
+               b = pair[2] and pair[2].position
+
+               if a and b then
+                  positions = array.doubles{a, spherical.anchor, b}
+               elseif a then
+                  positions = array.doubles{spherical.anchor, a}
+               elseif b then
+                  positions = array.doubles{spherical.anchor, b}
+               end
+
+               self.lines.positions = positions
+               self.points.positions = positions
+            end
+         end,
+
+         lines = shapes.line {},
+         points = shapes.points {},
+      }
+   }
+   return spherical
+end
+
+return joints

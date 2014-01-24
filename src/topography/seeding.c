@@ -71,18 +71,16 @@ static void project(float *r, float *s)
 {
     float z;
 
-    /* Push all vertices back by sqrt(2) to make sure that no seeded
-     * triangles span the near plane.  (The longest edge of a seeded
-     * triangle has a length of sqrt(2).) */
-    
-    z = -(r[2] + modelview[14]) + M_SQRT2;
+    z = -(r[2] + modelview[14]);
 
     /* Don't bother projecting points that are behind the near
      * plane. */
     
-    if (z >= 0) {
+    if (z > 0) {
         s[0] = (r[0] + modelview[12]) / z;
         s[1] = (r[1] + modelview[13]) / z;
+    } else {
+        s[0] = s[1] = NAN;
     }
 }
 
@@ -174,7 +172,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
     /* This triangle is visible so either descend or seed. */
     
-    if (level < TREE_HEIGHT - 1) {
+    if (level < TREE_HEIGHT - 1 + 9) {
         float c[3], c_r[3], c_s[2];
 
         /* _TRACE ("%f\n", fmax(fmax(z_a, z_0), z_1)); */
@@ -201,10 +199,6 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         double A, n_0, u[2], v[2];
         int j;
 
-        assert(-(a_r[2] + modelview[14]) >= -M_SQRT2);
-        assert(-(b_0r[2] + modelview[14]) >= -M_SQRT2);
-        assert(-(b_1r[2] + modelview[14]) >= -M_SQRT2);
-
         /* Calculate the screen-space area of the triangle and
          * multiply by density to get the number of seeds. */
         
@@ -215,10 +209,20 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         v[1] = projection[5] * (b_1s[1] - a_s[1]);
 
         /* _TRACEM (4, 4, "f", projection); */
-        
-        A = 0.5 * fabs(u[0] * v[1] - u[1] * v[0]);
-        n_0 = fmin(seeding->ceiling, fmax(seeding->density * A, 1));
 
+        A = 0.5 * fabs(u[0] * v[1] - u[1] * v[0]);
+
+        if (isnan(b_0s[0]) || isnan(b_1s[0]) || isnan(a_s[0]) ||
+            isnan(b_0s[1]) || isnan(b_1s[1]) || isnan(a_s[1])) {
+            assert(isnan(A));
+        }
+
+        if(isnan(A)) {
+            n_0 = seeding->ceiling;
+        } else {
+            n_0 = fmin(seeding->ceiling, fmax(seeding->density * A, 1));
+        }
+        
         if (n_min > n_0) {
             n_min = n_0;
         }

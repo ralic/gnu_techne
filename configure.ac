@@ -14,7 +14,7 @@ AC_CONFIG_LIBOBJ_DIR([src/compat])
 
 AC_CANONICAL_HOST
 
-AM_INIT_AUTOMAKE([nostdinc -Wall -Werror])
+AM_INIT_AUTOMAKE([nostdinc subdir-objects -Wall -Werror])
 
 LT_PREREQ([2.2])
 
@@ -30,11 +30,13 @@ AS_CASE([$host_os],
 	[AC_ERROR([Unsupported host $host_os])]
 )
 
-LT_INIT([dlopen])
 # Checks for programs.
 
 AC_PROG_CC
 AM_PROG_CC_C_O
+AM_PROG_AR
+
+LT_INIT([dlopen])
 
 # Checks for libraries.
 

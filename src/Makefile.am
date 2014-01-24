@@ -64,7 +64,7 @@ techne_bin_LDFLAGS = -export-dynamic
 techne_bin_LDADD = ${LUA_LIBS} ${GDK_LIBS} ${GL_LIBS} ${OPENAL_LIBS}	\
 		   ${ODE_LIBS} ${MHD_LIBS} ${AM_LDADD}
 
-browser_bin_CFLAGS = ${AM_CFLAGS} ${WEBKIT_CFLAGS} ${GTK_CFLAGS}
+browser_bin_CFLAGS = ${AM_CFLAGS} ${WEBKIT_CFLAGS} -I/usr/include/GNUstep/ -D_NATIVE_OBJC_EXCEPTIONS=1 ${GTK_CFLAGS}
 browser_bin_LDADD = ${WEBKIT_LIBS} ${GTK_LIBS} ${AM_LDADD}
 
 # The modules

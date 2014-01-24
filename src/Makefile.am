@@ -76,7 +76,7 @@ nobase_pkglib_LTLIBRARIES = array/core.la arraymath/core.la		\
 			    automotive/core.la shading/core.la 		\
 			    topography/core.la textures/core.la
 
-pkglib_LTLIBRARIES = misc/physics.la
+pkglib_LTLIBRARIES = misc/physics.la meteorology.la
 
 dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    arraymath/arraymath.lua bodies/bodies.lua		\
@@ -213,5 +213,13 @@ automotive_core_la_SOURCES = automotive/core.c automotive/chain.c	\
 automotive_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 automotive_core_la_LDFLAGS = -module -avoid-version -no-undefined
 automotive_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
+
+meteorology_la_SOURCES = meteorology/meteorology.c \
+			      	     meteorology/meteorology.h
+
+meteorology_la_CFLAGS = ${AM_CFLAGS}
+meteorology_la_LDFLAGS = -module -avoid-version -no-undefined
+meteorology_la_LIBADD = ${AM_LDADD}
+techne_bin_LDADD += meteorology.la
 
 CLEANFILES = $(bin_SCRIPTS) $(BUILT_SOURCES) opengl.c gl.h glx.h

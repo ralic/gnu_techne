@@ -102,14 +102,14 @@ local orbit = primitives.transform {
          p = self.parent.position or {0, 0, 0}
          R_p = self.parent.orientation or arraymath.diagonal(3, 1)
          R_pT = array.transpose(R_p)
-         R = arraymath.concatenate(R_p, arraymath.euler (0, rest[3], rest[2]))
+         R = arraymath.concatenate(R_p, arraymath.relue (0, rest[3], rest[2]))
          RT = array.transpose(R)
 
          -- Configure the rig.
 
          self.anchor = p
          self.axes = {
-            R_pT[3], RT[2], 
+            R_pT[3], RT[1], 
          }
 
          self.stops = {
@@ -126,7 +126,7 @@ local orbit = primitives.transform {
                axis = RT[3],
 
                head = bodies.point {
-                  position = arraymath.matrixmultiplyadd (RT, {0, 0, -rest[1]}, p),
+                  position = arraymath.matrixmultiplyadd (RT, {0, 0, rest[1]}, p),
 
                   orientation = R,
 

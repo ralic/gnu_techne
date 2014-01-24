@@ -16,12 +16,24 @@
 local math = require "math"
 
 local units = {
+   -- Weight.
+   
    pounds = function (m)
       return m * 0.45359237
    end,
+   
+   kilograms = function (m)
+      return m
+   end,
 
+   -- Distance.
+   
    meters = function (l)
       return l
+   end,
+
+   kilometers = function (l)
+      return 1000 * l
    end,
 
    inches = function (l)
@@ -36,6 +48,8 @@ local units = {
       return l * 1609.344
    end,
 
+   -- Speed.
+   
    milesperhour = function (v)
       return v * 0.44704
    end,
@@ -48,20 +62,30 @@ local units = {
       return v * 0.5144
    end,
 
+   -- Area.
+
+   squaremeters = function (A)
+      return A
+   end,
+
    squarefeet = function (A)
       return A * 0.3048^2
    end,
 
+   -- Moment of inertia.
+   
+   kilogramssquaremeters = function (I)
+      return I
+   end,
+   
    slugsquarefeet = function (I)
       return I * 14.593902 * 0.3048^2
    end,
 
-   slugspersquarefeet = function (P)
-      return P * 14.593902 / 0.3048^2
-   end,
+   -- Power
 
-   slugspercubicfeet = function (P)
-      return P * 14.593902 / 0.3048^3
+   watts = function (P)
+      return P
    end,
 
    metrichorsepower = function (P)
@@ -72,10 +96,18 @@ local units = {
       return P * 745.7
    end,
 
+   -- Frequency.
+
    rotationsperminute = function (nu)
       return nu / 30 * math.pi
    end,
 
+   hertz = function (N)
+      return N * 2 * math.pi / 60
+   end,
+
+   -- Angles.
+   
    degrees = function (theta)
       return theta / 180 * math.pi
    end,
@@ -84,8 +116,36 @@ local units = {
       return theta
    end,
 
-   hertz = function (N)
-      return N * 2 * math.pi / 60
+   -- Temperature.
+   
+   kelvin = function (T)
+      return T
+   end,
+
+   celsius = function (T)
+      return T + 273.15
+   end,
+
+   -- Density.
+   
+   kilogramspercubicmeter = function (rho)
+      return rho
+   end,
+
+   slugspercubicfeet = function (P)
+      return P * 14.593902 / 0.3048^3
+   end,
+
+   -- Pressure.
+   
+   newtonspersquaremeter = function (P)
+      return rho
+   end,
+   
+   --
+   
+   slugspersquarefeet = function (P)
+      return P * 14.593902 / 0.3048^2
    end,
 }
 

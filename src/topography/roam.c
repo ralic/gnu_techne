@@ -1295,10 +1295,6 @@ void *allocate_mesh(roam_Context *context_in)
 	    v[3][2] = h;
 
 	    /* Initialize base diamonds and triangles. */
-	    
-	    initialize_diamond(D[i_c][0], T[i_c][0], v[0], v[2],  0);
-	    initialize_diamond(D[i_c][1], T[i_c][2], v[1], v[2], -1);
-	    initialize_diamond(D[i_c][2], T[i_c][3], v[0], v[3], -1);
 
 	    initialize_triangle(T[i_c][2], D[i_c][1], NULL,
 				NULL, NULL, NULL, 0);
@@ -1315,6 +1311,10 @@ void *allocate_mesh(roam_Context *context_in)
 				j < t + 3 ? T[i_r][0] : NULL,
 				i > 0 ? T[i_b][0] : NULL,
 				T[i_c][0], i_p);
+	    
+	    initialize_diamond(D[i_c][0], T[i_c][0], v[0], v[2],  0);
+	    initialize_diamond(D[i_c][1], T[i_c][2], v[1], v[2], -1);
+	    initialize_diamond(D[i_c][2], T[i_c][3], v[0], v[3], -1);
 	}
     }
 

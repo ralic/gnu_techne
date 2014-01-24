@@ -1419,6 +1419,8 @@ static void unlink_node (Node *node)
     self->unlink = LUA_REFNIL;
     self->get = LUA_REFNIL;
     self->set = LUA_REFNIL;
+    self->adopt = LUA_REFNIL;
+    self->abandon = LUA_REFNIL;
 
     /* Put newly created nodes in the orphans list. */
 
@@ -1456,7 +1458,7 @@ static void unlink_node (Node *node)
     
     for (child = self->down ; child ; child = next) {
         next = child->right;
-        [self renounce: child];
+        [self abandon: child];
     }   
 
     luaL_unref (_L, LUA_REGISTRYINDEX, self->children);
@@ -1522,9 +1524,14 @@ static void unlink_node (Node *node)
 	    [sibling meetSibling: child];
 	}
     }   
+
+    if (self->adopt != LUA_REFNIL) {
+        t_pushuserdata (_L, 2, self, child);
+        t_callhook (_L, self->adopt, 2, 0);
+    }
 }
 
--(void) renounce: (Node *)child
+-(void) abandon: (Node *)child
 {
     Node *sibling;
 
@@ -1556,6 +1563,11 @@ static void unlink_node (Node *node)
     /* Link it into the orphans list. */
 
     link_node (child);
+
+    if (self->abandon != LUA_REFNIL) {
+        t_pushuserdata (_L, 2, self, child);
+        t_callhook (_L, self->abandon, 2, 0);
+    }
 }
 
 -(void) toggle
@@ -1566,7 +1578,7 @@ static void unlink_node (Node *node)
        the hook first, before descending
        into the ancestors. */
     
-    if (!self->linked) {
+    if (!self->linked && self->link != LUA_REFNIL) {
 	t_pushuserdata (_L, 1, self);
     	t_callhook (_L, self->link, 1, 0);
     }
@@ -1586,7 +1598,7 @@ static void unlink_node (Node *node)
        on the way out, after all the ancestors have
        been unlinked. */
     
-    if (!self->linked) {
+    if (!self->linked && self->unlink != LUA_REFNIL) {
 	t_pushuserdata (_L, 1, self);
     	t_callhook (_L, self->unlink, 1, 0);
     }
@@ -1598,8 +1610,28 @@ static void unlink_node (Node *node)
     
     return 1;
 }
+
+-(int) _get_pedigree
+{
+    Class c;
+    
+    lua_newtable(_L);
+
+    for (c = [self class] ; c ; c = [c superclass]) {
+        pushname(_L, c);
+        lua_pushboolean(_L, 1);
+        lua_settable(_L, -3);
+    }
+    
+    return 1;
+}
  
 -(void) _set_type
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_pedigree
 {
     T_WARN_READONLY;
 }
@@ -1724,6 +1756,20 @@ static void unlink_node (Node *node)
     return 1;
 }
 
+-(int) _get_adopt
+{
+    lua_rawgeti (_L, LUA_REGISTRYINDEX, self->adopt);
+
+    return 1;
+}
+
+-(int) _get_abandon
+{
+    lua_rawgeti (_L, LUA_REGISTRYINDEX, self->abandon);
+
+    return 1;
+}
+
 -(void) _set_link
 {
     luaL_unref (_L, LUA_REGISTRYINDEX, self->link);
@@ -1746,6 +1792,18 @@ static void unlink_node (Node *node)
 {
     luaL_unref (_L, LUA_REGISTRYINDEX, self->set);
     self->set = luaL_ref (_L, LUA_REGISTRYINDEX);
+}
+
+-(void) _set_adopt
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->adopt);
+    self->adopt = luaL_ref (_L, LUA_REGISTRYINDEX);
+}
+
+-(void) _set_abandon
+{
+    luaL_unref (_L, LUA_REGISTRYINDEX, self->abandon);
+    self->abandon = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
 
 -(int) _get_parent
@@ -1978,7 +2036,7 @@ static void unlink_node (Node *node)
 	    [child toggle];
 	}
 		
-	[self renounce: child];
+	[self abandon: child];
 	
 	/* Remove the key->child entry. */
     
@@ -2013,7 +2071,7 @@ static void unlink_node (Node *node)
 
 	    /* Remove from the old parent and toggle if necessary. */
 	    
-	    [child->up renounce: child];
+	    [child->up abandon: child];
 
 	    if (child->linked) {
 		[child toggle];

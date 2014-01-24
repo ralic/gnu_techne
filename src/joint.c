@@ -141,9 +141,9 @@
     }
 }
 
--(void) renounce: (Node *)child
+-(void) abandon: (Node *)child
 {
-    [super renounce: child];
+    [super abandon: child];
     
     if ([child isKindOf: [Body class]]) {
 	[self update];

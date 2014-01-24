@@ -78,8 +78,8 @@ struct protocol {
     } tag;
 
     double index;
-    int length, linked, rawaccess;
-    int children, link, unlink, get, set;
+    int length, linked, rawaccess, children;
+    int link, unlink, get, set, adopt, abandon, reparent;
 }
 
 +(const struct protocol *) introspect;
@@ -92,7 +92,7 @@ struct protocol {
 -(void) meetParent: (Node *)parent;
 -(void) missParent: (Node *)parent;
 -(void) adopt: (Node *)child;
--(void) renounce: (Node *)child;
+-(void) abandon: (Node *)child;
 -(void) toggle;
 
 -(int) call;
@@ -116,6 +116,8 @@ struct protocol {
 -(int) _get_annotations;
 -(int) _get_attributes;
 -(int) _get_index;
+-(int) _get_adopt;
+-(int) _get_abandon;
 
 -(void) _set_parent;
 -(void) _set_ancestors;
@@ -128,9 +130,14 @@ struct protocol {
 -(void) _set_get;
 -(void) _set_set;
 -(void) _set_index;
+-(void) _set_adopt;
+-(void) _set_abandon;
 
 -(int) _get_type;
 -(void) _set_type;
+
+-(int) _get_pedigree;
+-(void) _set_pedigree;
 
 
 @end

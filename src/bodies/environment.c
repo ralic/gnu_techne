@@ -55,14 +55,14 @@
     [super adopt: child];
 }
 
--(void) renounce: (id) child
+-(void) abandon: (id) child
 {
     if ([child isKindOf: [Body class]]) {
 	[child release];
 	[child insertInto: NULL];
     }
 
-    [super renounce: child];
+    [super abandon: child];
 }
 
 @end

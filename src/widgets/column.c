@@ -202,9 +202,9 @@
     }
 }
 
--(void) renounce: (Node *)child
+-(void) abandon: (Node *)child
 {
-    [super renounce: child];
+    [super abandon: child];
     
     if ([child isKindOf: [Row class]]) {
 	self->rows -= 1;

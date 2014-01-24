@@ -202,9 +202,9 @@
     }
 }
 
--(void) renounce: (Node *)child
+-(void) abandon: (Node *)child
 {
-    [super renounce: child];
+    [super abandon: child];
     
     if ([child isKindOf: [Column class]]) {
 	self->columns -= 1;

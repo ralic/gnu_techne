@@ -280,6 +280,87 @@ function shapes.cylinder(parameters)
    return node
 end
 
+function shapes.cone(parameters)
+   local node, oldmeta
+   local r, l, n = 1, 1, 16
+
+   node = shapes.triangles {}
+   oldmeta = getmetatable(node)
+
+   replacemetatable (node, {
+      __index = function (self, key)
+		   if key == "radius" then
+		      return r
+		   elseif key == "length" then
+		      return l
+		   elseif key == "segments" then
+		      return n
+		   else
+		      return oldmeta.__index(self, key)
+		   end
+		end,
+
+      __newindex = function (self, key, value)
+		      local v
+		      
+		      if key == "radius" then
+			 r = value
+		      elseif key == "length" then
+			 l = value
+		      elseif key == "segments" then
+			 n = value
+		      else
+			 oldmeta.__newindex(self, key, value)
+			 return
+		      end
+
+		      local positions = array.floats(n + 1, 3)
+		      local indices = array.ushorts(2 * n - 2, 3)
+
+		      for i = 1, n do
+			 local theta, a, b
+
+			 theta = 2 * math.pi * (i - 1) / n
+			 a = r * math.cos (theta)
+			 b = r * math.sin(theta)
+
+			 positions[i][1] = a
+			 positions[i][2] = b
+			 positions[i][3] = -l / 2
+		      end
+                      
+                      positions[n + 1][1] = 0
+                      positions[n + 1][2] = 0
+                      positions[n + 1][3] = l / 2
+
+		      for i = 1, n - 2 do
+		      	 indices[i][1] = 0
+		      	 indices[i][2] = i
+		      	 indices[i][3] = i + 1
+		      end
+
+		      for i = 1, n do
+		      	 local b
+
+		      	 b = n + i - 2
+
+		      	 indices[b][1] = i - 1
+		      	 indices[b][2] = n 
+		      	 indices[b][3] = i 
+		      end
+
+		      self.positions = positions
+		      self.indices = indices		      
+		   end
+   })
+   
+   for key, value in pairs (parameters) do
+      node[key] = value
+   end
+
+   return node
+end
+
 function shapes.torus(parameters)
    local node, oldmeta
    local r, R, n, N = 1, 0.1, 16, 8

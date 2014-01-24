@@ -27,35 +27,42 @@
                                                 \
 	for (i = 0 ; i < _N ; i += 1) {         \
 	    if (i != _N - 1) {                  \
-		printf ("%"_F", ", _V[i]);      \
+		printf ("%"_F", ", (_V)[i]);    \
 	    } else {                            \
-		printf ("%"_F, _V[i]);          \
+		printf ("%"_F, (_V)[i]);        \
 	    }                                   \
 	}                                       \
                                                 \
 	printf (")\n");                         \
     }
 
-#define _TRACEV(_N, _F, _V)                     \
-    {                                           \
-	printf ("\033[0;31m%s: %d: \033[0m",    \
-                __FILE__, __LINE__);            \
-	_PRINTV(_N, _F, _V);                    \
-    }                                           \
-
-#define _TRACEM(_N_0, _N_1, _F, _V)                     \
+#define _TRACEF(_V)                                     \
     {                                                   \
-	int j;                                          \
-                                                        \
-	printf ("\033[0;31m%s: %d: \033[0m(\n",		\
+	printf ("\033[0;31m%s: %d: \033[0m "#_V" = ",   \
                 __FILE__, __LINE__);                    \
-                                                        \
-	for (j = 0 ; j < _N_0 ; j += 1) {               \
-	    printf ("  ");                              \
-	    _PRINTV (_N_1, _F, (_V + j * _N_1));        \
-	}                                               \
-                                                        \
-	printf (")\n");					\
+	printf("%f\n", _V);                           \
+    }                                                   \
+
+#define _TRACEV(_N, _F, _V)                             \
+    {                                                   \
+	printf ("\033[0;31m%s: %d: \033[0m "#_V" = ",   \
+                __FILE__, __LINE__);                    \
+	_PRINTV(_N, _F, _V);                            \
+    }                                                   \
+
+#define _TRACEM(_N_0, _N_1, _F, _V)                             \
+    {                                                           \
+	int j;                                                  \
+                                                                \
+	printf ("\033[0;31m%s: %d: \033[0m"#_V" = (\n ",        \
+                __FILE__, __LINE__);                            \
+                                                                \
+	for (j = 0 ; j < _N_0 ; j += 1) {                       \
+	    printf ("  ");                                      \
+	    _PRINTV (_N_1, _F, ((_V) + j * (_N_1)));            \
+	}                                                       \
+                                                                \
+	printf (")\n");                                         \
     }
 
 #define _TOP(L) _TRACE ("@%d\n", lua_gettop(L))

@@ -85,7 +85,7 @@ static void APIENTRY debug_callback (GLenum source,
 				     GLenum severity,
 				     GLsizei length,
 				     const GLchar *message,
-				     GLvoid *userParam)
+				     const void *userParam)
 {
     int c;
     const char *s;
@@ -579,7 +579,7 @@ static void draw (Node *root)
     }
 	
     if (debug) {
-        glDebugMessageCallbackARB (debug_callback, NULL);
+        glDebugMessageCallbackARB (&debug_callback, NULL);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 
         /* glDebugMessageControlARB (GL_DONT_CARE, */

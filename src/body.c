@@ -207,13 +207,15 @@ static void call_poststep_hook (dBodyID body)
     } else if (self->body) {
 	r = (dReal *)dBodyGetPosition (self->body);
     } else {
-	[super _get_position];
+        goto skip;
     }
     
     for(i = 0 ; i < 3 ; i += 1) {
 	self->position[i] = r[i];
     }
 
+skip:
+    
     [super _get_position];
 
     return 1;
@@ -230,7 +232,7 @@ static void call_poststep_hook (dBodyID body)
     } else if (self->body) {
 	R = (dReal *)dBodyGetRotation (self->body);
     } else {
-	[super _get_orientation];
+        goto skip;
     }
     
     for(i = 0 ; i < 3 ; i += 1) {
@@ -238,6 +240,8 @@ static void call_poststep_hook (dBodyID body)
 	    self->orientation[i * 3 + j] = R[i * 4 + j];
 	}
     }
+
+skip:
     
     [super _get_orientation];
     

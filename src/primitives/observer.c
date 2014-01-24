@@ -76,37 +76,33 @@ static Observer *instance;
 	               -R[0], -R[3], -R[6]);
 		       
            and leave it on the bottom of the matrix stack. */
+
+        s[0] = R[0];
+	s[1] = R[3];
+	s[2] = R[6];
+
+	u[0] = -R[1];
+	u[1] = -R[4];
+	u[2] = -R[7];
 	
 	f[0] = -R[2];
 	f[1] = -R[5];
 	f[2] = -R[8];
+      
+	M[0] = R[0];
+	M[1] = -R[1];
+	M[2] = -R[2];
+	M[12] = -t_dot_3(s, r);
 
-	u[0] = -R[0];
-	u[1] = -R[3];
-	u[2] = -R[6];
-   
- 	/* S = f x u */
+	M[4] = R[3];
+	M[5] = -R[4];
+	M[6] = -R[5];
+	M[13] = -t_dot_3(u, r);
 
-	t_cross(s, f, u);
-   
-	/* Recompute u as u = s x f */
-
-	t_cross(u, s, f);
-   
-	M[0] = s[0];
-	M[4] = s[1];
-	M[8] = s[2];
-	M[12] = -t_dot_3(r, s);
-
-	M[1] = u[0];
-	M[5] = u[1];
-	M[9] = u[2];
-	M[13] = -t_dot_3(r, u);
-
-	M[2] = -f[0];
-	M[6] = -f[1];
-	M[10] = -f[2];
-	M[14] = t_dot_3(r, f);
+	M[8] = R[6];
+	M[9] = -R[7];
+	M[10] = -R[8];
+	M[14] = -t_dot_3(f, r);
 
 	M[3] = M[7] = M[11] = 0;
 	M[15] = 1;

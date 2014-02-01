@@ -85,6 +85,7 @@ typedef struct {
 
 int luaopen_array_core (lua_State *L);
 
+int array_isarray(lua_State *L, int index);
 array_Array *array_testarray (lua_State *L, int index);
 array_Array *array_checkarray (lua_State *L, int index);
 array_Array *array_checkcompatible (lua_State *L, int index, int what, ...);

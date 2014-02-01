@@ -870,6 +870,11 @@ static array_Array *testarray (lua_State *L, int index)
     }
 }
 
+int array_isarray(lua_State *L, int index)
+{
+    return testarray(L, index) != NULL;
+}
+
 array_Array *array_testarray (lua_State *L, int index)
 {
     index = absolute (L, index);

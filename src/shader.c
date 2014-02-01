@@ -472,6 +472,61 @@ static int uniforms_iterator(lua_State *L)
     return 3;
 }
 
+static void bind_shader(Shader *self)
+{
+    shader_Uniform *uniform;        
+    int i, j;
+
+    /* Bind the program and all uniform buffers and proceed to draw
+     * the meshes. */
+    
+    for (i = 0 ; i < self->blocks_n ; i += 1) {
+	if (self->blocks[i] != GL_INVALID_INDEX) {
+	    glBindBufferBase(GL_UNIFORM_BUFFER, i, self->blocks[i]);
+	}
+    }
+
+    if (self->public_buffer >= 0) {
+        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0,
+                         self->buffers[self->public_buffer]);
+    }
+
+    for (i = 0 ; i < self->uniforms_n ; i += 1) {
+        uniform = &self->uniforms[i];
+            
+        if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
+            shader_Sampler *sampler;
+            shader_Texture *texture;
+            unsigned int *names;
+
+            sampler = &uniform->sampler;
+            texture = &self->textures[sampler->index];
+
+            names = sampler->size > 1 ? texture->names : &texture->name;    
+
+            /* _TRACE ("%s, %d, %d, %d\n", [self name], sampler->index, sampler->location, texture->name); */
+            /* Bind all textures associated with the uniform to
+             * consecutive units starting with the assigned base
+             * unit.  */
+            
+            for (j = 0 ; j < sampler->size ; j += 1) {
+                glUniform1i (sampler->location + j, sampler->unit + j);
+                
+                if (names[j] > 0) {
+                    glActiveTexture(GL_TEXTURE0 + sampler->unit + j);
+                    glBindTexture (sampler->target, names[j]);
+
+                    /* { */
+                    /*     char _name[64]; */
+                    /*     glGetActiveUniformName (self->name, i, 64, NULL, _name); */
+                    /* _TRACE ("%s: %d, (%d, %d)\n", _name, names[j], sampler->unit, sampler->target); */
+                    /* } */
+                }
+            }
+        }
+    }
+}
+
 int t_add_global_block (const char *name, const char *declaration)
 {
     unsigned int i;
@@ -888,7 +943,7 @@ int t_add_global_block (const char *name, const char *declaration)
 
     if (mold->samplers_n > 0) {
         shader_Uniform *uniform;
-        
+
         self->textures = malloc (mold->samplers_n * sizeof (shader_Texture));
     
         for (i = 0 ; i < self->uniforms_n ; i += 1) {
@@ -1238,7 +1293,7 @@ int t_add_global_block (const char *name, const char *declaration)
                 
                 sampler = &self->uniforms[i].sampler;
                 texture = &self->textures[sampler->index];
-                
+
                 if (sampler->size > 1) {
                     if (!lua_istable (_L, 3)) {
                         t_print_error("Sampler array must be set with an array of textures.\n");
@@ -1261,7 +1316,7 @@ int t_add_global_block (const char *name, const char *declaration)
                 for (j = 0 ; j < n ; j += 1) {
                     Texture *texture;
                     
-                    lua_rawgeti (_L, 3, j);
+                    lua_rawgeti (_L, 3, j + 1);
                     texture = t_testtexture(_L, -1, sampler->target);
 
                 /* _TRACE ("%p\n", texture); */
@@ -1302,59 +1357,14 @@ int t_add_global_block (const char *name, const char *declaration)
     return [super _set_];
 }
 
+-(void) bind
+{
+    bind_shader(self);
+}
+
 -(void) draw: (int)frame
 {
-    shader_Uniform *uniform;        
-    int i, j;
-
-    /* _TRACE ("%f, %f, %f, %f,\n" */
-    /* 	    "%f, %f, %f, %f,\n" */
-    /* 	    "%f, %f, %f, %f,\n" */
-    /* 	    "%f, %f, %f, %f\n", */
-    /* 	    self->matrix[0], self->matrix[1], self->matrix[2], self->matrix[3], self->matrix[4], self->matrix[5], self->matrix[6], self->matrix[7], self->matrix[8], self->matrix[9], self->matrix[10], self->matrix[11], self->matrix[12], self->matrix[13], self->matrix[14], self->matrix[15]); */
-
-    /* Bind the program and all uniform buffers and proceed to draw
-     * the meshes. */
-    
-    for (i = 0 ; i < self->blocks_n ; i += 1) {
-	if (self->blocks[i] != GL_INVALID_INDEX) {
-	    glBindBufferBase(GL_UNIFORM_BUFFER, i, self->blocks[i]);
-	}
-    }
-
-    if (self->public_buffer >= 0) {
-        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0,
-                         self->buffers[self->public_buffer]);
-    }
-
-    for (i = 0 ; i < self->uniforms_n ; i += 1) {
-        uniform = &self->uniforms[i];
-            
-        if (uniform->any.kind == SHADER_SAMPLER_UNIFORM) {
-            shader_Sampler *sampler;
-            shader_Texture *texture;
-            unsigned int *names;
-
-            sampler = &uniform->sampler;
-            texture = &self->textures[sampler->index];
-
-            names = sampler->size > 1 ? texture->names : &texture->name;    
-
-            /* Bind all textures associated with the uniform to
-             * consecutive units starting with the assigned base
-             * unit.  */
-            
-            for (j = 0 ; j < sampler->size ; j += 1) {
-                glUniform1i (sampler->location + j, sampler->unit + j);
-                
-                if (names[j] > 0) {
-                    glActiveTexture(GL_TEXTURE0 + sampler->unit + j);
-                    glBindTexture (sampler->target, names[j]);
-                }
-            }
-        }
-    }
-    
+    bind_shader(self);
     [super draw: frame];
 }
 

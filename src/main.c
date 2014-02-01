@@ -578,51 +578,50 @@ int main(int argc, char **argv)
 	    char *path = NULL;
 	    int i, n;
 
-            lua_getfield (_L, -1, "prefix");
+            if (!access (optarg, F_OK)) {
+                path = optarg;
+            } else {
+                lua_getfield (_L, -1, "prefix");
 
-            /* Wrap a single prefix inside a table. */
+                /* Wrap a single prefix inside a table. */
 
-            if (lua_type (_L, -1) == LUA_TSTRING) {
-                lua_createtable (_L, 1, 0);
-                lua_insert (_L, -2);
-                lua_rawseti (_L, -2, 1);
-            } else if (lua_isnil(_L, -1)) {
-                lua_pop(_L, 1);
-                lua_createtable (_L, 1, 0);
-                lua_pushliteral (_L, "./");
-                lua_rawseti (_L, -2, 1);
-            }
+                if (lua_type (_L, -1) == LUA_TSTRING) {
+                    lua_createtable (_L, 1, 0);
+                    lua_insert (_L, -2);
+                    lua_rawseti (_L, -2, 1);
+                }
             
-            if (lua_type (_L, -1) == LUA_TTABLE) {
-                n = lua_rawlen (_L, -1);
+                if (lua_type (_L, -1) == LUA_TTABLE) {
+                    n = lua_rawlen (_L, -1);
                 
-                /* Try to find the specified script in a bunch of
-                   predetermined directories. */
+                    /* Try to find the specified script in a bunch of
+                       predetermined directories. */
 		
-                for (i = 0 ; i < n ; i += 1) {
-                    lua_rawgeti(_L, -1, i + 1);
+                    for (i = 0 ; i < n ; i += 1) {
+                        lua_rawgeti(_L, -1, i + 1);
 
-                    if (option == 'c') {
-                        asprintf (&path, "%s/%s",
-                                  lua_tostring(_L, -1), optarg);
-                    } else {
-                        asprintf (&path, "%s/patches/%s.lua",
-                                  lua_tostring(_L, -1), optarg);
+                        if (option == 'c') {
+                            asprintf (&path, "%s/%s",
+                                      lua_tostring(_L, -1), optarg);
+                        } else {
+                            asprintf (&path, "%s/patches/%s.lua",
+                                      lua_tostring(_L, -1), optarg);
+                        }
+                    
+                        lua_pop(_L, 1);
+
+                        if (!access (path, F_OK)) {
+                            break;
+                        }
                     }
-                    
-                    lua_pop(_L, 1);
-                    
-                    if (!access (path, F_OK)) {
-                        break;
+
+                    if (i == n) {
+                        path = NULL;
                     }
                 }
-
-                if (i == n) {
-                    path = NULL;
-                }
-            }
             
-            lua_pop(_L, 1);
+                lua_pop(_L, 1);
+            }
 
             if (!path) {
                 if (option == 'c') {

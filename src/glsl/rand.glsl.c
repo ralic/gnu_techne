@@ -5,6 +5,11 @@ void srand(uvec2 seed)
     next = seed;
 }
 
+uvec2 srand()
+{
+    return next;
+}
+
 vec2 hash(uvec2 U, unsigned int k)
 {
     uvec2 Uprime;

@@ -14,21 +14,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _GRASS_H_
+#define _GRASS_H_
+
 #include <lua.h>
-#include <lauxlib.h>
-
-#include "techne.h"
-#include "atmosphere.h"
+#include "shader.h"
 #include "elevation.h"
-#include "grass.h"
-#include "seeds.h"
 
-int luaopen_topography_core (lua_State *L)
-{
-    Class classes[] = {[Elevation class], [Atmosphere class],
-                       [Grass class], [Seeds class], NULL};
-
-    t_exportnodes (L, classes);
-
-    return 1;
+@interface Grass: Shader {
+@public
+    struct {
+        unsigned int intensity;
+    } locations;
 }
+
+@end
+
+#endif

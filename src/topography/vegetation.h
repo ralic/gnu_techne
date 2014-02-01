@@ -24,8 +24,9 @@
 @interface Vegetation: Shader {
 @public
     Elevation *elevation;
-    int reference_1, *masks;
-
+    int reference_1, *species;
+    unsigned int feedback, points, vao;
+    
     struct {
         unsigned int intensity;
     } locations;

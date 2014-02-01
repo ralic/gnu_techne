@@ -28,27 +28,9 @@
 #include "vegetation.h"
 #include "shader.h"
 
-#include "blades.h"
-
-#define N_K 32               /* Number of stiffness samples. */
-#define N_S 32               /* Number of blade segments. */
-
-static unsigned int deflections;
+static unsigned int query;
 
 @implementation Vegetation
-
-+(void)initialize
-{
-    glGenTextures (1, &deflections);
-    glBindTexture(GL_TEXTURE_2D, deflections);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, N_S, N_K, 0, GL_RGB,
-                 GL_FLOAT, blades);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-}
 
 -(void)init
 {
@@ -66,7 +48,6 @@ static unsigned int deflections;
 #include "glsl/vegetation_tesselation_control.h"
 #include "glsl/vegetation_tesselation_evaluation.h"
 #include "glsl/vegetation_geometry.h"
-#include "glsl/vegetation_fragment.h"
 
     /* Make a reference to the elevation to make sure it's not
      * collected. */
@@ -74,10 +55,10 @@ static unsigned int deflections;
     self->elevation = t_tonode (_L, -1);
     self->reference_1 = luaL_ref (_L, LUA_REGISTRYINDEX);
 
-    self->masks = malloc (self->elevation->swatches_n * sizeof(int));
+    self->species = malloc (self->elevation->swatches_n * sizeof(int));
 
     for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
-        self->masks[i] = LUA_REFNIL;
+        self->species[i] = LUA_REFNIL;
     }
     
     [super init];
@@ -89,6 +70,20 @@ static unsigned int deflections;
     lua_getfield (_L, -1, "profile");
     collect = lua_toboolean (_L, -1);
     lua_pop (_L, 2);
+
+    /* Create the feedback and vertex array objects. */
+
+    glGenTransformFeedbacks(1, &self->feedback);
+    glGenBuffers(1, &self->points);
+
+    glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, self->feedback);
+    glBindBuffer(GL_ARRAY_BUFFER, self->points);
+    glBufferData(GL_ARRAY_BUFFER, 10000000 * 11 * sizeof(float), NULL,
+                 GL_STREAM_COPY);
+    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, self->points);
+
+    glGenVertexArrays (1, &self->vao);
+    glGenQueries(1, &query);
 
     /* Create the program. */
 
@@ -110,12 +105,16 @@ static unsigned int deflections;
                         for: T_TESSELATION_EVALUATION_STAGE];
     [shader addSourceString: glsl_vegetation_geometry
                         for: T_GEOMETRY_STAGE];
-    
-    /* Add the fragment source. */
-    
-    [shader add: 2 sourceStrings: (const char *[2]){header, glsl_vegetation_fragment} for: T_FRAGMENT_STAGE];
-    [shader link];
 
+    {
+        const char *varyings[] = {"position_g", "normal_g", "color_g",
+                                  "distance_g"};
+        
+        glTransformFeedbackVaryings(shader->name, 4, varyings,
+                                    GL_INTERLEAVED_ATTRIBS);
+    }
+
+    [shader link];
     [self load];
 
     /* Initialize uniforms. */
@@ -130,8 +129,6 @@ static unsigned int deflections;
         references_l = glGetUniformLocation (self->name, "references");
         weights_l = glGetUniformLocation (self->name, "weights");
         resolutions_l = glGetUniformLocation (self->name, "resolutions");
-
-        self->locations.intensity = glGetUniformLocation (self->name, "intensity");
 
         glUniform1f (factor_l, self->elevation->albedo);
         glUniform1f (separation_l, self->elevation->separation);
@@ -158,23 +155,64 @@ static unsigned int deflections;
             glUniform3fv (weights_l + i, 1, swatch->weights);
         }
     }
-
-    [self setSamplerUniform: "deflections" to: deflections];
 }
 
 -(void)free
 {
     int i;
+
+    /* Free the transform feedback object and associated buffer. */
+    
+    glDeleteTransformFeedbacks(1, &self->feedback);
+    glDeleteBuffers(1, &self->points);
+
+    /* Free the vertex array. */
+    
+    glDeleteVertexArrays (1, &self->vao);
     
     for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
-        luaL_unref(_L, LUA_REGISTRYINDEX, self->masks[i]);
+        luaL_unref(_L, LUA_REGISTRYINDEX, self->species[i]);
     }
 
-    free(self->masks);
+    free(self->species);
 
     luaL_unref(_L, LUA_REGISTRYINDEX, self->reference_1);
 
     [super free];
+}
+
+-(void) meetParent: (Shader *)parent
+{
+    int i;
+    
+    [super meetParent: parent];
+
+    /* Initialize the vertex array object. */
+    
+    glBindVertexArray(self->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, self->points);
+
+#define TRANSFORMED_SEED_SIZE ((4 + 3 + 3 + 1) * sizeof(float))
+
+    i = glGetAttribLocation(parent->name, "position");
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
+                          (void *)0);
+    glEnableVertexAttribArray(i);
+
+    i = glGetAttribLocation(parent->name, "normal");
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
+                          (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(i);
+
+    i = glGetAttribLocation(parent->name, "color");
+    glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
+                          (void *)(6 * sizeof(float)));
+    glEnableVertexAttribArray(i);    
+
+    i = glGetAttribLocation(parent->name, "distance");
+    glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
+                          (void *)(10 * sizeof(float)));
+    glEnableVertexAttribArray(i);    
 }
 
 -(int) _get_element
@@ -184,52 +222,40 @@ static unsigned int deflections;
 
 -(void) _set_element
 {
-    Texture *texture;
-    int n;
+    /* int n; */
     
-    n = lua_tointeger(_L, 2);
-
-    if (n > self->elevation->swatches_n) {
-        t_print_warning ("Ignoring configuration specified at index %d which is too large.\n");
-        return;
-    }
-
-    lua_rawgeti(_L, 3, 1);
-    texture = t_testtexture(_L, -1, GL_TEXTURE_2D);
-    self->masks[n - 1] = luaL_ref(_L, LUA_REGISTRYINDEX);
-
-    [self setSamplerUniform: "masks" to: texture->name atIndex: n - 1];
+    /* n = lua_tointeger(_L, 2); */
 }
 
 -(void) draw: (int)frame
 {
-    Atmosphere *atmosphere;
-
-    glEnable (GL_DEPTH_TEST);
-    glEnable (GL_SAMPLE_ALPHA_TO_COVERAGE);
-    glEnable (GL_SAMPLE_ALPHA_TO_ONE);
-
-    /* glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); */
-    /* glEnable (GL_BLEND); */
-    
-    /* glEnable (GL_MULTISAMPLE); */
-
+    glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, self->feedback);
     glUseProgram(self->name);
 
-    atmosphere = [Atmosphere instance];
-    
-    if (atmosphere) {
-        glUniform3fv (self->locations.intensity, 1, atmosphere->intensity);
-    }
-    
+    glEnable (GL_RASTERIZER_DISCARD);
+    glBeginTransformFeedback(GL_POINTS);
+    glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
+
     [super draw: frame];
 
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
-    glDisable (GL_SAMPLE_ALPHA_TO_ONE);
+    glEndTransformFeedback();
+    glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+    glDisable (GL_RASTERIZER_DISCARD);
 
-    /* glDisable (GL_MULTISAMPLE); */
-    /* glDisable (GL_BLEND); */
-}
+    /* Draw the seeds. */
+    
+    glUseProgram(((Shader *)self->up)->name);
+    [((Shader *)self->up) bind];
+    /* glPointSize(3); */
+    
+    glBindVertexArray(self->vao);
+    glDrawTransformFeedback(GL_PATCHES, self->feedback);
+
+    /* { */
+    /*     unsigned int n; */
+    /*     glGetQueryObjectuiv(query, GL_QUERY_RESULT, &n); */
+    /*     _TRACE ("%d\n", n); */
+    /* } */
+ }
 
 @end

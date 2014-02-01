@@ -32,7 +32,7 @@ vegetationprofiler = primitives.graphic {
       self.initial = {techne.iterations,
                       parent.infertile,
                       parent.drawn,
-                      parent.segments}
+                      parent.parent.segments}
    end,
    
    -- draw = function(self)
@@ -47,7 +47,7 @@ vegetationprofiler = primitives.graphic {
          
          s = c * (parent.infertile - self.initial[2])
          t = c * (parent.drawn - self.initial[3])
-         q = c * (parent.segments - self.initial[4])
+         q = c * (parent.parent.segments - self.initial[4])
          
          message(string.format([[
 

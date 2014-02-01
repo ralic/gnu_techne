@@ -1,18 +1,18 @@
 in vec3 apex, left, right;
 
-out vec3 position;
-out vec4 color;
-out float distance;
-flat out int index, instance;
+out vec3 position_v;
+out vec4 color_v;
+out float distance_v;
+flat out int index_v;
 flat out vec3 apex_v, left_v, right_v, stratum_v;
 
-uniform vec3 intensity;
 uniform float factor;
-
 uniform vec2 offset, scale;
 
 float hsv_distance (vec3, vec3, vec3, float);
 vec2 hash(unsigned int R, unsigned int L, unsigned int k);
+vec2 rand2();
+uvec2 srand();
 
 uniform float instances;
 
@@ -29,7 +29,7 @@ void main()
 {
     vec3 rgb, hsv, c, s, t, r_0;
     vec2 uv, u, a;
-    float d_0, d_1, r, sqrtux, l;
+    float S, d_0, d_1, r, sqrtux, l;
     int i, i_0, i_1;
 
     vec2 center;
@@ -37,21 +37,8 @@ void main()
     center = (apex.xy + left.xy + right.xy) / 3;
     u = hash(floatBitsToUint(center.xy), uint(gl_InstanceID));
 
-    if (true) {
-        float S;
-
-        S = float(gl_InstanceID + 1);
-        l = ceil(pow(3 * S, 1.0 / 3.0) - 0.5);
-    } else {
-        int S;
-        
-        for (i = 0, S = 1 ; S <= gl_InstanceID + 1 ; i += 1, S += i * i);
-        l = float(i);
-        /* float S; */
-
-        /* S = float(gl_InstanceID + 1); */
-        /* l = pow(2, ceil(log(1 + 3 * S) / log(4)) - 1); */
-    }
+    S = float(gl_InstanceID + 1);
+    l = ceil(pow(3 * S, 1.0 / 3.0) - 0.5);
 
     a = floor(rand2() * l);
     u = (u + a) / l;    
@@ -67,7 +54,7 @@ void main()
     rgb = compose(uv);
     hsv = rgb_to_hsv(rgb);
     
-    for (i = 0, d_0 = d_1 = -infinity, i_0 = -1 ; i < N ; i += 1) {
+    for (i = 0, d_0 = d_1 = -infinity, i_0 = i_1 = -1 ; i < N ; i += 1) {
         float d;
         
         d = splat_distance(hsv, i, 0);
@@ -93,12 +80,12 @@ void main()
             atomicCounterIncrement(infertile);
 #endif
 
-            index = -1;
+            index_v = -1;
             return;
         }
 
-        i = i_1;
-        r = max(0, d_1 / d_0 - 1);
+        index_v = i_1;
+        distance_v = max(0, d_1 / d_0 - 1);
     } else {
         /* Skip the rest if the seed is infertile. */
     
@@ -107,26 +94,23 @@ void main()
             atomicCounterIncrement(infertile);
 #endif
 
-            index = -1;
+            index_v = -1;
             return;
         }
 
-        i = i_0;
-        r = 1 - d_1 / d_0;
+        index_v = i_0;
+        distance_v = 1 - d_1 / d_0;
     }
-    /* i = 0; r = 1; */
+    /* index_v = 0; distance_v = 1; */
 
 #ifdef COLLECT_STATISTICS
     atomicCounterIncrement(drawn);
 #endif
         
-    position = c;
-    index = i;
-    instance = gl_InstanceID;
-    distance = r;
+    position_v = c;
     const float transition = 0.3;
-    color = vec4(factor * intensity * rgb,
-                 min(1, 1 / transition - gl_InstanceID / (transition * instances)));
+    color_v = vec4(factor * rgb,
+                   min(1, 1 / transition - gl_InstanceID / (transition * instances)));
 
     apex_v = apex; left_v = left; right_v = right;
     stratum_v = vec3(a, l);

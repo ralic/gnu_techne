@@ -525,6 +525,18 @@ static void complete_if_needed(Texture *texture)
 -(void) _set_texels
 {
     int base, max;
+
+    /* If a single texel array is specified wrap it in a table and
+     * default minification filtering to linear. */
+    
+    if (array_isarray (_L, 3)) {
+        lua_createtable(_L, 1, 0);
+        lua_insert(_L, 3);
+        lua_rawseti(_L, 3, 1);
+
+        glBindTexture(self->target, self->name);
+        glTexParameteri(self->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    }
     
     if (!lua_istable (_L, 3)) {
         t_print_error("Invalid value specified for texel data.\n");
@@ -566,8 +578,11 @@ static void complete_if_needed(Texture *texture)
 
             map_array_to_texture(texels, &type, &internal, &format);
 
+            /* _TRACEV (3, "d", texels->size); */
+            /* _TRACE ("%d, %x, %x, %x\n", texels->type, type, internal, format); */
+
             /* Create the texture object. */
-	                    
+            
             switch(self->target) {
             case GL_TEXTURE_2D:
                 glTexImage2D (self->target, i, internal,
@@ -596,11 +611,11 @@ static void complete_if_needed(Texture *texture)
         lua_settop(_L, h - 1);
     }
 
-    glTexParameteri(self->target, GL_TEXTURE_BASE_LEVEL, base);
-    glTexParameteri(self->target, GL_TEXTURE_MAX_LEVEL, max);
+    /* glTexParameteri(self->target, GL_TEXTURE_BASE_LEVEL, base); */
+    /* glTexParameteri(self->target, GL_TEXTURE_MAX_LEVEL, max); */
     glBindTexture(self->target, 0);
 
-    /* complete_if_needed(self); */
+    complete_if_needed(self);
 }
 
 @end

@@ -98,7 +98,6 @@ dist_modules_DATA = joints/joints.lua array/array.lua			\
 topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
 			     topography/elevation_body.c 		\
 			     topography/elevation_shape.c 		\
-			     topography/elevation_seeds.c		\
 			     topography/elevation.h 			\
 			     topography/roam.h topography/roam.c	\
 			     topography/seeding.h topography/seeding.c	\

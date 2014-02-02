@@ -45,8 +45,6 @@ typedef struct {
 
 -(int) _get_shape;
 -(void) _set_shape;
--(int) _get_seeds;
--(void) _set_seeds;
 -(int) _get_body;
 -(void) _set_body;
 -(int) _get_separation;
@@ -100,46 +98,6 @@ typedef struct {
 @interface ElevationShader: Shader {
 @public
 }
-
-@end
-
-@interface ElevationSeeds: Shape {
-@public
-    roam_Context *context;
-    seeding_Context seeding;
-    
-    struct {
-        unsigned int scale, offset, clustering, instances;
-    } locations;
-
-    struct {
-        unsigned int base;
-    } units;
-
-    unsigned int buffer;
-    int reference;
-}
-
--(int) _get_density;
--(void) _set_density;
-
--(int) _get_ceiling;
--(void) _set_ceiling;
-
--(int) _get_clustering;
--(void) _set_clustering;
-
--(int) _get_bins;
--(void) _set_bins;
-
--(int) _get_triangles;
--(void) _set_triangles;
-
--(int) _get_horizon;
--(void) _set_horizon;
-
--(int) _get_error;
--(void) _set_error;
 
 @end
 

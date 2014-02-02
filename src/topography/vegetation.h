@@ -23,14 +23,42 @@
 
 @interface Vegetation: Shader {
 @public
+    roam_Context *context;
+    seeding_Context seeding;
     Elevation *elevation;
+
     int reference_1, *species;
-    unsigned int feedback, points, vao;
+    unsigned int feedback, arrays[2], vertexbuffers[2];
     
     struct {
-        unsigned int intensity;
+        unsigned int intensity, scale, offset, clustering, instances;
     } locations;
+
+    struct {
+        unsigned int base;
+    } units;
 }
+
+-(int) _get_density;
+-(void) _set_density;
+
+-(int) _get_ceiling;
+-(void) _set_ceiling;
+
+-(int) _get_clustering;
+-(void) _set_clustering;
+
+-(int) _get_bins;
+-(void) _set_bins;
+
+-(int) _get_triangles;
+-(void) _set_triangles;
+
+-(int) _get_horizon;
+-(void) _set_horizon;
+
+-(int) _get_error;
+-(void) _set_error;
 
 @end
 

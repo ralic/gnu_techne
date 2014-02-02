@@ -120,41 +120,17 @@ static unsigned int deflections;
     [self setSamplerUniform: "deflections" to: deflections];
 }
 
--(void)free
-{
-
-    [super free];
-}
-
--(void) draw: (int)frame
+-(void) bind
 {
     Atmosphere *atmosphere;
 
-    glEnable (GL_DEPTH_TEST);
-    glEnable (GL_SAMPLE_ALPHA_TO_COVERAGE);
-    glEnable (GL_SAMPLE_ALPHA_TO_ONE);
-
-    /* glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); */
-    /* glEnable (GL_BLEND); */
-    
-    glEnable (GL_MULTISAMPLE);
-
-    glUseProgram(self->name);
+    [super bind];
 
     atmosphere = [Atmosphere instance];
     
     if (atmosphere) {
         glUniform3fv (self->locations.intensity, 1, atmosphere->intensity);
     }
-    
-    [super draw: frame];
-
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
-    glDisable (GL_SAMPLE_ALPHA_TO_ONE);
-
-    glDisable (GL_MULTISAMPLE);
-    /* glDisable (GL_BLEND); */
 }
 
 @end

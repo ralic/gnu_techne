@@ -69,20 +69,30 @@ static unsigned int query;
     collect = lua_toboolean (_L, -1);
     lua_pop (_L, 2);
 
-    /* Create the feedback and vertex array objects. */
+    /* Initialize seeding. */
+    
+    self->context = &self->elevation->context;
+    self->seeding.horizon = -100;
+    self->seeding.density = 10000;
+    self->seeding.ceiling = 1000;
+    self->seeding.clustering = 1.0;
 
+    initialize_seeding(&self->seeding);
+
+    /* Create the VBOS and feedback and vertex array objects. */
+
+    glGenBuffers(2, self->vertexbuffers);
     glGenTransformFeedbacks(1, &self->feedback);
-    glGenBuffers(1, &self->points);
 
 #define TRANSFORMED_SEED_SIZE ((4 + 4 * 3 + 1) * sizeof(float) + 3 * sizeof(unsigned int))
 
     glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, self->feedback);
-    glBindBuffer(GL_ARRAY_BUFFER, self->points);
+    glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[1]);
     glBufferData(GL_ARRAY_BUFFER, 10000000 * TRANSFORMED_SEED_SIZE, NULL,
                  GL_STREAM_COPY);
-    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, self->points);
+    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, self->vertexbuffers[1]);
 
-    glGenVertexArrays (1, &self->vao);
+    glGenVertexArrays (2, self->arrays);
     glGenQueries(1, &query);
 
     /* Create the program. */
@@ -118,9 +128,34 @@ static unsigned int query;
     [shader link];
     [self load];
 
+    /* Bind the VBOs into the VAO. */
+    
+    glBindVertexArray(self->arrays[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[0]);
+
+    i = glGetAttribLocation(self->name, "apex");
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, SEED_SIZE, (void *)0);
+    glEnableVertexAttribArray(i);
+
+    i = glGetAttribLocation(self->name, "left");
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, SEED_SIZE, (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(i);
+
+    i = glGetAttribLocation(self->name, "right");
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, SEED_SIZE, (void *)(6 * sizeof(float)));
+    glEnableVertexAttribArray(i);
+
     /* Initialize uniforms. */
 
     glUseProgram(self->name);
+
+   
+    self->locations.scale = glGetUniformLocation(self->name, "scale");
+    self->locations.offset = glGetUniformLocation(self->name, "offset");
+    self->locations.clustering = glGetUniformLocation(self->name, "clustering");
+    self->locations.instances = glGetUniformLocation(self->name, "instances");
+
+    self->units.base = [self getUnitForSamplerUniform: "base"];
 
     {
         unsigned int factor_l, references_l, weights_l, resolutions_l, separation_l;
@@ -162,14 +197,15 @@ static unsigned int query;
 {
     int i;
 
-    /* Free the transform feedback object and associated buffer. */
+    /* Free the VBOs and transform feedback object and associated
+     * buffer. */
     
+    glDeleteBuffers(2, self->vertexbuffers);
     glDeleteTransformFeedbacks(1, &self->feedback);
-    glDeleteBuffers(1, &self->points);
 
     /* Free the vertex array. */
     
-    glDeleteVertexArrays (1, &self->vao);
+    glDeleteVertexArrays (2, self->arrays);
     
     for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
         luaL_unref(_L, LUA_REGISTRYINDEX, self->species[i]);
@@ -190,8 +226,8 @@ static unsigned int query;
 
     /* Initialize the vertex array object. */
     
-    glBindVertexArray(self->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, self->points);
+    glBindVertexArray(self->arrays[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[1]);
 
     i = glGetAttribLocation(parent->name, "apex");
     glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
@@ -248,26 +284,120 @@ static unsigned int query;
 
 -(void) draw: (int)frame
 {
-    glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, self->feedback);
-    glUseProgram(self->name);
+    double q;
+    roam_Tileset *tiles;
+    seeding_Bin *b;
+    int i, j;
 
+    tiles = &self->context->tileset;
+
+    glUseProgram(self->name);
+    [self bind];
+
+    glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, self->feedback);
     glEnable (GL_RASTERIZER_DISCARD);
     glBeginTransformFeedback(GL_POINTS);
     glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
 
-    [super draw: frame];
+    t_push_modelview (self->matrix, T_MULTIPLY);
+
+    /* Seed the vegetation. */
+    
+    begin_seeding (&self->seeding, self->context);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[0]);
+    glBindVertexArray(self->arrays[0]);
+    glActiveTexture(GL_TEXTURE0 + self->units.base);
+
+    glPatchParameteri(GL_PATCH_VERTICES, 1);
+    
+    q = ldexpf(1, -tiles->depth);
+    glUniform2f(self->locations.scale,
+                q / tiles->resolution[0], q / tiles->resolution[1]);
+    
+#ifdef RASTERTIZER_DISCARD
+    glEnable (GL_RASTERIZER_DISCARD);
+#endif
+
+    for (i = 0, b = &self->seeding.bins[0];
+         i < BINS_N;
+         i += 1, b += 1) {
+        b->patches = 0;
+    }
+    
+    for (i = 0 ; i < tiles->size[0] ; i += 1) {    
+	for (j = 0 ; j < tiles->size[1] ; j += 1) {
+            int k, l, n;
+
+            l = i * tiles->size[1] + j;
+            n = seed_tile(l);
+            
+            for (k = 0, b = &self->seeding.bins[0];
+                 k < BINS_N;
+                 k += 1, b += 1) {
+
+                if(b->fill > 0) {
+                    double r, C;
+                    
+                    glUniform2f(self->locations.offset,
+                                -i + 0.5 * tiles->size[0],
+                                -j + 0.5 * tiles->size[1]);
+                    
+                    glBindTexture(GL_TEXTURE_2D, tiles->imagery[l]);
+                    glPointSize(1);
+
+                    glBufferData (GL_ARRAY_BUFFER, n * SEED_SIZE, NULL,
+                                  GL_STREAM_DRAW);
+                    glBufferSubData (GL_ARRAY_BUFFER, 0,
+                                     b->fill * SEED_SIZE, b->buffer);
+
+                    C = self->seeding.clustering;
+                    r = round(b->center / C);
+
+                    if (r >= 1.0) {
+                        glUniform1f(self->locations.clustering, C);
+                        glUniform1f(self->locations.instances, k == BINS_N - 1 ? 1.0 / 0.0 : r);
+                        glDrawArraysInstanced(GL_POINTS, 0, b->fill, r);
+
+                        b->patches += b->fill * r;
+                    } else {
+                        glUniform1f(self->locations.clustering,
+                                    round(b->center));
+                        glUniform1f(self->locations.instances, 1);
+                        glDrawArraysInstanced(GL_POINTS, 0, b->fill, 1);
+                        
+                        b->patches += b->fill;
+                    }
+                }
+            }
+	}
+    }
+    
+    /* _TRACE ("error: %f\n", seeding->error); */
+
+#ifdef RASTERTIZER_DISCARD
+    glDisable (GL_RASTERIZER_DISCARD);
+#endif
+
+    finish_seeding();
+    t_pop_modelview ();
 
     glEndTransformFeedback();
     glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
     glDisable (GL_RASTERIZER_DISCARD);
 
     /* Draw the seeds. */
+
+    glEnable (GL_DEPTH_TEST);
+    glEnable (GL_SAMPLE_ALPHA_TO_COVERAGE);
+    glEnable (GL_SAMPLE_ALPHA_TO_ONE);
+    
+    glEnable (GL_MULTISAMPLE);
     
     glUseProgram(((Shader *)self->up)->name);
     [((Shader *)self->up) bind];
-    /* glPointSize(3); */
     
-    glBindVertexArray(self->vao);
+    glBindVertexArray(self->arrays[1]);
     glDrawTransformFeedback(GL_PATCHES, self->feedback);
 
     /* { */
@@ -275,6 +405,125 @@ static unsigned int query;
     /*     glGetQueryObjectuiv(query, GL_QUERY_RESULT, &n); */
     /*     _TRACE ("%d\n", n); */
     /* } */
- }
+
+    glDisable (GL_DEPTH_TEST);
+    glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
+    glDisable (GL_SAMPLE_ALPHA_TO_ONE);
+
+    glDisable (GL_MULTISAMPLE);
+
+    [super draw: frame];
+}
+
+-(int) _get_density
+{
+    lua_pushnumber(_L, self->seeding.density);
+
+    return 1;
+}
+
+-(void) _set_density
+{
+    self->seeding.density = lua_tonumber(_L, 3);
+}
+
+-(int) _get_ceiling
+{
+    lua_pushnumber(_L, self->seeding.ceiling);
+
+    return 1;
+}
+
+-(void) _set_ceiling
+{
+    self->seeding.ceiling = lua_tonumber(_L, 3);
+}
+
+-(int) _get_clustering
+{
+    lua_pushnumber (_L, self->seeding.clustering);
+    
+    return 1;
+}
+
+-(void) _set_clustering
+{
+    self->seeding.clustering = lua_tonumber (_L, 3);
+}
+
+-(int) _get_bins
+{
+    int i;
+    
+    lua_createtable (_L, BINS_N, 0);
+
+    for (i = 0 ; i < BINS_N ; i += 1) {
+        seeding_Bin *b;
+
+        b = &self->seeding.bins[i];
+        
+        lua_createtable (_L, 4, 0);
+        lua_pushnumber (_L, b->center);
+        lua_rawseti (_L, -2, 1);
+        lua_pushinteger (_L, b->triangles);
+        lua_rawseti (_L, -2, 2);
+        lua_pushinteger (_L, b->patches);
+        lua_rawseti (_L, -2, 3);
+        lua_pushinteger (_L, b->capacity);
+        lua_rawseti (_L, -2, 4);
+
+        lua_rawseti (_L, -2, i + 1);
+    }
+    
+    return 1;
+}
+
+-(void) _set_bins
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_triangles
+{
+    int i;
+    
+    lua_createtable (_L, 2, 0);
+
+    for (i = 0 ; i < 2 ; i += 1) {
+        lua_pushnumber (_L, self->seeding.triangles_n[i]);
+        lua_rawseti (_L, -2, i + 1);
+    }
+    
+    return 1;
+}
+
+-(void) _set_triangles
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_horizon
+{
+    lua_pushnumber (_L, -self->seeding.horizon);
+    
+    return 1;
+}
+
+-(void) _set_horizon
+{
+    self->seeding.horizon = -lua_tonumber (_L, 3);
+}
+
+-(int) _get_error
+{
+    lua_pushnumber (_L, self->seeding.error);
+    
+    return 1;
+}
+
+-(void) _set_error
+{
+    T_WARN_READONLY;
+}
 
 @end

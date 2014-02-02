@@ -29,6 +29,7 @@
 #include "shader.h"
 #include "elevation.h"
 #include "vegetation.h"
+#include "seeding.h"
 #include "splat.h"
 #include "roam.h"
 
@@ -492,19 +493,6 @@ static int construct(lua_State *L)
 }
 
 -(void) _set_body
-{
-}
-
--(int) _get_seeds
-{
-    lua_pop (_L, 1);
-    lua_pushlightuserdata(_L, [ElevationSeeds class]);
-    lua_pushcclosure(_L, construct, 2);
-    
-    return 1;
-}
-
--(void) _set_seeds
 {
 }
 

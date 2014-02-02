@@ -562,6 +562,7 @@ static void calculate_sky_color(double azimuth, double elevation,
     glEnable(GL_CULL_FACE);
     glEnable (GL_BLEND);
 
+    [self bind];
     [super draw: frame];
 
     glDisable(GL_CULL_FACE);

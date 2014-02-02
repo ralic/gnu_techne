@@ -114,18 +114,15 @@
     [super free];
 }
 
--(void) draw: (int)frame
+-(void) bind
 {
     Atmosphere *atmosphere;
 
-    glEnable (GL_CULL_FACE);
-    glEnable (GL_DEPTH_TEST);
+    [super bind];
 
-    /* Bind the program and all textures. */
-    
-    glUseProgram(self->name);
-    
     atmosphere = [Atmosphere instance];
+    
+    /* Set atmospheric parameters. */
     
     if (atmosphere) {
         glUniform3fv (self->locations.direction, 1, atmosphere->direction);
@@ -134,7 +131,16 @@
         glUniform1f (self->locations.beta_p, atmosphere->mie);
         glUniform1f (self->locations.turbidity, atmosphere->turbidity);
     }
+}
 
+-(void) draw: (int)frame
+{
+    glEnable (GL_CULL_FACE);
+    glEnable (GL_DEPTH_TEST);
+
+    glUseProgram(self->name);
+    
+    [self bind];
     [super draw: frame];
 
     glDisable (GL_DEPTH_TEST);

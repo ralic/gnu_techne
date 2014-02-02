@@ -1362,10 +1362,4 @@ int t_add_global_block (const char *name, const char *declaration)
     bind_shader(self);
 }
 
--(void) draw: (int)frame
-{
-    bind_shader(self);
-    [super draw: frame];
-}
-
 @end

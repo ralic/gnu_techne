@@ -60,6 +60,7 @@ static ShaderMold *handle;
     
     glUseProgram(self->name);
     
+    [self bind];
     [super draw: frame];
 
     glDisable (GL_DEPTH_TEST);

@@ -220,7 +220,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         if(isnan(A)) {
             n_0 = seeding->ceiling;
         } else {
-            n_0 = fmin(seeding->ceiling, fmax(seeding->density * A, 2));
+            n_0 = fmin(seeding->ceiling, fmax(seeding->density * A, 1));
         }
         
         if (n_min > n_0) {

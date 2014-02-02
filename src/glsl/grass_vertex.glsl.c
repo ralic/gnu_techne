@@ -1,15 +1,23 @@
-in vec3 position, normal;
+in vec3 apex, left, right, stratum;
 in vec4 color;
 in float distance;
+in unsigned int clustering;
+in uvec2 chance;
 
-out vec3 position_v, normal_v;
+out vec3 apex_v, left_v, right_v, stratum_v;
 out vec4 color_v;
 out float distance_v;
+out unsigned int clustering_v;
+out uvec2 chance_v;
 
 void main()
 {
-    position_v = position;
-    normal_v = normal;
+    apex_v = apex;
+    left_v = left;
+    right_v = right;
+    stratum_v = stratum;
     color_v = color;
     distance_v = distance;
+    clustering_v = clustering;
+    chance_v = chance;
 }

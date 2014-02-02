@@ -45,8 +45,6 @@ static unsigned int query;
 #include "glsl/splatting.h"
 #include "glsl/rand.h"
 #include "glsl/vegetation_vertex.h"
-#include "glsl/vegetation_tesselation_control.h"
-#include "glsl/vegetation_tesselation_evaluation.h"
 #include "glsl/vegetation_geometry.h"
 
     /* Make a reference to the elevation to make sure it's not
@@ -76,9 +74,11 @@ static unsigned int query;
     glGenTransformFeedbacks(1, &self->feedback);
     glGenBuffers(1, &self->points);
 
+#define TRANSFORMED_SEED_SIZE ((4 + 4 * 3 + 1) * sizeof(float) + 3 * sizeof(unsigned int))
+
     glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, self->feedback);
     glBindBuffer(GL_ARRAY_BUFFER, self->points);
-    glBufferData(GL_ARRAY_BUFFER, 10000000 * 11 * sizeof(float), NULL,
+    glBufferData(GL_ARRAY_BUFFER, 10000000 * TRANSFORMED_SEED_SIZE, NULL,
                  GL_STREAM_COPY);
     glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, self->points);
 
@@ -97,20 +97,21 @@ static unsigned int query;
         
     [shader initWithHandle: NULL];
     [shader declare: 9 privateUniforms: private];
-    [shader add: 5 sourceStrings: (const char *[5]){header, glsl_rand, glsl_color, glsl_splatting, glsl_vegetation_vertex} for: T_VERTEX_STAGE];
+    [shader add: 5
+            sourceStrings: (const char *[5]){header, glsl_rand, glsl_color,
+                                             glsl_splatting,
+                                             glsl_vegetation_vertex}
+            for: T_VERTEX_STAGE];
 
-    [shader addSourceString: glsl_vegetation_tesselation_control
-                        for: T_TESSELATION_CONTROL_STAGE];
-    [shader add: 3 sourceStrings: (const char *[3]){header, glsl_rand, glsl_vegetation_tesselation_evaluation}
-                        for: T_TESSELATION_EVALUATION_STAGE];
     [shader addSourceString: glsl_vegetation_geometry
                         for: T_GEOMETRY_STAGE];
 
     {
-        const char *varyings[] = {"position_g", "normal_g", "color_g",
-                                  "distance_g"};
+        const char *varyings[] = {"apex_g", "left_g", "right_g", "stratum_g",
+                                  "color_g", "distance_g", "clustering_g",
+                                  "chance_g"};
         
-        glTransformFeedbackVaryings(shader->name, 4, varyings,
+        glTransformFeedbackVaryings(shader->name, 8, varyings,
                                     GL_INTERLEAVED_ATTRIBS);
     }
 
@@ -192,26 +193,44 @@ static unsigned int query;
     glBindVertexArray(self->vao);
     glBindBuffer(GL_ARRAY_BUFFER, self->points);
 
-#define TRANSFORMED_SEED_SIZE ((4 + 3 + 3 + 1) * sizeof(float))
-
-    i = glGetAttribLocation(parent->name, "position");
+    i = glGetAttribLocation(parent->name, "apex");
     glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
                           (void *)0);
     glEnableVertexAttribArray(i);
 
-    i = glGetAttribLocation(parent->name, "normal");
+    i = glGetAttribLocation(parent->name, "left");
     glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
                           (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(i);
 
+    i = glGetAttribLocation(parent->name, "right");
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
+                          (void *)(6 * sizeof(float)));
+    glEnableVertexAttribArray(i);
+
+    i = glGetAttribLocation(parent->name, "stratum");
+    glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
+                          (void *)(9 * sizeof(float)));
+    glEnableVertexAttribArray(i);
+
     i = glGetAttribLocation(parent->name, "color");
     glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
-                          (void *)(6 * sizeof(float)));
+                          (void *)(12 * sizeof(float)));
     glEnableVertexAttribArray(i);    
 
     i = glGetAttribLocation(parent->name, "distance");
     glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
-                          (void *)(10 * sizeof(float)));
+                          (void *)(16 * sizeof(float)));
+    glEnableVertexAttribArray(i);    
+
+    i = glGetAttribLocation(parent->name, "clustering");
+    glVertexAttribIPointer(i, 1, GL_UNSIGNED_INT, TRANSFORMED_SEED_SIZE,
+                          (void *)(17 * sizeof(float)));
+    glEnableVertexAttribArray(i);    
+
+    i = glGetAttribLocation(parent->name, "chance");
+    glVertexAttribIPointer(i, 2, GL_UNSIGNED_INT, TRANSFORMED_SEED_SIZE,
+                           (void *)(17 * sizeof(float) + sizeof(unsigned int)));
     glEnableVertexAttribArray(i);    
 }
 

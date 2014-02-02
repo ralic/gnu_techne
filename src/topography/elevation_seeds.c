@@ -173,14 +173,14 @@
                     if (r >= 1.0) {
                         glUniform1f(self->locations.clustering, C);
                         glUniform1f(self->locations.instances, k == BINS_N - 1 ? 1.0 / 0.0 : r);
-                        glDrawArraysInstanced(GL_PATCHES, 0, b->fill, r);
+                        glDrawArraysInstanced(GL_POINTS, 0, b->fill, r);
 
                         b->patches += b->fill * r;
                     } else {
                         glUniform1f(self->locations.clustering,
                                     round(b->center));
                         glUniform1f(self->locations.instances, 1);
-                        glDrawArraysInstanced(GL_PATCHES, 0, b->fill, 1);
+                        glDrawArraysInstanced(GL_POINTS, 0, b->fill, 1);
                         
                         b->patches += b->fill;
                     }

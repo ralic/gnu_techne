@@ -1,10 +1,10 @@
 in vec3 apex, left, right;
 
-out vec3 position_v;
 out vec4 color_v;
 out float distance_v;
-flat out int index_v;
-flat out vec3 apex_v, left_v, right_v, stratum_v;
+out int index_v;
+out uvec2 chance_v;
+out vec3 apex_v, left_v, right_v, stratum_v;
 
 uniform float factor;
 uniform vec2 offset, scale;
@@ -70,12 +70,12 @@ void main()
             i_1 = i;
         }
     }
-
+    
     vec2 z = rand2();
     float z_0 = d_1 / (d_0 + d_1);
     
-    if (/* debug > 0 &&  */z.x < z_0 && i_0 > 0) {
-        if (i_1 > 0 || d_0 < 1000) {
+    if (/* debug > 0 &&  */z.x < z_0 && i_0 > 1) {
+        if (i_1 > 1 /* || d_0 < 1000 */) {
 #ifdef COLLECT_STATISTICS
             atomicCounterIncrement(infertile);
 #endif
@@ -85,11 +85,11 @@ void main()
         }
 
         index_v = i_1;
-        distance_v = max(0, d_1 / d_0 - 1);
+        distance_v = d_1 / d_0;
     } else {
         /* Skip the rest if the seed is infertile. */
     
-        if (i_0 > 0 || d_0 < 1000) {
+        if (i_0 > 1 /* || d_0 < 1000 */) {
 #ifdef COLLECT_STATISTICS
             atomicCounterIncrement(infertile);
 #endif
@@ -101,17 +101,17 @@ void main()
         index_v = i_0;
         distance_v = 1 - d_1 / d_0;
     }
-    /* index_v = 0; distance_v = 1; */
+    /* index_v = 0; distance_v = 1; color_v = vec4(1, 0, 0, 1); */
 
 #ifdef COLLECT_STATISTICS
     atomicCounterIncrement(drawn);
 #endif
         
-    position_v = c;
     const float transition = 0.3;
     color_v = vec4(factor * rgb,
                    min(1, 1 / transition - gl_InstanceID / (transition * instances)));
 
     apex_v = apex; left_v = left; right_v = right;
     stratum_v = vec3(a, l);
+    chance_v = srand();
 }

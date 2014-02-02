@@ -1,32 +1,38 @@
 layout(points) in;
 layout(points, max_vertices = 1) out;
               
-in vec3 position_te[], normal_te[];
-in vec4 color_te[];
-in float distance_te[];
-in int index_te[];
+in vec4 color_v[];
+in float distance_v[];
+in int index_v[];
+in vec3 apex_v[], left_v[], right_v[], stratum_v[];
+in uvec2 chance_v[];
 
 out vec4 color_g;
-out vec3 normal_g, position_g;
-flat out float distance_g;              
-              
+out vec3 apex_g, left_g, right_g, stratum_g;
+out float distance_g;              
+out uvec2 chance_g;
+out unsigned int clustering_g;              
+
+uniform float clustering;
+
 uniform grass_debug{
     int debug;
 };
 
 void main()
 {
-    const vec3 l = -normalize(vec3(1, 1, 1));
-    const vec2 horizon = vec2(100, 1.0 / 3.0);
-
-    mat4 T;
-    vec4 h, p_0, p_1, p;
-    float z, z_f, n, ldotn;
-
-    color_g = color_te[0];    
-    distance_g = distance_te[0];
-    normal_g = normal_te[0];
-    position_g = position_te[0];
+    if (index_v[0] < 0) {
+        return;
+    }
+    
+    color_g = color_v[0];    
+    distance_g = distance_v[0];
+    apex_g = apex_v[0];
+    left_g = left_v[0];
+    right_g = right_v[0];
+    stratum_g = stratum_v[0];
+    clustering_g = uint(clustering);
+    chance_g = chance_v[0];
     /* EmitStreamVertex(index_te[0]); */
     EmitVertex();
 

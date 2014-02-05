@@ -23,7 +23,7 @@ void main()
     
     fragment = vec4(intensity * mix(50.0 * vec3(phase_r),
                                     factor * rgb,
-                                    0*tau + 1), 0*rho+1);
+                                    tau), rho);
 
     /* fragment = vec4(vec3(max(0, dot(L, normal))), 1); */
     

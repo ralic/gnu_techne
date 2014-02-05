@@ -181,7 +181,6 @@ static unsigned int query;
 
             swatch = &self->elevation->swatches[i];
 
-
             for (j = 0 ; j < 3 ; j += 1) {
                 [self setSamplerUniform: "detail"
                                      to: swatch->detail[j]->name
@@ -327,11 +326,11 @@ static unsigned int query;
                 c = (int)round(b->center / seeds->clustering);
 
                 if (c > 1) {
-                    n += c;
-                    b->clusters += c;
+                    n += c * b->fill;
+                    b->clusters += c * b->fill;
                 } else {
-                    n += 1;
-                    b->clusters += 1;
+                    n += b->fill;
+                    b->clusters += b->fill;
                 }
 
                 b->triangles += b->fill;
@@ -412,6 +411,13 @@ static unsigned int query;
             glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
             glDisable (GL_RASTERIZER_DISCARD);
 
+            /* { */
+            /*     unsigned int n; */
+            /*     glGetQueryObjectuiv(query, GL_QUERY_RESULT, &n); */
+            /*     _TRACE ("%d, %d\n", n, highwater[1]); */
+            /*     assert(n < highwater[1]); */
+            /* } */
+
             /* Bind the second stage shader and draw the seeds. */
 
             glEnable (GL_DEPTH_TEST);
@@ -424,12 +430,6 @@ static unsigned int query;
     
             glBindVertexArray(self->arrays[1]);
             glDrawTransformFeedback(GL_PATCHES, self->feedback);
-
-            /* { */
-            /*     unsigned int n; */
-            /*     glGetQueryObjectuiv(query, GL_QUERY_RESULT, &n); */
-            /*     _TRACE ("%d\n", n); */
-            /* } */
 
             glDisable (GL_DEPTH_TEST);
             glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);

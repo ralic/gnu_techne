@@ -25,8 +25,8 @@
 
 typedef struct {
     char *buffer;
-    int patches, fill, capacity, triangles;
-    double center, sum;
+    int fill, capacity, clusters, triangles;
+    double center;
 } seeding_Bin;
 
 typedef struct {
@@ -37,7 +37,7 @@ typedef struct {
 
 void initialize_seeding (seeding_Context *seeding_in);
 void begin_seeding (seeding_Context *seeding_in, roam_Context *context_in);
-int seed_tile (int i);
+void seed_tile (int i);
 void finish_seeding ();
 
 #endif

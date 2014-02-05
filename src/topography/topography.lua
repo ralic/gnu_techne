@@ -114,9 +114,9 @@ Seed profile for node: %s
 Within-cluster RMS error: %.1f
 Mean number of triangles visited: %d roam, %d fine
 
-+-----+--------+-----------+---------+------------+---------+
-| Bin | Center | Triangles | Patches | Cum. Pat.  | Alloc'd |
-+-----+--------+-----------+---------+------------+---------+
++-----+--------+-----------+----------+------------+---------+
+| Bin | Center | Triangles | Clusters | Cum. Clus. | Alloc'd |
++-----+--------+-----------+----------+------------+---------+
 ]],
                             tostring(self.parent), self.error,
                             c * self.triangles[1], c * self.triangles[2]))
@@ -127,7 +127,7 @@ Mean number of triangles visited: %d roam, %d fine
          cummulative = cummulative + self.bins[i][3]
          
          message(string.format([[
-|% 5d|% 8.1f|% 11d|% 9d|% 12d|% 9d|
+|% 5d|% 8.1f|% 11d|% 10d|% 12d|% 9d|
 ]],
                                i, c * self.bins[i][1], c * self.bins[i][2],
                                c * self.bins[i][3], c * cummulative,

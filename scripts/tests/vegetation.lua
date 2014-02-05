@@ -126,24 +126,22 @@ root = primitives.root {
          shape = elevation.shape {
             tag = "elevation",
             target = 15000,
-                                 }
-                               },
-                                 },
+         }
+      },
+   },
 
    grass = shading.wireframe {
       enabled = false,
-      
-      elevation.vegetation {
-         tag = "vegetation",
 
-         shape = elevation.seeds {
-            tag = "seeds",
-            
+      topography.seeds {
+         elevation.vegetation {
+            tag = "vegetation",
+
             bias = 1,
             density = 50000,
-                                 }
-                            }
-                                },
+         }
+      },
+   },
 
    cameraman = options.timed and primitives.timer {
       period = 2,

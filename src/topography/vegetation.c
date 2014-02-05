@@ -87,9 +87,6 @@ static unsigned int query;
 #define TRANSFORMED_SEED_SIZE ((4 + 4 * 3 + 1) * sizeof(float) + 3 * sizeof(unsigned int))
 
     glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, self->feedback);
-    glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[1]);
-    glBufferData(GL_ARRAY_BUFFER, 10000000 * TRANSFORMED_SEED_SIZE, NULL,
-                 GL_STREAM_COPY);
     glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, self->vertexbuffers[1]);
 
     glGenVertexArrays (2, self->arrays);
@@ -148,9 +145,7 @@ static unsigned int query;
     /* Initialize uniforms. */
 
     glUseProgram(self->name);
-
-   
-    self->locations.scale = glGetUniformLocation(self->name, "scale");
+    
     self->locations.offset = glGetUniformLocation(self->name, "offset");
     self->locations.clustering = glGetUniformLocation(self->name, "clustering");
     self->locations.instances = glGetUniformLocation(self->name, "instances");
@@ -158,8 +153,12 @@ static unsigned int query;
     self->units.base = [self getUnitForSamplerUniform: "base"];
 
     {
-        unsigned int factor_l, references_l, weights_l, resolutions_l, separation_l;
-        
+        roam_Tileset *tiles;
+        unsigned int factor_l, references_l, weights_l, resolutions_l;
+        unsigned int separation_l, scale_l;
+        double q;
+
+        scale_l = glGetUniformLocation(self->name, "scale");
         separation_l = glGetUniformLocation (self->name, "separation");
         factor_l = glGetUniformLocation (self->name, "factor");
         references_l = glGetUniformLocation (self->name, "references");
@@ -168,6 +167,11 @@ static unsigned int query;
 
         glUniform1f (factor_l, self->elevation->albedo);
         glUniform1f (separation_l, self->elevation->separation);
+
+        tiles = &self->context->tileset;
+        q = ldexpf(1, -tiles->depth);
+        glUniform2f(scale_l,
+                    q / tiles->resolution[0], q / tiles->resolution[1]);
 
         /* Initialize reference color uniforms. */
         
@@ -284,55 +288,88 @@ static unsigned int query;
 
 -(void) draw: (int)frame
 {
-    double q;
     roam_Tileset *tiles;
+    seeding_Context *seeds;
     seeding_Bin *b;
     int i, j;
 
+    seeds = &self->seeding;
     tiles = &self->context->tileset;
-
-    glUseProgram(self->name);
-    [self bind];
-
-    glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, self->feedback);
-    glEnable (GL_RASTERIZER_DISCARD);
-    glBeginTransformFeedback(GL_POINTS);
-    glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
-
-    t_push_modelview (self->matrix, T_MULTIPLY);
-
-    /* Seed the vegetation. */
     
-    begin_seeding (&self->seeding, self->context);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[0]);
-    glBindVertexArray(self->arrays[0]);
-    glActiveTexture(GL_TEXTURE0 + self->units.base);
+    t_push_modelview (self->matrix, T_MULTIPLY);    
+    begin_seeding (seeds, self->context);
 
-    glPatchParameteri(GL_PATCH_VERTICES, 1);
-    
-    q = ldexpf(1, -tiles->depth);
-    glUniform2f(self->locations.scale,
-                q / tiles->resolution[0], q / tiles->resolution[1]);
-    
-#ifdef RASTERTIZER_DISCARD
-    glEnable (GL_RASTERIZER_DISCARD);
-#endif
-
-    for (i = 0, b = &self->seeding.bins[0];
-         i < BINS_N;
-         i += 1, b += 1) {
-        b->patches = 0;
+    for (i = 0, b = &seeds->bins[0] ; i < BINS_N ;i += 1, b += 1) {
+        b->triangles = 0;
+        b->clusters = 0;
     }
     
+    /* Seed all tiles. */
+
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {
             int k, l, n;
+            static int highwater[2] = {8, 1024};
 
-            l = i * tiles->size[1] + j;
-            n = seed_tile(l);
+            seed_tile(l = i * tiles->size[1] + j);
+
+            /* Calculate buffer size requirements. */
+    
+            for (k = 0, n = 0, b = &seeds->bins[0];
+                 k < BINS_N;
+                 k += 1, b += 1) {
+                int c;
+
+                while (b->fill > highwater[0]) {
+                    highwater[0] *= 2;
+                }
+
+                c = (int)round(b->center / seeds->clustering);
+
+                if (c > 1) {
+                    n += c;
+                    b->clusters += c;
+                } else {
+                    n += 1;
+                    b->clusters += 1;
+                }
+
+                b->triangles += b->fill;
+            }
+
+            if (n == 0) {
+                continue;
+            } else while (n > highwater[1]) {
+                highwater[1] *= 2;
+            }
+
+            /* Request a new block for the transformed seeds. */
             
-            for (k = 0, b = &self->seeding.bins[0];
+            glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[1]);
+            glBufferData (GL_ARRAY_BUFFER,
+                          highwater[1] * TRANSFORMED_SEED_SIZE,
+                          NULL, GL_STREAM_COPY);
+
+            /* Bind the first stage shader. */
+            
+            glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, self->feedback);
+            glPatchParameteri(GL_PATCH_VERTICES, 1);
+
+            glUseProgram(self->name);
+            [self bind];
+
+            glEnable (GL_RASTERIZER_DISCARD);
+            glBeginTransformFeedback(GL_POINTS);
+            glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
+    
+            glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[0]);
+            glBindVertexArray(self->arrays[0]);
+            glActiveTexture(GL_TEXTURE0 + self->units.base);
+
+            /* Go through all the bins and submit triangles for
+             * seeding. */
+            
+            for (k = 0, b = &seeds->bins[0];
                  k < BINS_N;
                  k += 1, b += 1) {
 
@@ -344,73 +381,68 @@ static unsigned int query;
                                 -j + 0.5 * tiles->size[1]);
                     
                     glBindTexture(GL_TEXTURE_2D, tiles->imagery[l]);
-                    glPointSize(1);
 
-                    glBufferData (GL_ARRAY_BUFFER, n * SEED_SIZE, NULL,
-                                  GL_STREAM_DRAW);
+                    /* Orphan the buffer and allocate a new piece of
+                     * memory equal to the largest bin capacity. */
+                    
+                    glBufferData (GL_ARRAY_BUFFER, highwater[0] * SEED_SIZE,
+                                  NULL, GL_STREAM_DRAW);
                     glBufferSubData (GL_ARRAY_BUFFER, 0,
                                      b->fill * SEED_SIZE, b->buffer);
 
-                    C = self->seeding.clustering;
+                    C = seeds->clustering;
                     r = round(b->center / C);
 
-                    if (r >= 1.0) {
+                    if (r > 1) {
                         glUniform1f(self->locations.clustering, C);
                         glUniform1f(self->locations.instances, k == BINS_N - 1 ? 1.0 / 0.0 : r);
                         glDrawArraysInstanced(GL_POINTS, 0, b->fill, r);
-
-                        b->patches += b->fill * r;
                     } else {
                         glUniform1f(self->locations.clustering,
                                     round(b->center));
                         glUniform1f(self->locations.instances, 1);
-                        glDrawArraysInstanced(GL_POINTS, 0, b->fill, 1);
-                        
-                        b->patches += b->fill;
+                        glDrawArrays(GL_POINTS, 0, b->fill);
                     }
                 }
             }
+
+            /* Clean up after the first stage. */
+            
+            glEndTransformFeedback();
+            glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+            glDisable (GL_RASTERIZER_DISCARD);
+
+            /* Bind the second stage shader and draw the seeds. */
+
+            glEnable (GL_DEPTH_TEST);
+            glEnable (GL_SAMPLE_ALPHA_TO_COVERAGE);
+            glEnable (GL_SAMPLE_ALPHA_TO_ONE);
+            glEnable (GL_MULTISAMPLE);
+    
+            glUseProgram(((Shader *)self->up)->name);
+            [((Shader *)self->up) bind];
+    
+            glBindVertexArray(self->arrays[1]);
+            glDrawTransformFeedback(GL_PATCHES, self->feedback);
+
+            /* { */
+            /*     unsigned int n; */
+            /*     glGetQueryObjectuiv(query, GL_QUERY_RESULT, &n); */
+            /*     _TRACE ("%d\n", n); */
+            /* } */
+
+            glDisable (GL_DEPTH_TEST);
+            glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
+            glDisable (GL_SAMPLE_ALPHA_TO_ONE);
+            glDisable (GL_MULTISAMPLE);
+            
 	}
     }
     
-    /* _TRACE ("error: %f\n", seeding->error); */
-
-#ifdef RASTERTIZER_DISCARD
-    glDisable (GL_RASTERIZER_DISCARD);
-#endif
-
+    /* _TRACE ("error: %f\n", seeds->error); */
+    
     finish_seeding();
     t_pop_modelview ();
-
-    glEndTransformFeedback();
-    glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
-    glDisable (GL_RASTERIZER_DISCARD);
-
-    /* Draw the seeds. */
-
-    glEnable (GL_DEPTH_TEST);
-    glEnable (GL_SAMPLE_ALPHA_TO_COVERAGE);
-    glEnable (GL_SAMPLE_ALPHA_TO_ONE);
-    
-    glEnable (GL_MULTISAMPLE);
-    
-    glUseProgram(((Shader *)self->up)->name);
-    [((Shader *)self->up) bind];
-    
-    glBindVertexArray(self->arrays[1]);
-    glDrawTransformFeedback(GL_PATCHES, self->feedback);
-
-    /* { */
-    /*     unsigned int n; */
-    /*     glGetQueryObjectuiv(query, GL_QUERY_RESULT, &n); */
-    /*     _TRACE ("%d\n", n); */
-    /* } */
-
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
-    glDisable (GL_SAMPLE_ALPHA_TO_ONE);
-
-    glDisable (GL_MULTISAMPLE);
 
     [super draw: frame];
 }
@@ -467,7 +499,7 @@ static unsigned int query;
         lua_rawseti (_L, -2, 1);
         lua_pushinteger (_L, b->triangles);
         lua_rawseti (_L, -2, 2);
-        lua_pushinteger (_L, b->patches);
+        lua_pushinteger (_L, b->clusters);
         lua_rawseti (_L, -2, 3);
         lua_pushinteger (_L, b->capacity);
         lua_rawseti (_L, -2, 4);

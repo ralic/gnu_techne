@@ -23,13 +23,10 @@
 #include "algebra.h"
 #include "techne.h"
 
-//#define K_MEANS
-
 static roam_Context *context;
 static seeding_Context *seeding;
 static double modelview[16], projection[16];
 static double aspect, n_min, n_max;
-static int highwater;
 
 static void recenter_bins(double d)
 {
@@ -58,10 +55,6 @@ static void grow_bin(int i)
         b->capacity = 8;
     } else {
         b->capacity *= 2;
-    }
-
-    if (b->capacity > highwater) {
-        highwater = b->capacity;
     }
     
     b->buffer = realloc (b->buffer, b->capacity * SEED_SIZE);
@@ -249,10 +242,6 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         memcpy (p, a, 3 * sizeof(float));
         memcpy (p + 3 * sizeof(float), b_0, 3 * sizeof(float));
         memcpy (p + 6 * sizeof(float), b_1, 3 * sizeof(float));
-
-#ifdef K_MEANS
-        bins[j].sum += n_0;
-#endif
         
         bins[j].fill += 1;
         seeding->error += (bins[j].center - n_0) * (bins[j].center - n_0);
@@ -334,8 +323,7 @@ void initialize_seeding (seeding_Context *seeding_in)
 
 void begin_seeding (seeding_Context *seeding_in, roam_Context *context_in)
 {
-    seeding_Bin *b;
-    int i, viewport[4];
+    int viewport[4];
 
     t_copy_modelview (modelview);
     t_copy_projection (projection);
@@ -351,25 +339,9 @@ void begin_seeding (seeding_Context *seeding_in, roam_Context *context_in)
     
     context = context_in;
     seeding = seeding_in;
-
-    /* Reset the bins. */
-    
-    for (i = 0, b = &seeding->bins[0] ; i < BINS_N ; i += 1, b += 1) {
-#ifdef K_MEANS
-        if (b->triangles > 0) {
-            b->center = b->sum / b->triangles;
-        }
-
-        b->sum = 0;
-#endif
-        
-        b->triangles = 0;
-
-        /* assert (k == BINS_N - 1 || bins[k].center <= bins[k + 1].center); */
-    }
 }
 
-int seed_tile (int i)
+void seed_tile (int i)
 {
     seeding_Bin *b;
     roam_Triangle *n_0, *n_1;
@@ -378,10 +350,9 @@ int seed_tile (int i)
     float b_0r[3], b_1r[3], a_0r[3], a_1r[3];
     int q, j;
 
-    /* Update the bins. */
+    /* Flush the bins. */
     
     for (j = 0, b = &seeding->bins[0] ; j < BINS_N ; j += 1, b += 1) {
-        b->triangles += b->fill;
         b->fill = 0;
     }
             
@@ -406,13 +377,9 @@ int seed_tile (int i)
 
     seed_subtree(n_0, a_0r, b_0r, b_1r);
     seed_subtree(n_1, a_1r, b_1r, b_0r);
-
-    return highwater;
 }
 
 void finish_seeding ()
 {
-#ifndef K_MEANS
     recenter_bins(n_max / n_min);
-#endif
 }

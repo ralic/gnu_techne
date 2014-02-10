@@ -504,6 +504,8 @@ static void match_attribute_to_buffer (unsigned int program,
     shape_Buffer *b;
     int j, l, n;
 
+    [super meetParent: parent];
+
     if (![parent isKindOf: [Shader class]]) {
 	t_print_warning("%s node has no shader parent.\n",
 			[self name]);
@@ -566,8 +568,6 @@ static void match_attribute_to_buffer (unsigned int program,
     }
 
     glBindVertexArray(0);
-
-    [super meetParent: parent];
 }
 
 -(void) draw: (int)frame

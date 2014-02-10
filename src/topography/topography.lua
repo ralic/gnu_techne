@@ -23,7 +23,7 @@ if not options.profile then
    return core
 end
 
-local topography, seedsprofiler, shapeprofiler
+local topography, vegetationprofiler, shapeprofiler
 
 vegetationprofiler = primitives.graphic {
    link = function(self)
@@ -31,44 +31,11 @@ vegetationprofiler = primitives.graphic {
 
       self.initial = {techne.iterations,
                       parent.infertile,
-                      parent.drawn,
-                      parent.parent.segments}
-   end,
-   
-   -- draw = function(self)
-   --    trace (self.parent.segments)
-   -- end,
-   
-   unlink = function(self)
-      if self.initial[2] then 
-         local parent = self.parent
-         local c = 1 / (techne.iterations - self.initial[1])
-         local s, t, q
-         
-         s = c * (parent.infertile - self.initial[2])
-         t = c * (parent.drawn - self.initial[3])
-         q = c * (parent.parent.segments - self.initial[4])
-         
-         message(string.format([[
+                      parent.drawn}
 
-Vegetation profile for node: %s
- 
-+----------------------------------------------+
-| Seeds                                        |
-+-----------+-----------+-----------+----------+
-| Infertile |   Drawn   |   Total   | Segments |
-+-----------+-----------+-----------+----------+
-|% 11.0f|% 11.0f|% 11.0f|% 10.0f|
-+-----------+-----------+-----------+----------+
-]],
-                               tostring(self.parent), s, t, s + t, q))
+      for i, species in ipairs(parent) do
+         self.initial[i] = species.segments
       end
-   end
-}
-              
-seedsprofiler = primitives.graphic {
-   link = function(self)
-      local parent = self.parent
 
       self.iterations = 0
       self.triangles = {0, 0}
@@ -102,7 +69,7 @@ seedsprofiler = primitives.graphic {
 
       self.iterations = self.iterations + 1
    end,
-
+   
    unlink = function(self)
       local c, cummulative
 
@@ -135,8 +102,33 @@ Mean number of triangles visited: %d roam, %d fine
       end
       
       message([[
-+-----+--------+-----------+---------+------------+---------+
++-----+--------+-----------+----------+------------+---------+
 ]])
+
+      if self.initial[2] then 
+         local parent = self.parent
+         local c = 1 / (techne.iterations - self.initial[1])
+         local s, t, q
+         
+         s = c * (parent.infertile - self.initial[2])
+         t = c * (parent.drawn - self.initial[3])
+
+         q = 0
+
+         for i, species in ipairs(parent) do
+            q = q + c * (species.segments - self.initial[i])
+         end
+         
+         message(string.format([[
+
++-----------+-----------+-----------+----------+
+| Infertile |   Drawn   |   Total   | Segments |
++-----------+-----------+-----------+----------+
+|% 11.0f|% 11.0f|% 11.0f|% 10.0f|
++-----------+-----------+-----------+----------+
+]],
+                               s, t, s + t, q))
+      end
    end
 }
 
@@ -212,16 +204,7 @@ topography = {
 
                                     value = oldmeta.__index(self, key)
                                     
-                                    if key == 'seeds' then
-                                       return function(parameters)
-                                          local seeds
-
-                                          seeds = value(parameters)
-                                          seeds.profiler = seedsprofiler
-
-                                          return seeds
-                                       end
-                                    elseif key == 'shape' then
+                                    if key == 'shape' then
                                        return function(parameters)
                                           local shape
 

@@ -18,13 +18,12 @@
 #define _GRASS_H_
 
 #include <lua.h>
-#include "shader.h"
-#include "elevation.h"
+#include "vegetation.h"
 
-@interface Grass: Shader {
+@interface Grass: VegetationSpecies {
 @public
     struct {
-        unsigned int intensity;
+        unsigned int intensity, direction;
     } locations;
 }
 

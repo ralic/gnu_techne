@@ -54,7 +54,7 @@ static unsigned int deflections;
 
 -(void)init
 {
-    const char *private[] = {"deflections", "intensity"};
+    const char *private[] = {"deflections", "intensity", "direction"};
     char *header;
     ShaderMold *shader;
     int collect;
@@ -116,6 +116,7 @@ static unsigned int deflections;
 
     glUseProgram(self->name);
     self->locations.intensity = glGetUniformLocation (self->name, "intensity");
+    self->locations.direction = glGetUniformLocation (self->name, "direction");
 
     [self setSamplerUniform: "deflections" to: deflections];
 }
@@ -130,6 +131,7 @@ static unsigned int deflections;
     
     if (atmosphere) {
         glUniform3fv (self->locations.intensity, 1, atmosphere->intensity);
+        glUniform3fv (self->locations.direction, 1, atmosphere->direction);
     }
 }
 

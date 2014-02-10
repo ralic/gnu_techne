@@ -36,7 +36,10 @@
                              "resolutions"};
 
     ShaderMold *shader;
-    unsigned int separation_l, references_l, weights_l, resolutions_l, factor_l;
+    roam_Tileset *tiles;
+    unsigned int separation_l, references_l, weights_l, resolutions_l;
+    unsigned int factor_l, scale_l;
+    double q;
     int i, j;
 
     
@@ -67,6 +70,7 @@
 
     /* Get uniform locations. */
 
+    scale_l = glGetUniformLocation(self->name, "scale");
     separation_l = glGetUniformLocation (self->name, "separation");
     references_l = glGetUniformLocation (self->name, "references");
     weights_l = glGetUniformLocation (self->name, "weights");
@@ -86,6 +90,12 @@
     glUseProgram(self->name);
     glUniform1f (separation_l, self->elevation->separation);
     glUniform1f (factor_l, self->elevation->albedo);
+
+    tiles = &self->elevation->context.tileset;
+
+    q = ldexpf(1, -tiles->depth);
+    glUniform2f(scale_l,
+                q / tiles->resolution[0], q / tiles->resolution[1]);
 
     /* Initialize reference color uniforms. */
     

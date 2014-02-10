@@ -7,7 +7,7 @@ patch in uvec2 chance_tc;
 
 out vec3 position_te, tangent_te, bitangent_te;
 out vec4 plane_te, color_te;
-out float distance_te, height_te, depth_te;
+out float distance_te, height_te, depth_te, width_te;
                                 
 #ifdef COLLECT_STATISTICS
 layout(binding = 0, offset = 8) uniform atomic_uint segments;
@@ -17,9 +17,10 @@ vec4 rand4();
 void srand(uvec2 seed);
                                 
 uniform sampler2D deflections;
-              
-uniform grass_debug{
-    int debug;
+      
+uniform grass_evaluation {
+    vec2 height, width;
+    float stiffness;
 };
                                 
 void main()
@@ -48,9 +49,11 @@ void main()
 
     /* Calculate and set ouput values. */
 
-    h_0 = 0.35 + (0.65 * distance_tc * v.x);
-    k = 0.3 * distance_tc + (1 - 0.3 * distance_tc) * v.y;
+    k = stiffness * distance_tc;
+    k += (1 - k) * v.y;
+
     t = vec3(texture(deflections, vec2(gl_TessCoord.x, k)));
+    
     phi = 2 * pi * v.z;
     theta = t.b;
     cosphi = cos(phi);
@@ -62,16 +65,13 @@ void main()
     n = normalize(cross(left_tc - apex_tc, right_tc - apex_tc));
 
     plane_te = vec4(n, -dot(n, p));
-    tangent_te = vec3(cosphi * costheta, costheta * sinphi, -sintheta);
+    tangent_te = vec3(-cosphi * sintheta, sintheta * sinphi, costheta);
     bitangent_te = vec3(-sinphi, cosphi, 0);
-    position_te = p + h_0 * 0.1 * d;
-
-    /* tangent_te = vec3(0, 0, 1); */
-    /* bitangent_te = vec3(0, 1, 0); */
-    /* position_te = p + vec3(0, 0, 0.03 * gl_TessCoord.x); */
+    position_te = p + (height.x + (height.y * distance_tc * v.x)) * d;
     
     color_te = color_tc;
-    distance_te = 0.5 *distance_tc + 0.5 * v.w;
+    width_te = width.x + (width.y * distance_tc * v.w);
+    distance_te = distance_tc;
     depth_te = depth_tc;
     height_te = gl_TessCoord.x;
 }

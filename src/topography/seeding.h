@@ -19,9 +19,9 @@
 
 #define BINS_N 32
 
-#define SEED_BUFFER_SIZE (10000)
 #define SEED_SIZE (3 * 3 * 4)
-#define VEGETATION_LEVEL_BIAS 0
+#define TRANSFORMED_SEED_SIZE ((4 + 4 * 3 + 2) * sizeof(float) +        \
+                               2 * sizeof(unsigned int))
 
 typedef struct {
     char *buffer;
@@ -32,7 +32,7 @@ typedef struct {
 typedef struct {
     seeding_Bin bins[BINS_N];
     double density, ceiling, horizon, error, clustering;
-    int triangles_n[2];
+    int level, triangles_n[2];
 } seeding_Context;
 
 void initialize_seeding (seeding_Context *seeding_in);

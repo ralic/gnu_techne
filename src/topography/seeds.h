@@ -18,10 +18,9 @@
 #define _SEEDS_H_
 
 #include <lua.h>
-#include "shader.h"
-#include "elevation.h"
+#include "vegetation.h"
 
-@interface Seeds: Shader {
+@interface Seeds: VegetationSpecies {
 @public
     struct {
         unsigned int intensity;

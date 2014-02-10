@@ -133,12 +133,19 @@ root = primitives.root {
    grass = shading.wireframe {
       enabled = false,
 
-      topography.seeds {
-         elevation.vegetation {
-            tag = "vegetation",
+      elevation.vegetation {
+         tag = "vegetation",
 
-            bias = 1,
-            density = 50000,
+         ceiling = 1000,
+         density = 50000,
+         horizon = 100,
+
+         topography.grass {
+            detail = 8,
+            height = {0.035, 0.065},
+            width = {0.025, 0.02},
+            stiffness = 0.3,
+            threshold = 1000,
          }
       },
    },

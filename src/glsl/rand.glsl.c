@@ -10,6 +10,12 @@ uvec2 srand()
     return next;
 }
 
+vec2 rand2(uvec2 seed)
+{
+    next = seed;
+    return vec2 (next) / vec2(4294967295.0);
+}
+
 vec2 hash(uvec2 U, unsigned int k)
 {
     uvec2 Uprime;

@@ -8,17 +8,13 @@ layout(lines) in;
 layout(triangle_strip, max_vertices = 4) out;
               
 in vec3 position_te[], tangent_te[], bitangent_te[];
-in float distance_te[], height_te[], depth_te[];
+in float distance_te[], height_te[], depth_te[], width_te[];
 in vec4 plane_te[], color_te[];
 
 out vec4 color_g;
 out vec3 normal_g;
 out vec2 uv_g;
 flat out float distance_g;              
-              
-uniform grass_debug{
-    int debug;
-};
 
 void main()
 {
@@ -26,12 +22,13 @@ void main()
     const vec2 horizon = vec2(100, 1.0 / 3.0);
 
     mat4 T;
+    mat3 R;
     vec4 h, p_0, p_1, p;
-    float z, z_f, n, ldotn;
+    float z, z_f, n;
     
     z_f = 5 + 10 / horizon[1] * (depth_te[0] / horizon[0] - 1);
     n = exp(3e-4 * depth_te[0] * depth_te[0] * (1 / (1 + exp(z_f))));    
-    h = 0.5 * n * 3.5e-3 * distance_te[0] * vec4(bitangent_te[0], 0);
+    h = 0.5 * n * width_te[0] * vec4(bitangent_te[0], 0);
 
     /* A flat leaf. */
 
@@ -40,7 +37,6 @@ void main()
 #endif
         color_g = color_te[0];    
         distance_g = distance_te[0];
-        normal_g = mat3(modelview) * tangent_te[0];
 
         T = transform;
 #ifdef CAST_SHADOWS
@@ -54,13 +50,15 @@ void main()
         
         color_g = vec4(0, 0, 0, 0.6);
         distance_g = 0;
-        normal_g = vec3(0);
     }
 #endif
 
-    ldotn = dot(l, plane_te[0].xyz);
+    R = mat3(modelview);
+    
     p_0 = vec4(position_te[0], 1);
     p_1 = vec4(position_te[1], 1);    
+    
+    normal_g = R * tangent_te[0];
     
     uv_g = vec2(1, height_te[0]);
     gl_Position = T * (p_0 + h);
@@ -70,6 +68,8 @@ void main()
     gl_Position = T * (p_0 - h);
     EmitVertex();
 
+    normal_g = R * tangent_te[1];
+    
     uv_g = vec2(1, height_te[1]);
     gl_Position = T * (p_1 + h);
     EmitVertex();

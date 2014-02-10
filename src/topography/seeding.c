@@ -165,7 +165,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
     /* This triangle is visible so either descend or seed. */
     
-    if (level < TREE_HEIGHT - 1 + 9) {
+    if (level < seeding->level) {
         float c[3], c_r[3], c_s[2];
 
         /* _TRACE ("%f\n", fmax(fmax(z_a, z_0), z_1)); */

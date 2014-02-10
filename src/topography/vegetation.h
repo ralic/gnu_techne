@@ -26,12 +26,14 @@
     roam_Context *context;
     seeding_Context seeding;
     Elevation *elevation;
-
-    int reference_1, *species;
-    unsigned int feedback, arrays[2], vertexbuffers[2];
+    Shader **species;
+    
+    int reference_1;
+    unsigned int feedback, *arrays, *vertexbuffers;
     
     struct {
         unsigned int intensity, scale, offset, clustering, instances;
+        unsigned int thresholds;
     } locations;
 
     struct {
@@ -59,6 +61,17 @@
 
 -(int) _get_error;
 -(void) _set_error;
+
+@end
+
+@interface VegetationSpecies: Shader {
+@public
+    int offset;
+    double threshold;
+}
+
+-(int) _get_threshold;
+-(void) _set_threshold;
 
 @end
 

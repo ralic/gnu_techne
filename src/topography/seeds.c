@@ -37,6 +37,7 @@
     ShaderMold *shader;
     int collect;
         
+#include "glsl/rand.h"
 #include "glsl/seeds_vertex.h"
 #include "glsl/seeds_tesselation_control.h"
 #include "glsl/seeds_tesselation_evaluation.h"
@@ -66,7 +67,8 @@
         
     [shader initWithHandle: NULL];
     [shader declare: 1 privateUniforms: private];
-    [shader add: 2 sourceStrings: (const char *[2]){header, glsl_seeds_vertex}
+    [shader add: 2 sourceStrings: (const char *[2]){glsl_rand,
+                                                    glsl_seeds_vertex}
             for: T_VERTEX_STAGE];
 
     [shader addSourceString: glsl_seeds_tesselation_control
@@ -90,12 +92,6 @@
 
     glUseProgram(self->name);
     self->locations.intensity = glGetUniformLocation (self->name, "intensity");
-}
-
--(void)free
-{
-
-    [super free];
 }
 
 -(void) bind

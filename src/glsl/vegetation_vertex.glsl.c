@@ -6,7 +6,7 @@ out int index_v;
 out uvec2 chance_v;
 out vec3 apex_v, left_v, right_v, stratum_v;
 
-uniform float factor;
+uniform float factor, thresholds[N];
 uniform vec2 offset, scale;
 
 float hsv_distance (vec3, vec3, vec3, float);
@@ -16,8 +16,9 @@ uvec2 srand();
 
 uniform float instances;
 
-uniform grass_debug{
+uniform vegetation_debug{
     int debug;
+    bool debugtoggle;
 };
 
 #ifdef COLLECT_STATISTICS
@@ -74,8 +75,8 @@ void main()
     vec2 z = rand2();
     float z_0 = d_1 / (d_0 + d_1);
     
-    if (/* debug > 0 &&  */z.x < z_0 && i_0 > 1) {
-        if (i_1 > 1 /* || d_0 < 1000 */) {
+    if (/* debug > 0 &&  */z.x < z_0 && d_0 < thresholds[i_0]) {
+        if (d_1 < thresholds[i_1]) {
 #ifdef COLLECT_STATISTICS
             atomicCounterIncrement(infertile);
 #endif
@@ -89,7 +90,7 @@ void main()
     } else {
         /* Skip the rest if the seed is infertile. */
     
-        if (i_0 > 1 /* || d_0 < 1000 */) {
+        if (d_0 < thresholds[i_0]) {
 #ifdef COLLECT_STATISTICS
             atomicCounterIncrement(infertile);
 #endif

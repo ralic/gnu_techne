@@ -129,7 +129,6 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
     glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
     glEnableVertexAttribArray(i);
 
-    self->locations.scale = glGetUniformLocation(parent->name, "scale");
     self->locations.offset = glGetUniformLocation(parent->name, "offset");
 
     self->units.base = [parent getUnitForSamplerUniform: "base"];
@@ -218,7 +217,7 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
 -(void) draw: (int)frame
 {
     roam_Tileset *tiles;
-    float q, *vert;
+    float *vert;
     int i, j, l;
     
     tiles = &self->context->tileset;
@@ -250,11 +249,6 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
     glActiveTexture(GL_TEXTURE0 + self->units.base);
 
     glBindVertexArray(self->name);
-
-    q = ldexpf(1, -tiles->depth);
-    glUniform2f(self->locations.scale,
-                q / tiles->resolution[0],
-                q / tiles->resolution[1]);
     
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {

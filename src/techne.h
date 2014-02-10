@@ -79,6 +79,9 @@ void t_warp_pointer (int x, int y);
 void t_convert_from_spring(double k_s, double k_d, double *erp, double *cfm);
 void t_convert_to_spring(double erp, double cfm, double *k_s, double *k_d);
 
+int t_compiletemplate(lua_State *L, const char *source);
+int t_rendertemplate(lua_State *L, const char *source);
+
 int luaopen_moremath (lua_State *L);
 int luaopen_morebase (lua_State *L);
 

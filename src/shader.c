@@ -1262,7 +1262,7 @@ int t_add_global_block (const char *name, const char *declaration)
 
     /* Skip this if the shader has no uniforms. */
 
-    if (self->blocks_n == 0) {
+    if (self->blocks_n == 0 || lua_type(_L, 2) != LUA_TSTRING) {
         return [super _set_];
     }
 

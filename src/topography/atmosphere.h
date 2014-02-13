@@ -24,12 +24,13 @@
 @public    
     unsigned int skylight;
     
-    int size[2], explicit, dirty;
-    float azimuth, elevation, turbidity, intensity[3], direction[3];
+    int size[2], explicit;
+    float azimuth, elevation, turbidity, intensity[3], direction[3], direction_w[3];
     float rayleigh[3], mie;
 }
 
 +(Atmosphere *) instance;
+-(void) toggle;
 
 @end
 

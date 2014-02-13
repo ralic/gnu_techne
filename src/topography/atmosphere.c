@@ -24,6 +24,7 @@
 
 #include "techne.h"
 #include "shader.h"
+#include "algebra.h"
 #include "atmosphere.h"
 
 static Atmosphere *instance;
@@ -306,7 +307,6 @@ static void calculate_sky_color(double azimuth, double elevation,
     self->rayleigh[2] = 0.012 * 2.44e-05;
 
     self->mie = 5e-5;
-    self->dirty = 0;
 
     /* Bind the sky texture to texture sampler. */
 
@@ -318,6 +318,67 @@ static void calculate_sky_color(double azimuth, double elevation,
     lua_pushstring(_L, "shape");
     [[AtmosphereShape alloc] init];
     lua_settable (_L, -3);
+}
+
+-(void) update
+{
+    unsigned char *pixels;
+    double phi, theta_0;
+    
+    /* Recalculate the sky texture. */
+    
+    pixels = (unsigned char *)calloc(self->size[0] * self->size[1],
+                                     3 * sizeof(unsigned char));
+    
+    calculate_sky_color(self->azimuth, self->elevation,
+                        self->turbidity, self->size[0], self->size[1], pixels);
+
+    if (!self->explicit) {
+        calculate_sun_color(self->elevation, self->turbidity, self->intensity);
+    }
+
+    /* Load the texture.*/
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, self->skylight);
+
+    glTexImage2D(GL_TEXTURE_2D, 0,
+                 GL_RGB,
+                 self->size[0],
+                 self->size[1],
+                 0, GL_RGB,
+                 GL_UNSIGNED_BYTE,
+                 pixels);
+	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    free(pixels);
+
+    /* Calculate the sunlight direction. */
+
+    phi = self->azimuth;
+    theta_0 = M_PI_2 - self->elevation;
+
+    self->direction_w[0] = cos (phi) * sin (theta_0);
+    self->direction_w[1] = sin (phi) * sin (theta_0);
+    self->direction_w[2] = cos (theta_0);
+}
+
+-(void) transform
+{
+    double M[16];
+    
+    [super transform];
+
+    /* Transform the direction vector to the eye coordinate system. */
+    
+    t_push_modelview (self->matrix, T_MULTIPLY);
+    t_copy_modelview (M);
+    t_transform_4RT3(self->direction, M, self->direction_w);
+    t_pop_modelview ();    
 }
 
 -(void) toggle
@@ -418,7 +479,7 @@ static void calculate_sky_color(double azimuth, double elevation,
         self->elevation = lua_tonumber(_L, -1);
         lua_pop(_L, 1);
 
-        self->dirty = 1;
+        [self update];
     }
 }
 
@@ -452,7 +513,7 @@ static void calculate_sky_color(double azimuth, double elevation,
             lua_pop(_L, 1);
         }
 
-        self->dirty = 1;
+        [self update];
     }
 }
 
@@ -468,20 +529,30 @@ static void calculate_sky_color(double azimuth, double elevation,
             lua_pop(_L, 1);
         }
 
-        self->dirty = 1;
+        [self update];
     }
 }
 
 -(void) _set_mie
 {
     self->mie = lua_tonumber(_L, 3);
-    self->dirty = 1;
+    [self update];
 }
 
 -(void) _set_turbidity
 {
     self->turbidity = lua_tonumber (_L, -1);
-    self->dirty = 1;
+    [self update];
+}
+
+-(void) _set_position
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_orientation
+{
+    T_WARN_READONLY;
 }
 
 -(void) free
@@ -493,64 +564,6 @@ static void calculate_sky_color(double azimuth, double elevation,
 
 -(void) draw: (int)frame
 {
-    double M[16], phi, theta_0, x, y, z;
-
-    /* Update the texture if needed. */
-    
-    if (self->dirty) {
-        unsigned char *pixels;
-
-        pixels = (unsigned char *)calloc(self->size[0] * self->size[1],
-                                         3 * sizeof(unsigned char));
-    
-        calculate_sky_color(self->azimuth, self->elevation,
-                            self->turbidity, self->size[0], self->size[1], pixels);
-
-        if (!self->explicit) {
-            calculate_sun_color(self->elevation, self->turbidity, self->intensity);
-        }
-
-        /* Load the texture.*/
-    
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, self->skylight);
-
-        glTexImage2D(GL_TEXTURE_2D, 0,
-                     GL_RGB,
-                     self->size[0],
-                     self->size[1],
-                     0, GL_RGB,
-                     GL_UNSIGNED_BYTE,
-                     pixels);
-	
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-        free(pixels);
-        
-        self->dirty = 0;
-    }
-    
-    /* Calculate the sunlight direction. */
-    
-    t_push_modelview (self->matrix, T_MULTIPLY);
-    t_copy_modelview (M);
-
-    phi = self->azimuth;
-    theta_0 = M_PI_2 - self->elevation;
-
-    x = cos (phi) * sin (theta_0);
-    y = sin (phi) * sin (theta_0);
-    z = cos (theta_0);
-		
-    self->direction[0] = x * M[0] + y * M[4] + z * M[8];
-    self->direction[1] = x * M[1] + y * M[5] + z * M[9];
-    self->direction[2] = x * M[2] + y * M[6] + z * M[10];
-
-    t_pop_modelview ();
-
     /* Bind resources and draw. */
     
     glUseProgram(self->name);
@@ -672,7 +685,7 @@ static void calculate_sky_color(double azimuth, double elevation,
 -(void) draw: (int)frame
 {
     double M[16], P[16], rho;
-    
+
     [super draw: frame];
     
     t_copy_projection (P);

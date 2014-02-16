@@ -14,8 +14,7 @@ uniform grass_debug{
 };
 
 uniform grass_fragment{
-    float ambient;
-    vec2 specular;
+    vec2 ambient, specular;
     vec3 diffuse;
 };
 
@@ -28,23 +27,26 @@ void main()
     /* fragment = vec4(uv_g, 1, 1); return; */
     /* fragment = texel.rgba; return; */
 
-    if (texel.a > 0) {
+    if (distance_g < 0) {
+        fragment = color_g;
+    } else if (texel.a > 0) {
         vec3 L_e = direction;
         vec3 n = (gl_FrontFacing ? -1 : 1) * normalize(normal_g);
         vec3 R = reflect(L_e, n);
-        float A_0, A, D_r, D_s, S, tau, nL_e;
+        float A, D_r, D_s, S, tau, nL_e;
 
         nL_e = dot(n, L_e);
 
-        A = ambient * clamp(uv_g.y, 1 - distance_g, 1.0);
-        D_r = diffuse[0] * max(nL_e, 0);
+        A = ambient[0] * mix(uv_g.y, 1, ambient[1]);
 
-        tau = 1 - abs(nL_e);
-        D_s = diffuse[1] * max(-nL_e, 0) * exp(-diffuse[2] * tau);
+        tau = 1 / abs(nL_e);
+        D_r = diffuse[0] * max(nL_e, A);
+        D_s = diffuse[1] * max(-nL_e, A) * exp(-diffuse[2] * tau);
 
-        S = specular[0] * pow(abs(R.z), specular[1]);
+        S = specular[0] * pow(max(-R.z, 0), specular[1]);
             
-        fragment = vec4(texel.rgb + intensity * (color_g.rgb * (A + D_r) + mix(color_g.rgb, vec3(1), 1) * D_s + S), min(1, texel.a * color_g.a));
+        fragment = vec4(mix(texel.rgb + intensity * color_g.rgb * (D_r + mix(vec3(1), vec3(1, 1, 0.6), abs(nL_e)) * D_s), intensity, S), texel.a * color_g.a);
+        /* fragment = vec4(vec3(1, 0, 0) * D_s + vec3(0, 1, 0) * D_r, 1); */
     } else {
         discard;
     }

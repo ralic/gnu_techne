@@ -24,7 +24,7 @@ void main() {
 
     p_e = modelview * vec4((apex_v[0] + left_v[0] + right_v[0]) / 3, 1);
     z = max(-p_e.z, bias);
-    n = bias * detail / z / z / z;
+    n = bias * detail / z / z;
     
     gl_TessLevelOuter[0] = clustering_v[0];
     gl_TessLevelOuter[1] = n;

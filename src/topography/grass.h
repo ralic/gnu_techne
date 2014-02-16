@@ -23,7 +23,7 @@
 @interface Grass: VegetationSpecies {
 @public
     struct {
-        unsigned int intensity, direction;
+    unsigned int intensity, direction, direction_w;
     } locations;
 }
 

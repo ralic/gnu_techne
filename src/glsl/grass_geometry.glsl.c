@@ -16,9 +16,11 @@ out vec3 normal_g;
 out vec2 uv_g;
 flat out float distance_g;              
 
+uniform vec3 direction_w;
+
 void main()
 {
-    const vec3 l = -normalize(vec3(1, 1, 1));
+    const vec3 l = direction_w;
     const vec2 horizon = vec2(100, 1.0 / 3.0);
 
     mat4 T;
@@ -29,8 +31,6 @@ void main()
     z_f = 5 + 10 / horizon[1] * (depth_te[0] / horizon[0] - 1);
     n = exp(3e-4 * depth_te[0] * depth_te[0] * (1 / (1 + exp(z_f))));    
     h = 0.5 * n * width_te[0] * vec4(bitangent_te[0], 0);
-
-    /* A flat leaf. */
 
 #ifdef CAST_SHADOWS
     if (gl_InvocationID == 0) {
@@ -49,7 +49,7 @@ void main()
         T = transform * P;
         
         color_g = vec4(0, 0, 0, 0.6);
-        distance_g = 0;
+        distance_g = -1;
     }
 #endif
 

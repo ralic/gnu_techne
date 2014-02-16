@@ -614,26 +614,26 @@ static void calculate_sky_color(double azimuth, double elevation,
         first[j] = 33 * 2 * j;
         count[j] = 33 * 2;
 	
-        theta_0 = j * M_PI * dtheta;
-        theta_1 = (j + 1) * M_PI * dtheta;
+        theta_0 = j * M_PI * dtheta - M_PI_2;
+        theta_1 = (j + 1) * M_PI * dtheta - M_PI_2;
 
         for(i = 0 ; i <= 32 ; i += 1) {
             k = j * 33 + i;
-            phi = -2 * i * M_PI * dphi;
+            phi = 2 * i * M_PI * dphi;
 
-            uv[4 * k] = i * dphi + 0.5;
-            uv[4 * k + 1] = 2 * j * dtheta;
+            uv[4 * k] = i * dphi;
+            uv[4 * k + 1] = 1 - fmax(0, 2 * j * dtheta - 1);
 
-            vertices[6 * k] = cos(phi) * sin(theta_0);
-            vertices[6 * k + 1] = sin(phi) * sin(theta_0);
-            vertices[6 * k + 2] = cos(theta_0);
+            vertices[6 * k] = cos(phi) * cos(theta_0);
+            vertices[6 * k + 1] = sin(phi) * cos(theta_0);
+            vertices[6 * k + 2] = sin(theta_0);
 
-            uv[4 * k + 2] = i * dphi + 0.5;
-            uv[4 * k + 3] = 2 * (j + 1) * dtheta;
+            uv[4 * k + 2] = i * dphi;
+            uv[4 * k + 3] = 1 - fmax(0, 2 * (j + 1) * dtheta - 1);
 
-            vertices[6 * k + 3] = cos(phi) * sin(theta_1);
-            vertices[6 * k + 4] = sin(phi) * sin(theta_1);
-            vertices[6 * k + 5] = cos(theta_1);
+            vertices[6 * k + 3] = cos(phi) * cos(theta_1);
+            vertices[6 * k + 4] = sin(phi) * cos(theta_1);
+            vertices[6 * k + 5] = sin(theta_1);
         }
     }
     

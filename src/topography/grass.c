@@ -54,7 +54,8 @@ static unsigned int deflections;
 
 -(void)init
 {
-    const char *private[] = {"deflections", "intensity", "direction"};
+    const char *private[] = {"deflections", "intensity", "direction",
+                             "direction_w"};
     char *header;
     ShaderMold *shader;
     int collect;
@@ -89,7 +90,7 @@ static unsigned int deflections;
     shader = [ShaderMold alloc];
         
     [shader initWithHandle: NULL];
-    [shader declare: 2 privateUniforms: private];
+    [shader declare: 4 privateUniforms: private];
     [shader add: 2 sourceStrings: (const char *[2]){header, glsl_grass_vertex}
             for: T_VERTEX_STAGE];
 
@@ -117,6 +118,8 @@ static unsigned int deflections;
     glUseProgram(self->name);
     self->locations.intensity = glGetUniformLocation (self->name, "intensity");
     self->locations.direction = glGetUniformLocation (self->name, "direction");
+    self->locations.direction_w = glGetUniformLocation (self->name,
+                                                        "direction_w");
 
     [self setSamplerUniform: "deflections" to: deflections];
 }
@@ -132,6 +135,7 @@ static unsigned int deflections;
     if (atmosphere) {
         glUniform3fv (self->locations.intensity, 1, atmosphere->intensity);
         glUniform3fv (self->locations.direction, 1, atmosphere->direction);
+        glUniform3fv (self->locations.direction_w, 1, atmosphere->direction_w);
     }
 }
 

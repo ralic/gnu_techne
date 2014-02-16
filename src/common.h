@@ -65,6 +65,13 @@
 	printf (")\n");                                         \
     }
 
+#define _BAL(_L, ...)                           \
+    {                                           \
+        int _h = lua_gettop(_L);                \
+        __VA_ARGS__                             \
+       assert(_h == lua_gettop(_L));            \
+    }
+
 #define _TOP(L) _TRACE ("@%d\n", lua_gettop(L))
 #define _TYPE(L, i) _TRACE ("%s@%d\n", lua_typename(L, lua_type(L, (i))), i)
 #define _STACK(L) {                                                     \

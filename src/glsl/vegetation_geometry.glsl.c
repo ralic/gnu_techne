@@ -8,7 +8,7 @@ in int index_v[];
 in vec3 apex_v[], left_v[], right_v[], stratum_v[];
 in uvec2 chance_v[];
 
-<@ for i = 0, context.n - 1 do @>
+<@ for i = 0, context.species - 1 do @>
 layout(stream = <@= i @>) out stream_<@= i @> {
     vec4 stream_<@= i @>_color_g;
     vec3 stream_<@= i @>_apex_g, stream_<@= i @>_left_g, stream_<@= i @>_right_g, stream_<@= i @>_stratum_g;
@@ -28,7 +28,7 @@ uniform vegetation_debug{
 void main()
 {
     switch (index_v[0]) {
-    <@ for i = 0, context.n - 1 do @>
+    <@ for i = 0, context.species - 1 do @>
     case <@= i @>:
         stream_<@= i @>_color_g = color_v[0];    
         stream_<@= i @>_distance_g = distance_v[0];

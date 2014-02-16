@@ -25,6 +25,7 @@
 #include "techne.h"
 #include "atmosphere.h"
 #include "vegetation.h"
+#include "splatting.h"
 #include "shader.h"
 
 static unsigned int queries[2];
@@ -39,12 +40,12 @@ static unsigned int queries[2];
     const char *private[] = {"base", "detail", "offset", "scale",
                              "factor", "references", "weights",
                              "resolutions", "clustering", "thresholds"};
-    char *header;
+
+    const char *header;
     ShaderMold *shader;
     int i, n, collect;
         
 #include "glsl/color.h"
-#include "glsl/splatting.h"
 #include "glsl/rand.h"
 #include "glsl/vegetation_vertex.h"
 #include "glsl/vegetation_geometry.h"
@@ -111,24 +112,34 @@ static unsigned int queries[2];
 
     /* Create the program. */
 
-    asprintf (&header, "const int N = %d;\n%s", n,
-              collect ? "#define COLLECT_STATISTICS\n" : "");
-
     [self unload];
     
     shader = [ShaderMold alloc];
         
     [shader initWithHandle: NULL];
     [shader declare: 10 privateUniforms: private];
-    [shader add: 5
-            sourceStrings: (const char *[5]){header, glsl_rand, glsl_color,
-                                             glsl_splatting,
-                                             glsl_vegetation_vertex}
+
+    add_splatting_sources(self->elevation, shader, T_VERTEX_STAGE);
+
+    asprintf((char **)&header,
+             "%s\n"
+             "const int SWATCHES = %d;\n",
+             collect ? "#define COLLECT_STATISTICS\n" : "", n);
+    
+    [shader add: 4
+            sourceStrings: (const char *[4]){
+                header,
+                glsl_color,
+                glsl_rand,
+                glsl_vegetation_vertex
+            }
             for: T_VERTEX_STAGE];
 
+    /* Render the geometry shader. */
+    
     lua_createtable(_L, 0, 1);
     lua_pushinteger(_L, n);
-    lua_setfield (_L, -2, "n");
+    lua_setfield (_L, -2, "species");
 
     if(t_rendertemplate(_L, glsl_vegetation_geometry) != LUA_OK) {
         puts(lua_tostring(_L, -1));
@@ -191,8 +202,6 @@ static unsigned int queries[2];
     glEnableVertexAttribArray(i);
 
     /* Initialize uniforms. */
-
-    glUseProgram(self->name);
     
     self->locations.thresholds = glGetUniformLocation(self->name, "thresholds");
     self->locations.offset = glGetUniformLocation(self->name, "offset");
@@ -201,47 +210,12 @@ static unsigned int queries[2];
 
     self->units.base = [self getUnitForSamplerUniform: "base"];
 
-    {
-        unsigned int factor_l, references_l, weights_l, resolutions_l;
-        unsigned int separation_l, scale_l;
-        double q;
+    set_splatting_uniforms(self->elevation, self);
 
-        scale_l = glGetUniformLocation(self->name, "scale");
-        separation_l = glGetUniformLocation (self->name, "separation");
-        factor_l = glGetUniformLocation (self->name, "factor");
-        references_l = glGetUniformLocation (self->name, "references");
-        weights_l = glGetUniformLocation (self->name, "weights");
-        resolutions_l = glGetUniformLocation (self->name, "resolutions");
-
-        glUniform1f (factor_l, self->elevation->albedo);
-        glUniform1f (separation_l, self->elevation->separation);
-
-        q = ldexpf(1, -tiles->depth);
-        glUniform2f(scale_l,
-                    q / tiles->resolution[0], q / tiles->resolution[1]);
-
-        /* Initialize reference color uniforms. */
-        
-        for (i = 0 ; i < n ; i += 1) {
-            elevation_SwatchDetail *swatch;
-            int j;
-
-            swatch = &self->elevation->swatches[i];
-
-            for (j = 0 ; j < 3 ; j += 1) {
-                [self setSamplerUniform: "detail"
-                                     to: swatch->detail[j]->name
-                                atIndex: 3 * i + j];
-
-                glUniform2fv (resolutions_l + 3 * i + j, 1,
-                              swatch->resolutions[j]);
-            }
-            
-            glUniform3fv (references_l + i, 1, swatch->values);
-            glUniform3fv (weights_l + i, 1, swatch->weights);
-
-            glUniform1f (self->locations.thresholds + i, 1.0 / 0.0);
-        }
+    glUseProgram(self->name);
+    
+    for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
+        glUniform1f (self->locations.thresholds + i, 1.0 / 0.0);
     }
 }
 

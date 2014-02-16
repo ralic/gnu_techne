@@ -63,24 +63,6 @@ for i = 1, 128 do
    end
 end
 
-local red = textures.planar {
-   texels = {
-      array.nuchars {
-         {{1, 0, 0},{1, 0, 0}},
-         {{1, 0, 0},{1, 0, 0}}
-      }
-   }
-}
-
-local green = textures.planar {
-   texels = {
-      array.nuchars {
-         {{0, 1, 0},{0, 1, 0}},
-         {{0, 1, 0},{0, 1, 0}}
-      }
-   }
-}
-
 elevation = topography.elevation {
    depth = 12,
    resolution = {0.625, 0.625},
@@ -89,8 +71,17 @@ elevation = topography.elevation {
    separation = 1,
 
    swatches = {
-      {green, {1, 1}, green, {1, 1}, green, {1, 1}, {0, .99, .99}},
-      {red, {1, 1}, red, {1, 1}, red, {1, 1}, {120 / 360, .99, .99},},
+      {
+         {0, .99, .99}, {},
+      },
+      
+      {
+         {120 / 360, .99, .99}, {},
+      },
+      
+      {
+         {240 / 360, .99, .99}, {},
+      },
    },
    
    tiles = {
@@ -139,14 +130,25 @@ root = primitives.root {
          ceiling = 1000,
          density = 50000,
          horizon = 100,
+         clustering = 8,
 
-         topography.grass {
-            detail = 8,
-            height = {0.035, 0.065},
-            width = {0.025, 0.02},
-            stiffness = 0.3,
-            threshold = 1000,
-         }
+         topography.seeds {
+            color = {0.5, 0.5, 0.5},
+            height = 0.1,
+            threshold = 0,
+         },
+
+         topography.seeds {
+            color = {0.5, 0.5, 0.5},
+            height = 0.1,
+            threshold = 0,
+         },
+
+         topography.seeds {
+            color = {0.5, 0.5, 0.5},
+            height = 0.1,
+            threshold = 0,
+         },
       },
    },
 

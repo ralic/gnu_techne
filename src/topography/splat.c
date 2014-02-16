@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
+/* Copyright (C) 2012 Papavasileiou Dimitris                             
  *                                                                      
  * This program is free software: you can redistribute it and/or modify 
  * it under the terms of the GNU General Public License as published by 
@@ -24,27 +24,20 @@
 #include "techne.h"
 #include "texture.h"
 #include "atmosphere.h"
+#include "splatting.h"
 #include "splat.h"
 
 @implementation Splat
 
 -(void) init
 {
-    char *header;
     const char *private[] = {"base", "detail", "offset", "scale",
                              "separation", "factor", "references", "weights",
                              "resolutions"};
 
     ShaderMold *shader;
-    roam_Tileset *tiles;
-    unsigned int separation_l, references_l, weights_l, resolutions_l;
-    unsigned int factor_l, scale_l;
-    double q;
-    int i, j;
-
     
 #include "glsl/color.h"	
-#include "glsl/splatting.h"
 #include "glsl/splat_vertex.h"	
 #include "glsl/splat_fragment.h"	
 
@@ -56,65 +49,29 @@
 
     [super init];
 
-    asprintf (&header, "const int N = %d;\n", self->elevation->swatches_n);
-        
     shader = [ShaderMold alloc];
         
     [shader initWithHandle: NULL];
     [shader declare: 9 privateUniforms: private];
     [shader addSourceString: glsl_splat_vertex for: T_VERTEX_STAGE];
-    [shader add: 4 sourceStrings: (const char *[4]){header, glsl_color, glsl_splatting, glsl_splat_fragment} for: T_FRAGMENT_STAGE];
+    
+    add_splatting_sources(self->elevation, shader, T_FRAGMENT_STAGE);
+    [shader add: 2
+            sourceStrings: (const char *[2]){glsl_color, glsl_splat_fragment}
+            for: T_FRAGMENT_STAGE];
+    
     [shader link];
-
     [self load];
 
     /* Get uniform locations. */
-
-    scale_l = glGetUniformLocation(self->name, "scale");
-    separation_l = glGetUniformLocation (self->name, "separation");
-    references_l = glGetUniformLocation (self->name, "references");
-    weights_l = glGetUniformLocation (self->name, "weights");
-    resolutions_l = glGetUniformLocation (self->name, "resolutions");
-    factor_l = glGetUniformLocation (self->name, "factor");
 
     self->locations.turbidity = glGetUniformLocation (self->name, "turbidity");
     self->locations.beta_p = glGetUniformLocation (self->name, "beta_p");
     self->locations.beta_r = glGetUniformLocation (self->name, "beta_r");
     self->locations.direction = glGetUniformLocation (self->name, "direction");
     self->locations.intensity = glGetUniformLocation (self->name, "intensity");
-        
-    /* Splatting-related uniforms will remain constant as the
-     * program is only used by this node so all uniform values can
-     * be loaded beforehand. */
 
-    glUseProgram(self->name);
-    glUniform1f (separation_l, self->elevation->separation);
-    glUniform1f (factor_l, self->elevation->albedo);
-
-    tiles = &self->elevation->context.tileset;
-
-    q = ldexpf(1, -tiles->depth);
-    glUniform2f(scale_l,
-                q / tiles->resolution[0], q / tiles->resolution[1]);
-
-    /* Initialize reference color uniforms. */
-    
-    for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
-        elevation_SwatchDetail *swatch;
-
-        swatch = &self->elevation->swatches[i];
-
-        for (j = 0 ; j < 3 ; j += 1) {
-            [self setSamplerUniform: "detail"
-                                 to: swatch->detail[j]->name atIndex: 3 * i + j];
-
-            glUniform2fv (resolutions_l + 3 * i + j, 1,
-                          swatch->resolutions[j]);
-        }
-
-        glUniform3fv (references_l + i, 1, swatch->values);
-        glUniform3fv (weights_l + i, 1, swatch->weights);
-    }
+    set_splatting_uniforms(self->elevation, self);
 }
 
 -(void)free

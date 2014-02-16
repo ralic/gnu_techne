@@ -39,7 +39,7 @@ typedef struct {
 @public
     roam_Context context;
     elevation_SwatchDetail *swatches;
-    int swatches_n, *references;
+    int swatches_n, *bands_n, *references;
     float separation, albedo;
 }
 

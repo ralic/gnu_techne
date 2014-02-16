@@ -15,7 +15,7 @@ bin_SCRIPTS = techne
 BUILT_SOURCES = gl.h glx.h glsl/flat_vertex.h glsl/flat_fragment.h	\
 		glsl/layout_vertex.h glsl/textured_fragment.h		\
 		glsl/splat_vertex.h glsl/splat_fragment.h		\
-		glsl/color.h glsl/rand.h				\
+		glsl/color.h glsl/rand.h 				\
 		glsl/vegetation_tesselation_control.h			\
 		glsl/vegetation_tesselation_evaluation.h		\
 		glsl/vegetation_geometry.h glsl/vegetation_vertex.h	\
@@ -101,7 +101,8 @@ topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
 			     topography/elevation.h 			\
 			     topography/roam.h topography/roam.c	\
 			     topography/seeding.h topography/seeding.c	\
-			     topography/bounds.c			\
+			     topography/splatting.h			\
+			     topography/splatting.c topography/bounds.c	\
 			     topography/atmosphere.h 			\
 			     topography/atmosphere.c			\
 			     topography/splat.h topography/splat.c	\

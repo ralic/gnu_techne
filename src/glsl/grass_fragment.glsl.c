@@ -44,7 +44,7 @@ void main()
 
         S = specular[0] * pow(abs(R.z), specular[1]);
             
-        fragment = vec4(texel.rgb +intensity * (color_g.rgb * (A + D_r) + mix(color_g.rgb, vec3(1), 1) * D_s + S), min(1, texel.a * color_g.a));
+        fragment = vec4(texel.rgb + intensity * (color_g.rgb * (A + D_r) + mix(color_g.rgb, vec3(1), 1) * D_s + S), min(1, texel.a * color_g.a));
     } else {
         discard;
     }

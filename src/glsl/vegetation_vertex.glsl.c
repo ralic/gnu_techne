@@ -6,10 +6,11 @@ out int index_v;
 out uvec2 chance_v;
 out vec3 apex_v, left_v, right_v, stratum_v;
 
-uniform float factor, thresholds[N];
+uniform float factor, thresholds[SWATCHES];
 uniform vec2 offset, scale;
 
-float hsv_distance (vec3, vec3, vec3, float);
+vec3 compose(const vec2 uv);
+float splat_distance(const vec3 hsv, const int i, const int j);
 vec2 hash(unsigned int R, unsigned int L, unsigned int k);
 vec2 rand2();
 uvec2 srand();
@@ -55,7 +56,7 @@ void main()
     rgb = compose(uv);
     hsv = rgb_to_hsv(rgb);
     
-    for (i = 0, d_0 = d_1 = -infinity, i_0 = i_1 = -1 ; i < N ; i += 1) {
+    for (i = 0, d_0 = d_1 = -infinity, i_0 = i_1 = -1 ; i < SWATCHES ; i += 1) {
         float d;
         
         d = splat_distance(hsv, i, 0);

@@ -57,7 +57,9 @@ static int construct(lua_State *L)
 
     tiles = &self->context.tileset;
 
-    self->swatches = 0;
+    self->swatches = NULL;
+    self->swatches_n = 0;
+    self->bands_n = NULL;
     self->separation = 1;
     
     /* Read in resolution data. */
@@ -347,23 +349,7 @@ static int construct(lua_State *L)
 
         swatch = &self->swatches[i];
         
-        /* The detail textures. */
-
-        for (k = 0 ; k < 3 ; k += 1) {
-            lua_rawgeti(_L, LUA_REGISTRYINDEX, swatch->references[k]);
-            lua_rawseti(_L, -2, 2 * k + 1);
-
-            /* The resolution. */
-        
-            lua_createtable (_L, 2, 0);
-
-            for (j = 0; j < 2 ; j += 1) {
-                lua_pushnumber(_L, swatch->resolutions[k][j]);
-                lua_rawseti(_L, -2, j + 1);
-            }
-
-            lua_rawseti(_L, -2, 2 * k + 2);
-        }
+        lua_createtable (_L, 2, 0);
         
         /* The reference color. */
 
@@ -379,7 +365,33 @@ static int construct(lua_State *L)
             lua_rawseti(_L, -2, j + 1);
         }
         
-        lua_rawseti(_L, -2, 7);
+        lua_rawseti(_L, -2, 1);
+        
+        /* The detail textures. */
+        
+        lua_createtable (_L, self->bands_n[i], 0);
+        
+        for (k = 0 ; k < self->bands_n[i] ; k += 1) {
+            lua_createtable(_L, 2, 0);
+            
+            lua_rawgeti(_L, LUA_REGISTRYINDEX, swatch->references[k]);
+            lua_rawseti(_L, -2, 1);
+
+            /* The resolution. */
+        
+            lua_createtable (_L, 2, 0);
+
+            for (j = 0; j < 2 ; j += 1) {
+                lua_pushnumber(_L, swatch->resolutions[k][j]);
+                lua_rawseti(_L, -2, j + 1);
+            }
+
+            lua_rawseti(_L, -2, 2);
+            lua_rawseti(_L, -2, k + 1);
+        }
+        
+        lua_rawseti(_L, -2, 2);
+        lua_rawseti(_L, -2, i + 1);
     }
 
     return 1;
@@ -394,38 +406,20 @@ static int construct(lua_State *L)
     self->swatches_n = n;
     self->swatches = realloc(self->swatches,
                              n * sizeof(elevation_SwatchDetail));
+    self->bands_n = realloc(self->bands_n,
+                            n * sizeof(int));
 
     for (i = 0 ; i < n ; i += 1) {
         elevation_SwatchDetail *swatch;
         int k;
 
         swatch = &self->swatches[i];
-        lua_rawgeti (_L, 3, i + 1);
-
-        /* The detail texture. */
-
-        for (k = 0 ; k < 3 ; k += 1) {
-            lua_rawgeti (_L, -1, 2 * k + 1);
-            swatch->detail[k] = t_totexture (_L, -1, GL_TEXTURE_2D);
-            swatch->references[k] = luaL_ref(_L, LUA_REGISTRYINDEX);
-
-            /* The resolution. */
         
-            lua_rawgeti (_L, -1, 2 * k + 2);
-
-            for (j = 0 ; j < 2 ; j += 1) {
-                lua_pushinteger (_L, j + 1);
-                lua_gettable (_L, -2);
-                swatch->resolutions[k][j] = lua_tonumber(_L, -1);
-                lua_pop (_L, 1);
-            }
-
-            lua_pop (_L, 1);
-        }
+        lua_rawgeti (_L, 3, i + 1);
 
         /* The reference color. */
 
-        lua_rawgeti (_L, -1, 7);
+        lua_rawgeti (_L, -1, 1);
 
         for (j = 0 ; j < 3 ; j += 1) {
             lua_pushinteger (_L, j + 1);
@@ -437,9 +431,39 @@ static int construct(lua_State *L)
             } else {
                 swatch->values[j] = 0;
                 swatch->weights[j] = 0;
-            }			    
+            }
 			
             lua_pop(_L, 1);
+        }
+
+        lua_pop (_L, 1);
+
+        /* The bands. */
+        
+        lua_rawgeti (_L, -1, 2);
+        self->bands_n[i] = lua_rawlen (_L, -1);
+
+        for (k = 0 ; k < self->bands_n[i] ; k += 1) {
+            lua_rawgeti (_L, -1, k + 1);
+
+            /* The detail texture. */
+            
+            lua_rawgeti (_L, -1, 1);
+            swatch->detail[k] = t_totexture (_L, -1, GL_TEXTURE_2D);
+            swatch->references[k] = luaL_ref(_L, LUA_REGISTRYINDEX);
+
+            /* The resolution. */
+        
+            lua_rawgeti (_L, -1, 2);
+
+            for (j = 0 ; j < 2 ; j += 1) {
+                lua_pushinteger (_L, j + 1);
+                lua_gettable (_L, -2);
+                swatch->resolutions[k][j] = lua_tonumber(_L, -1);
+                lua_pop (_L, 1);
+            }
+
+            lua_pop (_L, 2);
         }
 
         lua_pop (_L, 2);
@@ -472,7 +496,7 @@ static int construct(lua_State *L)
 
 -(int) _get_shape
 {
-    lua_pop (_L, 1);
+    lua_pushvalue (_L, 1);
     lua_pushlightuserdata(_L, [ElevationShape class]);
     lua_pushcclosure(_L, construct, 2);
 
@@ -485,7 +509,7 @@ static int construct(lua_State *L)
 
 -(int) _get_body
 {
-    lua_pop (_L, 1);
+    lua_pushvalue (_L, 1);
     lua_pushlightuserdata(_L, [ElevationBody class]);
     lua_pushcclosure(_L, construct, 2);
     
@@ -498,7 +522,7 @@ static int construct(lua_State *L)
 
 -(int) _get_vegetation
 {
-    lua_pop (_L, 1);
+    lua_pushvalue (_L, 1);
     lua_pushlightuserdata(_L, [/* Elevation */Vegetation class]);
     lua_pushcclosure(_L, construct, 2);
     
@@ -511,7 +535,7 @@ static int construct(lua_State *L)
 
 -(int) _get_splat
 {
-    lua_pop (_L, 1);
+    lua_pushvalue (_L, 1);
     lua_pushlightuserdata(_L, [/* Elevation */Splat class]);
     lua_pushcclosure(_L, construct, 2);
     
@@ -545,6 +569,7 @@ static int construct(lua_State *L)
     free_mesh(&self->context);
 
     free (self->swatches);
+    free (self->bands_n);
     free (self->references);
     free (tiles->samples);
     free (tiles->bounds);

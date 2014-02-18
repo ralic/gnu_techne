@@ -67,15 +67,14 @@
         
     [shader initWithHandle: NULL];
     [shader declare: 1 privateUniforms: private];
-    [shader add: 2 sourceStrings: (const char *[2]){glsl_rand,
-                                                    glsl_seeds_vertex}
-            for: T_VERTEX_STAGE];
+    [shader addSourceString: glsl_seeds_vertex for: T_VERTEX_STAGE];
 
     [shader addSourceString: glsl_seeds_tesselation_control
                         for: T_TESSELATION_CONTROL_STAGE];
 
-    [shader add: 2
-            sourceStrings: (const char *[2]){header,
+    [shader add: 3
+            sourceStrings: (const char *[3]){header,
+                                             glsl_rand,
                                              glsl_seeds_tesselation_evaluation}
             for: T_TESSELATION_EVALUATION_STAGE];
     

@@ -4,21 +4,18 @@ in float distance;
 in float clustering;
 in uvec2 chance;
 
-out vec3 position_v, normal_v;
+out vec3 apex_v, left_v, right_v, stratum_v;
 out vec4 color_v;
+out float clustering_v;
+out uvec2 chance_v;
 
 void main()
 {
-    vec2 u;
-    float sqrtux;
-    
-    u = (rand2(chance) + stratum.xy) / stratum.z;
-    sqrtux = sqrt(u.x);
-    
-    position_v = ((1 - sqrtux) * apex +
-                  sqrtux * (1 - u.y) * left +
-                  sqrtux * u.y * right);
-    
-    normal_v = normalize(cross(left - apex, right - apex));
+    apex_v = apex;
+    left_v = left;
+    right_v = right;
+    stratum_v = stratum;
     color_v = color;
+    clustering_v = clustering;
+    chance_v = chance;
 }

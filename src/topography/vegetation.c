@@ -257,8 +257,6 @@ static unsigned int queries[2];
 
         self->species[j - 1] = child;
 
-        glUseProgram(self->name);
-        glUniform1f (self->locations.thresholds + j - 1, child->threshold);
         /* { */
         /*     int k, l; */
 
@@ -324,11 +322,6 @@ static unsigned int queries[2];
         j = (int)child->key.number;
 
         self->species[j - 1] = NULL;
-
-        /* Make the swatch infertile. */
-        
-        glUseProgram(self->name);
-        glUniform1f (self->locations.thresholds + j - 1, 1.0 / 0.0);
 
         /* Reset the vertex array object. */
 
@@ -660,6 +653,40 @@ static unsigned int queries[2];
 	
 	return;
     }
+
+    /* Update the threshold. */
+    
+    glUseProgram(parent->name);
+    glUniform1f (parent->locations.thresholds + self->offset - 1,
+                 self->threshold);
+
+    /* Update the canopy. */
+    
+    if(parent->elevation->context.canopy < self->bound) {
+        parent->elevation->context.canopy = self->bound;
+    }
+}
+
+-(void) missParent: (Vegetation *)parent
+{
+    VegetationSpecies *child;
+    double h = 0;
+    
+    [super missParent: parent];
+
+    /* Mark the swatch as infertile. */
+        
+    glUseProgram(parent->name);
+    glUniform1f (parent->locations.thresholds + self->offset - 1, 1.0 / 0.0);
+
+    /* Update the canopy. */
+
+    for (child = (VegetationSpecies *)parent->down, h = 0;
+         child;
+         h = child != self && child->bound > h ? child->bound : h,
+             child = (VegetationSpecies *)child->right);
+    
+    parent->elevation->context.canopy = h;
 }
 
 -(int) _get_threshold
@@ -691,6 +718,17 @@ static unsigned int queries[2];
         glUseProgram(parent->name);
         glUniform1f (parent->locations.thresholds + self->offset - 1,
                      self->threshold);
+    }
+}
+
+-(void) setCanopy: (double)h
+{
+    Vegetation *parent = (Vegetation *)self->up;
+
+    self->bound = h;
+
+    if(parent && parent->elevation->context.canopy < self->bound) {
+        parent->elevation->context.canopy = self->bound;
     }
 }
 

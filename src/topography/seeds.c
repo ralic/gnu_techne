@@ -107,4 +107,14 @@
     }
 }
 
+-(void) _set_
+{
+    if (lua_type(_L, 2) == LUA_TSTRING &&
+        !strcmp(lua_tostring(_L, 2), "height")) {
+        [self setCanopy: lua_tonumber(_L, 3)];
+    }
+
+    [super _set_];
+}
+
 @end

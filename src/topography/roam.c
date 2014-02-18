@@ -482,7 +482,7 @@ static void classify_triangle(roam_Triangle *n, int b)
     if(((b & OUT) != OUT) && ((b & ALL_IN) != ALL_IN)) {
         double r_0;
         
-        r_0 = fmax(n->diamond->error, 0.1);
+        r_0 = n->diamond->error + context->canopy;
 
 	if (isinf (r_0)) {
 	    b = 0;
@@ -1160,6 +1160,8 @@ void *allocate_mesh(roam_Context *context_in)
 
     context->minimum = QUEUE_SIZE - 1;
     context->maximum = 0;
+
+    context->canopy = 0;
 
     context->pools[TRIANGLE_POOL] = t_build_pool (TRIANGLE_CHUNKING_FACTOR,
                                                   sizeof(roam_Triangle),

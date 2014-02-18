@@ -101,7 +101,7 @@ typedef struct {
 
     long long int intervals[4];
 
-    double viewport[4], transform[16], planes[6][4];
+    double canopy, viewport[4], transform[16], planes[6][4];
 
     int queued[2];
     int triangles, diamonds, culled, visible;

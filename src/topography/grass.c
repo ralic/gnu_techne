@@ -139,4 +139,21 @@ static unsigned int deflections;
     }
 }
 
+-(void) _set_
+{
+    if (lua_type(_L, 2) == LUA_TSTRING &&
+        !strcmp(lua_tostring(_L, 2), "height")) {
+        lua_pushinteger(_L, 1);
+        lua_gettable(_L, 3);
+        lua_pushinteger(_L, 2);
+        lua_gettable(_L, 3);
+
+        [self setCanopy: lua_tonumber(_L, -1) + lua_tonumber(_L, -2)];
+
+        lua_pop(_L, 2);
+    }
+
+    [super _set_];
+}
+
 @end

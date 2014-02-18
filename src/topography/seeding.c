@@ -155,9 +155,9 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
             r_min = fmin(r_a, fmin(r_0, r_1));
             r_max = fmax(r_a, fmax(r_0, r_1));
 
-            if (r_min > 0) {
+            if (r_min > context->canopy) {
                 bits |= j;
-            } else if(r_max < 0) {
+            } else if(r_max < -context->canopy) {
                 return;
             }
         }

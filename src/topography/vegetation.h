@@ -67,11 +67,12 @@
 @interface VegetationSpecies: Shader {
 @public
     int offset;
-    double threshold;
+    double threshold, bound;
 }
 
 -(int) _get_threshold;
 -(void) _set_threshold;
+-(void) setCanopy: (double)h;
 
 @end
 

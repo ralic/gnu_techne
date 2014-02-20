@@ -1,8 +1,8 @@
 layout(isolines, equal_spacing) in;
 
-patch in vec3 apex_tc, left_tc, right_tc, stratum_tc;
+patch in vec3 apex_tc, left_tc, right_tc, stratum_tc, normal_tc;
 patch in vec4 color_tc;
-patch in uvec2 chance_tc;
+patch in unsigned int instance_tc;
 
 out vec4 color_te;
                                 
@@ -26,16 +26,21 @@ void main()
     atomicCounterIncrement(segments);
 #endif
 
-    u = hash(chance_tc, floatBitsToUint(gl_TessCoord.y));
+    u = hash(floatBitsToUint(3 * apex_tc.xy + 5 * left_tc.xy + 7 * right_tc.xy),
+             floatBitsToUint(gl_TessCoord.y) + instance_tc);
     u = (u + stratum_tc.xy) / stratum_tc.z;
 
-    sqrtux = sqrt(u.x);
+    if (false) {
+        sqrtux = sqrt(u.x);
 
-    p = ((1 - sqrtux) * apex_tc +
-         sqrtux * (1 - u.y) * left_tc +
-         sqrtux * u.y * right_tc);
-    n = normalize(cross(left_tc - apex_tc, right_tc - apex_tc));
-
-    gl_Position = transform * vec4(p + height * gl_TessCoord.x * n, 1);
+        p = ((1 - sqrtux) * apex_tc +
+             sqrtux * (1 - u.y) * left_tc +
+             sqrtux * u.y * right_tc);
+    } else {
+        u = mix(u, 1 - u.yx, floor(u.x + u.y));
+        p = apex_tc + (left_tc - apex_tc) * u.x + (right_tc - apex_tc) * u.y;
+    }
+    
+    gl_Position = transform * vec4(p + height * gl_TessCoord.x * normal_tc, 1);
     color_te = color_tc;
 }

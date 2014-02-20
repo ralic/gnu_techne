@@ -3,8 +3,8 @@ in vec3 apex, left, right;
 out vec4 color_v;
 out float distance_v;
 out int index_v;
-out uvec2 chance_v;
-out vec3 apex_v, left_v, right_v, stratum_v;
+out vec3 apex_v, left_v, right_v;
+out unsigned int instance_v;
 
 uniform float factor, thresholds[SWATCHES];
 uniform vec2 offset, scale;
@@ -30,25 +30,27 @@ layout(binding = 0, offset = 4) uniform atomic_uint drawn;
 void main()
 {
     vec3 rgb, hsv, c, s, t, r_0;
-    vec2 uv, u, a;
-    float S, d_0, d_1, r, sqrtux, l;
+    vec2 p, uv, u, a;
+    float d_0, d_1, r, sqrtux, l;
     int i, i_0, i_1;
 
-    vec2 center;
+    p = (apex.xy + left.xy + right.xy) / 3;
 
-    center = (apex.xy + left.xy + right.xy) / 3;
-    u = hash(floatBitsToUint(center.xy), uint(gl_InstanceID));
-
-    S = float(gl_InstanceID + 1);
-    l = ceil(pow(3 * S, 1.0 / 3.0) - 0.5);
-
+    u = hash(floatBitsToUint(p.xy), uint(gl_InstanceID));
+    l = ceil(pow(3 * float(gl_InstanceID + 1), 1.0 / 3.0) - 0.5);
     a = floor(rand2() * l);
     u = (u + a) / l;    
-    sqrtux = sqrt(u.x);
+
+    if (false) {
+        sqrtux = sqrt(u.x);
     
-    c = (1 - sqrtux) * apex +
-        sqrtux * (1 - u.y) * left +
-        sqrtux * u.y * right;
+        c = (1 - sqrtux) * apex +
+            sqrtux * (1 - u.y) * left +
+            sqrtux * u.y * right;
+    } else {
+        u = mix(u, 1 - u.yx, floor(u.x + u.y));
+        c = apex + (left - apex) * u.x + (right - apex) * u.y;
+    }
     
     /* Find the seed type. */
     
@@ -114,6 +116,5 @@ void main()
                    min(1, 1 / transition - gl_InstanceID / (transition * instances)));
 
     apex_v = apex; left_v = left; right_v = right;
-    stratum_v = vec3(a, l);
-    chance_v = srand();
+    instance_v = uint(gl_InstanceID);
 }

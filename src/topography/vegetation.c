@@ -151,24 +151,23 @@ static unsigned int queries[2];
     lua_pop(_L, 1);
 
     {
-        const char *varyings[9 * n];
+        const char *varyings[8 * n];
 
         for (i = 0 ; i < n ; i += 1) {
-            asprintf ((char **)&varyings[9 * i + 0], "stream_%d_apex_g", i);
-            asprintf ((char **)&varyings[9 * i + 1], "stream_%d_left_g", i);
-            asprintf ((char **)&varyings[9 * i + 2], "stream_%d_right_g", i);
-            asprintf ((char **)&varyings[9 * i + 3], "stream_%d_stratum_g", i);
-            asprintf ((char **)&varyings[9 * i + 4], "stream_%d_color_g", i);
-            asprintf ((char **)&varyings[9 * i + 5], "stream_%d_distance_g", i);
-            asprintf ((char **)&varyings[9 * i + 6], "stream_%d_clustering_g", i);
-            asprintf ((char **)&varyings[9 * i + 7], "stream_%d_chance_g", i);
-            varyings[9 * i + 8] = "gl_NextBuffer";
+            asprintf ((char **)&varyings[8 * i + 0], "stream_%d_apex_g", i);
+            asprintf ((char **)&varyings[8 * i + 1], "stream_%d_left_g", i);
+            asprintf ((char **)&varyings[8 * i + 2], "stream_%d_right_g", i);
+            asprintf ((char **)&varyings[8 * i + 3], "stream_%d_color_g", i);
+            asprintf ((char **)&varyings[8 * i + 4], "stream_%d_distance_g", i);
+            asprintf ((char **)&varyings[8 * i + 5], "stream_%d_clustering_g", i);
+            asprintf ((char **)&varyings[8 * i + 6], "stream_%d_instance_g", i);
+            varyings[8 * i + 7] = "gl_NextBuffer";
         }
 
         /* Submit all varyings but the last gl_NextBuffer (which means
          * the -1 is intenional). */
         
-        glTransformFeedbackVaryings(shader->name, 9 * n - 1, varyings,
+        glTransformFeedbackVaryings(shader->name, 8 * n - 1, varyings,
                                     GL_INTERLEAVED_ATTRIBS);
     }
 
@@ -285,29 +284,24 @@ static unsigned int queries[2];
                               (void *)(6 * sizeof(float)));
         glEnableVertexAttribArray(i);
 
-        i = glGetAttribLocation(child->name, "stratum");
-        glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
-                              (void *)(9 * sizeof(float)));
-        glEnableVertexAttribArray(i);
-
         i = glGetAttribLocation(child->name, "color");
         glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
-                              (void *)(12 * sizeof(float)));
+                              (void *)(9 * sizeof(float)));
         glEnableVertexAttribArray(i);    
 
         i = glGetAttribLocation(child->name, "distance");
         glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
-                              (void *)(16 * sizeof(float)));
+                              (void *)(13 * sizeof(float)));
         glEnableVertexAttribArray(i);    
 
         i = glGetAttribLocation(child->name, "clustering");
         glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
-                               (void *)(17 * sizeof(float)));
+                               (void *)(14 * sizeof(float)));
         glEnableVertexAttribArray(i);    
 
-        i = glGetAttribLocation(child->name, "chance");
-        glVertexAttribIPointer(i, 2, GL_UNSIGNED_INT, TRANSFORMED_SEED_SIZE,
-                               (void *)(18 * sizeof(float)));
+        i = glGetAttribLocation(child->name, "instance");
+        glVertexAttribIPointer(i, 1, GL_UNSIGNED_INT, TRANSFORMED_SEED_SIZE,
+                               (void *)(15 * sizeof(float)));
         glEnableVertexAttribArray(i);    
     }
 

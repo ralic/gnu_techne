@@ -1,9 +1,9 @@
 layout(isolines, equal_spacing) in;
 
-patch in vec3 apex_tc, left_tc, right_tc, stratum_tc;
+patch in vec3 apex_tc, left_tc, right_tc, stratum_tc, normal_tc;
 patch in vec4 color_tc;
 patch in float distance_tc, depth_tc;
-patch in uvec2 chance_tc;
+patch in unsigned int instance_tc;
 
 out vec3 position_te, tangent_te, bitangent_te;
 out vec4 plane_te, color_te;
@@ -30,15 +30,21 @@ void main()
     vec2 u;
     float sqrtux, phi, theta, cosphi, costheta, sinphi, sintheta, h_0, k;
 
-    u = hash(chance_tc, floatBitsToUint(gl_TessCoord.y));
+    u = hash(floatBitsToUint((apex_tc.xy + left_tc.xy + right_tc.xy) / 3),
+             floatBitsToUint((gl_TessCoord.y + 1) * (instance_tc + 1)));
     u = (u + stratum_tc.xy) / stratum_tc.z;
 
-    sqrtux = sqrt(u.x);
+    if (false) {
+        sqrtux = sqrt(u.x);
 
-    p = ((1 - sqrtux) * apex_tc +
-         sqrtux * (1 - u.y) * left_tc +
-         sqrtux * u.y * right_tc);
-
+        p = ((1 - sqrtux) * apex_tc +
+             sqrtux * (1 - u.y) * left_tc +
+             sqrtux * u.y * right_tc);
+    } else {
+        u = mix(u, 1 - u.yx, floor(u.x + u.y));
+        p = apex_tc + (left_tc - apex_tc) * u.x + (right_tc - apex_tc) * u.y;
+    }
+    
     v = rand4();
     
     /* update the statistics. */
@@ -62,9 +68,8 @@ void main()
     sintheta = sin(theta);
     
     d = vec3(cosphi, sinphi, 1) * t.rrg;
-    n = normalize(cross(left_tc - apex_tc, right_tc - apex_tc));
 
-    plane_te = vec4(n, -dot(n, p));
+    plane_te = vec4(normal_tc, -dot(normal_tc, p));
     tangent_te = vec3(-cosphi * sintheta, sintheta * sinphi, costheta);
     bitangent_te = vec3(-sinphi, cosphi, 0);
     position_te = p + (height.x + (height.y * distance_tc * v.x)) * d;

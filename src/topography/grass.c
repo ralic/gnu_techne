@@ -91,10 +91,12 @@ static unsigned int deflections;
         
     [shader initWithHandle: NULL];
     [shader declare: 4 privateUniforms: private];
-    [shader add: 2 sourceStrings: (const char *[2]){header, glsl_grass_vertex}
+    [shader add: 2 sourceStrings: (const char *[2]){header,
+                                                    glsl_grass_vertex}
             for: T_VERTEX_STAGE];
 
-    [shader addSourceString: glsl_grass_tesselation_control
+    [shader add: 2 sourceStrings: (const char *[2]){glsl_rand,
+                                                    glsl_grass_tesselation_control}
                         for: T_TESSELATION_CONTROL_STAGE];
 
     [shader add: 3

@@ -1,5 +1,7 @@
 uvec2 next;
 
+const float UINT_MAX = ldexp(1, 32);
+
 void srand(uvec2 seed)
 {
     next = seed;
@@ -13,7 +15,7 @@ uvec2 srand()
 vec2 rand2(uvec2 seed)
 {
     next = seed;
-    return vec2 (next) / vec2(4294967295.0);
+    return vec2 (next) / vec2(UINT_MAX);
 }
 
 vec2 hash(uvec2 U, unsigned int k)
@@ -30,7 +32,7 @@ vec2 hash(uvec2 U, unsigned int k)
     }
 
     next = U;
-    return vec2(U) / 4294967295.0 ;
+    return vec2(U) / UINT_MAX ;
 }
 
 vec2 rand2()
@@ -38,7 +40,7 @@ vec2 rand2()
     const uint a = 1664525u;
     const uint c = 1013904223u;
     next = next * a + c;
-    return vec2 (next) / vec2(4294967295.0);
+    return vec2 (next) / vec2(UINT_MAX);
 }
 
 vec4 rand4()
@@ -47,5 +49,5 @@ vec4 rand4()
     const uvec2 c = {1013904223u, 1u};
     uvec4 new = next.xyxy * a.xxyy + c.xxyy;
     next = new.xz;
-    return vec4 (new) / vec4(4294967295.0);
+    return vec4 (new) / vec4(UINT_MAX);
 }

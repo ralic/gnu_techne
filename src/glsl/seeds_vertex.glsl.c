@@ -1,11 +1,9 @@
-in vec3 apex, left, right;
-in vec4 color;
+in vec3 apex, left, right, color;
 in float distance;
 in float clustering;
 in unsigned int instance;
 
-out vec3 apex_v, left_v, right_v, stratum_v, normal_v;
-out vec4 color_v;
+out vec3 apex_v, left_v, right_v, stratum_v, normal_v, color_v;
 out float clustering_v;
 out unsigned int instance_v;
 

@@ -1,7 +1,8 @@
-in vec4 color_g, position_g;
+in vec4 position_g;
 in vec3 normal_g;
 in vec2 uv_g;
 flat in float distance_g;              
+flat in vec3 color_g;
 
 out vec4 fragment;
 
@@ -25,12 +26,12 @@ void main()
     texel = texture(mask, uv_g);
 
     if (distance_g < 0) {
-        fragment = color_g * texel;
+        fragment = vec4(0, 0, 0, 1 - ambient[0]) * texel;
     } else if (texel.a > 0) {
         vec3 l = direction;
         vec3 n = (gl_FrontFacing ? -1 : 1) * normalize(normal_g);
         vec3 v = normalize(-position_g.xyz);
-        float A, D, T, S, tau, nl;
+        float A, D, T, S, nl;
 
         nl = dot(n, l);
         A = ambient[0] * mix(uv_g.y, 1, ambient[1]);
@@ -44,7 +45,7 @@ void main()
         
         S = specular[0] * pow(max(dot(reflect(l, n), v), 0), specular[1]);
             
-        fragment = vec4(texel.rgb + intensity * (color_g.rgb * (A + D + vec3(1, 1, 0.6) * T) + S), texel.a * color_g.a);
+        fragment = vec4(texel.rgb + intensity * (color_g * (A + D + vec3(1, 1, 0.6) * T) + S), texel.a);
     } else {
         discard;
     }

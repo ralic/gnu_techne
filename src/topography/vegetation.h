@@ -32,7 +32,7 @@
     unsigned int feedback, *arrays, *vertexbuffers;
     
     struct {
-        unsigned int intensity, scale, offset, clustering, instances;
+        unsigned int intensity, scale, offset, clustering;
         unsigned int thresholds;
     } locations;
 

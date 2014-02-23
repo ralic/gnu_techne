@@ -1,12 +1,11 @@
 layout(isolines, equal_spacing) in;
 
-patch in vec3 apex_tc, left_tc, right_tc, stratum_tc, normal_tc;
-patch in vec4 color_tc;
+patch in vec3 apex_tc, left_tc, right_tc, stratum_tc, normal_tc, color_tc;
 patch in float distance_tc, depth_tc;
 patch in unsigned int instance_tc;
 
-out vec3 position_te, tangent_te, bitangent_te;
-out vec4 plane_te, color_te;
+out vec3 position_te, tangent_te, bitangent_te, color_te;
+out vec4 plane_te;
 out float distance_te, height_te, depth_te, width_te;
                                 
 #ifdef COLLECT_STATISTICS

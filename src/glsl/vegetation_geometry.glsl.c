@@ -2,7 +2,7 @@
 layout(points) in;
 layout(points, max_vertices = 1) out;
               
-in vec4 color_v[];
+in vec3 color_v[];
 in float distance_v[];
 in int index_v[];
 in unsigned int instance_v[];
@@ -10,7 +10,7 @@ in vec3 apex_v[], left_v[], right_v[];
 
 <@ for i = 0, context.species - 1 do @>
 layout(stream = <@= i @>) out stream_<@= i @> {
-    vec4 stream_<@= i @>_color_g;
+    vec3 stream_<@= i @>_color_g;
     vec3 stream_<@= i @>_apex_g, stream_<@= i @>_left_g, stream_<@= i @>_right_g;
     float stream_<@= i @>_distance_g;              
     float stream_<@= i @>_clustering_g;

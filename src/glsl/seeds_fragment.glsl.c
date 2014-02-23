@@ -1,4 +1,4 @@
-in vec4 color_te;
+flat in vec3 color_te;
 out vec4 fragment;
 
 uniform vec3 intensity;
@@ -9,5 +9,5 @@ uniform seeds_fragment {
 
 void main()
 {
-    fragment = vec4(color * intensity * color_te.rgb, 1);
+    fragment = vec4(color * intensity * color_te, 1);
 }

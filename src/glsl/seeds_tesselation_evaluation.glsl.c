@@ -1,10 +1,9 @@
 layout(isolines, equal_spacing) in;
 
-patch in vec3 apex_tc, left_tc, right_tc, stratum_tc, normal_tc;
-patch in vec4 color_tc;
+patch in vec3 apex_tc, left_tc, right_tc, stratum_tc, normal_tc, color_tc;
 patch in unsigned int instance_tc;
 
-out vec4 color_te;
+flat out vec3 color_te;
                                 
 #ifdef COLLECT_STATISTICS
 layout(binding = 0, offset = 8) uniform atomic_uint segments;

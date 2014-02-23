@@ -1,6 +1,6 @@
 in vec3 apex, left, right;
 
-out vec4 color_v;
+out vec3 color_v;
 out float distance_v;
 out int index_v;
 out vec3 apex_v, left_v, right_v;
@@ -111,10 +111,7 @@ void main()
     atomicCounterIncrement(drawn);
 #endif
         
-    const float transition = 0.3;
-    color_v = vec4(factor * rgb,
-                   min(1, 1 / transition - gl_InstanceID / (transition * instances)));
-
+    color_v = factor * rgb;
     apex_v = apex; left_v = left; right_v = right;
     instance_v = uint(gl_InstanceID);
 }

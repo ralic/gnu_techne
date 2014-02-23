@@ -205,7 +205,6 @@ static unsigned int queries[2];
     self->locations.thresholds = glGetUniformLocation(self->name, "thresholds");
     self->locations.offset = glGetUniformLocation(self->name, "offset");
     self->locations.clustering = glGetUniformLocation(self->name, "clustering");
-    self->locations.instances = glGetUniformLocation(self->name, "instances");
 
     self->units.base = [self getUnitForSamplerUniform: "base"];
 
@@ -285,23 +284,23 @@ static unsigned int queries[2];
         glEnableVertexAttribArray(i);
 
         i = glGetAttribLocation(child->name, "color");
-        glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
+        glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
                               (void *)(9 * sizeof(float)));
         glEnableVertexAttribArray(i);    
 
         i = glGetAttribLocation(child->name, "distance");
         glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
-                              (void *)(13 * sizeof(float)));
+                              (void *)(12 * sizeof(float)));
         glEnableVertexAttribArray(i);    
 
         i = glGetAttribLocation(child->name, "clustering");
         glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
-                               (void *)(14 * sizeof(float)));
+                               (void *)(13 * sizeof(float)));
         glEnableVertexAttribArray(i);    
 
         i = glGetAttribLocation(child->name, "instance");
         glVertexAttribIPointer(i, 1, GL_UNSIGNED_INT, TRANSFORMED_SEED_SIZE,
-                               (void *)(15 * sizeof(float)));
+                               (void *)(14 * sizeof(float)));
         glEnableVertexAttribArray(i);    
     }
 
@@ -449,12 +448,10 @@ static unsigned int queries[2];
 
                     if (r > 1) {
                         glUniform1f(self->locations.clustering, C);
-                        glUniform1f(self->locations.instances, k == BINS_N - 1 ? 1.0 / 0.0 : r);
                         glDrawArraysInstanced(GL_POINTS, 0, b->fill, r);
                     } else {
                         glUniform1f(self->locations.clustering,
                                     round(b->center));
-                        glUniform1f(self->locations.instances, 1);
                         glDrawArraysInstanced(GL_POINTS, 0, b->fill, 1);
                     }
                 }

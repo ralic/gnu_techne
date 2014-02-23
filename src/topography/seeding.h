@@ -20,7 +20,7 @@
 #define BINS_N 32
 
 #define SEED_SIZE (3 * 3 * 4)
-#define TRANSFORMED_SEED_SIZE ((4 + 3 * 3 + 2) * sizeof(float) +        \
+#define TRANSFORMED_SEED_SIZE ((4 * 3 + 2) * sizeof(float) +        \
                                1 * sizeof(unsigned int))
 
 typedef struct {

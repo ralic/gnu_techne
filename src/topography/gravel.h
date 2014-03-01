@@ -14,23 +14,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _GRAVEL_H_
+#define _GRAVEL_H_
+
 #include <lua.h>
-#include <lauxlib.h>
+#include "vegetation.h"
 
-#include "techne.h"
-#include "atmosphere.h"
-#include "elevation.h"
-#include "grass.h"
-#include "seeds.h"
-#include "gravel.h"
-
-int luaopen_topography_core (lua_State *L)
-{
-    Class classes[] = {[Elevation class], [Atmosphere class],
-                       [Grass class], [Seeds class], [Gravel class],
-                       NULL};
-
-    t_exportnodes (L, classes);
-
-    return 1;
+@interface Gravel: VegetationSpecies {
+@public
+    struct {
+        unsigned int intensity, direction, direction_w;
+    } locations;
 }
+
+@end
+
+#endif

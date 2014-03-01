@@ -17,6 +17,8 @@ flat out vec4 color_g;
 
 uniform vec3 direction_w;
 
+void project_shadow(vec4 plane, vec3 direction, inout mat4 modelview);
+
 void main()
 {
     mat4 M, P;
@@ -33,12 +35,7 @@ void main()
 
 #ifdef CAST_SHADOWS
     } else {
-        mat4 P;
-        vec4 l;
-
-        l = vec4(direction_w / dot(direction_w, plane_te[0].xyz), 0);
-        M *= mat4(1.0) - outerProduct(l, plane_te[0]);
-        
+        project_shadow(plane_te[0], direction_w, M);
         color_g = vec4(0, 0, 0, 0.6);
     }
 #endif

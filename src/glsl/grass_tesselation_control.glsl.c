@@ -13,21 +13,17 @@ uniform grass_control {
     float detail;
 };
 
+vec3 cluster_stratum(vec3 apex, vec3 left, vec3 right, unsigned int instance);
+
 void main() {
     const float bias = 1;
     
     vec4 p_e;
     vec3 p;
-    vec2 u;
-    float l, z, n;
+    float z, n;
     int i;
-
-    p = (apex_v[0] + left_v[0] + right_v[0]) / 3;
-    u = hash(floatBitsToUint(p.xy), instance_v[0]);
-    l = ceil(pow(3 * float(instance_v[0] + 1), 1.0 / 3.0) - 0.5);
     
-    stratum_tc = vec3(floor(rand2() * l), l);
-
+    p = (apex_v[0] + left_v[0] + right_v[0]) / 3;
     p_e = modelview * vec4(p, 1);
     z = max(-p_e.z, bias);
     n = bias * detail / z / z;
@@ -43,4 +39,6 @@ void main() {
     distance_tc = distance_v[0];
     depth_tc = z;
     instance_tc = instance_v[0];
+    stratum_tc = cluster_stratum(apex_v[0], left_v[0], right_v[0],
+                                 instance_v[0]);    
 }

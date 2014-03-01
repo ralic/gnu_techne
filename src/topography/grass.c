@@ -61,6 +61,7 @@ static unsigned int deflections;
     int collect;
         
 #include "glsl/rand.h"
+#include "glsl/vegetation_common.h"
 #include "glsl/grass_vertex.h"
 #include "glsl/grass_tesselation_control.h"
 #include "glsl/grass_tesselation_evaluation.h"
@@ -91,20 +92,25 @@ static unsigned int deflections;
         
     [shader initWithHandle: NULL];
     [shader declare: 4 privateUniforms: private];
-    [shader add: 2 sourceStrings: (const char *[2]){header,
-                                                    glsl_grass_vertex}
-            for: T_VERTEX_STAGE];
+    
+    [shader addSourceString: glsl_grass_vertex for: T_VERTEX_STAGE];
 
-    [shader add: 2 sourceStrings: (const char *[2]){glsl_rand,
+    [shader add: 3 sourceStrings: (const char *[3]){glsl_rand,
+                                                    glsl_vegetation_common,
                                                     glsl_grass_tesselation_control}
-                        for: T_TESSELATION_CONTROL_STAGE];
+            for: T_TESSELATION_CONTROL_STAGE];
 
-    [shader add: 3
-            sourceStrings: (const char *[3]){header, glsl_rand,
+    [shader add: 4
+            sourceStrings: (const char *[4]){header,
+                                             glsl_rand,
+                                             glsl_vegetation_common,
                                              glsl_grass_tesselation_evaluation}
             for: T_TESSELATION_EVALUATION_STAGE];
 
-    [shader addSourceString: glsl_grass_geometry for: T_GEOMETRY_STAGE];
+    [shader add: 2
+            sourceStrings: (const char *[2]){glsl_vegetation_common,
+                                             glsl_grass_geometry}
+            for: T_GEOMETRY_STAGE];
     
     /* Add the fragment source. */
     
@@ -117,7 +123,6 @@ static unsigned int deflections;
 
     /* Initialize uniforms. */
 
-    glUseProgram(self->name);
     self->locations.intensity = glGetUniformLocation (self->name, "intensity");
     self->locations.direction = glGetUniformLocation (self->name, "direction");
     self->locations.direction_w = glGetUniformLocation (self->name,

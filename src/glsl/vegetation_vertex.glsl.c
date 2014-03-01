@@ -9,11 +9,14 @@ out unsigned int instance_v;
 uniform float factor, thresholds[SWATCHES];
 uniform vec2 offset, scale;
 
-vec3 compose(const vec2 uv);
-float splat_distance(const vec3 hsv, const int i, const int j);
 vec2 hash(unsigned int R, unsigned int L, unsigned int k);
 vec2 rand2();
 uvec2 srand();
+
+vec3 compose(const vec2 uv);
+float splat_distance(const vec3 hsv, const int i, const int j);
+
+vec3 cluster_center(vec3 apex, vec3 left, vec3 right, unsigned int instance);
 
 uniform float instances;
 
@@ -29,28 +32,12 @@ layout(binding = 0, offset = 4) uniform atomic_uint drawn;
 
 void main()
 {
-    vec3 rgb, hsv, c, s, t, r_0;
-    vec2 p, uv, u, a;
-    float d_0, d_1, r, sqrtux, l;
+    vec3 rgb, hsv, c;
+    vec2 uv;
+    float d_0, d_1, r;
     int i, i_0, i_1;
 
-    p = (apex.xy + left.xy + right.xy) / 3;
-
-    u = hash(floatBitsToUint(p.xy), uint(gl_InstanceID));
-    l = ceil(pow(3 * float(gl_InstanceID + 1), 1.0 / 3.0) - 0.5);
-    a = floor(rand2() * l);
-    u = (u + a) / l;    
-
-    if (false) {
-        sqrtux = sqrt(u.x);
-    
-        c = (1 - sqrtux) * apex +
-            sqrtux * (1 - u.y) * left +
-            sqrtux * u.y * right;
-    } else {
-        u = mix(u, 1 - u.yx, floor(u.x + u.y));
-        c = apex + (left - apex) * u.x + (right - apex) * u.y;
-    }
+    c = cluster_center(apex, left, right, uint(gl_InstanceID));
     
     /* Find the seed type. */
     

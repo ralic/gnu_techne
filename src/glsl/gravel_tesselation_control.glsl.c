@@ -1,6 +1,6 @@
 layout(vertices = 1) out;
 
-in vec3 apex_v[], left_v[], right_v[], stratum_v[], normal_v[], color_v[];
+in vec3 apex_v[], left_v[], right_v[], normal_v[], color_v[];
 in float clustering_v[];
 in unsigned int instance_v[];
 
@@ -27,8 +27,9 @@ void main() {
     apex_tc = apex_v[0];
     left_tc = left_v[0];
     right_tc = right_v[0];
-    stratum_tc = stratum_v[0];
     color_tc = color_v[0];
     normal_tc = normal_v[0];
     instance_tc = instance_v[0];
+    stratum_tc = cluster_stratum(apex_v[0], left_v[0], right_v[0],
+                                 instance_v[0]);    
 }

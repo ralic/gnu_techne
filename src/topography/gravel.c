@@ -38,6 +38,7 @@
     int collect;
         
 #include "glsl/rand.h"
+#include "glsl/vegetation_common.h"
 #include "glsl/gravel_vertex.h"
 #include "glsl/gravel_tesselation_control.h"
 #include "glsl/gravel_tesselation_evaluation.h"
@@ -68,20 +69,25 @@
         
     [shader initWithHandle: NULL];
     [shader declare: 1 privateUniforms: private];
-    [shader add:2 sourceStrings: (const char *[2]){glsl_rand,
-                                                   glsl_gravel_vertex}
-            for: T_VERTEX_STAGE];
+    
+    [shader addSourceString: glsl_gravel_vertex for: T_VERTEX_STAGE];
 
-    [shader addSourceString: glsl_gravel_tesselation_control
-                        for: T_TESSELATION_CONTROL_STAGE];
+    [shader add: 3 sourceStrings: (const char *[3]){glsl_rand,
+                                                    glsl_vegetation_common,
+                                                    glsl_gravel_tesselation_control}
+            for: T_TESSELATION_CONTROL_STAGE];
 
-    [shader add: 3
-            sourceStrings: (const char *[3]){header,
+    [shader add: 4
+            sourceStrings: (const char *[4]){header,
                                              glsl_rand,
+                                             glsl_vegetation_common,
                                              glsl_gravel_tesselation_evaluation}
             for: T_TESSELATION_EVALUATION_STAGE];
 
-    [shader addSourceString: glsl_gravel_geometry for: T_GEOMETRY_STAGE];
+    [shader add: 2
+            sourceStrings: (const char *[2]){glsl_vegetation_common,
+                                             glsl_gravel_geometry}
+            for: T_GEOMETRY_STAGE];
     
     /* Add the fragment source. */
     

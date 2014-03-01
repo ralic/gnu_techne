@@ -17,9 +17,7 @@ uniform gravel_evaluation {
 
 void main()
 {
-    vec3 p, n;
-    vec2 u;
-    float sqrtux;
+    vec3 p;
     
     /* Update the statistics. */
 
@@ -27,12 +25,7 @@ void main()
     atomicCounterIncrement(segments);
 #endif
 
-    u = hash(floatBitsToUint(3 * apex_tc.xy + 5 * left_tc.xy + 7 * right_tc.xy),
-             floatBitsToUint(gl_TessCoord.y) + instance_tc);
-    u = (u + stratum_tc.xy) / stratum_tc.z;
-
-    u = mix(u, 1 - u.yx, floor(u.x + u.y));
-    p = apex_tc + (left_tc - apex_tc) * u.x + (right_tc - apex_tc) * u.y;
+    p = cluster_seed(apex_tc, left_tc, right_tc, stratum_tc, instance_tc);
 
     {
         vec3 u, v, rho;

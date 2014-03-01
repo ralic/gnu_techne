@@ -26,24 +26,9 @@ void main()
 {
     vec3 p, d, t, n;
     vec4 v;
-    vec2 u;
-    float sqrtux, phi, theta, cosphi, costheta, sinphi, sintheta, h_0, k;
+    float phi, theta, cosphi, costheta, sinphi, sintheta, h_0, k;
 
-    u = hash(floatBitsToUint((apex_tc.xy + left_tc.xy + right_tc.xy) / 3),
-             floatBitsToUint((gl_TessCoord.y + 1) * (instance_tc + 1)));
-    u = (u + stratum_tc.xy) / stratum_tc.z;
-
-    if (false) {
-        sqrtux = sqrt(u.x);
-
-        p = ((1 - sqrtux) * apex_tc +
-             sqrtux * (1 - u.y) * left_tc +
-             sqrtux * u.y * right_tc);
-    } else {
-        u = mix(u, 1 - u.yx, floor(u.x + u.y));
-        p = apex_tc + (left_tc - apex_tc) * u.x + (right_tc - apex_tc) * u.y;
-    }
-    
+    p = cluster_seed(apex_tc, left_tc, right_tc, stratum_tc, instance_tc);
     v = rand4();
     
     /* update the statistics. */

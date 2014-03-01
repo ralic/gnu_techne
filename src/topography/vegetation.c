@@ -47,6 +47,7 @@ static unsigned int queries[2];
         
 #include "glsl/color.h"
 #include "glsl/rand.h"
+#include "glsl/vegetation_common.h"
 #include "glsl/vegetation_vertex.h"
 #include "glsl/vegetation_geometry.h"
 
@@ -126,11 +127,12 @@ static unsigned int queries[2];
              "const int SWATCHES = %d;\n",
              collect ? "#define COLLECT_STATISTICS\n" : "", n);
     
-    [shader add: 4
-            sourceStrings: (const char *[4]){
+    [shader add: 5
+            sourceStrings: (const char *[5]){
                 header,
                 glsl_color,
                 glsl_rand,
+                glsl_vegetation_common,
                 glsl_vegetation_vertex
             }
             for: T_VERTEX_STAGE];

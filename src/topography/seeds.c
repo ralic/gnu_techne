@@ -38,6 +38,7 @@
     int collect;
         
 #include "glsl/rand.h"
+#include "glsl/vegetation_common.h"
 #include "glsl/seeds_vertex.h"
 #include "glsl/seeds_tesselation_control.h"
 #include "glsl/seeds_tesselation_evaluation.h"
@@ -67,16 +68,17 @@
         
     [shader initWithHandle: NULL];
     [shader declare: 1 privateUniforms: private];
-    [shader add:2 sourceStrings: (const char *[2]){glsl_rand,
-                                                   glsl_seeds_vertex}
-            for: T_VERTEX_STAGE];
+    [shader addSourceString: glsl_seeds_vertex for: T_VERTEX_STAGE];
 
-    [shader addSourceString: glsl_seeds_tesselation_control
+    [shader add: 3 sourceStrings: (const char *[3]){glsl_rand,
+                                                    glsl_vegetation_common,
+                                                    glsl_seeds_tesselation_control}
                         for: T_TESSELATION_CONTROL_STAGE];
 
-    [shader add: 3
-            sourceStrings: (const char *[3]){header,
+    [shader add: 4
+            sourceStrings: (const char *[4]){header,
                                              glsl_rand,
+                                             glsl_vegetation_common,
                                              glsl_seeds_tesselation_evaluation}
             for: T_TESSELATION_EVALUATION_STAGE];
     

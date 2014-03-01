@@ -1,6 +1,8 @@
 layout(isolines, equal_spacing) in;
 
-patch in vec3 apex_tc, left_tc, right_tc, stratum_tc, normal_tc, color_tc;
+patch in vec3 apex_tc, left_tc, right_tc, stratum_tc, normal_tc, color_tc,
+    position_tc;
+patch in float clustering_tc;
 patch in unsigned int instance_tc;
 
 flat out vec3 color_te;
@@ -15,9 +17,7 @@ uniform seeds_evaluation {
 
 void main()
 {
-    vec3 p, n;
-    vec2 u;
-    float sqrtux;
+    vec3 p;
     
     /* Update the statistics. */
 
@@ -25,19 +25,10 @@ void main()
     atomicCounterIncrement(segments);
 #endif
 
-    u = hash(floatBitsToUint(3 * apex_tc.xy + 5 * left_tc.xy + 7 * right_tc.xy),
-             floatBitsToUint(gl_TessCoord.y) + instance_tc);
-    u = (u + stratum_tc.xy) / stratum_tc.z;
-
-    if (false) {
-        sqrtux = sqrt(u.x);
-
-        p = ((1 - sqrtux) * apex_tc +
-             sqrtux * (1 - u.y) * left_tc +
-             sqrtux * u.y * right_tc);
+    if (clustering_tc > 1) {
+        p = cluster_seed(apex_tc, left_tc, right_tc, stratum_tc, instance_tc);
     } else {
-        u = mix(u, 1 - u.yx, floor(u.x + u.y));
-        p = apex_tc + (left_tc - apex_tc) * u.x + (right_tc - apex_tc) * u.y;
+        p = position_tc;
     }
     
     gl_Position = transform * vec4(p + height * gl_TessCoord.x * normal_tc, 1);

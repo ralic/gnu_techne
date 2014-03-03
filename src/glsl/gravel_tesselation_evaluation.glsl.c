@@ -17,7 +17,8 @@ uniform gravel_evaluation {
 
 void main()
 {
-    vec3 p;
+    vec3 p, u, v;
+    float phi;
     
     /* Update the statistics. */
 
@@ -25,23 +26,16 @@ void main()
     atomicCounterIncrement(segments);
 #endif
 
+    phi = 2 * pi * gl_TessCoord.x;
+        
+    u = normalize(vec3(-normal_tc.y, normal_tc.x, 0));
+    v = normal_tc;
+
+    normal_te = vec3(cos(phi), sin(phi), 0);
+
     p = cluster_seed(apex_tc, left_tc, right_tc, stratum_tc, instance_tc);
-
-    {
-        vec3 u, v, rho;
-        float phi;
-        
-        phi = 2 * pi * gl_TessCoord.x;
-        
-        u = normalize(vec3(-normal_tc.y, normal_tc.x, 0));
-        v = normal_tc;
-
-        rho = vec3(cos(phi), sin(phi), 0);
-
-        plane_te = vec4(normal_tc, -dot(normal_tc, p));
-        normal_te = rho;
-        position_te = p;
-    }
+    plane_te = vec4(normal_tc, -dot(normal_tc, p));
+    position_te = p;
     
     color_te = color_tc;
     chance_te = rand4();

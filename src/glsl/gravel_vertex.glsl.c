@@ -3,7 +3,7 @@ in float distance;
 in float clustering;
 in unsigned int instance;
 
-out vec3 apex_v, left_v, right_v, normal_v, color_v;
+out vec3 apex_v, left_v, right_v, color_v;
 out float clustering_v;
 out unsigned int instance_v;
 
@@ -18,5 +18,4 @@ void main()
     color_v = color;
     clustering_v = clustering;
     instance_v = instance;
-    normal_v = normalize(cross(left - apex, right - apex));
 }

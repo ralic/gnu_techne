@@ -23,6 +23,8 @@ void main()
 {
     mat4 M, P;
     mat3 R;
+    vec3 rho, p;
+    float w, h;
     
     P = projection;
     M = modelview;
@@ -39,31 +41,45 @@ void main()
         color_g = vec4(0, 0, 0, 0.6);
     }
 #endif
+    
+    w = 1e-3 + 1e-3 * chance_te[0].x;
+    h = (0.25 + 0.35 * chance_te[0].z) * w;
 
-    const vec3 rho = vec3(1e-3, 1e-3, 1e-3) + vec3(2e-3, 2e-3, 1e-3) * chance_te[0].xyz;
-    const vec3 delta = vec3(0, 0, rho.z);
+    /* ***** */
+
+    float theta = 2 * pi * chance_te[0].w;
+    float phi = atan(h / w);
+
+    mat3 T = mat3(vec3(1, 0, 0),
+                  vec3(0, cos(phi), sin(phi)),
+                  vec3(0, -sin(phi), cos(phi))) *
+             mat3(vec3(cos(theta), sin(theta), 0),
+                  vec3(-sin(theta), cos(theta), 0),
+                  vec3(0, 0, 1));    
+
+    /* ***** */
+
+    p = position_te[0] + vec3(0, 0, h);
+    rho = vec3(w, (1 + 0.35 * chance_te[0].y) * w, h);
     
-    uv_g = vec2(0, 0);
-    normal_g = R * vec3(0, 0, 1);
-    position_g = M * vec4(position_te[0] + rho * vec3(0, 0, 1) + delta, 1);
+    uv_g = chance_te[0].yw;
+    normal_g = R * T * vec3(0, 0, 1);
+    position_g = M * vec4(p + T * (rho * vec3(0, 0, 1)), 1);
     gl_Position = P * position_g;
     EmitVertex();
     
-    uv_g = vec2(0, 0);
-    normal_g = R * normal_te[0];
-    position_g = M * vec4(position_te[0] + rho * normal_te[0] + delta, 1);
+    normal_g = R * T * normal_te[0];
+    position_g = M * vec4(p + T * (rho * normal_te[0]), 1);
     gl_Position = P * position_g;
     EmitVertex();
     
-    uv_g = vec2(0, 0);
-    normal_g = R * normal_te[1];
-    position_g = M * vec4(position_te[1] + rho * normal_te[1] + delta, 1);
+    normal_g = R * T * normal_te[1];
+    position_g = M * vec4(p + T * (rho * normal_te[1]), 1);
     gl_Position = P * position_g;
     EmitVertex();
     
-    uv_g = vec2(0, 0);
-    normal_g = R * vec3(0, 0, -1);
-    position_g = M * vec4(position_te[1] + rho * vec3(0, 0, -1) + delta, 1);
+    normal_g = R * T * vec3(0, 0, -1);
+    position_g = M * vec4(p + T * (rho * vec3(0, 0, -1)), 1);
     gl_Position = P * position_g;
     EmitVertex();
 

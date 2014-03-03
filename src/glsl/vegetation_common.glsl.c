@@ -53,7 +53,7 @@ vec3 cluster_seed(vec3 apex, vec3 left, vec3 right, vec3 stratum,
      * numbers. */
     
     u = hash(floatBitsToUint((apex.xy + left.xy + right.xy) / 3),
-             floatBitsToUint(gl_TessCoord.y) + instance);
+             uint(round(gl_TessLevelOuter[0] * gl_TessCoord.y)) + instance + 1);
     u = (u + stratum.xy) / stratum.z;
 
     /* Map the random numbers onto the triangle (0, 0) - (1, 0) -

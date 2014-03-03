@@ -18,8 +18,6 @@ float splat_distance(const vec3 hsv, const int i, const int j);
 
 vec3 cluster_center(vec3 apex, vec3 left, vec3 right, unsigned int instance);
 
-uniform float instances;
-
 uniform vegetation_debug{
     int debug;
     bool debugtoggle;

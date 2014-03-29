@@ -12,5 +12,5 @@ void main()
     
     gl_Position = projection * Mp;
     eye = vec3(Mp);
-    uv = fma(scale, positions.xy, offset);
+    uv = scale * positions.xy + offset;
 }

@@ -6,7 +6,7 @@ patch in unsigned int instance_tc;
 
 out vec3 position_te, tangent_te, bitangent_te, color_te;
 out vec4 plane_te;
-out float distance_te, height_te, depth_te, width_te;
+out float distance_te, height_te, parameter_te, depth_te, width_te;
                                 
 #ifdef COLLECT_STATISTICS
 layout(binding = 0, offset = 8) uniform atomic_uint segments;
@@ -45,22 +45,24 @@ void main()
     t = vec3(texture(deflections, vec2(gl_TessCoord.x, k)));
     
     phi = 2 * pi * v.z;
-    theta = t.b;
+    theta = t.z;
     cosphi = cos(phi);
     sinphi = sin(phi);
     costheta = cos(theta);
     sintheta = sin(theta);
     
-    d = vec3(cosphi, sinphi, 1) * t.rrg;
+    d = (height.x + (height.y * distance_tc * v.x)) *
+        vec3(cosphi, sinphi, 1) * t.xxy;
 
     plane_te = vec4(normal_tc, -dot(normal_tc, p));
-    tangent_te = vec3(-cosphi * sintheta, sintheta * sinphi, costheta);
+    tangent_te = vec3(-cosphi * sintheta, -sinphi * sintheta, costheta);
     bitangent_te = vec3(-sinphi, cosphi, 0);
-    position_te = p + (height.x + (height.y * distance_tc * v.x)) * d;
+    position_te = p + d;
     
     color_te = color_tc;
     width_te = width.x + (width.y * distance_tc * v.w);
     distance_te = distance_tc;
     depth_te = depth_tc;
-    height_te = gl_TessCoord.x;
+    parameter_te = gl_TessCoord.x;
+    height_te = d.z / (height.x + height.y);
 }

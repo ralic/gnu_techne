@@ -31,7 +31,7 @@ layout(binding = 0, offset = 4) uniform atomic_uint drawn;
 void main()
 {
     vec3 rgb, hsv, c;
-    vec2 uv;
+    vec2 uv, z;
     float d_0, d_1, r;
     int i, i_0, i_1;
 
@@ -39,7 +39,7 @@ void main()
     
     /* Find the seed type. */
     
-    uv = fma(scale, c.xy, offset);
+    uv = scale * c.xy + offset;
     rgb = compose(uv);
     hsv = rgb_to_hsv(rgb);
     
@@ -60,19 +60,13 @@ void main()
         }
     }
     
-    vec2 z = rand2();
-    float z_0 = d_1 / (d_0 + d_1);
+    z = rand2();
+
+    /* Randomly mix neighboring species based on their scores.  Don't
+     * go for the second-best species if it wouldn't result in a seed
+     * to avoid reducing plant density. */
     
-    if (/* debug > 0 &&  */z.x < z_0 && d_0 < thresholds[i_0]) {
-        if (d_1 < thresholds[i_1]) {
-#ifdef COLLECT_STATISTICS
-            atomicCounterIncrement(infertile);
-#endif
-
-            index_v = -1;
-            return;
-        }
-
+    if (z.x < d_1 / (d_0 + d_1) && d_1 >= thresholds[i_1]) {
         index_v = i_1;
         distance_v = d_1 / d_0;
     } else {

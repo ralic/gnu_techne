@@ -47,12 +47,14 @@ vec3 cluster_center(vec3 apex, vec3 left, vec3 right, unsigned int instance)
 vec3 cluster_seed(vec3 apex, vec3 left, vec3 right, vec3 stratum,
                   unsigned int instance)
 {
-    vec2 u;
+    vec2 u, p;
 
+    p = (apex.xy + left.xy + right.xy) / 3;
+    
     /* Hash the triangle vertices and instance to get a pair of random
      * numbers. */
     
-    u = hash(floatBitsToUint((apex.xy + left.xy + right.xy) / 3),
+    u = hash(floatBitsToUint(p),
              uint(round(gl_TessLevelOuter[0] * gl_TessCoord.y)) + instance + 1);
     u = (u + stratum.xy) / stratum.z;
 

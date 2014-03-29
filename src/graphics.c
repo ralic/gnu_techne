@@ -38,6 +38,8 @@
 #include "root.h"
 
 static GdkWindow *window;
+static GLXPbuffer pbuffer;
+GLXFBConfig configuration;
 static GdkDisplay *display;
 static GdkScreen *screen;
 
@@ -58,7 +60,8 @@ static enum {
 } projection;
 
 static int width = 640, height = 480;
-static int hide = 1, cursor = 1, decorate = 1;
+static int hide = 1, cursor = 1, decorate = 1, offscreen = 0;
+;
 static int frames;
 static double planes[6], frustum[3];
 static int focus = LUA_REFNIL, defocus = LUA_REFNIL;
@@ -203,11 +206,11 @@ static void update_projection()
 			TRANSFORM_SIZE, T_f);                           \
 									\
 	if(0) {								\
-            double M[16];						\
+            float M[16];						\
 									\
             glGetBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,    \
-                               PROJECTION_SIZE, &M);                    \
-									\
+                               PROJECTION_SIZE, M);                     \
+                                                                        \
             _TRACEM(4, 4, ".5f", M);                                    \
 	}								\
     }
@@ -259,12 +262,12 @@ void t_copy_projection(double *matrix)
 			TRANSFORM_SIZE, T_f);                           \
 									\
 	if(0) {								\
-		double N[16];						\
+            float N[16];						\
 									\
-		glGetBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET, \
-				   MODELVIEW_SIZE, &N);                 \
+            glGetBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,     \
+                               MODELVIEW_SIZE, N);                      \
 									\
-		_TRACEM(4, 4, ".5f", N);				\
+            _TRACEM(4, 4, ".5f", N);                                    \
 	}								\
     }
 
@@ -317,18 +320,25 @@ void t_copy_transform(double *matrix)
 
 void t_get_pointer (int *x, int *y)
 {
-    GdkModifierType mask;
+    if (window) {
+        GdkModifierType mask;
     
-    gdk_window_get_pointer (window, x, y, &mask);
+        gdk_window_get_pointer (window, x, y, &mask);
+    } else {
+        *x = -1;
+        *y = -1;
+    }
 }
 
 void t_warp_pointer (int x, int y)
 {
-    int x_w, y_w;
+    if (window) {
+        int x_w, y_w;
 
-    gdk_window_get_origin (window, &x_w, &y_w);
-    gdk_display_warp_pointer (display, screen, x + x_w, y + y_w);
-    gdk_flush();
+        gdk_window_get_origin (window, &x_w, &y_w);
+        gdk_display_warp_pointer (display, screen, x + x_w, y + y_w);
+        gdk_flush();
+    }
 }
 
 static void draw (Node *root)
@@ -353,11 +363,8 @@ static void draw (Node *root)
 
 -(void) init
 {
-    GdkWindowAttr window_attributes;
-    GdkVisual *visual;
-    GLXFBConfig *configurations, configuration;
+    GLXFBConfig *configurations;
     GLXContext context;
-    XVisualInfo *info;
         
     int context_attributes[] = {
         GLX_CONTEXT_MAJOR_VERSION_ARB, 1,
@@ -410,6 +417,12 @@ static void draw (Node *root)
 	class = "Techne";
     }
     
+    lua_pop (_L, 1);
+
+    /* Do we want an on-screen window? */
+    
+    lua_getfield (_L, -1, "offscreen");
+    offscreen = lua_toboolean (_L, -1);
     lua_pop (_L, 1);
 
     /* The graphics context options. */
@@ -528,44 +541,64 @@ static void draw (Node *root)
         t_print_error ("I could not create a rendering context.\n");
         exit(1);
     }
-
-    /* Get the visual. */
-	
-    info = glXGetVisualFromFBConfig(GDK_DISPLAY_XDISPLAY(display), configuration);
-    visual = gdk_x11_screen_lookup_visual (screen, info->visualid);
-
-    /* Clean up. */
-	
-    XFree(configurations);
-    XFree(info);
     
-    /* Create the window. */
+    /* Create the rendering surface. */
 
-    window_attributes.window_type = GDK_WINDOW_TOPLEVEL;
-    window_attributes.wclass = GDK_INPUT_OUTPUT;
-    window_attributes.wmclass_name = (char *)name;
-    window_attributes.wmclass_class = (char *)class;
-    window_attributes.colormap = gdk_colormap_new(visual, FALSE);
-    window_attributes.visual = visual;
-    window_attributes.width = width;
-    window_attributes.height = height;
-    window_attributes.event_mask = (GDK_STRUCTURE_MASK |
-				    GDK_FOCUS_CHANGE_MASK |
-				    GDK_BUTTON_PRESS_MASK |
-				    GDK_BUTTON_RELEASE_MASK |
-				    GDK_KEY_PRESS_MASK |
-				    GDK_KEY_RELEASE_MASK |
-				    GDK_POINTER_MOTION_MASK |
-				    GDK_SCROLL_MASK);
+    if (offscreen) {
+        int pbuffer_attributes[] = {
+            GLX_PBUFFER_WIDTH,  1920,
+            GLX_PBUFFER_HEIGHT, 1080,
+            None
+        };
 
-    window = gdk_window_new(gdk_get_default_root_window(),
-			    &window_attributes, 
-			    GDK_WA_COLORMAP | GDK_WA_VISUAL |
-			    GDK_WA_WMCLASS);
+        pbuffer = glXCreatePbuffer(GDK_DISPLAY_XDISPLAY(display),
+                                   configuration,
+                                   pbuffer_attributes);
 
-    glXMakeCurrent(GDK_DISPLAY_XDISPLAY(display),
-                   GDK_WINDOW_XWINDOW(window),
-                   context);
+        XSync(GDK_DISPLAY_XDISPLAY(display), False);
+
+        glXMakeContextCurrent(GDK_DISPLAY_XDISPLAY(display),
+                              pbuffer, pbuffer, context);
+    } else {
+        GdkWindowAttr window_attributes;
+        GdkVisual *visual;
+        XVisualInfo *info;
+
+        /* Get the visual. */
+	
+        info = glXGetVisualFromFBConfig(GDK_DISPLAY_XDISPLAY(display),
+                                        configuration);
+        visual = gdk_x11_screen_lookup_visual (screen, info->visualid);
+        
+        window_attributes.window_type = GDK_WINDOW_TOPLEVEL;
+        window_attributes.wclass = GDK_INPUT_OUTPUT;
+        window_attributes.wmclass_name = (char *)name;
+        window_attributes.wmclass_class = (char *)class;
+        window_attributes.colormap = gdk_colormap_new(visual, FALSE);
+        window_attributes.visual = visual;
+        window_attributes.width = width;
+        window_attributes.height = height;
+        window_attributes.event_mask = (GDK_STRUCTURE_MASK |
+                                        GDK_FOCUS_CHANGE_MASK |
+                                        GDK_BUTTON_PRESS_MASK |
+                                        GDK_BUTTON_RELEASE_MASK |
+                                        GDK_KEY_PRESS_MASK |
+                                        GDK_KEY_RELEASE_MASK |
+                                        GDK_POINTER_MOTION_MASK |
+                                        GDK_SCROLL_MASK);
+
+        window = gdk_window_new(gdk_get_default_root_window(),
+                                &window_attributes, 
+                                GDK_WA_COLORMAP | GDK_WA_VISUAL |
+                                GDK_WA_WMCLASS);
+
+        glXMakeContextCurrent(GDK_DISPLAY_XDISPLAY(display),
+                              GDK_WINDOW_XWINDOW(window),
+                              GDK_WINDOW_XWINDOW(window),
+                              context);
+
+        XFree(info);
+    }
 
     /* Query the bound context. */
     
@@ -636,6 +669,8 @@ static void draw (Node *root)
                      glXIsDirect (GDK_DISPLAY_XDISPLAY(display), context) ?
                      " " : " *not* ");
 
+    XFree(configurations);
+
     {
 #include "glsl/transform_block.h"
 
@@ -672,11 +707,14 @@ static void draw (Node *root)
     
     context = glXGetCurrentContext ();
 
-    glXMakeCurrent(GDK_DISPLAY_XDISPLAY(display),
-                   None, NULL);
-    glXDestroyContext(GDK_DISPLAY_XDISPLAY(display),
-                      context);
-    gdk_window_destroy(window);
+    glXMakeContextCurrent(GDK_DISPLAY_XDISPLAY(display), None, None, NULL);
+    glXDestroyContext(GDK_DISPLAY_XDISPLAY(display), context);
+
+    if (offscreen) {
+        glXDestroyPbuffer(GDK_DISPLAY_XDISPLAY(display), pbuffer);
+    } else if (window) {
+        gdk_window_destroy(window);
+    }
     
     [super free];
 }
@@ -826,7 +864,7 @@ static void draw (Node *root)
     t_begin_interval(self);
 
     glXSwapBuffers (GDK_DISPLAY_XDISPLAY(display),
-                    GDK_WINDOW_XWINDOW(window));
+                    offscreen ? pbuffer : GDK_WINDOW_XWINDOW(window));
 
     t_end_interval(self);
 }
@@ -884,6 +922,22 @@ static void draw (Node *root)
     glGetDoublev (GL_COLOR_CLEAR_VALUE, canvas);
     array_createarray (_L, ARRAY_TDOUBLE, canvas, 1, 3);
 
+    return 1;
+}
+
+-(int) _get_colorbuffer
+{
+    array_Array *pixels;
+    int v[4];
+
+    glGetIntegerv (GL_VIEWPORT, v);
+
+    /* glReadBuffer (GL_FRONT); */
+
+    pixels = array_createarray(_L, ARRAY_TNUCHAR, NULL, 3, v[3], v[2], 4);
+    glReadPixels(v[0], v[1], v[2], v[3], GL_RGBA,
+                 GL_UNSIGNED_BYTE, pixels->values.any);
+    
     return 1;
 }
 
@@ -984,49 +1038,70 @@ static void draw (Node *root)
     GdkGeometry geometry;
 	
     if (lua_istable (_L, 3)) {
-	gdk_window_hide(window);
-	gdk_window_unfullscreen (window);
-	gdk_window_set_geometry_hints (window, NULL, 0);
+        lua_pushinteger (_L, 1);
+        lua_gettable (_L, 3);
+        width = lua_tointeger(_L, -1);
+
+        lua_pushinteger (_L, 2);
+        lua_gettable (_L, 3);
+        height = lua_tointeger(_L, -1);
+
+        lua_pop (_L, 2);
+
+        if (offscreen) {
+            GLXContext context;
+            int pbuffer_attributes[] = {
+                GLX_PBUFFER_WIDTH,  width,
+                GLX_PBUFFER_HEIGHT, height,
+                None
+            };
+    
+            context = glXGetCurrentContext ();
+            glXMakeContextCurrent(GDK_DISPLAY_XDISPLAY(display),
+                                  None, None, NULL);
+            glXDestroyPbuffer(GDK_DISPLAY_XDISPLAY(display), pbuffer);
+
+            pbuffer = glXCreatePbuffer(GDK_DISPLAY_XDISPLAY(display),
+                                       configuration,
+                                       pbuffer_attributes);
+
+            glXMakeContextCurrent(GDK_DISPLAY_XDISPLAY(display),
+                                  pbuffer, pbuffer, context);
+
+            XSync(GDK_DISPLAY_XDISPLAY(display), False);
+        } else {
+            gdk_window_hide(window);
+            gdk_window_unfullscreen (window);
+            gdk_window_set_geometry_hints (window, NULL, 0);
+            gdk_window_resize (window, width, height);
 	    
-	lua_pushinteger (_L, 1);
-	lua_gettable (_L, 3);
-	width = lua_tointeger(_L, -1);
+            geometry.min_width = width;
+            geometry.min_height = height;
+            geometry.max_width = width;
+            geometry.max_height = height;
 
-	lua_pushinteger (_L, 2);
-	lua_gettable (_L, 3);
-	height = lua_tointeger(_L, -1);
+            gdk_window_set_geometry_hints(window, &geometry,
+                                          GDK_HINT_MIN_SIZE |
+                                          GDK_HINT_MAX_SIZE);
 
-	lua_pop (_L, 2);
+            if (!hide) {
+                gdk_window_clear (window);
+                gdk_window_show (window);
+                gdk_window_raise (window);
+                /* gdk_window_focus (window, GDK_CURRENT_TIME); */
 
-	gdk_window_resize (window, width, height);
+                if (width == gdk_screen_width() &&
+                    height == gdk_screen_height()) {
+                    gdk_window_fullscreen (window);
+                }
+            }
 	    
-	geometry.min_width = width;
-	geometry.min_height = height;
-	geometry.max_width = width;
-	geometry.max_height = height;
-
-	gdk_window_set_geometry_hints(window, &geometry,
-				      GDK_HINT_MIN_SIZE |
-				      GDK_HINT_MAX_SIZE);
-
-	if (!hide) {
-	    gdk_window_clear (window);
-	    gdk_window_show (window);
-	    gdk_window_raise (window);
-	    /* gdk_window_focus (window, GDK_CURRENT_TIME); */
-
-	    if (width == gdk_screen_width() &&
-		height == gdk_screen_height()) {
-		gdk_window_fullscreen (window);
-	    }
-	}
-	    
-	gdk_window_flush (window);
-    }
-
-    /* Always flush when you're done. */
+            /* Always flush when you're done. */
 	
-    gdk_flush ();
+            gdk_window_flush (window);
+            gdk_flush ();
+        }
+    }
 
     /* Clear the window's color buffers to the
        canvas color. */
@@ -1076,38 +1151,45 @@ static void draw (Node *root)
 
 -(void) _set_title
 {
-    gdk_window_set_title (window, (char *) lua_tostring (_L, 3));
+    if (window) {
+        gdk_window_set_title (window, (char *) lua_tostring (_L, 3));
+    }
 }
 
 -(void) _set_decorate
 {
-    decorate = lua_toboolean (_L, 3);
-
-    gdk_window_set_override_redirect (window, !decorate);
+    if (window) {
+        decorate = lua_toboolean (_L, 3);
+        gdk_window_set_override_redirect (window, !decorate);
+    }
 }
 
 -(void) _set_grabinput
 {
-    if (lua_toboolean (_L, 3)) {
-	gdk_pointer_grab (window, TRUE,
-			  GDK_BUTTON_PRESS_MASK |
-			  GDK_BUTTON_RELEASE_MASK |
-			  GDK_POINTER_MOTION_MASK,
-			  NULL, NULL, GDK_CURRENT_TIME);
-    } else {
-	gdk_pointer_ungrab (GDK_CURRENT_TIME);
+    if (window) {
+        if (lua_toboolean (_L, 3)) {
+            gdk_pointer_grab (window, TRUE,
+                              GDK_BUTTON_PRESS_MASK |
+                              GDK_BUTTON_RELEASE_MASK |
+                              GDK_POINTER_MOTION_MASK,
+                              NULL, NULL, GDK_CURRENT_TIME);
+        } else {
+            gdk_pointer_ungrab (GDK_CURRENT_TIME);
+        }
     }
 }
 
 -(void) _set_cursor
 {
-    GdkCursor *new;
+    if (window) {
+        GdkCursor *new;
 
-    cursor = lua_toboolean (_L, 3);
+        cursor = lua_toboolean (_L, 3);
 
-    new = gdk_cursor_new (cursor ? GDK_ARROW : GDK_BLANK_CURSOR);
-    gdk_window_set_cursor (window, new);
-    gdk_cursor_destroy(new);
+        new = gdk_cursor_new (cursor ? GDK_ARROW : GDK_BLANK_CURSOR);
+        gdk_window_set_cursor (window, new);
+        gdk_cursor_destroy(new);
+    }
 }
 
 -(void) _set_perspective
@@ -1166,6 +1248,11 @@ static void draw (Node *root)
 		  array->values.doubles[1],
 		  array->values.doubles[2],
 		  0);
+}
+
+-(void) _set_colorbuffer
+{
+    T_WARN_READONLY;
 }
 
 -(void) _set_configure

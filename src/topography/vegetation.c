@@ -28,14 +28,14 @@
 #include "splatting.h"
 #include "shader.h"
 
-static unsigned int queries[2];
+/* static unsigned int queries[2]; */
 
 @implementation Vegetation
 
 -(void)init
 {
     roam_Tileset *tiles;
-    const double A = 0.0625;
+    const double A = 1;
     
     const char *private[] = {"base", "detail", "offset", "scale",
                              "factor", "references", "weights",
@@ -109,7 +109,7 @@ static unsigned int queries[2];
     
     self->arrays = malloc((n + 1) * sizeof(unsigned int));
     glGenVertexArrays (n + 1, self->arrays);
-    glGenQueries(2, queries);
+    /* glGenQueries(2, queries); */
 
     /* Create the program. */
 
@@ -255,6 +255,13 @@ static unsigned int queries[2];
             return;
         }
 
+        if (j <= 0 || j > self->elevation->swatches_n) {
+            t_print_warning("Ignoring vegetation species %s.\n",
+                            [child name]);
+	
+            return;
+        }            
+
         self->species[j - 1] = child;
 
         /* { */
@@ -316,17 +323,20 @@ static unsigned int queries[2];
     if ([child isKindOf: [VegetationSpecies class]]) {
         j = (int)child->key.number;
 
-        self->species[j - 1] = NULL;
+ 
+        if (j > 0 && j <= self->elevation->swatches_n) {
+            self->species[j - 1] = NULL;
 
-        /* Reset the vertex array object. */
+            /* Reset the vertex array object. */
 
-        glBindVertexArray(self->arrays[j]);
+            glBindVertexArray(self->arrays[j]);
 
-        for (i = 0 ; i < GL_MAX_VERTEX_ATTRIBS - 1 ; i += 1) {
-            glDisableVertexAttribArray(i);
+            for (i = 0 ; i < GL_MAX_VERTEX_ATTRIBS - 1 ; i += 1) {
+                glDisableVertexAttribArray(i);
+            }
         }
     }
-
+    
     [super abandon: child];
 }
 
@@ -412,10 +422,10 @@ static unsigned int queries[2];
             glEnable (GL_RASTERIZER_DISCARD);
             glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, self->feedback);
             glBeginTransformFeedback(GL_POINTS);
-            glBeginQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 0,
-                                queries[0]);
-            glBeginQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 1,
-                                queries[1]);
+            /* glBeginQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 0, */
+            /*                     queries[0]); */
+            /* glBeginQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 1, */
+            /*                     queries[1]); */
     
             glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[0]);
             glBindVertexArray(self->arrays[0]);
@@ -462,8 +472,8 @@ static unsigned int queries[2];
             /* Clean up after the first stage. */
             
             glEndTransformFeedback();
-            glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 0);
-            glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 1);
+            /* glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 0); */
+            /* glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 1); */
             glDisable (GL_RASTERIZER_DISCARD);
 
             /* unsigned int N[2]; */
@@ -500,7 +510,6 @@ static unsigned int queries[2];
             glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
             glDisable (GL_SAMPLE_ALPHA_TO_ONE);
             glDisable (GL_MULTISAMPLE);
-            
 	}
     }
     
@@ -651,7 +660,7 @@ static unsigned int queries[2];
     
     glUseProgram(parent->name);
     glUniform1f (parent->locations.thresholds + self->offset - 1,
-                 self->threshold);
+                 self->threshold * self->threshold);
 
     /* Update the canopy. */
     
@@ -710,7 +719,7 @@ static unsigned int queries[2];
     if (parent) {
         glUseProgram(parent->name);
         glUniform1f (parent->locations.thresholds + self->offset - 1,
-                     self->threshold);
+                     self->threshold * self->threshold);
     }
 }
 

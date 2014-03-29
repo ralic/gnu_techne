@@ -258,8 +258,8 @@ static int construct(lua_State *L)
 
                     if (!lua_isnil (_L, -1)) {
                         rgb = array_testcompatible (_L, -1,
-                                                       ARRAY_TYPE | ARRAY_RANK,
-                                                       ARRAY_TNUCHAR, 3);
+                                                    ARRAY_TYPE | ARRAY_RANK,
+                                                    ARRAY_TNUCHAR, 3);
 
                         if (!rgb) {
                             t_print_error("Array specified for elevation imagery is incompatible.\n");

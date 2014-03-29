@@ -26,7 +26,7 @@
 static roam_Context *context;
 static seeding_Context *seeding;
 static double modelview[16], projection[16];
-static double aspect, n_min, n_max;
+static double aspect, n_min, n_max, A_total, A_mean = 0;
 
 static void recenter_bins(double d)
 {
@@ -205,11 +205,6 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
         A = 0.5 * fabs(u[0] * v[1] - u[1] * v[0]);
 
-        if (isnan(b_0s[0]) || isnan(b_1s[0]) || isnan(a_s[0]) ||
-            isnan(b_0s[1]) || isnan(b_1s[1]) || isnan(a_s[1])) {
-            assert(isnan(A));
-        }
-
         if(isnan(A)) {
             n_0 = seeding->ceiling;
         } else {
@@ -222,6 +217,10 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
         if (n_max < n_0) {
             n_max = n_0;
+        }
+
+        if(!isnan(A)) {
+            A_total += A;
         }
         
         /* This simple search should be preffered to binary searching
@@ -335,7 +334,7 @@ void begin_seeding (seeding_Context *seeding_in, roam_Context *context_in)
     seeding_in->triangles_n[1] = 0;
     seeding_in->error = 0;
     n_min = 1.0 / 0.0;
-    n_max = 0;
+    n_max = A_total = 0;
     
     context = context_in;
     seeding = seeding_in;
@@ -382,4 +381,13 @@ void seed_tile (int i)
 void finish_seeding ()
 {
     recenter_bins(n_max / n_min);
+        
+    {
+        static int n = 0;
+
+        n += 1;
+        A_mean += (A_total - A_mean) / n;
+    }
+
+    /* _TRACE ("%f\n", A_mean); */
 }

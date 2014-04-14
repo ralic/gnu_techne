@@ -14,10 +14,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "prompt/prompt.h"
 
 /* Debugging convenience macros. */
 
 #define _TRACE printf ("\033[0;31m%s: %d: \033[0m", __FILE__, __LINE__), printf
+
+#define _DESCRIBE(_L, _I)                       \
+    _TRACE (luap_describe((_L), (_I))); putchar('\n');
 
 #define _PRINTV(_N, _F, _V)                     \
     {                                           \
@@ -40,7 +44,7 @@
     {                                                   \
 	printf ("\033[0;31m%s: %d: \033[0m "#_V" = ",   \
                 __FILE__, __LINE__);                    \
-	printf("%f\n", _V);                           \
+	printf("%f\n", _V);                             \
     }                                                   \
 
 #define _TRACEV(_N, _F, _V)                             \
@@ -91,7 +95,11 @@
             } else if (lua_type(L, (i)) == LUA_TUSERDATA) {             \
                 printf ("\033[0;31m  %d: %s \033[0;32m[%p]\033[0m\n",   \
                         i, lua_typename(L, lua_type(L, (i))),           \
-                        lua_touserdata (L, (i)));                        \
+                        lua_touserdata (L, (i)));                       \
+            } else if (lua_topointer(L, (i))) {                         \
+                printf ("\033[0;31m  %d: %s \033[0;32m[%p]\033[0m\n",   \
+                        i, lua_typename(L, lua_type(L, (i))),           \
+                        lua_topointer (L, (i)));                        \
             } else {                                                    \
                 printf ("\033[0;31m  %d: %s\033[0m\n",                  \
                         i, lua_typename(L, lua_type(L, (i))));          \

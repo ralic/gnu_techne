@@ -16,9 +16,11 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include <lua.h>
 #include <lauxlib.h>
+
 #include "gl.h"
 
 #include "array/array.h"

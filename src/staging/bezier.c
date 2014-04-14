@@ -89,7 +89,8 @@
 
         /* Check vertex count. */
 
-        if ((array->size[0] - 1) / 3 != (int)((array->size[0] - 1) / 3.0)) {
+        if ((double)((array->size[0] - 1) / 3) !=
+            (double)(array->size[0] - 1) / 3) {
             lua_pushstring (_L,
                             "Number of vertices for a cubic curve must be "
                             "multiple-of-three plus 1.");

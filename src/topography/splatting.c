@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
+
 #include <lua.h>
 #include <lauxlib.h>
 
@@ -60,10 +62,7 @@ void add_splatting_sources(Elevation *elevation, ShaderMold *shader,
     lua_pushinteger(_L, l);
     lua_setfield (_L, -2, "bands_max");
 
-    if(t_rendertemplate(_L, glsl_splatting) != LUA_OK) {
-        puts(lua_tostring(_L, -1));
-        abort();
-    }
+    assert(t_rendertemplate(_L, glsl_splatting) == LUA_OK);
 
     [shader addSourceString: lua_tostring(_L, -1) for: stage];
     /* _TRACE ("%s\n", source); */

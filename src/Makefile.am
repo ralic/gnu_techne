@@ -25,11 +25,7 @@ BUILT_SOURCES = gl.h glx.h glsl/flat_vertex.h glsl/flat_fragment.h	\
 		glsl/grass_geometry.h glsl/grass_vertex.h		\
 		glsl/grass_fragment.h glsl/seeds_tesselation_control.h	\
 		glsl/seeds_tesselation_evaluation.h			\
-		glsl/seeds_vertex.h glsl/seeds_fragment.h 		\
-		glsl/gravel_tesselation_control.h			\
-		glsl/gravel_tesselation_evaluation.h			\
-		glsl/gravel_vertex.h glsl/gravel_geometry.h		\
-		glsl/gravel_fragment.h
+		glsl/seeds_vertex.h glsl/seeds_fragment.h
 
 SUFFIXES = .glsl.c
 $(BUILT_SOURCES): glsl/stringify
@@ -117,8 +113,7 @@ topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
 			     topography/vegetation.h 			\
 			     topography/vegetation.c topography/grass.c	\
 			     topography/grass.h topography/seeds.c	\
-			     topography/seeds.h topography/gravel.c	\
-			     topography/gravel.h
+			     topography/seeds.h
 topography_core_la_CFLAGS = ${AM_CFLAGS}
 topography_core_la_LDFLAGS = -module -avoid-version -no-undefined
 topography_core_la_LIBADD = ${LUA_LIBS} ${AM_LDADD}

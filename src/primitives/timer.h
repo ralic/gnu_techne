@@ -18,23 +18,22 @@
 #define _TIMER_H_
 
 #include <lua.h>
-#include <time.h>
 #include "dynamic.h"
 
 @interface Timer: Dynamic {
-    struct timespec checkpoint;
-
-    double period, elapsed, delta, count;
-    int tick, shortcircuit;
+    double period, elapsed, delta, count, previous;
+    int tick, shortcircuit, source;
 }
 
 -(void) tick;
 
 -(int) _get_period;
 -(int) _get_tick;
+-(int) _get_source;
 
 -(void) _set_period;
 -(void) _set_tick;
+-(void) _set_source;
 
 -(int) _get_count;
 -(int) _get_elapsed;

@@ -15,12 +15,19 @@
  */
 
 #include <math.h>
+#include <string.h>
 
 #include <lua.h>
 #include <lauxlib.h>
 
 #include "techne.h"
 #include "timer.h"
+
+#define TECHNE 1
+#define DYNAMICS 2
+#define ITERATIONS 3
+
+#define current(self) (self->source == TECHNE ? t_get_real_time() * 1e-9 : (self->source == DYNAMICS ? t_get_dynamics_time() * 1e-9 : t_get_iterations()))
 
 @implementation Timer
 
@@ -31,6 +38,7 @@
     self->tick = LUA_REFNIL;    
     self->shortcircuit = 0;
     self->period = 0.0 / 0.0;
+    self->source = TECHNE;
 }
 
 -(void) toggle
@@ -49,7 +57,7 @@
     /* Reset the timer if it's just been linked. */
     
     if (self->linked) {
-        clock_gettime (CLOCK_REALTIME, &self->checkpoint);
+        self->previous = current(self);
         self->elapsed = 0;
         self->delta = 0;
         self->count = 0;
@@ -65,16 +73,13 @@
 
 -(void) tick
 {
-    struct timespec time;
+    double now;
 
-    clock_gettime (CLOCK_REALTIME, &time);   
+    now = current(self);
+    self->delta = now - self->previous;
 
-    self->delta = time.tv_sec - self->checkpoint.tv_sec +
-	         (time.tv_nsec - self->checkpoint.tv_nsec) / 1e9;
-
-    if (self->shortcircuit || self->delta > self->period) {
+    if (self->shortcircuit || self->delta >= self->period) {
 	self->elapsed += self->delta;
-	self->checkpoint = time;
 	self->count += 1;
 
 	t_pushuserdata (_L, 1, self);
@@ -83,12 +88,18 @@
 	lua_pushnumber (_L, self->elapsed);
 
 	t_callhook (_L, self->tick, 4, 0);
+
+	self->previous = now;
     }
 }
 
 -(void) stepBy: (double) h at: (double) t
 {
-    [self tick];
+    if (self->source == TECHNE ||
+        self->source == DYNAMICS) {
+        [self tick];
+    }
+    
     [super stepBy: h at: t];
 }
 
@@ -123,6 +134,17 @@
     return 1;
 }
 
+-(int) _get_source
+{
+    switch (self->source) {
+    case TECHNE: lua_pushliteral(_L, "techne"); break;
+    case DYNAMICS: lua_pushliteral(_L, "dynamics"); break;
+    case ITERATIONS: lua_pushliteral(_L, "iterations"); break;
+    }
+
+    return 1;
+}
+
 -(int) _get_elapsed
 {
     lua_pushnumber (_L, self->elapsed);
@@ -148,6 +170,23 @@
 -(void) _set_count
 {
     T_WARN_READONLY;
+}
+
+-(void) _set_source
+{
+    const char *new;
+
+    new = lua_tostring (_L, 3);
+    
+    if (!strcmp(new, "techne")) {
+        self->source = TECHNE;
+    } else if (!strcmp(new, "dynamics")) {
+        self->source = DYNAMICS;
+    } else if (!strcmp(new, "iterations")) {
+        self->source = ITERATIONS;
+    } else {
+        t_print_warning("'%s' is not a valid timer source.\n", new);
+    }
 }
 
 -(void) _set_elapsed

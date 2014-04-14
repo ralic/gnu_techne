@@ -61,7 +61,7 @@ typedef struct {
     shader_UniformKind kind;
     shader_UniformMode mode;
     
-    unsigned int offset, buffer;
+    unsigned int offset, size, buffer;
 } shader_Counter; 
 
 typedef union {

@@ -861,6 +861,8 @@ int t_add_global_block (const char *name, const char *declaration)
                 
                 uniform->counter.buffer = buffer_indices[i];
                 uniform->counter.offset = offsets[i];
+                uniform->counter.size = sizes[i];
+
                 /* _TRACE ("%d: b = %d, offset = %d\n", i, buffer_indices[i], offsets[i]); */
             } else {
                 uniform->basic.kind = SHADER_BASIC_UNIFORM;
@@ -1236,17 +1238,28 @@ int t_add_global_block (const char *name, const char *declaration)
                 
                 return 1;
             } else if (uniform->any.kind == SHADER_COUNTER_UNIFORM) {
-                int n;
+                int n[uniform->counter.size];
 
                 glBindBuffer (GL_ATOMIC_COUNTER_BUFFER,
                               self->buffers[uniform->counter.buffer]);
 
                 glGetBufferSubData (GL_ATOMIC_COUNTER_BUFFER,
                                     uniform->counter.offset,
-                                    sizeof (unsigned int), &n);
-                
-                lua_pushinteger (_L, n);
+                                    sizeof (n), n);
 
+                if (uniform->counter.size == 1) {
+                    lua_pushinteger (_L, n[0]);
+                } else {
+                    int i;
+
+                    lua_createtable (_L, uniform->counter.size, 0);
+                    
+                    for (i = 0 ; i < uniform->counter.size ; i += 1) {
+                        lua_pushinteger (_L, n[i]);
+                        lua_rawseti (_L, -2, i + 1);
+                    }
+                }
+                
                 return 1;
             }
         }
@@ -1334,20 +1347,34 @@ int t_add_global_block (const char *name, const char *declaration)
 
                 return 1;
             } else if (uniform->any.kind == SHADER_COUNTER_UNIFORM) {
-                int n;
+                int n[uniform->counter.size];
 
                 glBindBuffer (GL_ATOMIC_COUNTER_BUFFER,
                               self->buffers[uniform->counter.buffer]);
 
-                if (!lua_isnumber (_L, 3)) {
-                    t_print_error("Atomic counter must be set with an integer.\n");
-                    abort();
+                if (uniform->counter.size == 1) {
+                    if (!lua_isnumber (_L, 3)) {
+                        t_print_error("Atomic counter must be set with an integer.\n");
+                        abort();
+                    }
+
+                    n[0] = lua_tointeger (_L, 3);
+                } else {
+                    if (!lua_istable (_L, 3)) {
+                        t_print_error("Arrays of atomic counters must be set with a table.\n");
+                        abort();
+                    }
+
+                    for (i = 0 ; i < uniform->counter.size ; i += 1) {
+                        lua_rawgeti (_L, -1, i + 1);
+                        n[i] = lua_tointeger (_L, -1);
+                        lua_pop(_L, 1);
+                    }
                 }
 
-                n = lua_tointeger (_L, 3);
                 glBufferSubData (GL_ATOMIC_COUNTER_BUFFER,
                                  uniform->counter.offset,
-                                 sizeof (unsigned int), &n);
+                                 sizeof (n), n);
 
                 return 1;
             }

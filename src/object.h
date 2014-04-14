@@ -29,8 +29,7 @@
 -(void) free;
 -(id) copy;
 
--(const char *) name;
-
++(const char *) name;
 +(Class) superclass;
 -(BOOL)isKindOf:(Class)aClassObject;
 -(BOOL)isMemberOf:(Class)aClassObject;

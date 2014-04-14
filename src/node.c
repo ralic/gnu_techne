@@ -853,9 +853,9 @@ static int __tostring(lua_State *L)
     object = *(Node **)lua_touserdata(L, 1);
 
     if (object->tag.reference != LUA_REFNIL) {
-	lua_pushfstring(L, "<%s: %s>", [[object class] name], object->tag.string);
+	lua_pushfstring(L, "<%s: %s>", [object name], object->tag.string);
     } else {
-	lua_pushfstring(L, "<%s: %p>", [[object class] name], object);
+	lua_pushfstring(L, "<%s: %p>", [object name], object);
     }
 
     return 1;
@@ -1376,6 +1376,15 @@ static void unlink_node (Node *node)
     }
 }
 
+-(const char *) name;
+{
+    if (self->alias.string) {
+        return self->alias.string;
+    } else {
+        return [[self class] name];
+    }
+}
+
 -(void) setOrphansList: (Node **)list
 {
     self->orphans = list;
@@ -1394,24 +1403,13 @@ static void unlink_node (Node *node)
     self->protocol = [[self class] introspect];
     
     self->tag.reference = LUA_REFNIL;
-    self->tag.string = NULL;
+    self->alias.reference = LUA_REFNIL;
+    self->key.reference = LUA_REFNIL;
+    self->key.number = NAN;
 
     if (!self->orphans) {
 	self->orphans = &list;
     }
-
-    self->left = NULL;
-    self->right = NULL;
-    self->up = NULL;
-    self->down = NULL;
-
-    self->rawaccess = 0;
-    self->linked = 0;
-    self->key.reference = LUA_REFNIL;
-    self->key.number = NAN;
-    self->key.string = NULL;
-
-    memset (&self->profile, 0, sizeof (self->profile));
 
     /* Initialize the hooks. */
 
@@ -1604,6 +1602,13 @@ static void unlink_node (Node *node)
     }
 }
 
+-(int) _get_name
+{
+    lua_pushstring(_L, [self name]);
+    
+    return 1;
+}
+
 -(int) _get_type
 {
     pushname(_L, [self class]);
@@ -1624,6 +1629,14 @@ static void unlink_node (Node *node)
     }
     
     return 1;
+}
+ 
+-(void) _set_name
+{
+    luaL_unref(_L, LUA_REGISTRYINDEX, self->alias.reference);
+
+    self->alias.string = lua_tostring(_L, 3);
+    self->alias.reference = luaL_ref (_L, LUA_REGISTRYINDEX);
 }
  
 -(void) _set_type

@@ -54,7 +54,7 @@
     return object_copy (self, 0);
 }
 
--(const char *) name;
++(const char *) name;
 {
     return object_getClassName(self);
 }

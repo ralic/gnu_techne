@@ -75,6 +75,11 @@ struct protocol {
     struct {
 	const char *string;
 	int reference;
+    } alias;
+    
+    struct {
+	const char *string;
+	int reference;
     } tag;
 
     double index;
@@ -83,6 +88,8 @@ struct protocol {
 }
 
 +(const struct protocol *) introspect;
+
+-(const char *) name;
 
 -(void) setOrphansList: (Node **)list;
 -(void) set: (int) n prerequisites: (const char **)list;

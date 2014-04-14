@@ -160,16 +160,15 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
 
 -(int) _get_triangles
 {
-    lua_createtable (_L, 3, 0);
-
-    lua_pushinteger (_L, self->context->triangles);
-    lua_rawseti(_L, -2, 1);
-    
-    lua_pushinteger (_L, self->context->culled);
-    lua_rawseti(_L, -2, 2);
-
-    lua_pushinteger (_L, self->context->visible);
-    lua_rawseti(_L, -2, 3);
+    if (self->profile_2.frames > 0) {
+        lua_createtable (_L, 2, 0);
+        lua_pushinteger (_L, self->statistics[0] / self->core.frames);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger (_L, self->profile_2.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
 
     return 1;
 }
@@ -179,18 +178,57 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
     T_WARN_READONLY;
 }
 
+-(int) _get_culled
+{
+    if (self->profile_2.frames > 0) {
+        lua_createtable (_L, 2, 0);
+        lua_pushinteger (_L, self->statistics[1] / self->core.frames);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger (_L, self->profile_2.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+
+    return 1;
+}
+
+-(void) _set_culled
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_visible
+{
+    if (self->profile_2.frames > 0) {
+        lua_createtable (_L, 2, 0);
+        lua_pushinteger (_L, self->statistics[2] / self->core.frames);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger (_L, self->profile_2.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+
+    return 1;
+}
+
+-(void) _set_visible
+{
+    T_WARN_READONLY;
+}
+
 -(int) _get_diamonds
 {
-    lua_createtable (_L, 3, 0);
-
-    lua_pushinteger (_L, self->context->diamonds);
-    lua_rawseti(_L, -2, 1);
-    
-    lua_pushinteger (_L, self->context->queued[0]);
-    lua_rawseti(_L, -2, 2);
-
-    lua_pushinteger (_L, self->context->queued[1]);
-    lua_rawseti(_L, -2, 3);
+    if (self->profile_2.frames > 0) {
+        lua_createtable (_L, 2, 0);
+        lua_pushinteger (_L, self->statistics[3] / self->core.frames);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger (_L, self->profile_2.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
 
     return 1;
 }
@@ -199,19 +237,129 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
 {
     T_WARN_READONLY;
 }
- 
--(int) _get_profile
-{
-    int i;
-    
-    [super _get_profile];
 
-    for (i = 0 ; i < 4 ; i += 1) {
-        lua_pushnumber(_L, self->context->intervals[i] * 1e-9);
-        lua_rawseti(_L, -2, i + 3);
+-(int) _get_splittable
+{
+    if (self->profile_2.frames > 0) {
+        lua_createtable (_L, 2, 0);
+        lua_pushinteger (_L, self->statistics[4] / self->core.frames);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger (_L, self->profile_2.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+
+    return 1;
+}
+
+-(void) _set_splittable
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_mergeable
+{
+    if (self->profile_2.frames > 0) {
+        lua_createtable (_L, 2, 0);
+        lua_pushinteger (_L, self->statistics[5] / self->core.frames);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger (_L, self->profile_2.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+
+    return 1;
+}
+
+-(void) _set_mergeable
+{
+    T_WARN_READONLY;
+}
+ 
+-(int) _get_setup
+{
+    if (self->profile_2.frames > 0) {
+        lua_createtable (_L, 2, 0);
+        lua_pushnumber(_L, (self->context->intervals[0] /
+                            self->profile_2.frames * 1e-9));
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger (_L, self->profile_2.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
     }
     
     return 1;
+}
+
+-(void) _set_setup
+{
+    T_WARN_READONLY;
+}
+ 
+-(int) _get_reculling
+{
+    if (self->profile_2.frames > 0) {
+        lua_createtable (_L, 2, 0);
+        lua_pushnumber(_L, (self->context->intervals[1] /
+                            self->profile_2.frames * 1e-9));
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger (_L, self->profile_2.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+    
+    return 1;
+}
+
+-(void) _set_reculling
+{
+    T_WARN_READONLY;
+}
+ 
+-(int) _get_reordering
+{
+    if (self->profile_2.frames > 0) {
+        lua_createtable (_L, 2, 0);
+        lua_pushnumber(_L, (self->context->intervals[2] /
+                            self->profile_2.frames * 1e-9));
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger (_L, self->profile_2.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+    
+    return 1;
+}
+
+-(void) _set_reordering
+{
+    T_WARN_READONLY;
+}
+ 
+-(int) _get_tessellation
+{
+    if (self->profile_2.frames > 0) {
+        lua_createtable (_L, 2, 0);
+        lua_pushnumber(_L, (self->context->intervals[3] /
+                            self->profile_2.frames * 1e-9));
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger (_L, self->profile_2.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+    
+    return 1;
+}
+
+-(void) _set_tessellation
+{
+    T_WARN_READONLY;
 }
 
 -(void) draw: (int)frame
@@ -226,6 +374,21 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
 
     if (self->optimize) {
         optimize_geometry(self->context, frame);
+
+        if (_PROFILING) {
+            self->statistics[0] += self->context->triangles;
+            self->statistics[1] += self->context->culled;
+            self->statistics[2] += self->context->visible;
+            self->statistics[3] += self->context->diamonds;
+            self->statistics[4] += self->context->queued[0];
+            self->statistics[5] += self->context->queued[1];
+        
+            for (i = 0 ; i < 4 ; i += 1) {
+                self->profile_2.intervals[i] += self->context->intervals[i];
+            }
+
+            self->profile_2.frames += 1;
+        }
     }
     
     l = 9 * self->context->target * sizeof(float);

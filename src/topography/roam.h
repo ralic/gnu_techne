@@ -99,7 +99,7 @@ typedef struct {
     struct diamond *queues[2][QUEUE_SIZE];
     struct triangle *(*roots)[2];
 
-    long long int intervals[4];
+    long long unsigned int intervals[4];
 
     double canopy, viewport[4], transform[16], planes[6][4];
 

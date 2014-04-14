@@ -24,8 +24,7 @@ uniform vegetation_debug{
 };
 
 #ifdef COLLECT_STATISTICS
-layout(binding = 0, offset = 0) uniform atomic_uint infertile;
-layout(binding = 0, offset = 4) uniform atomic_uint drawn;
+layout(binding = 0, offset = 0) uniform atomic_uint infertile, fertile;
 #endif
 
 void main()
@@ -87,7 +86,7 @@ void main()
     /* index_v = 0; distance_v = 1; color_v = vec4(1, 0, 0, 1); */
 
 #ifdef COLLECT_STATISTICS
-    atomicCounterIncrement(drawn);
+    atomicCounterIncrement(fertile);
 #endif
         
     color_v = factor * rgb;

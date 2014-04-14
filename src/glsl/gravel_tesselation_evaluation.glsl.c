@@ -8,7 +8,7 @@ out vec4 plane_te, chance_te;
 out vec3 color_te;
                                 
 #ifdef COLLECT_STATISTICS
-layout(binding = 0, offset = 8) uniform atomic_uint segments;
+layout(binding = 0, offset = 0) uniform atomic_uint triangles;
 #endif
                                 
 uniform gravel_evaluation {
@@ -23,7 +23,7 @@ void main()
     /* Update the statistics. */
 
 #ifdef COLLECT_STATISTICS
-    atomicCounterIncrement(segments);
+    atomicCounterIncrement(triangles);
 #endif
 
     phi = 2 * pi * gl_TessCoord.x;

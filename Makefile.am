@@ -7,7 +7,6 @@ dist_man1_MANS = doc/techne.1 doc/techne-browser.1
 
 nobase_pkgdata_DATA = scripts/utils/basic.lua \
 		      scripts/utils/orbit.lua \
-		      scripts/patches/profile.lua \
 		      scripts/tests/atmosphere.lua \
 		      scripts/tests/elevation.lua \
 		      scripts/tests/vegetation.lua \

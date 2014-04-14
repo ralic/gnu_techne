@@ -9,7 +9,7 @@ out vec4 plane_te;
 out float distance_te, height_te, parameter_te, depth_te, width_te;
                                 
 #ifdef COLLECT_STATISTICS
-layout(binding = 0, offset = 8) uniform atomic_uint segments;
+layout(binding = 0, offset = 0) uniform atomic_uint triangles;
 #endif
 
 vec4 rand4();
@@ -31,10 +31,10 @@ void main()
     p = cluster_seed(apex_tc, left_tc, right_tc, stratum_tc, instance_tc);
     v = rand4();
     
-    /* update the statistics. */
+    /* Update the statistics. */
 
 #ifdef COLLECT_STATISTICS
-    atomicCounterIncrement(segments);
+    atomicCounterIncrement(triangles);
 #endif
 
     /* Calculate and set ouput values. */

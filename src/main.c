@@ -34,6 +34,7 @@
 #endif
 
 #include "prompt/prompt.h"
+#include "profiling.h"
 #include "techne.h"
 #include "graphics.h"
 #include "network.h"
@@ -424,7 +425,7 @@ int main(int argc, char **argv)
     static struct option options[] = {
 	{"option", 1, 0, 'O'},
 	{"execute", 1, 0, 'e'},
-	{"patch", 1, 0, 'p'},
+	{"profile", 0, 0, 'p'},
 	{"load", 1, 0, 'l'},
 	{"load-all", 1, 0, 'a'},
 	{"interactive", 0, 0, 'i'},
@@ -435,7 +436,7 @@ int main(int argc, char **argv)
 	{0, 0, 0, 0}
     };
 
-    int i, h, option;
+    int i, option, profile;
     
     _L = luaL_newstate();
 
@@ -480,10 +481,12 @@ int main(int argc, char **argv)
     }
 #endif
     
+    luaL_requiref(_L, "package", luaopen_package, 0);
+
     /* Modify the Lua path and cpath. */
 
-    luaL_requiref(_L, "package", luaopen_package, 0);
-    lua_pushstring (_L, PKGDATADIR"/modules/?.lua;"PKGDATADIR"/modules/?.lc;");
+    lua_pushstring (_L, PKGDATADIR"/modules/?.lua;"
+                        PKGDATADIR"/modules/?/init.lua;");
     lua_getfield (_L, -2, "path");
 
     lua_concat (_L, 2);
@@ -517,7 +520,7 @@ int main(int argc, char **argv)
     /* Parse the command line. */
     
     while ((option = getopt_long (argc, argv,
-				  "O:p:c:e:l:ahiq",
+				  "O:c:e:l:ahiqp",
 				  options, 0)) != -1) {
 	if (option == 'O') {
 	    char *equal;
@@ -636,7 +639,7 @@ int main(int argc, char **argv)
 				 "setting '%s'.\n", optarg);
 	    }
 	    luap_setcolor (_L, colorize);
-	} else if (option == 'c' || option == 'p') {
+	} else if (option == 'c') {
 	    char *path = NULL;
 	    int i, n;
 
@@ -662,13 +665,8 @@ int main(int argc, char **argv)
                     for (i = 0 ; i < n ; i += 1) {
                         lua_rawgeti(_L, -1, i + 1);
 
-                        if (option == 'c') {
-                            asprintf (&path, "%s/%s",
-                                      lua_tostring(_L, -1), optarg);
-                        } else {
-                            asprintf (&path, "%s/patches/%s.lua",
-                                      lua_tostring(_L, -1), optarg);
-                        }
+                        asprintf (&path, "%s/%s",
+                                  lua_tostring(_L, -1), optarg);
                     
                         lua_pop(_L, 1);
 
@@ -686,13 +684,8 @@ int main(int argc, char **argv)
             }
 
             if (!path) {
-                if (option == 'c') {
-                    t_print_warning("Could not find input file '%s'.\n",
-                                    optarg);
-                } else {
-                    t_print_warning("Could not find patch '%s'.\n",
-                                    optarg);
-                }
+                t_print_warning("Could not find input file '%s'.\n",
+                                optarg);
             } else {
                 /* Compile the chunk and stash it away behind the options
                  * table. */
@@ -705,6 +698,8 @@ int main(int argc, char **argv)
 
                 t_print_message ("Compiled the input file %s\n", path);
             }
+        } else if (option == 'p') {
+            profile = 1;
 	} else if (option == 'h') {
 	    t_print_message (
 		"Usage: %s [OPTION...]\n\n"
@@ -713,8 +708,6 @@ int main(int argc, char **argv)
 		"Display this help message.\n"
 		"  -c FILE, --configuration=FILE                  "
 		"Load the specified input file.\n"
-		"  -p PATCH, --patch=PATCH                        "
-		"Apply the specified patch script.\n"
 		"  -l MODULE, --load=MODULE                       "
 		"Load the specified module during initialization.\n"
 		"  -a, --load-all                                 "
@@ -725,6 +718,8 @@ int main(int argc, char **argv)
 		"Drop to an interactive shell after initializing.\n"
 		"  -e STAT, --execute=STAT                        "
 		"Execute the provided statement.\n"
+		"  -p, --profile                                  "
+		"Enable profiling.\n"
 		"  --colorize=always|never|auto                   "
 		"Specify when to color console output.\n"
 		"  -q, --quiet                                    "
@@ -738,6 +733,9 @@ int main(int argc, char **argv)
 
     lua_setglobal (_L, "options");
 
+    if (profile) {
+        t_enable_profiling();
+    }
     
     /* Initialize the interactive interpreter. */
 
@@ -754,6 +752,12 @@ int main(int argc, char **argv)
     lua_pushcfunction (_L, warn);
     lua_setglobal (_L, "warn");
     
+    /* Run the boot scripts. */
+
+    lua_getglobal(_L, "require");
+    lua_pushstring(_L, "boot");
+    lua_pcall(_L, 1, 0, 0);
+
     /* Proceed to execute specified input. */
 
     if (lua_gettop(_L) > 0) {	
@@ -768,9 +772,6 @@ int main(int argc, char **argv)
     } else {
 	t_print_message ("No input files provided.\n");
     }
-
-    t_print_message ("Spent %.1f CPU seconds initializing.\n",
-    		     (double)t_get_cpu_time() / 1e9);
 
     if (interactive) {
 	t_print_message ("Dropping to a shell.  Press ctrl-d to continue.\n");

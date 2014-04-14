@@ -3,7 +3,7 @@
 LOCKFILE="mkopengl-lock"
 
 GLX_FUNCTIONS="glXCreateContextAttribsARB"
-GL_FUNCTIONS="glDebugMessageCallbackARB glDebugMessageControlARB glGetUniformIndices glGetActiveUniformBlockiv glUniformBlockBinding glGetActiveUniformBlockName glGetActiveUniformsiv glGetActiveUniformName glGetActiveAtomicCounterBufferiv glVertexBindingDivisor"
+GL_FUNCTIONS="glDebugMessageCallbackARB glDebugMessageControlARB glGetUniformIndices glGetActiveUniformBlockiv glUniformBlockBinding glGetActiveUniformBlockName glGetActiveUniformsiv glGetActiveUniformName glGetActiveAtomicCounterBufferiv glVertexBindingDivisor glQueryCounter glGetQueryObjectui64v"
 
 if ( set -o noclobber; echo "$$" > "$LOCKFILE" ) 2> /dev/null; then
     trap 'rm -f "$LOCKFILE"; exit $?' INT TERM EXIT

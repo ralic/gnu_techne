@@ -56,9 +56,8 @@ static unsigned int deflections;
 {
     const char *private[] = {"deflections", "intensity", "direction",
                              "direction_w"};
-    char *header;
+    const char *header;
     ShaderMold *shader;
-    int collect;
         
 #include "glsl/rand.h"
 #include "glsl/vegetation_common.h"
@@ -70,21 +69,9 @@ static unsigned int deflections;
     
     [super init];
 
-    /* Are we profiling? */
-    
-    lua_getglobal (_L, "options");
-
-    lua_getfield (_L, -1, "profile");
-    collect = lua_toboolean (_L, -1);
-    lua_pop (_L, 2);
-
     /* Create the program. */
 
-    if (collect) {
-        header = "#define COLLECT_STATISTICS\n";
-    } else {
-        header = "";
-    }
+    header = _PROFILING ? "#define COLLECT_STATISTICS\n" : "";
 
     [self unload];
     
@@ -144,6 +131,22 @@ static unsigned int deflections;
         glUniform3fv (self->locations.direction, 1, atmosphere->direction);
         glUniform3fv (self->locations.direction_w, 1, atmosphere->direction_w);
     }
+}
+
+-(int) _get_triangles
+{
+    [super _get_];
+
+    /* Convert segments to triangles and normalize. */
+    
+    lua_pushnumber(_L, lua_tonumber(_L, -1) / self->core.frames * 2);
+
+    return 1;
+}
+
+-(void) _set_triangles
+{
+    T_WARN_READONLY;
 }
 
 -(void) _set_

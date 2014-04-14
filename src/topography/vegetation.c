@@ -43,7 +43,7 @@
 
     const char *header;
     ShaderMold *shader;
-    int i, n, collect;
+    int i, n;
         
 #include "glsl/color.h"
 #include "glsl/rand.h"
@@ -58,14 +58,6 @@
     self->reference_1 = luaL_ref (_L, LUA_REGISTRYINDEX);
     
     [super init];
-
-    /* Are we profiling? */
-    
-    lua_getglobal (_L, "options");
-
-    lua_getfield (_L, -1, "profile");
-    collect = lua_toboolean (_L, -1);
-    lua_pop (_L, 2);
 
     /* Initialize seeding. */
     
@@ -125,7 +117,7 @@
     asprintf((char **)&header,
              "%s\n"
              "const int SWATCHES = %d;\n",
-             collect ? "#define COLLECT_STATISTICS\n" : "", n);
+             _PROFILING ? "#define COLLECT_STATISTICS\n" : "", n);
     
     [shader add: 5
             sourceStrings: (const char *[5]){
@@ -354,11 +346,6 @@
     
     begin_seeding (seeds, self->context);
 
-    for (i = 0, b = &seeds->bins[0] ; i < BINS_N ;i += 1, b += 1) {
-        b->triangles = 0;
-        b->clusters = 0;
-    }
-
     glPatchParameteri(GL_PATCH_VERTICES, 1);
 
     /* Seed all tiles. */
@@ -385,13 +372,9 @@
 
                 if (c > 1) {
                     n += c * b->fill;
-                    b->clusters += c * b->fill;
                 } else {
                     n += b->fill;
-                    b->clusters += b->fill;
                 }
-
-                b->triangles += b->fill;
             }
 
             if (n == 0) {
@@ -399,7 +382,13 @@
             } else while (n > highwater[1]) {
                 highwater[1] *= 2;
             }
-
+                
+            if (_PROFILING) {
+                self->statistics[0] += seeds->triangles_n[0];
+                self->statistics[1] += seeds->triangles_n[1];
+                self->statistics[2] += n;
+            }
+            
             /* Request a new block for the transformed seeds of each
              * species. */
 
@@ -513,8 +502,6 @@
 	}
     }
     
-    /* _TRACE ("error: %f\n", seeds->error); */
-    
     finish_seeding();
     t_pop_modelview ();
 
@@ -557,53 +544,92 @@
     self->seeding.clustering = lua_tonumber (_L, 3);
 }
 
--(int) _get_bins
+-(int) _get_infertile
 {
-    int i;
+    [super _get_];
+
+    /* Normalize the seed counters we got from the shader. */
     
-    lua_createtable (_L, BINS_N, 0);
+    lua_createtable(_L, 2, 0);
+    lua_pushnumber(_L, lua_tonumber(_L, -2) / self->core.frames);
+    lua_rawseti(_L, -2, 1);
+    lua_pushinteger (_L, self->core.frames);
+    lua_rawseti(_L, -2, 2);
+    lua_replace(_L, -2);
 
-    for (i = 0 ; i < BINS_N ; i += 1) {
-        seeding_Bin *b;
-
-        b = &self->seeding.bins[i];
-        
-        lua_createtable (_L, 4, 0);
-        lua_pushnumber (_L, b->center);
-        lua_rawseti (_L, -2, 1);
-        lua_pushinteger (_L, b->triangles);
-        lua_rawseti (_L, -2, 2);
-        lua_pushinteger (_L, b->clusters);
-        lua_rawseti (_L, -2, 3);
-        lua_pushinteger (_L, b->capacity);
-        lua_rawseti (_L, -2, 4);
-
-        lua_rawseti (_L, -2, i + 1);
-    }
-    
     return 1;
 }
 
--(void) _set_bins
+-(void) _set_infertile
 {
     T_WARN_READONLY;
 }
 
--(int) _get_triangles
+-(int) _get_fertile
 {
-    int i;
-    
-    lua_createtable (_L, 2, 0);
+    [super _get_];
 
-    for (i = 0 ; i < 2 ; i += 1) {
-        lua_pushnumber (_L, self->seeding.triangles_n[i]);
-        lua_rawseti (_L, -2, i + 1);
-    }
+    /* Normalize the seed counters we got from the shader. */
     
+    lua_createtable(_L, 2, 0);
+    lua_pushnumber(_L, lua_tonumber(_L, -2) / self->core.frames);
+    lua_rawseti(_L, -2, 1);
+    lua_pushinteger (_L, self->core.frames);
+    lua_rawseti(_L, -2, 2);
+    lua_replace(_L, -2);
+
     return 1;
 }
 
--(void) _set_triangles
+-(void) _set_fertile
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_coarse
+{
+    lua_createtable(_L, 2, 0);
+    lua_pushnumber (_L, self->statistics[0] / self->core.frames);
+    lua_rawseti(_L, -2, 1);
+    lua_pushinteger (_L, self->core.frames);
+    lua_rawseti(_L, -2, 2);
+
+    return 1;
+}
+
+-(void) _set_coarse
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_fine
+{
+    lua_createtable(_L, 2, 0);
+    lua_pushnumber (_L, self->statistics[1] / self->core.frames);
+    lua_rawseti(_L, -2, 1);
+    lua_pushinteger (_L, self->core.frames);
+    lua_rawseti(_L, -2, 2);
+
+    return 1;
+}
+
+-(void) _set_fine
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_clusters
+{
+    lua_createtable(_L, 2, 0);
+    lua_pushnumber (_L, self->statistics[2] / self->core.frames);
+    lua_rawseti(_L, -2, 1);
+    lua_pushinteger (_L, self->core.frames);
+    lua_rawseti(_L, -2, 2);
+
+    return 1;
+}
+
+-(void) _set_clusters
 {
     T_WARN_READONLY;
 }
@@ -618,18 +644,6 @@
 -(void) _set_horizon
 {
     self->seeding.horizon = -lua_tonumber (_L, 3);
-}
-
--(int) _get_error
-{
-    lua_pushnumber (_L, self->seeding.error);
-    
-    return 1;
-}
-
--(void) _set_error
-{
-    T_WARN_READONLY;
 }
 
 @end

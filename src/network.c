@@ -468,13 +468,13 @@ static void run()
 
 -(void) iterate
 {
-    t_begin_interval(self);
+    t_begin_cpu_interval (&self->core);
 
     do {
 	run();
     } while (block);
 
-    t_end_interval(self);
+    t_end_cpu_interval (&self->core);
 }
     
 -(int) _get_http

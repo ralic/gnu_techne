@@ -243,7 +243,6 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         memcpy (p + 6 * sizeof(float), b_1, 3 * sizeof(float));
         
         bins[j].fill += 1;
-        seeding->error += (bins[j].center - n_0) * (bins[j].center - n_0);
         seeding->triangles_n[1] += 1;
     }
 }
@@ -332,7 +331,6 @@ void begin_seeding (seeding_Context *seeding_in, roam_Context *context_in)
 
     seeding_in->triangles_n[0] = 0;
     seeding_in->triangles_n[1] = 0;
-    seeding_in->error = 0;
     n_min = 1.0 / 0.0;
     n_max = A_total = 0;
     

@@ -34,59 +34,11 @@ static int interactive = 0;   /* Accept input on the tty. */
 static int iterate = 0;       /* Keep the main loop running. */
 static int iterations = 0;
 
-static long long int zero;
-static long long int *intervals;
-static long long int *beginnings;
-
 static Techne *instance;
 
-static void profilinghook (lua_State *L, lua_Debug *ar)
+int t_get_iterations ()
 {
-    if (lua_getstack (L, 1, ar) == 0) {
-	if (ar->event == LUA_HOOKCALL) {
-	    beginnings[1] = t_get_cpu_time();
-	} else if (ar->event == LUA_HOOKRET) {
-	    intervals[1] += t_get_cpu_time() - beginnings[1];
-	}
-    }
-}
-
-void t_begin_interval (Node *node)
-{
-    long long int t;
-    
-    t = t_get_cpu_time();
-
-    if (!node->up) {
-	lua_sethook (_L, profilinghook, LUA_MASKCALL | LUA_MASKRET, 0);
-    } else {
-	assert (node->up->profile.beginnings == beginnings);
-	assert (node->up->profile.intervals == intervals);
-	intervals[0] += t - beginnings[0];
-    }
-
-    intervals = node->profile.intervals;
-    beginnings = node->profile.beginnings;
-    beginnings[0] = t;
-}
-
-void t_end_interval (Node *node)
-{
-    long long int t;
-    
-    assert (intervals == node->profile.intervals);
-    assert (beginnings == node->profile.beginnings);
-
-    t = t_get_cpu_time();
-    intervals[0] += t - beginnings[0];
-
-    if (node->up) {
-	intervals = node->up->profile.intervals;
-	beginnings = node->up->profile.beginnings;
-	beginnings[0] = t;
-    } else {
-	lua_sethook (_L, 0, 0, 0);
-    }
+    return iterations;
 }
 
 @implementation Techne
@@ -100,7 +52,6 @@ void t_end_interval (Node *node)
     /* Greet the user. */
 
     t_print_message ("This is Techne, version %s.\n", VERSION);
-    t_print_timing_resolution();
 
     instance = self;
 }
@@ -114,11 +65,11 @@ void t_end_interval (Node *node)
 {
     Builtin *builtin;
 
-    zero = t_get_cpu_time();
-    
-    t_begin_interval(self);
+    t_initialize_timing ();
     
     while (iterate || interactive) {
+        t_begin_cpu_interval (&self->core);
+        
 	if (interactive) {
 	    t_print_message ("Dropping to a shell.  "
 			     "Press ctrl-d to continue.\n");
@@ -127,7 +78,7 @@ void t_end_interval (Node *node)
 	    interactive = 0;
 	}
 
-        t_end_interval(self);
+        t_end_cpu_interval (&self->core);
                 
 	for (builtin = [Builtin nodes];
 	     builtin;
@@ -137,12 +88,10 @@ void t_end_interval (Node *node)
 	    }
 	}
 
-        t_begin_interval(self);
+        t_advance_profiling_frame();
 	
         iterations += 1;
     }
-
-    t_end_interval(self);
 }
 
 -(int) _get_interactive
@@ -161,7 +110,7 @@ void t_end_interval (Node *node)
  
 -(int) _get_time
 {
-    lua_pushnumber (_L, (t_get_cpu_time() - zero) / 1e9);
+    lua_pushnumber (_L, t_get_cpu_time() / 1e9);
     
     return 1;
 }
@@ -169,6 +118,13 @@ void t_end_interval (Node *node)
 -(int) _get_iterations
 {
     lua_pushnumber (_L, iterations);
+
+    return 1;
+}
+	
+-(int) _get_profiling
+{
+    lua_pushboolean (_L, _PROFILING);
 
     return 1;
 }
@@ -189,6 +145,11 @@ void t_end_interval (Node *node)
 }
 	
 -(void) _set_iterations
+{
+    T_WARN_READONLY;
+}
+	
+-(void) _set_profiling
 {
     T_WARN_READONLY;
 }

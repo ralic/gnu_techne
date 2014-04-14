@@ -30,6 +30,7 @@
     
     int reference_1;
     unsigned int feedback, *arrays, *vertexbuffers;
+    unsigned int statistics[3];
     
     struct {
         unsigned int intensity, scale, offset, clustering;
@@ -50,17 +51,23 @@
 -(int) _get_clustering;
 -(void) _set_clustering;
 
--(int) _get_bins;
--(void) _set_bins;
-
--(int) _get_triangles;
--(void) _set_triangles;
-
 -(int) _get_horizon;
 -(void) _set_horizon;
 
--(int) _get_error;
--(void) _set_error;
+-(int) _get_infertile;
+-(void) _set_infertile;
+
+-(int) _get_fertile;
+-(void) _set_fertile;
+
+-(int) _get_coarse;
+-(void) _set_coarse;
+
+-(int) _get_fine;
+-(void) _set_fine;
+
+-(int) _get_clusters;
+-(void) _set_clusters;
 
 @end
 

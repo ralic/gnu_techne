@@ -61,7 +61,8 @@ static enum {
 
 static int width = 640, height = 480;
 static int hide = 1, cursor = 1, decorate = 1, offscreen = 0;
-;
+
+static long long unsigned int then, frametime;
 static int frames;
 static double planes[6], frustum[3];
 static int focus = LUA_REFNIL, defocus = LUA_REFNIL;
@@ -341,24 +342,6 @@ void t_warp_pointer (int x, int y)
     }
 }
 
-static void draw (Node *root)
-{
-    Node *child, *next;
-
-    t_begin_interval (root);
-
-    if ([root isKindOf: [Graphic class]]) {
-	[(Graphic *)root draw: frames];
-    } else {
-	for (child = root->down ; child ; child = next) {
-	    next = child->right;	    
-	    draw (child);
-	}
-    }
-    
-    t_end_interval (root);
-}
-
 @implementation Graphics
 
 -(void) init
@@ -374,19 +357,19 @@ static void draw (Node *root)
     };
  
     int visual_attributes[] = {
-        GLX_X_RENDERABLE    , True,
-        GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
-        GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-        GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-        GLX_RED_SIZE        , 8,
-        GLX_GREEN_SIZE      , 8,
-        GLX_BLUE_SIZE       , 8,
-        GLX_ALPHA_SIZE      , 8,
-        GLX_DEPTH_SIZE      , 24,
-        GLX_STENCIL_SIZE    , 8,
-        GLX_DOUBLEBUFFER    , True,
-        GLX_SAMPLE_BUFFERS  , 1,
-        GLX_SAMPLES         , 8,
+        GLX_X_RENDERABLE,   True,
+        GLX_DRAWABLE_TYPE,  GLX_WINDOW_BIT,
+        GLX_RENDER_TYPE,    GLX_RGBA_BIT,
+        GLX_X_VISUAL_TYPE,  GLX_TRUE_COLOR,
+        GLX_RED_SIZE,       8,
+        GLX_GREEN_SIZE,     8,
+        GLX_BLUE_SIZE,      8,
+        GLX_ALPHA_SIZE,     8,
+        GLX_DEPTH_SIZE,     24,
+        GLX_STENCIL_SIZE,   8,
+        GLX_DOUBLEBUFFER,   True,
+        GLX_SAMPLE_BUFFERS, 1,
+        GLX_SAMPLES,        8,
         None
     };
 
@@ -724,7 +707,10 @@ static void draw (Node *root)
     Node *root;
     GdkEvent *event;
 
-    t_begin_interval(self);
+    t_begin_cpu_interval (&self->core);
+
+    glXSwapBuffers (GDK_DISPLAY_XDISPLAY(display),
+                    offscreen ? pbuffer : GDK_WINDOW_XWINDOW(window));
 
     while ((event = gdk_event_get()) != NULL) {
 	assert(event);
@@ -814,7 +800,7 @@ static void draw (Node *root)
 		update_projection();
 	    }	       
 
-	    t_pushuserdata (_L, 1, self);
+            t_pushuserdata (_L, 1, self);
 	    t_callhook (_L, configure, 1, 0);
 	    break;
 	case GDK_FOCUS_CHANGE:
@@ -853,20 +839,23 @@ static void draw (Node *root)
 	    GL_COLOR_BUFFER_BIT |
 	    GL_STENCIL_BUFFER_BIT);
 
-    t_end_interval(self);
+    t_end_cpu_interval (&self->core);
 
+    if (!then) {
+        then = t_get_cpu_time();
+    } else {    
+        long long unsigned int now;
+        
+        now = t_get_cpu_time();
+        frametime += now - then;
+        then = now;
+    }
+    
     frames += 1;
     
     for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-	draw (root);    
+	t_draw_subtree (root, frames);    
     }
-
-    t_begin_interval(self);
-
-    glXSwapBuffers (GDK_DISPLAY_XDISPLAY(display),
-                    offscreen ? pbuffer : GDK_WINDOW_XWINDOW(window));
-
-    t_end_interval(self);
 }
 
 -(int) _get_window
@@ -1030,6 +1019,21 @@ static void draw (Node *root)
     lua_pushinteger (_L, gdk_screen_height());
     lua_rawseti (_L, -2, 2);
 
+    return 1;
+}
+ 
+-(int) _get_frametime
+{
+    if (frames > 0) {
+        lua_createtable(_L, 2, 0);
+        lua_pushnumber(_L, frametime / (frames - 1) * 1e-9);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger(_L, frames - 1);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+    
     return 1;
 }
 
@@ -1285,6 +1289,11 @@ static void draw (Node *root)
 }
 
 -(void) _set_screen
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_frametime
 {
     T_WARN_READONLY;
 }

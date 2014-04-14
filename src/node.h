@@ -20,6 +20,7 @@
 #include <lua.h>
 #include <objc/runtime.h>
 
+#include "profiling.h"
 #include "object.h"
 
 #define GET_PREFIX "_get_"
@@ -62,9 +63,7 @@ struct protocol {
     const char **prerequisites;
     int prerequisites_n;
     
-    struct {
-	long long int beginnings[2], intervals[2];
-    } profile;
+    t_CPUProfile core;
     
     struct {
 	lua_Number number;
@@ -106,8 +105,10 @@ struct protocol {
 
 -(int) _get_tag;
 -(void) _set_tag;
--(int) _get_profile;
--(void) _set_profile;
+-(int) _get_core;
+-(void) _set_core;
+-(int) _get_user;
+-(void) _set_user;
 
 -(int) _get_;
 -(int) _set_;
@@ -146,11 +147,7 @@ struct protocol {
 -(int) _get_pedigree;
 -(void) _set_pedigree;
 
-
 @end
-
-void t_begin_interval (Node *);
-void t_end_interval (Node *);
 
 int t_isnode(lua_State *L, int index);
 id t_tonode (lua_State *L, int index);

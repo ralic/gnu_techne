@@ -64,7 +64,8 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     memory.c network.c network.h proxy.c proxy.h	\
 		     input.c input.h structures.h math.h root.c root.h	\
 		     builtin.c builtin.h dynamic.c dynamic.h graphic.c  \
-		     graphic.h texture.c texture.h template.c
+		     graphic.h texture.c texture.h template.c 		\
+		     profiling.c profiling.h
 
 EXTRA_techne_bin_SOURCES = compat/asprintf.h
 
@@ -99,6 +100,8 @@ dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    topography/topography.lua textures/textures.lua	\
 		    staging/staging.lua aeronautics/aeronautics.lua     \
 		    misc/recorder.lua
+
+nobase_modules_DATA = boot/init.lua boot/profilingreports.lua
 
 topography_core_la_SOURCES = topography/core.c topography/elevation.c 	\
 			     topography/elevation_body.c 		\

@@ -29,23 +29,6 @@ static int events_max, events_n;
 
 static Input* instance;
 
-static void recurse (Node *root)
-{
-    Node *child;
-    
-    t_begin_interval (root);
-
-    if ([root isKindOf: [Event class]]) {
-	[(id)root input];
-    } else {
-        for (child = root->down ; child ; child = child->right) {
-            recurse (child);
-        }
-    }
-    
-    t_end_interval (root);
-}
-
 @implementation Input
 
 -(void) init
@@ -108,10 +91,10 @@ static void recurse (Node *root)
     int n;
 
     for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-        recurse(root);
+        t_input_subtree(root);
     }
 
-    t_begin_interval(self);
+    t_begin_cpu_interval (&self->core);
 
     for (n = 0 ; n < events_n ; n += 1) {
         gdk_event_free(events[n]);
@@ -120,7 +103,7 @@ static void recurse (Node *root)
     memset (events, 0, events_n * sizeof (GdkEvent *));
     events_n = 0;
     
-    t_end_interval(self);
+    t_end_cpu_interval (&self->core);
 }
 
 @end

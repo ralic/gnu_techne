@@ -17,25 +17,31 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include "gl.h"
+
 #include "graphic.h"
 #include "techne.h"
 
-static void recurse (Node *root, int frame)
+void t_draw_subtree (Node *root, int frame)
 {
     Node *child, *next;
 
-    t_begin_interval (root);
+    t_begin_cpu_interval (&root->core);
 
     if ([root isKindOf: [Graphic class]]) {
-	[(Graphic *)root draw: frame];
+        Graphic *graphic = (Graphic *)root;
+
+        t_begin_gpu_interval (&graphic->graphics);
+	[graphic draw: frame];
+        t_end_gpu_interval (&graphic->graphics);
     } else {
 	for (child = root->down ; child ; child = next) {
 	    next = child->right;	    
-	    recurse (child, frame);
+	    t_draw_subtree (child, frame);
 	}
     }
     
-    t_end_interval (root);
+    t_end_cpu_interval (&root->core);
 }
 
 @implementation Graphic
@@ -50,22 +56,44 @@ static void recurse (Node *root, int frame)
     
     for (child = self->down ; child ; child = sister) {
 	sister = child->right;
-	recurse (child, frame);
+	t_draw_subtree (child, frame);
     }
 }
 
 -(void) init
 {
     [super init];
-
+    
     self->draw = LUA_REFNIL;
 }
 
 -(void) free
 {
     luaL_unref (_L, LUA_REGISTRYINDEX, self->draw);
+    t_free_profiling_queries(&self->graphics);
     
     [super free];
+}
+ 
+-(int) _get_graphics
+{
+    if (self->graphics.frames > 0) {
+        lua_createtable(_L, 2, 0);
+        lua_pushnumber(_L, (self->graphics.interval /
+                            self->graphics.frames * 1e-9));
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger(_L, self->graphics.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+    
+    return 1;
+}
+
+-(void) _set_graphics
+{
+    T_WARN_READONLY;
 }
 
 -(int) _get_draw

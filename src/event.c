@@ -20,22 +20,22 @@
 #include "event.h"
 #include "techne.h"
 
-static void recurse (Node *root)
+void t_input_subtree (Node *root)
 {
     Node *child, *next;
 
-    t_begin_interval (root);
+    t_begin_cpu_interval (&root->core);
 
     if ([root isKindOf: [Event class]]) {
 	[(Event *)root input];
     } else {
 	for (child = root->down ; child ; child = next) {
 	    next = child->right;	    
-	    recurse (child);
+	    t_input_subtree (child);
 	}
     }
     
-    t_end_interval (root);
+    t_end_cpu_interval (&root->core);
 }
 
 @implementation Event
@@ -49,7 +49,7 @@ static void recurse (Node *root)
     
     for (child = self->down ; child ; child = sister) {
 	sister = child->right;
-	recurse (child);
+	t_input_subtree (child);
     }
 }
 

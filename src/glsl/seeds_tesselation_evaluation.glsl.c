@@ -8,7 +8,7 @@ patch in unsigned int instance_tc;
 flat out vec3 color_te;
                                 
 #ifdef COLLECT_STATISTICS
-layout(binding = 0, offset = 8) uniform atomic_uint segments;
+layout(binding = 0, offset = 0) uniform atomic_uint triangles;
 #endif
                                 
 uniform seeds_evaluation {
@@ -22,7 +22,7 @@ void main()
     /* Update the statistics. */
 
 #ifdef COLLECT_STATISTICS
-    atomicCounterIncrement(segments);
+    atomicCounterIncrement(triangles);
 #endif
 
     if (clustering_tc > 1) {

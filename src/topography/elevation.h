@@ -68,7 +68,12 @@ typedef struct {
         unsigned int base;
     } units;
 
-    unsigned int buffer;
+    struct {
+        long long unsigned int intervals[4];
+        int frames;
+    } profile_2;
+
+    unsigned int buffer, statistics[6];
     int reference, optimize, *ranges;
 }
 
@@ -81,8 +86,32 @@ typedef struct {
 -(int) _get_triangles;
 -(void) _set_triangles;
 
+-(int) _get_culled;
+-(void) _set_culled;
+
+-(int) _get_visible;
+-(void) _set_visible;
+
 -(int) _get_diamonds;
 -(void) _set_diamonds;
+
+-(int) _get_splittable;
+-(void) _set_splittable;
+
+-(int) _get_mergeable;
+-(void) _set_mergeable;
+
+-(int) _get_setup;
+-(void) _set_setup;
+
+-(int) _get_reculling;
+-(void) _set_reculling;
+
+-(int) _get_reordering;
+-(void) _set_reordering;
+
+-(int) _get_tessellation;
+-(void) _set_tessellation;
 
 @end
 

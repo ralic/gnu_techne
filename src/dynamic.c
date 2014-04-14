@@ -20,22 +20,22 @@
 #include "dynamic.h"
 #include "techne.h"
 
-static void recurse (Node *root, double h, double t)
+void t_step_subtree (Node *root, double h, double t)
 {
     Node *child, *next;
 
-    t_begin_interval (root);
+    t_begin_cpu_interval (&root->core);
 
     if ([root isKindOf: [Dynamic class]]) {
 	[(id)root stepBy: h at: t];
     } else {
 	for (child = root->down ; child ; child = next) {
 	    next = child->right;	    
-	    recurse (child, h, t);
+	    t_step_subtree (child, h, t);
 	}
     }
     
-    t_end_interval (root);
+    t_end_cpu_interval (&root->core);
 }
 
 @implementation Dynamic
@@ -66,7 +66,7 @@ static void recurse (Node *root, double h, double t)
     
     for (child = self->down ; child ; child = sister) {
 	sister = child->right;
-	recurse (child, h, t);
+	t_step_subtree (child, h, t);
     }
 }
 

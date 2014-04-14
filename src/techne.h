@@ -43,17 +43,25 @@ typedef enum {
     T_STAGES_N,
 } t_Enumerated;
 
+int _PROFILING;
 lua_State *_L;
 
+/* Console output. */
+
 const char *t_ansi_color (int i, int j);
-int t_call (lua_State *L, int nargs, int nresults);
 void t_print_message (const char *format, ...);
 void t_print_warning (const char *format, ...);
 void t_print_error (const char *format, ...);
 
-void t_print_timing_resolution();
-long long int t_get_real_time ();
-long long int t_get_cpu_time ();
+/* Timing. */
+
+void t_initialize_timing ();
+long long unsigned int t_get_dynamics_time ();
+long long unsigned int t_get_real_time ();
+long long unsigned int t_get_raw_cpu_time ();
+long long unsigned int t_get_cpu_time ();
+
+/* Memory pools. */
 
 void *t_build_pool(int factor, size_t size, t_Enumerated mode);
 void *t_allocate_pooled (void *p);
@@ -61,6 +69,8 @@ void t_free_pooled (void *p, void *block);
 void t_reset_pool (void *p);
 void t_flush_pool (void *p);
 void t_free_pool (void *p);
+
+/* Transform stack manipulation. */
 
 void t_load_projection (double *matrix);
 void t_push_projection (double *matrix);
@@ -73,24 +83,42 @@ void t_pop_modelview ();
 void t_copy_modelview(double *matrix);
 void t_copy_transform(double *matrix);
 
+/* Window-related stuff. */
+
 void t_get_pointer (int *x, int *y);
 void t_warp_pointer (int x, int y);
 
+/* Tree traversal. */
+
+void t_draw_subtree (Node *root, int frame);
+void t_transform_subtree (Node *root);
+void t_step_subtree (Node *root, double h, double t);
+void t_input_subtree (Node *root);
+
+/* Misc. */
+
+int t_get_iterations ();
+
 void t_convert_from_spring(double k_s, double k_d, double *erp, double *cfm);
 void t_convert_to_spring(double erp, double cfm, double *k_s, double *k_d);
+
+int t_call (lua_State *L, int nargs, int nresults);
 
 int t_compiletemplate(lua_State *L, const char *source);
 int t_rendertemplate(lua_State *L, const char *source);
 
 int luaopen_moremath (lua_State *L);
 int luaopen_morebase (lua_State *L);
+int luaopen_profiling (lua_State *L);
 
 @interface Techne: Builtin {
 }
 
+-(int) _get_profiling;
+-(void) _set_profiling;
 -(int) _get_iterate;
--(int) _get_iterations;	
 -(void) _set_iterate;
+-(int) _get_iterations;
 -(void) _set_iterations;
 -(int) _get_interactive;
 -(void) _set_interactive;

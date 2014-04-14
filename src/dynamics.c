@@ -299,42 +299,6 @@ static void callback (void *data, dGeomID a, dGeomID b)
     }
 }
 
-static void transform (Node *root)
-{
-    Node *child, *next;
-
-    t_begin_interval (root);
-
-    if ([root isKindOf: [Transform class]]) {
-	[(Transform *)root transform];
-    } else {
-	for (child = root->down ; child ; child = next) {
-	    next = child->right;	    
-	    transform (child);
-	}
-    }
-    
-    t_end_interval (root);
-}
-
-static void step (Node *root, double h, double t)
-{
-    Node *child, *next;
-
-    t_begin_interval (root);
-
-    if ([root isKindOf: [Dynamic class]]) {
-	[(Dynamic *)root stepBy: h at: t];
-    } else {
-	for (child = root->down ; child ; child = next) {
-	    next = child->right;	    
-	    step (child, h, t);
-	}
-    }
-    
-    t_end_interval (root);
-}
-
 void t_convert_from_spring(double k_s, double k_d, double *erp, double *cfm)
 {
     *cfm = 1.0 / (stepsize * k_s + k_d);
@@ -345,6 +309,11 @@ void t_convert_to_spring(double erp, double cfm, double *k_s, double *k_d)
 {
     *k_s = erp / (cfm * stepsize);
     *k_d = - (erp - 1) / cfm;
+}
+
+long long unsigned int t_get_dynamics_time ()
+{
+    return (long long unsigned int)(now * 1e9);
 }
 
 @implementation Dynamics
@@ -394,7 +363,7 @@ void t_convert_to_spring(double erp, double cfm, double *k_s, double *k_d)
     double delta;
     long int time;
     
-    t_begin_interval(self);
+    t_begin_cpu_interval (&self->core);
 
     time = t_get_real_time();
 
@@ -425,15 +394,15 @@ void t_convert_to_spring(double erp, double cfm, double *k_s, double *k_d)
 	dJointGroupEmpty (_GROUP);
 	t_reset_pool (pool);
     
-        t_end_interval(self);
+        t_end_cpu_interval (&self->core);
 
 	/* Step the tree. */
     
 	for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-	    step (root, stepsize, then);
+	    t_step_subtree (root, stepsize, then);
 	}
     
-        t_begin_interval(self);
+        t_begin_cpu_interval (&self->core);
 
 	if (dSpaceGetNumGeoms (_SPACE) > 1) {
 	    dSpaceCollide (_SPACE, NULL, callback);
@@ -457,13 +426,13 @@ void t_convert_to_spring(double erp, double cfm, double *k_s, double *k_d)
     /* Advance the real-world time. */
 
     once = time;    
-    t_end_interval(self);
+    t_end_cpu_interval (&self->core);
 
     /* Transform the tree to update absolute positions and
        orientations. */
     
     for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-	transform (root);
+	t_transform_subtree (root);
     }
 }
 

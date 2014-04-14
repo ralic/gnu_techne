@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
+/* Copyright (C) 2014 Papavasileiou Dimitris                             
  *                                                                      
  * This program is free software: you can redistribute it and/or modify 
  * it under the terms of the GNU General Public License as published by 
@@ -14,25 +14,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _GRAPHIC_H_
-#define _GRAPHIC_H_
+#ifndef _PROFILING_H_
+#define _PROFILING_H_
 
-#include "profiling.h"
-#include "transform.h"
+struct queryset {
+    unsigned int queries[2];
+    struct queryset *left, *right;
+};
 
-@interface Graphic: Transform {
-@public
-    int draw;
-    
-    t_GPUProfile graphics;
-}
+typedef struct {
+    struct queryset *sets;
+    long long unsigned int interval;
+    int frames;
+} t_GPUProfile;
 
--(void) draw: (int)frame;
--(int) _get_graphics;
--(void) _set_graphics;
--(int) _get_draw;
--(void) _set_draw;
+typedef struct {
+    long long unsigned int total[2], lua[2];
+    int frame, frames;
+} t_CPUProfile;
 
-@end
+void t_begin_gpu_interval (t_GPUProfile *profile);
+void t_end_gpu_interval (t_GPUProfile *profile);
+void t_free_profiling_queries(t_GPUProfile *profile);
+
+void t_begin_cpu_interval (t_CPUProfile *profile);
+void t_end_cpu_interval (t_CPUProfile *profile);
+
+void t_enable_profiling ();
+void t_advance_profiling_frame ();
 
 #endif

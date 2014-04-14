@@ -1711,20 +1711,44 @@ static void unlink_node (Node *node)
     }
 }
  
--(int) _get_profile
+-(int) _get_core
 {
-    lua_newtable(_L);
-
-    lua_pushnumber(_L, self->profile.intervals[0] * 1e-9);
-    lua_rawseti(_L, -2, 1);
-
-    lua_pushnumber(_L, self->profile.intervals[1] * 1e-9);
-    lua_rawseti(_L, -2, 2);
+    if (self->core.frames > 0) {
+        lua_createtable(_L, 2, 0);
+        lua_pushnumber(_L,
+                       self->core.total[1] / self->core.frames * 1e-9);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger(_L, self->core.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
     
     return 1;
 }
 
--(void) _set_profile
+-(void) _set_core
+{
+    T_WARN_READONLY;
+}
+ 
+-(int) _get_user
+{
+    if (self->core.frames > 0) {
+        lua_createtable(_L, 2, 0);
+        lua_pushnumber(_L,
+                       self->core.lua[1] / self->core.frames * 1e-9);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger(_L, self->core.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+    
+    return 1;
+}
+
+-(void) _set_user
 {
     T_WARN_READONLY;
 }

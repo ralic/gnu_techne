@@ -15,7 +15,10 @@
  */
 
 #include <time.h>
+
 #include "techne.h"
+
+static long long unsigned int zero;
 
 #ifdef __WIN32__
 #include <windows.h>
@@ -24,7 +27,7 @@
 LARGE_INTEGER frequency;
 #endif
 
-void t_print_timing_resolution()
+void t_initialize_timing()
 {
 #ifdef __WIN32__
     BOOL available;
@@ -47,9 +50,11 @@ void t_print_timing_resolution()
     clock_getres(CLOCK_PROCESS_CPUTIME_ID, &time);
     t_print_message ("The resolution of the process clock is %ld ns.\n", time.tv_nsec);
 #endif
+
+    zero = t_get_raw_cpu_time();
 }
 
-long long int t_get_real_time ()
+long long unsigned int t_get_real_time ()
 {
 #ifdef __WIN32__
     LARGE_INTEGER ticks;
@@ -62,11 +67,11 @@ long long int t_get_real_time ()
 
     clock_gettime (CLOCK_REALTIME, &time);
 
-    return (long long int)time.tv_sec * 1000000000 + time.tv_nsec;
+    return (long long unsigned int)time.tv_sec * 1000000000 + time.tv_nsec;
 #endif
 }
 
-long long int t_get_cpu_time ()
+long long unsigned int t_get_raw_cpu_time ()
 {
 #ifdef __WIN32__
     return t_get_real_time();
@@ -75,6 +80,11 @@ long long int t_get_cpu_time ()
 
     clock_gettime (CLOCK_MONOTONIC, &time);
 
-    return (long long int)time.tv_sec * 1000000000 + time.tv_nsec;
+    return (long long unsigned int)time.tv_sec * 1000000000 + time.tv_nsec;
 #endif
+}
+
+long long unsigned int t_get_cpu_time ()
+{
+    return t_get_raw_cpu_time() - zero;
 }

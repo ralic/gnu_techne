@@ -507,19 +507,6 @@ static int construct(lua_State *L)
 {
 }
 
--(int) _get_body
-{
-    lua_pushvalue (_L, 1);
-    lua_pushlightuserdata(_L, [ElevationBody class]);
-    lua_pushcclosure(_L, construct, 2);
-
-    return 1;
-}
-
--(void) _set_body
-{
-}
-
 -(int) _get_vegetation
 {
     lua_pushvalue (_L, 1);

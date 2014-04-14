@@ -76,26 +76,8 @@ path to the Lua 5.2 compiler.
    fi
 fi
 
-PKG_CHECK_MODULES([OPENAL], [openal])
-PKG_CHECK_MODULES([ODE], [ode])
 PKG_CHECK_MODULES([GDK], [gdk-2.0])
 PKG_CHECK_MODULES([GL], [x11 gl glu])
-PKG_CHECK_MODULES([MHD], [libmicrohttpd])
-PKG_CHECK_MODULES([WEBKIT], [webkit-1.0])
-dnl PKG_CHECK_MODULES([MAGICKWAND], [MagickWand])
-dnl PKG_CHECK_MODULES([GVC], [libgvc])
-
-dnl Check whether building of the tools was requested and add needed
-dnl dependencies.
-
-AC_ARG_WITH([tools], AS_HELP_STRING([--with-tools],
-                                    [Build development tools.]))
-
-if test "x$with_tools" = "xyes"; then
-   PKG_CHECK_MODULES([LIBPNG], [libpng])
-
-   AC_CONFIG_FILES([tools/Makefile])
-fi
 
 # Checks for library functions.
 

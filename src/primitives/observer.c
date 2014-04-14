@@ -18,7 +18,6 @@
 
 #include <lua.h>
 #include <lauxlib.h>
-#include <AL/al.h>
 
 #include "gl.h"
 
@@ -109,25 +108,6 @@ static Observer *instance;
 
         t_load_modelview(M, T_LOAD);
     }
-
-#ifdef FIXME
-    /* Update the OpenAL listener object to reflect
-       this transform. */
-
-    {
-        float T[16], R[6], r[3];
-
-        glGetFloatv (GL_MODELVIEW_MATRIX, T);
-
-        R[0] = -T[8]; R[1] = -T[9]; R[2] = -T[10];
-        R[3] = T[4]; R[4] = T[5]; R[5] = T[6];
-
-        r[0] = T[12]; r[1] = T[13]; r[2] = T[14];
-
-        alListenerfv (AL_ORIENTATION, R);
-        alListenerfv (AL_POSITION, r);
-    }
-#endif
 }
 
 @end

@@ -41,8 +41,6 @@
 #include "profiling.h"
 #include "techne.h"
 #include "graphics.h"
-#include "network.h"
-#include "accoustics.h"
 #include "input.h"
 #include "dynamics.h"
 #include "root.h"
@@ -368,9 +366,7 @@ static int internal_searcher(lua_State *L)
         {"techne", luaopen_techne},
         {"graphics", luaopen_graphics},
         {"dynamics", luaopen_dynamics},
-        {"accoustics", luaopen_accoustics},
         {"input", luaopen_input},
-        {"network", luaopen_network},
 
         {"coroutine", luaopen_coroutine},
         {"string", luaopen_string},
@@ -666,17 +662,15 @@ int main(int argc, char **argv)
             const char *s;
             char **list, *all[] = {
                 "techne", "graphics", "dynamics",
-                "accoustics", "input", "network",
+                "input",
 
                 "coroutine", "string", "table",
                 "math", "bit32", "io", "os", "debug",
-
                 "serialize", "units", "bindings",
                 "resources", "array", "arraymath",
-                "joints", "primitives", "bodies",
-                "shading", "shapes", "automotive",
+                "primitives",
                 "widgets", "controllers", "textures",
-                "topography", "physics"
+                "topography"
             };
             int i, n;
 

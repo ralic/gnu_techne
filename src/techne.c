@@ -24,10 +24,8 @@
 #include "techne.h"
 #include "root.h"
 #include "dynamics.h"
-#include "network.h"
 #include "input.h"
 #include "graphics.h"
-#include "accoustics.h"
 #include "shader.h"
 
 static int interactive = 0;   /* Accept input on the tty. */

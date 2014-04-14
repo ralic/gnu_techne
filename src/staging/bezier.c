@@ -19,7 +19,6 @@
 
 #include <lua.h>
 #include <lauxlib.h>
-#include <AL/al.h>
 
 #include "gl.h"
 

@@ -19,12 +19,10 @@
 
 #include <lua.h>
 #include <GL/gl.h>
-#include <ode/ode.h>
 
 #include "roam.h"
 #include "seeding.h"
 #include "shape.h"
-#include "body.h"
 #include "shader.h"
 
 typedef struct {
@@ -45,8 +43,6 @@ typedef struct {
 
 -(int) _get_shape;
 -(void) _set_shape;
--(int) _get_body;
--(void) _set_body;
 -(int) _get_separation;
 -(void) _set_separation;
 -(int) _get_albedo;
@@ -107,15 +103,6 @@ typedef struct {
 
 -(int) _get_tessellation;
 -(void) _set_tessellation;
-
-@end
-
-@interface ElevationBody: Body {
-@public
-    roam_Tileset *tileset;
-    dHeightfieldDataID data;
-    int reference;
-}
 
 @end
 

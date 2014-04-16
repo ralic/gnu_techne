@@ -44,6 +44,7 @@ static GdkDisplay *display;
 static GdkScreen *screen;
 
 static Graphics* instance;
+static int have_context;
 
 #define PROJECTION_OFFSET (0)
 #define PROJECTION_SIZE (sizeof(float[16]))
@@ -59,8 +60,10 @@ static enum {
     ORTHOGRAPHIC, PERSPECTIVE, FRUSTUM
 } projection;
 
-static int width = 640, height = 480;
+static int width, height;
 static int hide = 1, cursor = 1, decorate = 1, offscreen = 0;
+static int redbits = 1, greenbits = 1, bluebits = 1, alphabits = 1;
+static int depthbits = 1, stencilbits = 8, samples = 4;
 
 static long long unsigned int then, frametime;
 static int frames;
@@ -120,7 +123,7 @@ static void APIENTRY debug_callback (GLenum source,
 	s = "";
 	break;
     }
-    
+
     t_print_message("%sGL %s %d:%s %s\n",
 		    t_ansi_color(c, 1),
 		    s, id,
@@ -143,13 +146,13 @@ static void update_projection()
 {
     double P[16];
     double a;
-    
+
     memset (P, 0, sizeof (double[16]));
 
     switch (projection) {
     case FRUSTUM:
 	a = (double)width / height;
-	
+
 	/* Set planes based on frustum.  This will result in the same
 	 * matrix as:
 	 *     gluPerspective (frustum[0], a, frustum[1], frustum[2]);
@@ -180,10 +183,10 @@ static void update_projection()
 	P[13] = -(planes[3] + planes[2]) / (planes[3] - planes[2]);
 	P[10] = -2 / (planes[5] - planes[4]);
 	P[14] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
-	P[15] = 1;	
+	P[15] = 1;
 	break;
     }
-    
+
     t_load_projection(P);
 }
 
@@ -276,7 +279,7 @@ void t_load_modelview (double *matrix, t_Enumerated mode)
 {
     if (mode == T_MULTIPLY) {
 	double M[16];
-	
+
 	t_concatenate_4T(M, modelviews[modelviews_n], matrix);
 	memcpy(modelviews[modelviews_n], M, 16 * sizeof(double));
     } else {
@@ -294,7 +297,7 @@ void t_push_modelview (double *matrix, t_Enumerated mode)
     } else {
 	memcpy(modelviews[modelviews_n + 1], matrix, 16 * sizeof(double));
     }
-    
+
     modelviews_n += 1;
     assert (modelviews_n < MODELVIEW_STACK_DEPTH);
 
@@ -323,7 +326,7 @@ void t_get_pointer (int *x, int *y)
 {
     if (window) {
         GdkModifierType mask;
-    
+
         gdk_window_get_pointer (window, x, y, &mask);
     } else {
         *x = -1;
@@ -346,335 +349,12 @@ void t_warp_pointer (int x, int y)
 
 -(void) init
 {
-    GLXFBConfig *configurations;
-    GLXContext context;
-        
-    int context_attributes[] = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB, 1,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 0,
-        GLX_CONTEXT_FLAGS_ARB, 0,
-        None
-    };
- 
-    int visual_attributes[] = {
-        GLX_X_RENDERABLE,   True,
-        GLX_DRAWABLE_TYPE,  GLX_WINDOW_BIT,
-        GLX_RENDER_TYPE,    GLX_RGBA_BIT,
-        GLX_X_VISUAL_TYPE,  GLX_TRUE_COLOR,
-        GLX_RED_SIZE,       8,
-        GLX_GREEN_SIZE,     8,
-        GLX_BLUE_SIZE,      8,
-        GLX_ALPHA_SIZE,     8,
-        GLX_DEPTH_SIZE,     24,
-        GLX_STENCIL_SIZE,   8,
-        GLX_DOUBLEBUFFER,   True,
-        GLX_SAMPLE_BUFFERS, 1,
-        GLX_SAMPLES,        8,
-        None
-    };
-
-    int argc = 0;
-    char **argv = NULL;
-    const char *name, *class;
-
-    int i, j, r, g, b, a, z, s, n;
-
-    /* Get the configuration. */
-    
-    lua_getglobal (_L, "options");
-
-    /* The window manager class. */
-    
-    lua_getfield (_L, -1, "wmclass");
-
-    if (lua_istable (_L, -1)) {
-	lua_rawgeti (_L, -1, 1);
-	name = lua_tostring (_L, -1);
-	
-	lua_rawgeti (_L, -1, 2);
-	class = lua_tostring (_L, -1);
-
-	lua_pop (_L, 2);
-    } else {
-	name = "techne";
-	class = "Techne";
-    }
-    
-    lua_pop (_L, 1);
-
-    /* Do we want an on-screen window? */
-    
-    lua_getfield (_L, -1, "offscreen");
-    offscreen = lua_toboolean (_L, -1);
-    lua_pop (_L, 1);
-
-    /* The graphics context options. */
-    
-    lua_getfield (_L, -1, "context");
-    
-    arbcontext = lua_toboolean (_L, -1);
-    
-    if (lua_type(_L, -1) != LUA_TBOOLEAN) {
-	int n, i, isnumber;
-	const char *s;
-
-	/* Encapsulate into a table if needed. */
-	
-	if (lua_type(_L, -1) != LUA_TTABLE) {
-	    lua_newtable(_L);
-	    lua_insert (_L, -2);
-	    lua_rawseti (_L, -2, 1);
-	}
-	
-	n = lua_rawlen (_L, -1);
-
-	for (i = 0 ; i < n ; i += 1) {
-	    lua_rawgeti (_L, -1, i + 1);
-		    
-	    s = lua_tostring (_L, -1);
-	    lua_tonumberx (_L, -1, &isnumber);
-		
-	    if (isnumber) {
-		char *dot;
-
-		dot = strchr (s, '.');
-
-		if (dot) {
-		    *dot = '\0';
-
-		    context_attributes[3] = atoi(dot + 1);
-		}
-
-		context_attributes[1] = atoi(s);
-
-		/* Forward-compatible contexts are only defined for
-		 * versions 3.0 and later. */
-		
-		if (context_attributes[1] >= 3) {
-		    context_attributes[5] |=
-			GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
-		}
-	    } else if (!strcmp (s, "debug")) {
-		debug = 1;
-		    
-		context_attributes[5] |= GLX_CONTEXT_DEBUG_BIT_ARB;
-	    } else if (!strcmp (s, "reportonce")) {
-		reportonce = 1;
-	    } else if (!strcmp (s, "break")) {
-		interrupt = 1;
-	    }
-
-	    lua_pop (_L, 1);
-	}
-    }
-	
-    lua_pop (_L, 2);
-
     self->index = 4;
 
     [super init];
 
     lua_pushstring (_L, "graphics");
     lua_setfield (_L, -2, "tag");
-    
-    /* Create the rendering context and associated visual. */
-
-    gdk_init(&argc, &argv);
-
-    display = gdk_display_get_default ();
-    screen = gdk_display_get_default_screen (display);
-    
-    /* Check the version. */
-	
-    if (!glXQueryVersion(GDK_DISPLAY_XDISPLAY(display), &i, &j) ||
-        (i == 1 && j < 4) || i < 1) {
-        t_print_error ("This GLX version is not supported.\n");
-        exit(1);
-    }
-
-    /* Query the framebuffer configurations. */
-
-    configurations = glXChooseFBConfig(GDK_DISPLAY_XDISPLAY(display),
-                                       GDK_SCREEN_XNUMBER(screen), 
-                                       visual_attributes, &j);
-    if (!configurations) {
-        t_print_error("Failed to retrieve any framebuffer configurations.\n");
-        exit(1);
-    }
-        
-    t_print_message("Found %d matching framebuffer configurations.\n", j);
-
-    /* Choose a configuration at random and create a GLX context. */
-	
-    configuration = configurations[0];
-
-    if (arbcontext) {
-        context = glXCreateContextAttribsARB(GDK_DISPLAY_XDISPLAY(display),
-                                             configuration, 0,
-                                             True, context_attributes);
-    } else {
-        context = glXCreateNewContext(GDK_DISPLAY_XDISPLAY(display),
-                                      configuration, GLX_RGBA_TYPE,
-				      0, True);
-    }
-
-    gdk_display_sync(display);
- 
-    if (!context) {
-        t_print_error ("I could not create a rendering context.\n");
-        exit(1);
-    }
-    
-    /* Create the rendering surface. */
-
-    if (offscreen) {
-        int pbuffer_attributes[] = {
-            GLX_PBUFFER_WIDTH,  1920,
-            GLX_PBUFFER_HEIGHT, 1080,
-            None
-        };
-
-        pbuffer = glXCreatePbuffer(GDK_DISPLAY_XDISPLAY(display),
-                                   configuration,
-                                   pbuffer_attributes);
-
-        XSync(GDK_DISPLAY_XDISPLAY(display), False);
-
-        glXMakeContextCurrent(GDK_DISPLAY_XDISPLAY(display),
-                              pbuffer, pbuffer, context);
-    } else {
-        GdkWindowAttr window_attributes;
-        GdkVisual *visual;
-        XVisualInfo *info;
-
-        /* Get the visual. */
-	
-        info = glXGetVisualFromFBConfig(GDK_DISPLAY_XDISPLAY(display),
-                                        configuration);
-        visual = gdk_x11_screen_lookup_visual (screen, info->visualid);
-        
-        window_attributes.window_type = GDK_WINDOW_TOPLEVEL;
-        window_attributes.wclass = GDK_INPUT_OUTPUT;
-        window_attributes.wmclass_name = (char *)name;
-        window_attributes.wmclass_class = (char *)class;
-        window_attributes.colormap = gdk_colormap_new(visual, FALSE);
-        window_attributes.visual = visual;
-        window_attributes.width = width;
-        window_attributes.height = height;
-        window_attributes.event_mask = (GDK_STRUCTURE_MASK |
-                                        GDK_FOCUS_CHANGE_MASK |
-                                        GDK_BUTTON_PRESS_MASK |
-                                        GDK_BUTTON_RELEASE_MASK |
-                                        GDK_KEY_PRESS_MASK |
-                                        GDK_KEY_RELEASE_MASK |
-                                        GDK_POINTER_MOTION_MASK |
-                                        GDK_SCROLL_MASK);
-
-        window = gdk_window_new(gdk_get_default_root_window(),
-                                &window_attributes, 
-                                GDK_WA_COLORMAP | GDK_WA_VISUAL |
-                                GDK_WA_WMCLASS);
-
-        glXMakeContextCurrent(GDK_DISPLAY_XDISPLAY(display),
-                              GDK_WINDOW_XWINDOW(window),
-                              GDK_WINDOW_XWINDOW(window),
-                              context);
-
-        XFree(info);
-    }
-
-    /* Query the bound context. */
-    
-    {
-	int major, minor;
-
-	glGetIntegerv(GL_MAJOR_VERSION, &major);
-	glGetIntegerv(GL_MINOR_VERSION, &minor);
-
-        t_print_message("A version %d.%d, %s GLX context was created.\n", major, minor, arbcontext ? "ARB" : "old");
-    }
-	
-    if (debug) {
-        glDebugMessageCallbackARB (&debug_callback, NULL);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-
-        /* glDebugMessageControlARB (GL_DONT_CARE, */
-        /* 			  GL_DONT_CARE, */
-        /* 			  GL_DEBUG_SEVERITY_HIGH_ARB, */
-        /* 			  0, NULL, */
-        /* 			  high ? GL_TRUE : GL_FALSE); */
-
-        /* glDebugMessageControlARB (GL_DONT_CARE, */
-        /* 			  GL_DONT_CARE, */
-        /* 			  GL_DEBUG_SEVERITY_MEDIUM_ARB, */
-        /* 			  0, NULL, */
-        /* 			  medium ? GL_TRUE : GL_FALSE); */
-
-        /* glDebugMessageControlARB (GL_DONT_CARE, */
-        /* 			  GL_DONT_CARE, */
-        /* 			  GL_DEBUG_SEVERITY_LOW_ARB, */
-        /* 			  0, NULL, */
-        /* 			  low ? GL_TRUE : GL_FALSE); */
-    }
-        
-    /* Print useful debug information. */
-        
-    t_print_message ("The graphics renderer is: '%s %s'.\n",
-                     glGetString(GL_RENDERER), glGetString(GL_VERSION));
-    t_print_message ("The shading language version is: '%s'.\n",
-                     glGetString(GL_SHADING_LANGUAGE_VERSION));
-        
-    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
-                          GLX_RED_SIZE, &r);
-        
-    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
-                          GLX_GREEN_SIZE, &g);
-        
-    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
-                          GLX_BLUE_SIZE, &b);
-        
-    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
-                          GLX_ALPHA_SIZE, &a);
-        
-    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
-                          GLX_DEPTH_SIZE, &z);
-        
-    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
-                          GLX_STENCIL_SIZE, &s);
-
-    glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
-                          GLX_SAMPLES, &n);
-
-    t_print_message ("The configuration of the framebuffer is "
-                     "[%d, %d, %d, %d, %d, %d, %d].\n", r, g, b, a, z, s, n);
-
-    t_print_message ("The rendering context is%sdirect.\n",
-                     glXIsDirect (GDK_DISPLAY_XDISPLAY(display), context) ?
-                     " " : " *not* ");
-
-    XFree(configurations);
-
-    {
-#include "glsl/transform_block.h"
-
-	double I[16];
-
-	/* Register the transform uniform block. */
-	
-	buffer = t_add_global_block ("__transform_block", glsl_transform_block);
-
-	/* Create the global shading context buffer object. */
-    
-	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-	glBufferData(GL_UNIFORM_BUFFER, UNIFORM_BUFFER_SIZE, NULL,
-		     GL_DYNAMIC_DRAW);
-
-	/* Initialize the values. */
-
-	t_load_identity_4 (I);
-	t_load_projection (I);
-	t_load_modelview (I, T_LOAD);
-    }
 
     instance = self;
 }
@@ -687,7 +367,7 @@ void t_warp_pointer (int x, int y)
 -(void) free
 {
     GLXContext context;
-    
+
     context = glXGetCurrentContext ();
 
     glXMakeContextCurrent(GDK_DISPLAY_XDISPLAY(display), None, None, NULL);
@@ -698,7 +378,7 @@ void t_warp_pointer (int x, int y)
     } else if (window) {
         gdk_window_destroy(window);
     }
-    
+
     [super free];
 }
 
@@ -714,13 +394,13 @@ void t_warp_pointer (int x, int y)
 
     while ((event = gdk_event_get()) != NULL) {
 	assert(event);
-	
+
 	/* _TRACE ("%d\n", event->type); */
 	assert(event);
 
         /* Ignore double/triple-click events for now.  Individual
          * press/release event sets are generated as expected. */
-        
+
         if (event->type == GDK_2BUTTON_PRESS ||
             event->type == GDK_3BUTTON_PRESS) {
             gdk_event_free (event);
@@ -729,23 +409,23 @@ void t_warp_pointer (int x, int y)
 
 	/* Ignore consecutive keypresses for the same key.  These are
 	 * always a result of key autorepeat. */
-    
+
 	if (event->type == GDK_KEY_PRESS) {
 	    unsigned int k;
 	    int i, j = -1, skip = 0;
 
 	    k = ((GdkEventKey *)event)->keyval;
-	
+
 	    for (i = 0 ; i < keys_n ; i += 1) {
                 /* Find an empty spot in case we need to store the
                  * key. */
-                
+
 		if (keys[i] == 0) {
 		    j = i;
 		}
 
                 /* Check if it's been pressed already. */
-                
+
 		if (keys[i] == k) {
                     skip = 1;
                     break;
@@ -774,7 +454,7 @@ void t_warp_pointer (int x, int y)
 	    k = ((GdkEventKey *)event)->keyval;
 
             /* Remove the key from the list. */
-            
+
 	    for (i = 0 ; i < keys_n ; i += 1) {
 		if (keys[i] == k) {
 		    keys[i] = 0;
@@ -787,25 +467,25 @@ void t_warp_pointer (int x, int y)
 	case GDK_CONFIGURE:
 	    width = ((GdkEventConfigure *)event)->width;
 	    height = ((GdkEventConfigure *)event)->height;
-	    
+
 	    glViewport (0, 0, width, height);
 
 	    /* If a projection frustum has been specified update the
 	     * planes as the viewport aspect ratio has probably
 	     * changed. */
-	    
+
 	    if (projection == FRUSTUM) {
 		/* Set planes based on frustum. */
 
 		update_projection();
-	    }	       
+	    }
 
             t_pushuserdata (_L, 1, self);
 	    t_callhook (_L, configure, 1, 0);
 	    break;
 	case GDK_FOCUS_CHANGE:
 	    t_pushuserdata (_L, 1, self);
-	    
+
 	    if (((GdkEventFocus *)event)->in == TRUE) {
 		t_callhook (_L, focus, 1, 0);
 	    } else {
@@ -829,7 +509,7 @@ void t_warp_pointer (int x, int y)
 	default:
             assert(0);
 	}
-		
+
 	gdk_event_free (event);
     }
 
@@ -843,28 +523,32 @@ void t_warp_pointer (int x, int y)
 
     if (!then) {
         then = t_get_cpu_time();
-    } else {    
+    } else {
         long long unsigned int now;
-        
+
         now = t_get_cpu_time();
         frametime += now - then;
         then = now;
     }
-    
+
     frames += 1;
-    
+
     for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-	t_draw_subtree (root, frames);    
+	t_draw_subtree (root, frames);
     }
 }
 
 -(int) _get_window
 {
-    lua_newtable (_L);
-    lua_pushinteger (_L, width);
-    lua_rawseti (_L, -2, 1);
-    lua_pushinteger (_L, height);
-    lua_rawseti (_L, -2, 2);
+    if (have_context) {
+        lua_newtable (_L);
+        lua_pushinteger (_L, width);
+        lua_rawseti (_L, -2, 1);
+        lua_pushinteger (_L, height);
+        lua_rawseti (_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
 
     return 1;
 }
@@ -899,57 +583,73 @@ void t_warp_pointer (int x, int y)
 
 -(int) _get_grabinput
 {
-    lua_pushboolean (_L, gdk_pointer_is_grabbed ());
+    if (have_context) {
+        lua_pushboolean (_L, gdk_pointer_is_grabbed ());
+    } else {
+        lua_pushnil(_L);
+    }
 
     return 1;
 }
 
 -(int) _get_canvas
 {
-    double canvas[4];
+    if (have_context) {
+        double canvas[4];
 
-    glGetDoublev (GL_COLOR_CLEAR_VALUE, canvas);
-    array_createarray (_L, ARRAY_TDOUBLE, canvas, 1, 3);
+        glGetDoublev (GL_COLOR_CLEAR_VALUE, canvas);
+        array_createarray (_L, ARRAY_TDOUBLE, canvas, 1, 3);
+    } else {
+        lua_pushnil(_L);
+    }
 
     return 1;
 }
 
 -(int) _get_colorbuffer
 {
-    array_Array *pixels;
-    int v[4];
+    if (have_context) {
+        array_Array *pixels;
+        int v[4];
 
-    glGetIntegerv (GL_VIEWPORT, v);
+        glGetIntegerv (GL_VIEWPORT, v);
 
-    /* glReadBuffer (GL_FRONT); */
+        /* glReadBuffer (GL_FRONT); */
 
-    pixels = array_createarray(_L, ARRAY_TNUCHAR, NULL, 3, v[3], v[2], 4);
-    glReadPixels(v[0], v[1], v[2], v[3], GL_RGBA,
-                 GL_UNSIGNED_BYTE, pixels->values.any);
-    
+        pixels = array_createarray(_L, ARRAY_TNUCHAR, NULL, 3, v[3], v[2], 4);
+        glReadPixels(v[0], v[1], v[2], v[3], GL_RGBA,
+                     GL_UNSIGNED_BYTE, pixels->values.any);
+    } else {
+        lua_pushnil(_L);
+    }
+
     return 1;
 }
 
 -(int) _get_perspective
 {
-    int i;
-    
-    if (projection == PERSPECTIVE) {
-	lua_newtable(_L);
-        
-	for(i = 0; i < 6; i += 1) {
-	    lua_pushnumber(_L, planes[i]);
-	    lua_rawseti(_L, -2, i + 1);
-	}
-    } else if (projection == FRUSTUM) {
-	lua_newtable(_L);
-        
-	for(i = 0; i < 3; i += 1) {
-	    lua_pushnumber(_L, frustum[i]);
-	    lua_rawseti(_L, -2, i + 1);
-	}
+    if (have_context) {
+        int i;
+
+        if (projection == PERSPECTIVE) {
+            lua_newtable(_L);
+
+            for(i = 0; i < 6; i += 1) {
+                lua_pushnumber(_L, planes[i]);
+                lua_rawseti(_L, -2, i + 1);
+            }
+        } else if (projection == FRUSTUM) {
+            lua_newtable(_L);
+
+            for(i = 0; i < 3; i += 1) {
+                lua_pushnumber(_L, frustum[i]);
+                lua_rawseti(_L, -2, i + 1);
+            }
+        } else {
+            lua_pushnil (_L);
+        }
     } else {
-	lua_pushnil (_L);
+        lua_pushnil(_L);
     }
 
     return 1;
@@ -957,43 +657,47 @@ void t_warp_pointer (int x, int y)
 
 -(int) _get_orthographic
 {
-    int i;
-    
-    if (projection == ORTHOGRAPHIC) {
-	lua_newtable(_L);
-        
-	for(i = 0; i < 6; i += 1) {
-	    lua_pushnumber(_L, planes[i]);
-	    lua_rawseti(_L, -2, i + 1);
-	}
+    if (have_context) {
+        int i;
+
+        if (projection == ORTHOGRAPHIC) {
+            lua_newtable(_L);
+
+            for(i = 0; i < 6; i += 1) {
+                lua_pushnumber(_L, planes[i]);
+                lua_rawseti(_L, -2, i + 1);
+            }
+        } else {
+            lua_pushnil (_L);
+        }
     } else {
-	lua_pushnil (_L);
+        lua_pushnil(_L);
     }
 
     return 1;
 }
-	
+
 -(int) _get_configure
 {
     lua_rawgeti(_L, LUA_REGISTRYINDEX, configure);
 
     return 1;
 }
-	
+
 -(int) _get_focus
 {
     lua_rawgeti(_L, LUA_REGISTRYINDEX, focus);
 
     return 1;
 }
-	
+
 -(int) _get_defocus
 {
     lua_rawgeti(_L, LUA_REGISTRYINDEX, defocus);
 
     return 1;
 }
-	
+
 -(int) _get_close
 {
     lua_rawgeti(_L, LUA_REGISTRYINDEX, delete);
@@ -1003,28 +707,36 @@ void t_warp_pointer (int x, int y)
 
 -(int) _get_renderer
 {
-    lua_pushstring (_L, (const char *)glGetString(GL_RENDERER));
-    lua_pushstring (_L, " ");
-    lua_pushstring (_L, (const char *)glGetString(GL_VERSION));
-    lua_concat (_L, 3);
+    if (have_context) {
+        lua_pushstring (_L, (const char *)glGetString(GL_RENDERER));
+        lua_pushstring (_L, " ");
+        lua_pushstring (_L, (const char *)glGetString(GL_VERSION));
+        lua_concat (_L, 3);
+    } else {
+        lua_pushnil(_L);
+    }
 
     return 1;
 }
 
 -(int) _get_screen
 {
-    lua_newtable (_L);
-    lua_pushinteger (_L, gdk_screen_width());
-    lua_rawseti (_L, -2, 1);
-    lua_pushinteger (_L, gdk_screen_height());
-    lua_rawseti (_L, -2, 2);
+    if (have_context) {
+        lua_newtable (_L);
+        lua_pushinteger (_L, gdk_screen_width());
+        lua_rawseti (_L, -2, 1);
+        lua_pushinteger (_L, gdk_screen_height());
+        lua_rawseti (_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
 
     return 1;
 }
- 
+
 -(int) _get_frametime
 {
-    if (frames > 0) {
+    if (have_context && frames > 0) {
         lua_createtable(_L, 2, 0);
         lua_pushnumber(_L, frametime / (frames - 1) * 1e-9);
         lua_rawseti(_L, -2, 1);
@@ -1033,14 +745,63 @@ void t_warp_pointer (int x, int y)
     } else {
         lua_pushnil(_L);
     }
-    
+
+    return 1;
+}
+
+-(int) _get_redbits
+{
+    lua_pushinteger(_L, redbits);
+
+    return 1;
+}
+
+-(int) _get_greenbits
+{
+    lua_pushinteger(_L, greenbits);
+
+    return 1;
+}
+
+-(int) _get_bluebits
+{
+    lua_pushinteger(_L, bluebits);
+
+    return 1;
+}
+
+-(int) _get_alphabits
+{
+    lua_pushinteger(_L, alphabits);
+
+    return 1;
+}
+
+-(int) _get_depthbits
+{
+    lua_pushinteger(_L, depthbits);
+
+    return 1;
+}
+
+-(int) _get_stencilbits
+{
+    lua_pushinteger(_L, stencilbits);
+
+    return 1;
+}
+
+-(int) _get_samples
+{
+    lua_pushinteger(_L, samples);
+
     return 1;
 }
 
 -(void) _set_window
 {
     GdkGeometry geometry;
-	
+
     if (lua_istable (_L, 3)) {
         lua_pushinteger (_L, 1);
         lua_gettable (_L, 3);
@@ -1052,6 +813,341 @@ void t_warp_pointer (int x, int y)
 
         lua_pop (_L, 2);
 
+        if (!have_context) {
+            GLXFBConfig *configurations;
+            GLXContext context;
+
+            int context_attributes[] = {
+                GLX_CONTEXT_MAJOR_VERSION_ARB, 1,
+                GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+                GLX_CONTEXT_FLAGS_ARB, 0,
+                None
+            };
+
+            int visual_attributes[] = {
+                GLX_X_RENDERABLE,   True,
+                GLX_DRAWABLE_TYPE,  GLX_WINDOW_BIT,
+                GLX_RENDER_TYPE,    GLX_RGBA_BIT,
+                GLX_X_VISUAL_TYPE,  GLX_TRUE_COLOR,
+                GLX_RED_SIZE,       redbits,
+                GLX_GREEN_SIZE,     greenbits,
+                GLX_BLUE_SIZE,      bluebits,
+                GLX_ALPHA_SIZE,     alphabits,
+                GLX_DEPTH_SIZE,     depthbits,
+                GLX_STENCIL_SIZE,   stencilbits,
+                GLX_DOUBLEBUFFER,   True,
+                GLX_SAMPLE_BUFFERS, samples > 0,
+                GLX_SAMPLES,        samples,
+                None
+            };
+
+            int argc = 0;
+            char **argv = NULL;
+            const char *name, *class;
+
+            int i, j;
+
+            /* Get the configuration. */
+
+            lua_getglobal (_L, "options");
+
+            /* The window manager class. */
+
+            lua_getfield (_L, -1, "wmclass");
+
+            if (lua_istable (_L, -1)) {
+                lua_rawgeti (_L, -1, 1);
+                name = lua_tostring (_L, -1);
+
+                lua_rawgeti (_L, -1, 2);
+                class = lua_tostring (_L, -1);
+
+                lua_pop (_L, 2);
+            } else {
+                name = "techne";
+                class = "Techne";
+            }
+
+            lua_pop (_L, 1);
+
+            /* Do we want an on-screen window? */
+
+            lua_getfield (_L, -1, "offscreen");
+            offscreen = lua_toboolean (_L, -1);
+            lua_pop (_L, 1);
+
+            /* The graphics context options. */
+
+            lua_getfield (_L, -1, "context");
+
+            arbcontext = lua_toboolean (_L, -1);
+
+            if (lua_type(_L, -1) != LUA_TBOOLEAN) {
+                int n, i, isnumber;
+                const char *s;
+
+                /* Encapsulate into a table if needed. */
+
+                if (lua_type(_L, -1) != LUA_TTABLE) {
+                    lua_newtable(_L);
+                    lua_insert (_L, -2);
+                    lua_rawseti (_L, -2, 1);
+                }
+
+                n = lua_rawlen (_L, -1);
+
+                for (i = 0 ; i < n ; i += 1) {
+                    lua_rawgeti (_L, -1, i + 1);
+
+                    s = lua_tostring (_L, -1);
+                    lua_tonumberx (_L, -1, &isnumber);
+
+                    if (isnumber) {
+                        char *dot;
+
+                        dot = strchr (s, '.');
+
+                        if (dot) {
+                            *dot = '\0';
+
+                            context_attributes[3] = atoi(dot + 1);
+                        }
+
+                        context_attributes[1] = atoi(s);
+
+                        /* Forward-compatible contexts are only defined for
+                         * versions 3.0 and later. */
+
+                        if (context_attributes[1] >= 3) {
+                            context_attributes[5] |=
+                                GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
+                        }
+                    } else if (!strcmp (s, "debug")) {
+                        debug = 1;
+
+                        context_attributes[5] |= GLX_CONTEXT_DEBUG_BIT_ARB;
+                    } else if (!strcmp (s, "reportonce")) {
+                        reportonce = 1;
+                    } else if (!strcmp (s, "break")) {
+                        interrupt = 1;
+                    }
+
+                    lua_pop (_L, 1);
+                }
+            }
+
+            lua_pop (_L, 2);
+
+            /* Create the rendering context and associated visual. */
+
+            gdk_init(&argc, &argv);
+
+            display = gdk_display_get_default ();
+            screen = gdk_display_get_default_screen (display);
+
+            /* Check the version. */
+
+            if (!glXQueryVersion(GDK_DISPLAY_XDISPLAY(display), &i, &j) ||
+                (i == 1 && j < 4) || i < 1) {
+                t_print_error ("This GLX version is not supported.\n");
+                exit(1);
+            }
+
+            /* Query the framebuffer configurations. */
+
+            configurations = glXChooseFBConfig(GDK_DISPLAY_XDISPLAY(display),
+                                               GDK_SCREEN_XNUMBER(screen),
+                                               visual_attributes, &j);
+            if (!configurations) {
+                t_print_error("Failed to retrieve any framebuffer configurations.\n");
+                exit(1);
+            }
+
+            t_print_message("Found %d matching framebuffer configurations.\n", j);
+
+            /* Choose a configuration at random and create a GLX context. */
+
+            configuration = configurations[0];
+
+            if (arbcontext) {
+                context = glXCreateContextAttribsARB(GDK_DISPLAY_XDISPLAY(display),
+                                                     configuration, 0,
+                                                     True, context_attributes);
+            } else {
+                context = glXCreateNewContext(GDK_DISPLAY_XDISPLAY(display),
+                                              configuration, GLX_RGBA_TYPE,
+                                              0, True);
+            }
+
+            gdk_display_sync(display);
+
+            if (!context) {
+                t_print_error ("I could not create a rendering context.\n");
+                exit(1);
+            }
+
+            /* Create the rendering surface. */
+
+            if (offscreen) {
+                int pbuffer_attributes[] = {
+                    GLX_PBUFFER_WIDTH,  1920,
+                    GLX_PBUFFER_HEIGHT, 1080,
+                    None
+                };
+
+                pbuffer = glXCreatePbuffer(GDK_DISPLAY_XDISPLAY(display),
+                                           configuration,
+                                           pbuffer_attributes);
+
+                XSync(GDK_DISPLAY_XDISPLAY(display), False);
+
+                glXMakeContextCurrent(GDK_DISPLAY_XDISPLAY(display),
+                                      pbuffer, pbuffer, context);
+            } else {
+                GdkWindowAttr window_attributes;
+                GdkVisual *visual;
+                XVisualInfo *info;
+
+                /* Get the visual. */
+
+                info = glXGetVisualFromFBConfig(GDK_DISPLAY_XDISPLAY(display),
+                                                configuration);
+                visual = gdk_x11_screen_lookup_visual (screen, info->visualid);
+
+                window_attributes.window_type = GDK_WINDOW_TOPLEVEL;
+                window_attributes.wclass = GDK_INPUT_OUTPUT;
+                window_attributes.wmclass_name = (char *)name;
+                window_attributes.wmclass_class = (char *)class;
+                window_attributes.colormap = gdk_colormap_new(visual, FALSE);
+                window_attributes.visual = visual;
+                window_attributes.width = width;
+                window_attributes.height = height;
+                window_attributes.event_mask = (GDK_STRUCTURE_MASK |
+                                                GDK_FOCUS_CHANGE_MASK |
+                                                GDK_BUTTON_PRESS_MASK |
+                                                GDK_BUTTON_RELEASE_MASK |
+                                                GDK_KEY_PRESS_MASK |
+                                                GDK_KEY_RELEASE_MASK |
+                                                GDK_POINTER_MOTION_MASK |
+                                                GDK_SCROLL_MASK);
+
+                window = gdk_window_new(gdk_get_default_root_window(),
+                                        &window_attributes,
+                                        GDK_WA_COLORMAP | GDK_WA_VISUAL |
+                                        GDK_WA_WMCLASS);
+
+                glXMakeContextCurrent(GDK_DISPLAY_XDISPLAY(display),
+                                      GDK_WINDOW_XWINDOW(window),
+                                      GDK_WINDOW_XWINDOW(window),
+                                      context);
+
+                XFree(info);
+            }
+
+            /* Query the bound context. */
+
+            if (arbcontext) {
+                int major, minor;
+
+                glGetIntegerv(GL_MAJOR_VERSION, &major);
+                glGetIntegerv(GL_MINOR_VERSION, &minor);
+
+                t_print_message("A version %d.%d, ARB GLX context was created.\n", major, minor);
+            } else {
+                t_print_message("An old-style GLX context was created.\n");
+            }
+
+            if (debug) {
+                glDebugMessageCallbackARB (&debug_callback, NULL);
+                glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+
+                /* glDebugMessageControlARB (GL_DONT_CARE, */
+                /* 			  GL_DONT_CARE, */
+                /* 			  GL_DEBUG_SEVERITY_HIGH_ARB, */
+                /* 			  0, NULL, */
+                /* 			  high ? GL_TRUE : GL_FALSE); */
+
+                /* glDebugMessageControlARB (GL_DONT_CARE, */
+                /* 			  GL_DONT_CARE, */
+                /* 			  GL_DEBUG_SEVERITY_MEDIUM_ARB, */
+                /* 			  0, NULL, */
+                /* 			  medium ? GL_TRUE : GL_FALSE); */
+
+                /* glDebugMessageControlARB (GL_DONT_CARE, */
+                /* 			  GL_DONT_CARE, */
+                /* 			  GL_DEBUG_SEVERITY_LOW_ARB, */
+                /* 			  0, NULL, */
+                /* 			  low ? GL_TRUE : GL_FALSE); */
+            }
+
+            /* Print useful debug information. */
+
+            t_print_message ("The graphics renderer is: '%s %s'.\n",
+                             glGetString(GL_RENDERER), glGetString(GL_VERSION));
+            t_print_message ("The shading language version is: '%s'.\n",
+                             glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+            glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                                  GLX_RED_SIZE, &redbits);
+
+            glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                                  GLX_GREEN_SIZE, &greenbits);
+
+            glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                                  GLX_BLUE_SIZE, &bluebits);
+
+            glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                                  GLX_ALPHA_SIZE, &alphabits);
+
+            glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                                  GLX_DEPTH_SIZE, &depthbits);
+
+            glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                                  GLX_STENCIL_SIZE, &stencilbits);
+
+            glXGetFBConfigAttrib (GDK_DISPLAY_XDISPLAY(display), configuration,
+                                  GLX_SAMPLES, &samples);
+
+            t_print_message ("The configuration of the framebuffer is "
+                             "[%d, %d, %d, %d, %d, %d, %d].\n",
+                             redbits, greenbits, bluebits, alphabits,
+                             depthbits, stencilbits, samples);
+
+            t_print_message ("The rendering context is%sdirect.\n",
+                             glXIsDirect (GDK_DISPLAY_XDISPLAY(display), context) ?
+                             " " : " *not* ");
+
+            XFree(configurations);
+
+            /* Enable multisampling if we have a suitable context. */
+
+            if (samples > 0) {
+                glEnable(GL_MULTISAMPLE);
+            }
+
+            {
+#include "glsl/transform_block.h"
+
+                double I[16];
+
+                /* Register the transform uniform block. */
+
+                buffer = t_add_global_block ("__transform_block", glsl_transform_block);
+
+                /* Create the global shading context buffer object. */
+
+                glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+                glBufferData(GL_UNIFORM_BUFFER, UNIFORM_BUFFER_SIZE, NULL,
+                             GL_DYNAMIC_DRAW);
+
+                /* Initialize the values. */
+
+                t_load_identity_4 (I);
+                t_load_projection (I);
+                t_load_modelview (I, T_LOAD);
+            }
+        }
+
         if (offscreen) {
             GLXContext context;
             int pbuffer_attributes[] = {
@@ -1059,7 +1155,7 @@ void t_warp_pointer (int x, int y)
                 GLX_PBUFFER_HEIGHT, height,
                 None
             };
-    
+
             context = glXGetCurrentContext ();
             glXMakeContextCurrent(GDK_DISPLAY_XDISPLAY(display),
                                   None, None, NULL);
@@ -1078,7 +1174,7 @@ void t_warp_pointer (int x, int y)
             gdk_window_unfullscreen (window);
             gdk_window_set_geometry_hints (window, NULL, 0);
             gdk_window_resize (window, width, height);
-	    
+
             geometry.min_width = width;
             geometry.min_height = height;
             geometry.max_width = width;
@@ -1099,9 +1195,9 @@ void t_warp_pointer (int x, int y)
                     gdk_window_fullscreen (window);
                 }
             }
-	    
+
             /* Always flush when you're done. */
-	
+
             gdk_window_flush (window);
             gdk_flush ();
         }
@@ -1109,7 +1205,7 @@ void t_warp_pointer (int x, int y)
 
     /* Clear the window's color buffers to the
        canvas color. */
-		
+
     glDrawBuffer (GL_FRONT_AND_BACK);
     glClear (GL_COLOR_BUFFER_BIT);
     glFlush();
@@ -1140,13 +1236,13 @@ void t_warp_pointer (int x, int y)
 
 	    /* Clear the window's color buffers to the
 	       canvas color. */
-		
+
 	    glDrawBuffer (GL_FRONT_AND_BACK);
 	    glClear (GL_COLOR_BUFFER_BIT);
 	    glFlush();
 	    glDrawBuffer (GL_BACK);
 	}
-	    
+
 	gdk_window_flush (window);
     }
 
@@ -1221,7 +1317,7 @@ void t_warp_pointer (int x, int y)
 
 	projection = PERSPECTIVE;
     }
-    
+
     update_projection();
 }
 
@@ -1243,7 +1339,7 @@ void t_warp_pointer (int x, int y)
 -(void) _set_canvas
 {
     array_Array *array;
-    
+
     array = array_checkcompatible (_L, 3,
                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                    ARRAY_TDOUBLE, 1, 3);
@@ -1296,6 +1392,69 @@ void t_warp_pointer (int x, int y)
 -(void) _set_frametime
 {
     T_WARN_READONLY;
+}
+
+-(void) _set_redbits
+{
+    if (have_context) {
+        T_WARN_READONLY;
+    } else {
+        redbits = lua_tointeger(_L, 3);
+    }
+}
+
+-(void) _set_greenbits
+{
+    if (have_context) {
+        T_WARN_READONLY;
+    } else {
+        greenbits = lua_tointeger(_L, 3);
+    }
+}
+
+-(void) _set_bluebits
+{
+    if (have_context) {
+        T_WARN_READONLY;
+    } else {
+        bluebits = lua_tointeger(_L, 3);
+    }
+}
+
+-(void) _set_alphabits
+{
+    if (have_context) {
+        T_WARN_READONLY;
+    } else {
+        alphabits = lua_tointeger(_L, 3);
+    }
+}
+
+-(void) _set_depthbits
+{
+    if (have_context) {
+        T_WARN_READONLY;
+    } else {
+        depthbits = lua_tointeger(_L, 3);
+    }
+}
+
+-(void) _set_stencilbits
+{
+    if (have_context) {
+        T_WARN_READONLY;
+    } else {
+        stencilbits = lua_tointeger(_L, 3);
+    }
+}
+
+-(void) _set_samples
+{
+    if (have_context) {
+        T_WARN_READONLY;
+    } else {
+        samples = lua_tointeger(_L, 3);
+    }
 }
 
 @end

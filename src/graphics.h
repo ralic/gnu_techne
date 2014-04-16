@@ -39,6 +39,13 @@
 -(int) _get_close;
 -(int) _get_renderer;
 -(int) _get_screen;
+-(int) _get_redbits;
+-(int) _get_greenbits;
+-(int) _get_bluebits;
+-(int) _get_alphabits;
+-(int) _get_depthbits;
+-(int) _get_stencilbits;
+-(int) _get_samples;
 
 -(void) _set_window;
 -(void) _set_hide;
@@ -55,6 +62,13 @@
 -(void) _set_close;
 -(void) _set_renderer;
 -(void) _set_screen;
+-(void) _set_redbits;
+-(void) _set_greenbits;
+-(void) _set_bluebits;
+-(void) _set_alphabits;
+-(void) _set_depthbits;
+-(void) _set_stencilbits;
+-(void) _set_samples;
 
 @end
 

@@ -479,7 +479,6 @@
             glEnable (GL_DEPTH_TEST);
             glEnable (GL_SAMPLE_ALPHA_TO_COVERAGE);
             glEnable (GL_SAMPLE_ALPHA_TO_ONE);
-            glEnable (GL_MULTISAMPLE);
     
             for (k = 0 ; k < self->elevation->swatches_n ; k += 1) {
                 Shader *shader;
@@ -500,7 +499,6 @@
             glDisable (GL_DEPTH_TEST);
             glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
             glDisable (GL_SAMPLE_ALPHA_TO_ONE);
-            glDisable (GL_MULTISAMPLE);
 	}
     }
     

@@ -11,18 +11,17 @@ datadir=@datadir@
 # at this point.
 
 args=()
-debug=0
 
 for arg in "$@"; do
     if [ "$arg" = "--debug" ]; then
-	debug=1
+	debug="debug"
     else
 	args+=("$arg")
     fi
 done
 
-if [ "$debug" -eq 1 ]; then
-    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts "${args[@]}"
+if [ "$debug" = "debug" ]; then
+    exec gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts "${args[@]}"
 else
-    ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts "${args[@]}"
+    exec ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts "${args[@]}"
 fi

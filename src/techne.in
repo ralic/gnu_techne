@@ -22,7 +22,7 @@ for arg in "$@"; do
 done
 
 if [ "$debug" -eq 1 ]; then
-    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts ${args[*]}
+    gdb -silent --args ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts "${args[@]}"
 else
-    ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts ${args[@]}
+    ${libdir}/techne/techne.bin -Oprefix=${datadir}/techne -Oprefix=${datadir}/techne/scripts "${args[@]}"
 fi

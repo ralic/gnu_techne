@@ -41,6 +41,7 @@ LT_INIT([dlopen])
 # Checks for libraries.
 
 AX_LIB_READLINE
+AC_CHECK_LIB(dw, dwfl_errno)
 
 # Lua tends to be named differently among distributions,
 # so we need to look for the proper packagename.
@@ -95,7 +96,6 @@ if test "x$with_tools" = "xyes"; then
 
    AC_CONFIG_FILES([tools/Makefile])
 fi
-
 
 # Checks for library functions.
 

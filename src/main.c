@@ -33,6 +33,8 @@
 #include <execinfo.h>
 #endif
 
+#include <elfutils/libdwfl.h>
+
 #include "prompt/prompt.h"
 #include "profiling.h"
 #include "techne.h"
@@ -171,18 +173,21 @@ static void pushstack(lua_State *L)
     	lua_getinfo(L, "Snl", &ar);
 
     	if (!strcmp (ar.what, "C")) {
-    	    lua_pushfstring (L, "%s#%d%s in C function %s'%s'\n",
-			     COLOR(0, 31), i, COLOR(0, 37), COLOR(1, 33),
-			     ar.name);
+    	    lua_pushfstring (L, "%s#%d%s in C function %s'%s'%s\n",
+			     COLOR(0, 31), i, COLOR(0,37),
+                             COLOR(1, 37), ar.name, COLOR(0,37));
     	} else if (!strcmp (ar.what, "main")) {
-    	    lua_pushfstring (L, "%s#%d %s%s:%s%d%s in the main chunk\n",
-			     COLOR(0, 31), i, COLOR(0, 33), ar.short_src,
-			     COLOR(1, 33), ar.currentline, COLOR(0, 37));
+    	    lua_pushfstring (L, "%s#%d%s in the %smain chunk%s at %s%s:%d%s\n",
+			     COLOR(0, 31), i, COLOR(0,37),
+                             COLOR(1, 37), COLOR(0,37),
+                             COLOR(1, 33), ar.short_src,
+			     ar.currentline, COLOR(0,));
     	} else if (!strcmp (ar.what, "Lua")) {
-    	    lua_pushfstring (L, "%s#%d %s%s:%s%d%s in function %s'%s'\n",
-			     COLOR(0, 31), i, COLOR(0, 33), ar.short_src,
-			     COLOR(1, 33), ar.currentline, COLOR(0, 37), 
-			     COLOR(1, 33), ar.name);
+    	    lua_pushfstring (L, "%s#%d%s in function %s'%s'%s at %s%s:%d%s\n",
+			     COLOR(0, 31), i, COLOR(0,37),
+                             COLOR(1, 37), ar.name, COLOR(0,37),
+                             COLOR(1, 33), ar.short_src,
+			     ar.currentline, COLOR(0,));
     	}
     }
 
@@ -209,17 +214,84 @@ static void print_c_stack()
 {
 #ifdef HAVE_BACKTRACE
     void *frames[64];
-    char **lines;
     int i, n;
     
     t_print_error("\n%sC stack trace:\n", COLOR(0, 31));
     
     n = backtrace (frames, 64);
-    lines = backtrace_symbols (frames, n);
 
-    for (i = 0 ; i < n ; i += 1) {
-        t_print_error("%s#%-2d%s %s\n", COLOR(0, 31), i, COLOR(0,), lines[i]);
+#ifdef HAVE_LIBDW
+    {
+        static Dwfl* dwfl;
+        Dwfl_Callbacks callbacks;
+        char *debuginfo_path = NULL;
+ 
+        callbacks.find_elf = dwfl_linux_proc_find_elf;
+        callbacks.find_debuginfo = dwfl_standard_find_debuginfo;
+        callbacks.section_address = NULL;
+        callbacks.debuginfo_path = &debuginfo_path;
+ 
+        dwfl = dwfl_begin(&callbacks);
+        
+        if(dwfl == NULL ||
+           dwfl_linux_proc_report (dwfl, getpid()) != 0 ||
+           dwfl_report_end (dwfl, NULL, NULL) != 0) {
+            if (dwfl) {
+                dwfl_end(dwfl);
+            }
+
+            t_print_error("Could not read debugging symbols.\n");
+            
+            return;
+        }
+
+        for (i = 0 ; i < n ; i += 1) {
+            Dwarf_Addr addr;
+            Dwfl_Module *module;
+            Dwfl_Line *line;
+            const char *function;
+
+            addr = (uintptr_t)frames[i];
+            module = dwfl_addrmodule (dwfl, addr);
+            line = dwfl_getsrc (dwfl, addr);
+            function = dwfl_module_addrname(module, addr);
+
+            t_print_error("%s#%-2d%s",
+                          COLOR(0, 31), i, COLOR(0,37));
+
+            if (function) {
+                t_print_error("in %s%s%s ",
+                              COLOR(1, 37), function, COLOR(0,37));
+            }
+                
+            if(line) {
+                Dwarf_Addr addr;
+                const char *filename;
+                int n;
+
+                filename = dwfl_lineinfo (line, &addr, &n, NULL, NULL, NULL);
+                t_print_error("at %s%s:%d%s\n",
+                              COLOR(1, 33), basename(filename),
+                              n, COLOR(0,));
+            } else {
+                t_print_error("at %s%p%s\n",
+                              COLOR(1, 33), frames[i], COLOR(0,));
+            }
+        }
+
+        dwfl_end(dwfl);
     }
+#else
+    {
+        char **lines;
+        lines = backtrace_symbols (frames, n);
+
+        for (i = 0 ; i < n ; i += 1) {
+            t_print_error("%s#%-2d%s %s\n",
+                          COLOR(0, 31), i, COLOR(0,), lines[i]);
+        }
+    }
+#endif
 #endif
 }
 

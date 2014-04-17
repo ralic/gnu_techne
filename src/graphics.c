@@ -349,9 +349,17 @@ void t_warp_pointer (int x, int y)
 
 -(void) init
 {
+    int argc = 0;
+    char **argv = NULL;
+
     self->index = 4;
 
     [super init];
+
+    gdk_init(&argc, &argv);
+
+    display = gdk_display_get_default ();
+    screen = gdk_display_get_default_screen (display);
 
     lua_pushstring (_L, "graphics");
     lua_setfield (_L, -2, "tag");
@@ -583,11 +591,7 @@ void t_warp_pointer (int x, int y)
 
 -(int) _get_grabinput
 {
-    if (have_context) {
-        lua_pushboolean (_L, gdk_pointer_is_grabbed ());
-    } else {
-        lua_pushnil(_L);
-    }
+    lua_pushboolean (_L, gdk_pointer_is_grabbed ());
 
     return 1;
 }
@@ -721,15 +725,11 @@ void t_warp_pointer (int x, int y)
 
 -(int) _get_screen
 {
-    if (have_context) {
-        lua_newtable (_L);
-        lua_pushinteger (_L, gdk_screen_width());
-        lua_rawseti (_L, -2, 1);
-        lua_pushinteger (_L, gdk_screen_height());
-        lua_rawseti (_L, -2, 2);
-    } else {
-        lua_pushnil(_L);
-    }
+    lua_newtable (_L);
+    lua_pushinteger (_L, gdk_screen_width());
+    lua_rawseti (_L, -2, 1);
+    lua_pushinteger (_L, gdk_screen_height());
+    lua_rawseti (_L, -2, 2);
 
     return 1;
 }
@@ -841,8 +841,6 @@ void t_warp_pointer (int x, int y)
                 None
             };
 
-            int argc = 0;
-            char **argv = NULL;
             const char *name, *class;
 
             int i, j;
@@ -939,12 +937,6 @@ void t_warp_pointer (int x, int y)
             lua_pop (_L, 2);
 
             /* Create the rendering context and associated visual. */
-
-            gdk_init(&argc, &argv);
-
-            display = gdk_display_get_default ();
-            screen = gdk_display_get_default_screen (display);
-
             /* Check the version. */
 
             if (!glXQueryVersion(GDK_DISPLAY_XDISPLAY(display), &i, &j) ||

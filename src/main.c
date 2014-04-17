@@ -33,7 +33,9 @@
 #include <execinfo.h>
 #endif
 
+#ifdef HAVE_LIBDW
 #include <elfutils/libdwfl.h>
+#endif
 
 #include "prompt/prompt.h"
 #include "profiling.h"

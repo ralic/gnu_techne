@@ -1138,6 +1138,8 @@ void t_warp_pointer (int x, int y)
                 t_load_projection (I);
                 t_load_modelview (I, T_LOAD);
             }
+
+            have_context = 1;
         }
 
         if (offscreen) {

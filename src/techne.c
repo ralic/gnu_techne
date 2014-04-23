@@ -64,6 +64,7 @@ int t_get_iterations ()
 -(void) iterate
 {
     Builtin *builtin;
+    long long unsigned int t;
 
     t_initialize_timing ();
     
@@ -92,6 +93,11 @@ int t_get_iterations ()
 	
         iterations += 1;
     }
+
+    t = t_get_cpu_time();
+    t_print_message("Ran a total of %d iterations in %.1f seconds at %.1f ms per iteration (%.1f Hz).\n",
+                    iterations, t * 1e-9, t * 1e-6 / iterations,
+                    iterations / (t * 1e-9));
 }
 
 -(int) _get_interactive
@@ -110,7 +116,7 @@ int t_get_iterations ()
  
 -(int) _get_time
 {
-    lua_pushnumber (_L, t_get_cpu_time() / 1e9);
+    lua_pushnumber (_L, t_get_cpu_time() * 1e-9);
     
     return 1;
 }

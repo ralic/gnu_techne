@@ -132,17 +132,11 @@ else
       index = -1 / 0,
 
       unlink = function(self)
-         local c, nodes, output = 1e3
+         local nodes, output
 
          if techne.iterations == 0 then
             return
          end
-
-         message(string.format([[
-Ran a total of %d iterations in %.1f seconds at %.1f ms per iteration (%.1f Hz).
-]],
-                               techne.iterations, techne.time,
-                               techne.time / techne.iterations * c, techne.iterations / techne.time))
          
          -- Collect to-be-profiled nodes.
          
@@ -242,13 +236,13 @@ Ran a total of %d iterations in %.1f seconds at %.1f ms per iteration (%.1f Hz).
 |%-30s %5.1f(%2d)/%5.1f  %5.1f(%2d)/%5.1f  %5.1f(%2d)/%5.1f |
 ]],
                            label,
-                           cummulative[1][1] * c, cummulative[1][2] / 100,
-                           own[1][1] * c,
-                           cummulative[2][1] * c, cummulative[2][2] / 100,
-                           own[2][1] * c,
-                           (cummulative[3] and cummulative[3][1] or 0) * c,
+                           cummulative[1][1] * 1e3, cummulative[1][2] / 100,
+                           own[1][1] * 1e3,
+                           cummulative[2][1] * 1e3, cummulative[2][2] / 100,
+                           own[2][1] * 1e3,
+                           (cummulative[3] and cummulative[3][1] or 0) * 1e3,
                            (cummulative[3] and cummulative[3][2] / 100 or 0),
-                           (own[3] and own[3][1] or 0) * c))
+                           (own[3] and own[3][1] or 0) * 1e3))
             end
 
             message ([[

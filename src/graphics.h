@@ -20,8 +20,11 @@
 #include <lua.h>
 #include "builtin.h"
 #include "transform.h"
+#include "profiling.h"
 
 @interface Graphics: Builtin {
+@public
+    t_GPUProfile latency;
 }
 
 -(int) _get_window;
@@ -46,6 +49,7 @@
 -(int) _get_depthbits;
 -(int) _get_stencilbits;
 -(int) _get_samples;
+-(int) _get_latency;
 
 -(void) _set_window;
 -(void) _set_hide;
@@ -69,6 +73,7 @@
 -(void) _set_depthbits;
 -(void) _set_stencilbits;
 -(void) _set_samples;
+-(void) _set_latency;
 
 @end
 

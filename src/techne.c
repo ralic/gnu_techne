@@ -69,6 +69,7 @@ int t_get_iterations ()
     t_initialize_timing ();
     
     while (iterate || interactive) {
+        t_begin_cpu_interval (&self->latency);
         t_begin_cpu_interval (&self->core);
         
 	if (interactive) {
@@ -89,6 +90,7 @@ int t_get_iterations ()
 	    }
 	}
 
+        t_end_cpu_interval (&self->latency);
         t_advance_profiling_frame();
 	
         iterations += 1;
@@ -135,6 +137,21 @@ int t_get_iterations ()
     return 1;
 }
 
+-(int) _get_latency
+{
+    if (self->latency.frames > 0) {
+        lua_createtable(_L, 2, 0);
+        lua_pushnumber(_L, self->latency.total[1] * 1e-9 / self->latency.frames);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger(_L, self->latency.frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+
+    return 1;
+}
+
 -(void) _set_time
 {
     T_WARN_READONLY;
@@ -156,6 +173,11 @@ int t_get_iterations ()
 }
 	
 -(void) _set_profiling
+{
+    T_WARN_READONLY;
+}
+
+-(void) _set_latency
 {
     T_WARN_READONLY;
 }

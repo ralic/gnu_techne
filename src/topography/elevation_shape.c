@@ -284,8 +284,8 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
 {
     if (self->profile_2.frames > 0) {
         lua_createtable (_L, 2, 0);
-        lua_pushnumber(_L, (self->context->intervals[0] /
-                            self->profile_2.frames * 1e-9));
+        lua_pushnumber(_L, (self->context->intervals[0] * 1e-9 /
+                            self->profile_2.frames));
         lua_rawseti(_L, -2, 1);
         lua_pushinteger (_L, self->profile_2.frames);
         lua_rawseti(_L, -2, 2);
@@ -305,8 +305,8 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
 {
     if (self->profile_2.frames > 0) {
         lua_createtable (_L, 2, 0);
-        lua_pushnumber(_L, (self->context->intervals[1] /
-                            self->profile_2.frames * 1e-9));
+        lua_pushnumber(_L, (self->context->intervals[1] * 1e-9 /
+                            self->profile_2.frames));
         lua_rawseti(_L, -2, 1);
         lua_pushinteger (_L, self->profile_2.frames);
         lua_rawseti(_L, -2, 2);
@@ -326,8 +326,8 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
 {
     if (self->profile_2.frames > 0) {
         lua_createtable (_L, 2, 0);
-        lua_pushnumber(_L, (self->context->intervals[2] /
-                            self->profile_2.frames * 1e-9));
+        lua_pushnumber(_L, (self->context->intervals[2] * 1e-9 /
+                            self->profile_2.frames));
         lua_rawseti(_L, -2, 1);
         lua_pushinteger (_L, self->profile_2.frames);
         lua_rawseti(_L, -2, 2);
@@ -347,8 +347,8 @@ static void draw_geometry(roam_Context *context, float *buffer_in,
 {
     if (self->profile_2.frames > 0) {
         lua_createtable (_L, 2, 0);
-        lua_pushnumber(_L, (self->context->intervals[3] /
-                            self->profile_2.frames * 1e-9));
+        lua_pushnumber(_L, (self->context->intervals[3] * 1e-9 /
+                            self->profile_2.frames));
         lua_rawseti(_L, -2, 1);
         lua_pushinteger (_L, self->profile_2.frames);
         lua_rawseti(_L, -2, 2);

@@ -112,6 +112,7 @@ int luaopen_morebase (lua_State *L);
 int luaopen_profiling (lua_State *L);
 
 @interface Techne: Builtin {
+    t_CPUProfile latency;    
 }
 
 -(int) _get_profiling;
@@ -124,6 +125,8 @@ int luaopen_profiling (lua_State *L);
 -(void) _set_interactive;
 -(int) _get_time;
 -(void) _set_time;
+-(int) _get_latency;
+-(void) _set_latency;
 
 @end
 

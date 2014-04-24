@@ -825,12 +825,12 @@ int main(int argc, char **argv)
 
     lua_pushcfunction (_L, warn);
     lua_setglobal (_L, "warn");
-    
+
     /* Run the boot scripts. */
 
     lua_getglobal(_L, "require");
     lua_pushstring(_L, "boot");
-    lua_pcall(_L, 1, 0, 0);
+    assert(lua_pcall(_L, 1, 0, 0) == LUA_OK);
 
     /* Proceed to execute specified input. */
 

@@ -65,7 +65,6 @@ static int hide = 1, cursor = 1, decorate = 1, offscreen = 0;
 static int redbits = 1, greenbits = 1, bluebits = 1, alphabits = 1;
 static int depthbits = 1, stencilbits = 8, samples = 4;
 
-static long long unsigned int then, frametime;
 static int frames;
 static double planes[6], frustum[3];
 static int focus = LUA_REFNIL, defocus = LUA_REFNIL;
@@ -397,9 +396,15 @@ void t_warp_pointer (int x, int y)
 
     t_begin_cpu_interval (&self->core);
 
-    glXSwapBuffers (GDK_DISPLAY_XDISPLAY(display),
-                    offscreen ? pbuffer : GDK_WINDOW_XWINDOW(window));
+    if (frames > 0) {
+        glXSwapBuffers (GDK_DISPLAY_XDISPLAY(display),
+                        offscreen ? pbuffer : GDK_WINDOW_XWINDOW(window));
 
+        t_end_gpu_interval(&self->latency);
+    }
+
+    t_begin_gpu_interval(&self->latency);
+    
     while ((event = gdk_event_get()) != NULL) {
 	assert(event);
 
@@ -528,16 +533,6 @@ void t_warp_pointer (int x, int y)
 	    GL_STENCIL_BUFFER_BIT);
 
     t_end_cpu_interval (&self->core);
-
-    if (!then) {
-        then = t_get_cpu_time();
-    } else {
-        long long unsigned int now;
-
-        now = t_get_cpu_time();
-        frametime += now - then;
-        then = now;
-    }
 
     frames += 1;
 
@@ -734,13 +729,13 @@ void t_warp_pointer (int x, int y)
     return 1;
 }
 
--(int) _get_frametime
+-(int) _get_latency
 {
-    if (have_context && frames > 0) {
+    if (have_context && self->latency.frames > 0) {
         lua_createtable(_L, 2, 0);
-        lua_pushnumber(_L, frametime / (frames - 1) * 1e-9);
+        lua_pushnumber(_L, self->latency.interval * 1e-9 / self->latency.frames);
         lua_rawseti(_L, -2, 1);
-        lua_pushinteger(_L, frames - 1);
+        lua_pushinteger(_L, self->latency.frames);
         lua_rawseti(_L, -2, 2);
     } else {
         lua_pushnil(_L);
@@ -1383,7 +1378,7 @@ void t_warp_pointer (int x, int y)
     T_WARN_READONLY;
 }
 
--(void) _set_frametime
+-(void) _set_latency
 {
     T_WARN_READONLY;
 }

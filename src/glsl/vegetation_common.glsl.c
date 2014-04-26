@@ -9,7 +9,7 @@ void seed_cluster(vec3 apex, vec3 left, vec3 right,
 
     p = (apex.xy + left.xy + right.xy) / 3;
 
-    u = hash(floatBitsToUint(p.xy), instance);
+    u = hash(floatBitsToUint(p), instance);
     l = ceil(pow(3 * float(instance + 1), 1.0 / 3.0) - 0.5);
     a = floor(rand2() * l);
 }

@@ -205,6 +205,10 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
 
         A = 0.5 * fabs(u[0] * v[1] - u[1] * v[0]);
 
+        if (seeding->rolloff < 1) {
+            A = pow(A, seeding->rolloff);
+        }
+
         if(isnan(A)) {
             n_0 = seeding->ceiling;
         } else {

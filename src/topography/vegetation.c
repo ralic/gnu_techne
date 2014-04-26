@@ -65,6 +65,7 @@
     
     self->context = &self->elevation->context;
     self->seeding.horizon = -100;
+    self->seeding.rolloff = 1;
     self->seeding.density = 10000;
     self->seeding.ceiling = 1000;
     self->seeding.clustering = 1.0;
@@ -644,6 +645,18 @@
 -(void) _set_horizon
 {
     self->seeding.horizon = -lua_tonumber (_L, 3);
+}
+
+-(int) _get_rolloff
+{
+    lua_pushnumber (_L, self->seeding.rolloff);
+    
+    return 1;
+}
+
+-(void) _set_rolloff
+{
+    self->seeding.rolloff = lua_tonumber (_L, 3);
 }
 
 @end

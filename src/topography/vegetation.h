@@ -69,6 +69,9 @@
 -(int) _get_clusters;
 -(void) _set_clusters;
 
+-(int) _get_rolloff;
+-(void) _set_rolloff;
+
 @end
 
 @interface VegetationSpecies: Shader {

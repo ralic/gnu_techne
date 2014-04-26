@@ -85,5 +85,7 @@ AC_CHECK_FUNCS([backtrace wordexp ioctl asprintf])
 
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
-		 src/techne])
+		 grass/Makefile
+		 src/techne
+                 grass/grassdemo])
 AC_OUTPUT

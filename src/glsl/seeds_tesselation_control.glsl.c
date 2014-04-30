@@ -12,7 +12,7 @@ patch out unsigned int instance_tc;
 void main() {
     gl_TessLevelOuter[0] = clustering_v[0];
     gl_TessLevelOuter[1] = 1;
-    
+
     apex_tc = apex_v[0];
     left_tc = left_v[0];
     right_tc = right_v[0];

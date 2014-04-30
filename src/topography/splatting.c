@@ -1,16 +1,16 @@
-/* Copyright (C) 2012 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2012 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -36,10 +36,10 @@ void add_splatting_sources(Elevation *elevation, ShaderMold *shader,
     lua_setfield (_L, -2, "swatches_n");
 
     lua_createtable(_L, n, 0);
-        
+
     for (i = 0, j = 0, l = 0 ; i < n ; i += 1) {
         k = elevation->bands_n[i];
-            
+
         lua_createtable(_L, 2, 0);
 
         lua_pushinteger(_L, j);
@@ -79,7 +79,7 @@ void set_splatting_uniforms(Elevation *elevation, Shader *shader)
     int i, j, k, n;
 
     n = shader->name;
-    
+
     /* Get uniform locations. */
 
     scale_l = glGetUniformLocation(n, "scale");
@@ -102,12 +102,12 @@ void set_splatting_uniforms(Elevation *elevation, Shader *shader)
                 q / tiles->resolution[0], q / tiles->resolution[1]);
 
     /* Initialize reference color uniforms. */
-    
+
     for (i = 0, k = 0 ; i < elevation->swatches_n ; i += 1) {
         elevation_SwatchDetail *swatch;
-        
+
         swatch = &elevation->swatches[i];
-        
+
         for (j = 0 ; j < elevation->bands_n[i] ; j += 1, k += 1) {
             t_set_indexed_sampler(shader, "detail",
                                   swatch->detail[j]->name, k);

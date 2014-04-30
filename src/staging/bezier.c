@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -58,7 +58,7 @@
 
     return 1;
 }
- 
+
 -(void) _set_speed
 {
     self->speed = lua_tonumber(_L, 3);
@@ -70,13 +70,13 @@
 
     return 1;
 }
- 
+
 -(void) _set_vertices
 {
     array_Array *array;
-    
+
     luaL_unref (_L, LUA_REGISTRYINDEX, self->reference);
-    
+
     if (!lua_isnoneornil(_L, 3)) {
         array = array_checkcompatible (_L, 3,
                                        ARRAY_TYPE | ARRAY_RANK,
@@ -112,7 +112,7 @@
     if (n < self->segments_n) {
         double (*P)[3], u, u_1, v[3];
         int i;
-    
+
         u = self->time - floor(self->time);
         u_1 = 1 - u;
         P = ((double (*)[3])self->vertices) + 3 * n;
@@ -169,16 +169,16 @@
         R[0] = s[0];
         R[3] = s[1];
         R[6] = s[2];
-            
+
         R[1] = U[0];
         R[4] = U[1];
         R[7] = U[2];
-            
+
         R[2] = t[0];
         R[5] = t[1];
         R[8] = t[2];
     }
-                
+
     [super transform];
 }
 

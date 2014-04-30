@@ -1,33 +1,33 @@
--- Copyright (C) 2009 Papavasileiou Dimitris                             
---                                                                      
--- This program is free software: you can redistribute it and/or modify 
--- it under the terms of the GNU General Public License as published by 
--- the Free Software Foundation, either version 3 of the License, or    
--- (at your option) any later version.                                  
---                                                                      
--- This program is distributed in the hope that it will be useful,      
--- but WITHOUT ANY WARRANTY; without even the implied warranty of       
--- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
--- GNU General Public License for more details.                         
---                                                                      
--- You should have received a copy of the GNU General Public License    
+-- Copyright (C) 2009 Papavasileiou Dimitris
+--
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local math = require "math"
 
 local units = {
    -- Weight.
-   
+
    pounds = function (m)
       return m * 0.45359237
    end,
-   
+
    kilograms = function (m)
       return m
    end,
 
    -- Distance.
-   
+
    meters = function (l)
       return l
    end,
@@ -49,7 +49,7 @@ local units = {
    end,
 
    -- Speed.
-   
+
    milesperhour = function (v)
       return v * 0.44704
    end,
@@ -73,11 +73,11 @@ local units = {
    end,
 
    -- Moment of inertia.
-   
+
    kilogramssquaremeters = function (I)
       return I
    end,
-   
+
    slugsquarefeet = function (I)
       return I * 14.593902 * 0.3048^2
    end,
@@ -107,7 +107,7 @@ local units = {
    end,
 
    -- Angles.
-   
+
    degrees = function (theta)
       return theta / 180 * math.pi
    end,
@@ -117,7 +117,7 @@ local units = {
    end,
 
    -- Temperature.
-   
+
    kelvin = function (T)
       return T
    end,
@@ -127,7 +127,7 @@ local units = {
    end,
 
    -- Density.
-   
+
    kilogramspercubicmeter = function (rho)
       return rho
    end,
@@ -137,13 +137,13 @@ local units = {
    end,
 
    -- Pressure.
-   
+
    newtonspersquaremeter = function (P)
       return rho
    end,
-   
+
    --
-   
+
    slugspersquarefeet = function (P)
       return P * 14.593902 / 0.3048^2
    end,
@@ -151,18 +151,18 @@ local units = {
 
 local function wrapper (f)
    return function (x)
-	     if type(x) == "table" then
-		local t = {}
+             if type(x) == "table" then
+                local t = {}
 
-		for i, v in ipairs (x) do
-		   t[i] = f(x[i])
-		end
+                for i, v in ipairs (x) do
+                   t[i] = f(x[i])
+                end
 
-		return t
-	     else
-		return f(x)
-	     end
-	  end
+                return t
+             else
+                return f(x)
+             end
+          end
 end
 
 local wrapped = {}

@@ -18,9 +18,9 @@ vec3 cluster_stratum(vec3 apex, vec3 left, vec3 right, unsigned int instance)
 {
     vec2 u, a;
     float l;
-    
+
     seed_cluster(apex, left, right, instance, u, a, l);
-    
+
     return vec3(a, l);
 }
 
@@ -30,11 +30,11 @@ vec3 cluster_center(vec3 apex, vec3 left, vec3 right, unsigned int instance)
     float l;
 
     seed_cluster(apex, left, right, instance, u, a, l);
-    u = (u + a) / l;    
+    u = (u + a) / l;
 
     if (false) {
         float sqrtux = sqrt(u.x);
-    
+
         return (1 - sqrtux) * apex +
             sqrtux * (1 - u.y) * left +
             sqrtux * u.y * right;
@@ -50,10 +50,10 @@ vec3 cluster_seed(vec3 apex, vec3 left, vec3 right, vec3 stratum,
     vec2 u, p;
 
     p = (apex.xy + left.xy + right.xy) / 3;
-    
+
     /* Hash the triangle vertices and instance to get a pair of random
      * numbers. */
-    
+
     u = hash(floatBitsToUint(p),
              uint(round(gl_TessLevelOuter[0] * gl_TessCoord.y)) + instance + 1);
     u = (u + stratum.xy) / stratum.z;
@@ -61,7 +61,7 @@ vec3 cluster_seed(vec3 apex, vec3 left, vec3 right, vec3 stratum,
     /* Map the random numbers onto the triangle (0, 0) - (1, 0) -
        (0, 1) by reflecting the points lying outside it along the edge
        (1, 0) - (0, 1).*/
-    
+
     u = mix(u, 1 - u.yx, floor(u.x + u.y));
     return apex + (left - apex) * u.x + (right - apex) * u.y;
 }

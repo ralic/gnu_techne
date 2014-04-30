@@ -79,7 +79,7 @@ c = array.divide (a, b)
 -- implicitly promoted to a float array.
 
 a = array.floats {1, 2, 3}
-b = array.divide (a, {2, 2, 2}) 
+b = array.divide (a, {2, 2, 2})
 
 -- Specify both arguments as normal tables which are both implicitly
 -- promoted to double arrays (since it's the only type guaranteed not
@@ -89,7 +89,7 @@ a = array.divide ({1, 2, 3}, {2, 2, 2})
 
 The result is always an array of the same type as the arguments, so a
 float array in the first two cases but a double array in the last.
- 
+
 Apart from division you can perform element-by-element
 multiplications, addition, substraction, scaling by a constant and
 raising to a power with array.multiply, array.add, array.subtract,
@@ -131,14 +131,14 @@ For example:
 > a = array.doubles {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}
 > =array.pretty (a)
 {
-  {1, 2, 3}, 
-  {4, 5, 6}, 
+  {1, 2, 3},
+  {4, 5, 6},
   {7, 8, 9}
 }
 > b = array.slice (a, 2, 3, 2, 3)
 > =array.pretty (b)
 {
-  {5, 6}, 
+  {5, 6},
   {8, 9}
 }
 

@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -36,7 +36,7 @@ static Input* instance;
     self->index = 1;
 
     [super init];
-    
+
     lua_pushstring (_L, "input");
     lua_setfield (_L, -2, "tag");
 
@@ -64,7 +64,7 @@ static Input* instance;
 +(GdkEvent *)next
 {
     assert (cursor);
-    
+
     if (cursor - events < events_n - 1) {
         return *(cursor += 1);
     } else {
@@ -75,7 +75,7 @@ static Input* instance;
 +(void)addEvent: (GdkEvent *)event
 {
     assert(event);
-    
+
     if (events_n == events_max) {
         events_max += 1;
         events = realloc (events, events_max * sizeof(GdkEvent *));
@@ -102,7 +102,7 @@ static Input* instance;
 
     memset (events, 0, events_n * sizeof (GdkEvent *));
     events_n = 0;
-    
+
     t_end_cpu_interval (&self->core);
 }
 

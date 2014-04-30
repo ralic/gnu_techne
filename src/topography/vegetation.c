@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -38,7 +38,7 @@
 {
     roam_Tileset *tiles;
     const double A = 1;
-    
+
     const char *private[] = {"base", "detail", "offset", "scale",
                              "factor", "references", "weights",
                              "resolutions", "clustering", "thresholds"};
@@ -46,7 +46,7 @@
     const char *header;
     ShaderMold *shader;
     int i, n;
-        
+
 #include "glsl/color.h"
 #include "glsl/rand.h"
 #include "glsl/vegetation_common.h"
@@ -58,11 +58,11 @@
 
     self->elevation = t_tonode (_L, -1);
     self->reference_1 = luaL_ref (_L, LUA_REGISTRYINDEX);
-    
+
     [super init];
 
     /* Initialize seeding. */
-    
+
     self->context = &self->elevation->context;
     self->seeding.horizon = -100;
     self->seeding.rolloff = 1;
@@ -90,7 +90,7 @@
     tiles = &self->context->tileset;
 
     self->seeding.level = 2 * tiles->depth + log(tiles->resolution[0] * tiles->resolution[1] / A) / log(2) - 1;
-    
+
     initialize_seeding(&self->seeding);
 
     n = self->elevation->swatches_n;
@@ -101,7 +101,7 @@
     self->vertexbuffers = malloc((n + 1) * sizeof(unsigned int));
     glGenBuffers(n + 1, self->vertexbuffers);
     glGenTransformFeedbacks(1, &self->feedback);
-    
+
     self->arrays = malloc((n + 1) * sizeof(unsigned int));
     glGenVertexArrays (n + 1, self->arrays);
     /* glGenQueries(2, queries); */
@@ -109,9 +109,9 @@
     /* Create the program. */
 
     [self unload];
-    
+
     shader = [ShaderMold alloc];
-        
+
     [shader initWithHandle: NULL];
     [shader declare: 10 privateUniforms: private];
 
@@ -121,7 +121,7 @@
              "%s\n"
              "const int SWATCHES = %d;\n",
              _PROFILING ? "#define COLLECT_STATISTICS\n" : "", n);
-    
+
     [shader add: 5
             sourceStrings: (const char *[5]){
                 header,
@@ -133,7 +133,7 @@
             for: T_VERTEX_STAGE];
 
     /* Render the geometry shader. */
-    
+
     lua_createtable(_L, 0, 1);
     lua_pushinteger(_L, n);
     lua_setfield (_L, -2, "species");
@@ -163,7 +163,7 @@
 
         /* Submit all varyings but the last gl_NextBuffer (which means
          * the -1 is intenional). */
-        
+
         glTransformFeedbackVaryings(shader->name, 8 * n - 1, varyings,
                                     GL_INTERLEAVED_ATTRIBS);
     }
@@ -181,7 +181,7 @@
     }
 
     /* Bind the VBOs into the VAO. */
-    
+
     glBindVertexArray(self->arrays[0]);
     glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[0]);
 
@@ -198,7 +198,7 @@
     glEnableVertexAttribArray(i);
 
     /* Initialize uniforms. */
-    
+
     self->locations.thresholds = glGetUniformLocation(self->name, "thresholds");
     self->locations.offset = glGetUniformLocation(self->name, "offset");
     self->locations.clustering = glGetUniformLocation(self->name, "clustering");
@@ -208,7 +208,7 @@
     set_splatting_uniforms(self->elevation, self);
 
     glUseProgram(self->name);
-    
+
     for (i = 0 ; i < self->elevation->swatches_n ; i += 1) {
         glUniform1f (self->locations.thresholds + i, 1.0 / 0.0);
     }
@@ -217,12 +217,12 @@
 -(void)free
 {
     int n;
-    
+
     n = self->elevation->swatches_n;
 
     /* Free the VBOs, vertex arrays and transform feedback object and
      * associated buffers. */
-    
+
     glDeleteBuffers(n + 1, self->vertexbuffers);
     glDeleteVertexArrays (n + 1, self->arrays);
     glDeleteTransformFeedbacks(1, &self->feedback);
@@ -246,16 +246,16 @@
         if ((double)j != child->key.number) {
             t_print_warning("%s node has non-integer key.\n",
                             [child name]);
-	
+
             return;
         }
 
         if (j <= 0 || j > self->elevation->swatches_n) {
             t_print_warning("Ignoring vegetation species %s.\n",
                             [child name]);
-	
+
             return;
-        }            
+        }
 
         self->species[j - 1] = child;
 
@@ -268,7 +268,7 @@
         /* } */
 
         /* Initialize the vertex array object. */
-    
+
         glBindVertexArray(self->arrays[j]);
         glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[j]);
 
@@ -290,22 +290,22 @@
         i = glGetAttribLocation(child->name, "color");
         glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
                               (void *)(9 * sizeof(float)));
-        glEnableVertexAttribArray(i);    
+        glEnableVertexAttribArray(i);
 
         i = glGetAttribLocation(child->name, "distance");
         glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
                               (void *)(12 * sizeof(float)));
-        glEnableVertexAttribArray(i);    
+        glEnableVertexAttribArray(i);
 
         i = glGetAttribLocation(child->name, "clustering");
         glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
                                (void *)(13 * sizeof(float)));
-        glEnableVertexAttribArray(i);    
+        glEnableVertexAttribArray(i);
 
         i = glGetAttribLocation(child->name, "instance");
         glVertexAttribIPointer(i, 1, GL_UNSIGNED_INT, TRANSFORMED_SEED_SIZE,
                                (void *)(14 * sizeof(float)));
-        glEnableVertexAttribArray(i);    
+        glEnableVertexAttribArray(i);
     }
 
     [super adopt: child];
@@ -318,7 +318,7 @@
     if ([child isKindOf: [VegetationSpecies class]]) {
         j = (int)child->key.number;
 
- 
+
         if (j > 0 && j <= self->elevation->swatches_n) {
             self->species[j - 1] = NULL;
 
@@ -331,7 +331,7 @@
             }
         }
     }
-    
+
     [super abandon: child];
 }
 
@@ -344,24 +344,24 @@
 
     seeds = &self->seeding;
     tiles = &self->context->tileset;
-    
+
     t_push_modelview (self->matrix, T_MULTIPLY);
-    
+
     begin_seeding (seeds, self->context);
 
     glPatchParameteri(GL_PATCH_VERTICES, 1);
 
     /* Seed all tiles. */
 
-    for (i = 0 ; i < tiles->size[0] ; i += 1) {    
-	for (j = 0 ; j < tiles->size[1] ; j += 1) {
+    for (i = 0 ; i < tiles->size[0] ; i += 1) {
+        for (j = 0 ; j < tiles->size[1] ; j += 1) {
             int k, l, n, m;
             static int highwater[2] = {8, 1024};
 
             seed_tile(l = i * tiles->size[1] + j);
 
             /* Calculate buffer size requirements. */
-    
+
             for (k = 0, n = 0, m = 0, b = &seeds->bins[0];
                  k < BINS_N;
                  k += 1, b += 1) {
@@ -394,7 +394,7 @@
                 t_add_count_sample (&self->clusters, n);
                 t_add_count_sample (&self->individual, m);
             }
-            
+
             /* Request a new block for the transformed seeds of each
              * species. */
 
@@ -406,14 +406,14 @@
                 glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[k + 1]);
                 glBufferData (GL_ARRAY_BUFFER,
                               highwater[1] * TRANSFORMED_SEED_SIZE,
-                              NULL, GL_STREAM_COPY);                
+                              NULL, GL_STREAM_COPY);
             }
 
             /* Bind the first stage shader. */
-            
+
             glUseProgram(self->name);
             [self bind];
-            
+
             glEnable (GL_RASTERIZER_DISCARD);
             glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, self->feedback);
             glBeginTransformFeedback(GL_POINTS);
@@ -421,30 +421,30 @@
             /*                     queries[0]); */
             /* glBeginQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 1, */
             /*                     queries[1]); */
-    
+
             glBindBuffer(GL_ARRAY_BUFFER, self->vertexbuffers[0]);
             glBindVertexArray(self->arrays[0]);
             glActiveTexture(GL_TEXTURE0 + self->units.base);
 
             /* Go through all the bins and submit triangles for
              * seeding. */
-            
+
             for (k = 0, b = &seeds->bins[0];
                  k < BINS_N;
                  k += 1, b += 1) {
 
                 if(b->fill > 0) {
                     double r, C;
-                    
+
                     glUniform2f(self->locations.offset,
                                 -i + 0.5 * tiles->size[0],
                                 -j + 0.5 * tiles->size[1]);
-                    
+
                     glBindTexture(GL_TEXTURE_2D, tiles->imagery[l]);
 
                     /* Orphan the buffer and allocate a new piece of
                      * memory equal to the largest bin capacity. */
-                    
+
                     glBufferData (GL_ARRAY_BUFFER, highwater[0] * SEED_SIZE,
                                   NULL, GL_STREAM_DRAW);
                     glBufferSubData (GL_ARRAY_BUFFER, 0,
@@ -465,7 +465,7 @@
             }
 
             /* Clean up after the first stage. */
-            
+
             glEndTransformFeedback();
 
             if (_PROFILING) {
@@ -477,7 +477,7 @@
                 t_get_and_reset_counter (self, "fertile", &n);
                 t_add_count_sample (&self->fertile, n);
             }
-            
+
             /* glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 0); */
             /* glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 1); */
             glDisable (GL_RASTERIZER_DISCARD);
@@ -494,7 +494,7 @@
             glEnable (GL_DEPTH_TEST);
             glEnable (GL_SAMPLE_ALPHA_TO_COVERAGE);
             glEnable (GL_SAMPLE_ALPHA_TO_ONE);
-    
+
             for (k = 0 ; k < self->elevation->swatches_n ; k += 1) {
                 Shader *shader;
 
@@ -503,10 +503,10 @@
                 if (!shader) {
                     continue;
                 }
-                
+
                 glUseProgram(shader->name);
                 [shader bind];
-                
+
                 glBindVertexArray(self->arrays[k + 1]);
                 glDrawTransformFeedbackStream(GL_PATCHES, self->feedback, k);
             }
@@ -514,9 +514,9 @@
             glDisable (GL_DEPTH_TEST);
             glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
             glDisable (GL_SAMPLE_ALPHA_TO_ONE);
-	}
+        }
     }
-    
+
     finish_seeding();
     t_pop_modelview ();
 
@@ -550,7 +550,7 @@
 -(int) _get_clustering
 {
     lua_pushnumber (_L, self->seeding.clustering);
-    
+
     return 1;
 }
 
@@ -634,7 +634,7 @@
 -(int) _get_horizon
 {
     lua_pushnumber (_L, -self->seeding.horizon);
-    
+
     return 1;
 }
 
@@ -646,7 +646,7 @@
 -(int) _get_rolloff
 {
     lua_pushnumber (_L, self->seeding.rolloff);
-    
+
     return 1;
 }
 
@@ -662,31 +662,31 @@
 -(void) meetParent: (Vegetation *)parent
 {
     [super meetParent: parent];
-    
+
     if (![parent isKindOf: [Vegetation class]]) {
-	t_print_warning("%s node has no Vegetation parent.\n",
-			[self name]);
-	
-	return;
+        t_print_warning("%s node has no Vegetation parent.\n",
+                        [self name]);
+
+        return;
     }
 
     self->offset = (int)self->key.number;
 
     if ((double)self->offset != self->key.number) {
-	t_print_warning("%s node has non-integer key.\n",
-			[self name]);
-	
-	return;
+        t_print_warning("%s node has non-integer key.\n",
+                        [self name]);
+
+        return;
     }
 
     /* Update the threshold. */
-    
+
     glUseProgram(parent->name);
     glUniform1f (parent->locations.thresholds + self->offset - 1,
                  self->threshold * self->threshold);
 
     /* Update the canopy. */
-    
+
     if(parent->elevation->context.canopy < self->bound) {
         parent->elevation->context.canopy = self->bound;
     }
@@ -696,11 +696,11 @@
 {
     VegetationSpecies *child;
     double h = 0;
-    
+
     [super missParent: parent];
 
     /* Mark the swatch as infertile. */
-        
+
     glUseProgram(parent->name);
     glUniform1f (parent->locations.thresholds + self->offset - 1, 1.0 / 0.0);
 
@@ -710,7 +710,7 @@
          child;
          h = child != self && child->bound > h ? child->bound : h,
              child = (VegetationSpecies *)child->right);
-    
+
     parent->elevation->context.canopy = h;
 }
 
@@ -728,7 +728,7 @@
     } else {
         lua_pushnil(_L);
     }
-    
+
     return 1;
 }
 

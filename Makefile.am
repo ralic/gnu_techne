@@ -17,4 +17,3 @@ nobase_pkgdata_DATA = scripts/utils/basic.lua \
 		      scripts/tests/springs.lua \
 		      scripts/tests/textured.lua \
 		      scripts/tests/bezier.lua
-

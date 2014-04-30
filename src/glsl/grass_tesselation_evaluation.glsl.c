@@ -10,14 +10,14 @@ out float distance_te, height_te, parameter_te, depth_te, width_te;
 
 vec4 rand4();
 void srand(uvec2 seed);
-                                
+
 uniform sampler2D deflections;
-      
+
 uniform grass_evaluation {
     vec2 height, width;
     float stiffness;
 };
-                                
+
 void main()
 {
     vec3 p, d, t, n;
@@ -33,14 +33,14 @@ void main()
     k += (1 - k) * v.y;
 
     t = vec3(texture(deflections, vec2(gl_TessCoord.x, k)));
-    
+
     phi = 2 * pi * v.z;
     theta = t.z;
     cosphi = cos(phi);
     sinphi = sin(phi);
     costheta = cos(theta);
     sintheta = sin(theta);
-    
+
     d = (height.x + (height.y * distance_tc * v.x)) *
         vec3(cosphi, sinphi, 1) * t.xxy;
 
@@ -48,7 +48,7 @@ void main()
     tangent_te = vec3(-cosphi * sintheta, -sinphi * sintheta, costheta);
     bitangent_te = vec3(-sinphi, cosphi, 0);
     position_te = p + d;
-    
+
     color_te = color_tc;
     width_te = width.x + (width.y * distance_tc * v.w);
     distance_te = distance_tc;

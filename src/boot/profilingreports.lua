@@ -1,16 +1,16 @@
--- Copyright (C) 2013 Papavasileiou Dimitris                           
---                                                                      
--- This program is free software: you can redistribute it and/or modify 
--- it under the terms of the GNU General Public License as published by 
--- the Free Software Foundation, either version 3 of the License, or    
--- (at your option) any later version.                                  
---                                                                      
--- This program is distributed in the hope that it will be useful,      
--- but WITHOUT ANY WARRANTY; without even the implied warranty of       
--- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
--- GNU General Public License for more details.                         
---                                                                      
--- You should have received a copy of the GNU General Public License    
+-- Copyright (C) 2013 Papavasileiou Dimitris
+--
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local io = require 'io'
@@ -27,7 +27,7 @@ end
 if options.periodicprofile then
    local expressions
    local last = {}
-   
+
    if type(options.profile) == "string" then
       expressions = {loadstring("return " .. options.profile)}
    elseif type(options.profile) == "table" then
@@ -39,17 +39,17 @@ if options.periodicprofile then
 
    if expressions then
       local printrow, file
-      
+
       if type(options.periodicprofile) == "string" then
          file = io.open(options.periodicprofile, "w")
-         
+
          printrow = function (row)
             file:write(row)
          end
       else
          printrow = message
       end
-      
+
       profiler = primitives.root {
          tag = "profiler",
          index = -1 / 0,
@@ -77,7 +77,7 @@ if options.periodicprofile then
                   row = row .. string.format("%f", x) ..
                                (i < n and ", " or "\n")
                end
-               
+
                printrow (row)
             end,
 
@@ -104,7 +104,7 @@ else
    end
 
    -- Sort based on total own per-frame time.
-   
+
    local function comparenodes(a, b)
       return (a[3][1][1] + (a[3][3] and a[3][3][1] or 0) >
                  b[3][1][1] + (b[3][3] and b[3][3][1] or 0))
@@ -137,14 +137,14 @@ else
          if techne.iterations == 0 then
             return
          end
-         
+
          -- Collect to-be-profiled nodes.
-         
+
          if options.profile then
             local specifications
-            
+
             -- Wrap a single node in a table.
-            
+
             if type(options.profile) == "table" then
                specifications = options.profile
             else
@@ -153,7 +153,7 @@ else
 
             -- Evaluate each node specification and collect the result
             -- into the table.
-            
+
             nodes = {}
             for _, specification in pairs(specifications) do
                local node, chunk
@@ -183,7 +183,7 @@ else
             end
          else
             local total
-            
+
             -- No nodes specified explicitly; collect all roots and
             -- built-ins.
 
@@ -197,7 +197,7 @@ else
             table.sort(nodes, comparenodes)
 
             -- Just include the nodes that take up 95% of execution time.
-            
+
             total = 0
             for i = 1, #nodes do
                if total < 0.95 * techne.time then
@@ -209,23 +209,23 @@ else
          end
 
          -- Arrange node profiling information in a neat table.
-         
+
          if #nodes > 0 then
             local total
-            
+
             message ([[
 +---------------------------------------------------------------------------------+
 |                                 cummulative ms(samples x 100)/self ms           |
 |node                             total            user             graphics      |
 +---------------------------------------------------------------------------------+
 ]])
-            
+
             for i, node in ipairs(nodes) do
                local skip, cummulative, own, label
 
                cummulative = node[2]
                own = node[3]
-               
+
                label = tostring(node[1])
                if #label > 30 then
                   label = string.sub(label, 1, 27) .. "..."

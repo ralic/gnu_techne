@@ -1,16 +1,16 @@
--- Copyright (C) 2009 Papavasileiou Dimitris                             
---                                                                      
--- This program is free software: you can redistribute it and/or modify 
--- it under the terms of the GNU General Public License as published by 
--- the Free Software Foundation, either version 3 of the License, or    
--- (at your option) any later version.                                  
---                                                                      
--- This program is distributed in the hope that it will be useful,      
--- but WITHOUT ANY WARRANTY; without even the implied warranty of       
--- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
--- GNU General Public License for more details.                         
---                                                                      
--- You should have received a copy of the GNU General Public License    
+-- Copyright (C) 2009 Papavasileiou Dimitris
+--
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local core = require 'joints.core'
@@ -100,11 +100,11 @@ joints.hinge = function (parameters)
       arms = shading.flat {
          color = ivory3,
 
-         draw = function (self) 
+         draw = function (self)
             local a, b, pair
 
             pair = hinge.pair
-            
+
             if pair then
                local positions = {}
 
@@ -131,7 +131,7 @@ joints.hinge = function (parameters)
          points = shapes.points {},
       }
    }
-   
+
    return hinge
 end
 
@@ -175,7 +175,7 @@ joints.slider = function (parameters)
             L = arraymath.dot (arraymath.subtract(b, a), x)
             c = arraymath.combine (a, x, 1, L)
             e = arraymath.combine(a, x, 1, -d)
-            
+
             self.rod.lines.positions = array.doubles {a, e}
             self.tube.lines.positions = array.doubles {e, c}
          elseif a then
@@ -241,11 +241,11 @@ joints.universal = function (parameters)
       arms = shading.flat {
          color = darkseagreen,
 
-         draw = function (self) 
+         draw = function (self)
             local a, b, pair
 
             pair = universal.pair
-            
+
             if pair then
                local positions = {}
 
@@ -284,7 +284,7 @@ joints.spherical = function (parameters)
       arms = shading.flat {
          color = darkseagreen,
 
-         draw = function (self) 
+         draw = function (self)
             local a, b, pair
 
             pair = spherical.pair

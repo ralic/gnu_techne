@@ -11,7 +11,7 @@ if ( set -o noclobber; echo "$$" > "$LOCKFILE" ) 2> /dev/null; then
     echo -e "#include \"gl.h\"\n#include \"glx.h\"\n\n__attribute__((constructor)) static void load_opengl_entry_points()\n{" > opengl.c
 
     for f in $GL_FUNCTIONS $GLX_FUNCTIONS; do
-        echo "__$f = (PFN`echo $f | tr a-z A-Z`PROC)glXGetProcAddressARB((const GLubyte *)\"$f\");" 
+        echo "__$f = (PFN`echo $f | tr a-z A-Z`PROC)glXGetProcAddressARB((const GLubyte *)\"$f\");"
     done >> opengl.c
 
     echo "}" >> opengl.c
@@ -31,11 +31,11 @@ if ( set -o noclobber; echo "$$" > "$LOCKFILE" ) 2> /dev/null; then
     done >> glx.h
 
     echo "#endif" >> glx.h
-    
+
     rm -f "$LOCKFILE"
     trap - INT TERM EXIT
 else
     while [ -e $LOCKFILE ]; do
         sleep 0.05
     done
-fi 
+fi

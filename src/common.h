@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -25,48 +25,48 @@
 
 #define _PRINTV(_N, _F, _V)                     \
     {                                           \
-	int i;                                  \
+        int i;                                  \
                                                 \
-	printf ("(");                           \
+        printf ("(");                           \
                                                 \
-	for (i = 0 ; i < _N ; i += 1) {         \
-	    if (i != _N - 1) {                  \
-		printf ("%"_F", ", (_V)[i]);    \
-	    } else {                            \
-		printf ("%"_F, (_V)[i]);        \
-	    }                                   \
-	}                                       \
+        for (i = 0 ; i < _N ; i += 1) {         \
+            if (i != _N - 1) {                  \
+                printf ("%"_F", ", (_V)[i]);    \
+            } else {                            \
+                printf ("%"_F, (_V)[i]);        \
+            }                                   \
+        }                                       \
                                                 \
-	printf (")\n");                         \
+        printf (")\n");                         \
     }
 
 #define _TRACEF(_V)                                     \
     {                                                   \
-	printf ("\033[0;31m%s: %d: \033[0m "#_V" = ",   \
+        printf ("\033[0;31m%s: %d: \033[0m "#_V" = ",   \
                 __FILE__, __LINE__);                    \
-	printf("%f\n", _V);                             \
+        printf("%f\n", _V);                             \
     }                                                   \
 
 #define _TRACEV(_N, _F, _V)                             \
     {                                                   \
-	printf ("\033[0;31m%s: %d: \033[0m "#_V" = ",   \
+        printf ("\033[0;31m%s: %d: \033[0m "#_V" = ",   \
                 __FILE__, __LINE__);                    \
-	_PRINTV(_N, _F, _V);                            \
+        _PRINTV(_N, _F, _V);                            \
     }                                                   \
 
 #define _TRACEM(_N_0, _N_1, _F, _V)                             \
     {                                                           \
-	int j;                                                  \
+        int j;                                                  \
                                                                 \
-	printf ("\033[0;31m%s: %d: \033[0m"#_V" = (\n ",        \
+        printf ("\033[0;31m%s: %d: \033[0m"#_V" = (\n ",        \
                 __FILE__, __LINE__);                            \
                                                                 \
-	for (j = 0 ; j < _N_0 ; j += 1) {                       \
-	    printf ("  ");                                      \
-	    _PRINTV (_N_1, _F, ((_V) + j * (_N_1)));            \
-	}                                                       \
+        for (j = 0 ; j < _N_0 ; j += 1) {                       \
+            printf ("  ");                                      \
+            _PRINTV (_N_1, _F, ((_V) + j * (_N_1)));            \
+        }                                                       \
                                                                 \
-	printf (")\n");                                         \
+        printf (")\n");                                         \
     }
 
 #define _BAL(_L, ...)                           \

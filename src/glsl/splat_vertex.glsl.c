@@ -9,7 +9,7 @@ void main()
     vec4 Mp;
 
     Mp = modelview * vec4(positions, 1);
-    
+
     gl_Position = projection * Mp;
     eye = vec3(Mp);
     uv = scale * positions.xy + offset;

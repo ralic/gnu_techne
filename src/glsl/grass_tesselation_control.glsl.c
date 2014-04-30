@@ -18,17 +18,17 @@ vec3 cluster_stratum(vec3 apex, vec3 left, vec3 right, unsigned int instance);
 void main()
 {
     const float bias = 1;
-    
+
     vec4 p_e;
     vec3 p;
     float z, n;
     int i;
-    
+
     p = (apex_v[0] + left_v[0] + right_v[0]) / 3;
     p_e = modelview * vec4(p, 1);
     z = max(-p_e.z, bias);
     n = bias * detail / z / z;
-    
+
     gl_TessLevelOuter[0] = clustering_v[0];
     gl_TessLevelOuter[1] = n;
 
@@ -41,5 +41,5 @@ void main()
     depth_tc = z;
     instance_tc = instance_v[0];
     stratum_tc = cluster_stratum(apex_v[0], left_v[0], right_v[0],
-                                 instance_v[0]);    
+                                 instance_v[0]);
 }

@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -38,15 +38,15 @@
     GdkEvent *event;
 
     /* Fire the bindings based on the event type. */
-    
-    for (event = [Input first] ; event ; event = [Input next]) {    
+
+    for (event = [Input first] ; event ; event = [Input next]) {
         assert (event);
-    
+
         if (event->type == GDK_BUTTON_PRESS ||
             event->type == GDK_BUTTON_RELEASE) {
             t_pushuserdata (_L, 1, self);
             lua_pushnumber (_L, event->button.button);
-        
+
             if (event->type == GDK_BUTTON_PRESS) {
                 t_callhook (_L, self->buttonpress, 2, 0);
             } else {
@@ -68,7 +68,7 @@
                 lua_pushinteger (_L, 1);
                 lua_pushinteger (_L, 1);
             }
-	
+
             t_callhook (_L, self->relative, 3, 0);
         } else if (event->type == GDK_MOTION_NOTIFY) {
             if (event->motion.x != self->axes[0]) {
@@ -78,7 +78,7 @@
 
                 t_callhook (_L, self->absolute, 3, 0);
             }
-            
+
             if (event->motion.y != self->axes[1]) {
                 t_pushuserdata (_L, 1, self);
                 lua_pushinteger (_L, 1);
@@ -100,7 +100,7 @@
     int i, pointer[2];
 
     t_get_pointer (&pointer[0], &pointer[1]);
-    
+
     lua_createtable (_L, 2, 0);
 
     for (i = 0 ; i < 2 ; i += 1) {
@@ -114,13 +114,13 @@
 -(void) _set_axes
 {
     int i, pointer[2];
-    
+
     for (i = 0 ; i < 2 ; i += 1) {
         lua_rawgeti (_L, 3, i + 1);
         pointer[i] = lua_tointeger (_L, -1);
         lua_pop (_L, 1);
     }
-    
+
     t_warp_pointer (pointer[0], pointer[1]);
 }
 

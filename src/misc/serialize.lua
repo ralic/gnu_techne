@@ -1,16 +1,16 @@
--- Copyright (C) 2012 Papavasileiou Dimitris                             
---                                                                      
--- This program is free software: you can redistribute it and/or modify 
--- it under the terms of the GNU General Public License as published by 
--- the Free Software Foundation, either version 3 of the License, or    
--- (at your option) any later version.                                  
---                                                                      
--- This program is distributed in the hope that it will be useful,      
--- but WITHOUT ANY WARRANTY; without even the implied warranty of       
--- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
--- GNU General Public License for more details.                         
---                                                                      
--- You should have received a copy of the GNU General Public License    
+-- Copyright (C) 2012 Papavasileiou Dimitris
+--
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local table = require "table"
@@ -44,7 +44,7 @@ end
 local function tolua(value)
    local meta, array, hash
 
-   meta = getmetatable(value)   
+   meta = getmetatable(value)
    array = (type(value) == "table") or (meta and meta.__ipairs ~= nil)
    hash = (type(value) == "table") or (meta and meta.__pairs ~= nil)
 
@@ -52,23 +52,23 @@ local function tolua(value)
       local serialized, fields = {}, {}
 
       if array then
-	 for i, element in ipairs (value) do
-	    table.insert (fields, string.format ("%s,", tolua(element)))
+         for i, element in ipairs (value) do
+            table.insert (fields, string.format ("%s,", tolua(element)))
 
-	    serialized[i] = true
-	 end
+            serialized[i] = true
+         end
       end
 
       if hash then
-	 for key, element in pairs (value) do
-	    if not serialized[key] then
-	       table.insert (fields, string.format ("[%s] = %s,",
-						    tolua(key),
-						    tolua(element)))
-	    end
-	 end
+         for key, element in pairs (value) do
+            if not serialized[key] then
+               table.insert (fields, string.format ("[%s] = %s,",
+                                                    tolua(key),
+                                                    tolua(element)))
+            end
+         end
       end
-      
+
       return "{" .. table.concat(fields) .. "}"
    elseif type(value) == "string" then
       return string.format ("%q", value)
@@ -82,7 +82,7 @@ end
 local function tojson(value)
    local meta, array, hash
 
-   meta = getmetatable(value)   
+   meta = getmetatable(value)
    array = (type(value) == "table") or (meta and meta.__ipairs ~= nil)
    hash = (type(value) == "table") or (meta and meta.__pairs ~= nil)
 
@@ -96,26 +96,26 @@ local function tojson(value)
                                          i == 1 and "" or ",",
                                          tojson(element)))
          end
-      
+
          return "[" .. table.concat(fields) .. "]"
       elseif hash then
          if not serialized[value] then
-	    local first = true
+            local first = true
 
             for key, element in pairs (value) do
-	       if type(key) == "string" then
-		  table.insert (fields, string.format ("%s%s: %s",
-						       first and "" or ",",
-						       tojson(key),
-						       tojson(element) or "null"))
-               
-		  first = false
-	       end
+               if type(key) == "string" then
+                  table.insert (fields, string.format ("%s%s: %s",
+                                                       first and "" or ",",
+                                                       tojson(key),
+                                                       tojson(element) or "null"))
+
+                  first = false
+               end
             end
 
-	    serialized[value] = true
+            serialized[value] = true
          end
-      
+
          return "{" .. table.concat(fields) .. "}"
       end
    elseif type(value) == "string" then

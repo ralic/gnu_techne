@@ -36,7 +36,7 @@ vec3 compose(const vec2 uv)
     int i, j;
 
     B = vec3(texture2D(base, uv));
-    
+
 <@ if context.bands_n == 0 then @>
     return B;
 <@ else @>
@@ -48,7 +48,7 @@ vec3 compose(const vec2 uv)
         float C;
 
         H = rgb_to_hsv(S);
-        
+
         for (i = 0, L = vec3(0), C = 0 ; i < SWATCHES ; i += 1) {
             float D, l;
             vec3 T;
@@ -60,7 +60,7 @@ vec3 compose(const vec2 uv)
 
             k = BANDS[2 * i] + j;
 
-            D = splat_distance(H, i, j);            
+            D = splat_distance(H, i, j);
             T = vec3(texture2D(detail[k], uv / resolutions[k]));
 
             C += D;

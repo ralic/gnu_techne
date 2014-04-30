@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -41,14 +41,14 @@ static dColliderFn * getCollider (int num)
     int i;
 
     if (!dWheelClass) {
-	struct dGeomClass class = {
-	    sizeof (struct wheeldata),
-	    getCollider,
-	    dInfiniteAABB,
-	    0, 0
-	};
-      
-	dWheelClass = dCreateGeomClass (&class);
+        struct dGeomClass class = {
+            sizeof (struct wheeldata),
+            getCollider,
+            dInfiniteAABB,
+            0, 0
+        };
+
+        dWheelClass = dCreateGeomClass (&class);
     }
 
     self->geom = dCreateGeom (dWheelClass);
@@ -63,13 +63,13 @@ static dColliderFn * getCollider (int num)
     data->elasticity[1] = 1500;
 
     data->airborne = 1;
-    
+
     self->damper = dJointCreateAMotor (_WORLD, NULL);
 
     self->F_x = 0;
     self->F_y = 0;
     self->M_z = 0;
-    
+
     self->F_z0 = 1100;
 
     self->C_x = 1.6064;
@@ -91,7 +91,7 @@ static dColliderFn * getCollider (int num)
     self->p_Dy1 = 1.3;
     self->p_Dy2 = 0;
     self->p_Dy3 = 0;
-    self->p_Ey1 = -1.2556;  
+    self->p_Ey1 = -1.2556;
     self->p_Ey2 = -3.2068;
     self->p_Ey4 = -3.998;
     self->p_Ky1 = 22.841;
@@ -134,23 +134,23 @@ static dColliderFn * getCollider (int num)
     self->resistance = 0.015;
 
     for (i = 0 ; i < 10 ; i += 1) {
-	data->lambda[i] = 1;
+        data->lambda[i] = 1;
     }
-    
+
     [super init];
 }
 
 -(void) release
 {
     dVector3 a;
-    
+
     [super release];
 
     dBodyVectorToWorld (self->body, 0, 1, 0, a);
-    
+
     dBodySetFiniteRotationMode (self->body, 1);
     dBodySetGyroscopicMode (self->body, 1);
-    
+
     dJointAttach (self->damper, self->body, 0);
     dJointSetAMotorMode (self->damper, dAMotorUser);
     dJointSetAMotorNumAxes (self->damper, 1);
@@ -169,29 +169,29 @@ static dColliderFn * getCollider (int num)
     int i;
 
     struct wheeldata *data;
-    
+
     data = dGeomGetClassData (self->geom);
     V = dLENGTH (dBodyGetLinearVel (self->body));
 
     /* Combine track and wheel scaling factors. */
 
     for (i = 0 ; i < 10 ; i += 1) {
-	lambda[i] *= data->lambda[i];
+        lambda[i] *= data->lambda[i];
     }
 
     /* Make sure the load does not vanish completely. */
-    
+
     if (self->F_z < 1e-3) {
-	self->F_z = 1e-3;
+        self->F_z = 1e-3;
     }
-    
+
     /* if (self->tag == 1) */
     /* printf ("!! %f, %f, %f, %f, %f, %f\n", self->F_z, self->beta, self->beta_1, self->kappa, self->gamma, V); */
 
     /* printf ("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", */
-    /* 	    lambda[0], lambda[1], lambda[2], */
-    /* 	    lambda[3], lambda[4], lambda[5], */
-    /* 	    lambda[6]); */
+    /*      lambda[0], lambda[1], lambda[2], */
+    /*      lambda[3], lambda[4], lambda[5], */
+    /*      lambda[6]); */
 
     /* Pure longitudinal slip. */
 
@@ -207,26 +207,26 @@ static dColliderFn * getCollider (int num)
     K_yalpha0 = lambda[3] * self->p_Ky1 * self->F_z0 * sin (self->p_Ky2 * atan(self->F_z / (self->p_Ky3 * self->F_z0)));
 
     sigma = K_yalpha0 * (self->relaxation[0] +
-			 self->relaxation[1] * V +
-			 self->relaxation[2] * V * V);
-    
+                         self->relaxation[1] * V +
+                         self->relaxation[2] * V * V);
+
     if (V == 0 || sigma < V * h || sigma <= 0 || h == 0) {
-	self->beta_1 = self->beta;
+        self->beta_1 = self->beta;
     } else {
-	self->beta_1 += (self->beta - self->beta_1) *
-	    V / sigma * h;
+        self->beta_1 += (self->beta - self->beta_1) *
+            V / sigma * h;
     }
 
     /* Pure lateral slip. */
-    
+
     gamma_2 = self->gamma * self->gamma;
     K_yalpha = lambda[3] * self->p_Ky1 * self->F_z0 * sin (self->p_Ky2 * atan(self->F_z / ((self->p_Ky3 + self->p_Ky4 * gamma_2) * self->F_z0))) / (1 + self->p_Ky5 * gamma_2);
-    
+
     /* The paper by Sharp has a division by the last term but the
        Pacejka in section 10.6.1 of Tyre and Vehicle Dynamics has a
        multiplication.  The lisp code for Sharp's paper multiplies as
        well so we'll assume this is correct. */
-    
+
     D_y = lambda[1] * self->F_z * self->p_Dy1 * exp (self->p_Dy2 * df_z) * (1 + self->p_Dy3 * gamma_2);
     E_y = self->p_Ey1 + self->p_Ey2 * gamma_2 + self->p_Ey4 * self->gamma * sign(self->beta_1);
     B_y = K_yalpha / (self->C_y * D_y);
@@ -255,7 +255,7 @@ static dColliderFn * getCollider (int num)
 
     /* These are not strictly necessary it seems
        but are included for completeness when plotting. */
-    
+
     M_zt0 = -D_t * cos(self->C_t * atan(B_t * self->beta_1 - E_t * (B_t * self->beta_1 - atan(B_t * self->beta_1)))) / sqrt (1 + beta_2) * F_y00;
     M_zr0 = D_r * cos(atan(B_r * alpha_r));
     self->M_z0 = M_zt0 + M_zr0;
@@ -265,7 +265,7 @@ static dColliderFn * getCollider (int num)
     B_xalpha = self->r_Bx1 * cos (atan (self->r_Bx2 * self->kappa));
     B_ykappa = self->r_By1 * cos (atan (self->r_By2 * (self->beta_1 - self->r_By3)));
     G_ykappa = cos (self->C_ykappa * atan (B_ykappa * self->kappa));
-	
+
     self->F_x = cos (self->C_xalpha * atan (B_xalpha * self->beta_1)) * self->F_x0;
     self->F_y = G_ykappa * self->F_y0;
 
@@ -294,9 +294,9 @@ static dColliderFn * getCollider (int num)
 /*   if (self->tag == 1) { */
 /*     printf ("%f, %f;\n", data->kappa, data->beta); */
 /*   } */
-	    
+
     /* Calculate slip ratios. */
-    
+
     r = dBodyGetPosition (self->body);
     v = dBodyGetLinearVel (self->body);
     omega = dBodyGetAngularVel (self->body);
@@ -311,148 +311,148 @@ static dColliderFn * getCollider (int num)
     p[2] = data->contact.pos[2] + data->contact.normal[2] * data->contact.depth;
 
     r_e = (p[0] - r[0]) * data->radial[0] +
-	(p[1] - r[1]) * data->radial[1] +
-	(p[2] - r[2]) * data->radial[2];
-    
+        (p[1] - r[1]) * data->radial[1] +
+        (p[2] - r[2]) * data->radial[2];
+
     self->gamma = asin(dDOT(data->axial, data->contact.normal));
 
     /* The slip ratio kappa is the ratio of the difference between the
        spin velocity of the driven tire (V_l / r_e) and that of the
        free-rolling tire (omega) to the spin velocity of the
        free-rolling tire (according to SAE J670e). */
-    
+
     self->kappa = (dDOT (omega, data->axial) * r_e - V_l) / fabs(V_l);
 
     /* Here beta is the tangent of the slip angle which is the input
        to the magic formula according to: Tyre and vehicle dynamics
        pp. 173 */
-    
+
     self->beta = dDOT (v, data->lateral) / fabs(V_l);
 
     /* if (self->tag == 1) { */
-    	/* printf ("%f, %f, %f, %f\n", self->kappa, self->beta, self->F_x, self->F_y); */
-	/* printf ("%f\n", r_e); */
+        /* printf ("%f, %f, %f, %f\n", self->kappa, self->beta, self->F_x, self->F_y); */
+        /* printf ("%f\n", r_e); */
     /* } */
 
     /* Take care of singularities. */
-    
+
     if (!isfinite (self->kappa)) {
-	self->kappa = 0;
+        self->kappa = 0;
     }
 
     if (!isfinite (self->beta)) {
-	self->beta = 0;
+        self->beta = 0;
     }
 
     /* printf ("%f, %f, %f\n", V_l, self->kappa, self->beta); */
 
     if (!data->airborne) {
-	double lambda[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-	int airborne = 0;
-	int i, h_0;
+        double lambda[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+        int airborne = 0;
+        int i, h_0;
 
-	/* Call the collision callback for the pair
-	   of geoms and get the returned parameters. */
-	
-	h_0 = lua_gettop (_L);
-		    
+        /* Call the collision callback for the pair
+           of geoms and get the returned parameters. */
+
+        h_0 = lua_gettop (_L);
+
         [(Dynamics *)[Dynamics instance] _get_collision];
-	lua_replace (_L, -2);
-	
-	if (!lua_isnil(_L, -1)) {
-	    /* Get the userdata. */
-	    
-	    t_pushuserdata (_L, 2,
-			     dGeomGetData(data->contact.g1),
-			     dGeomGetData(data->contact.g2));
+        lua_replace (_L, -2);
 
-	    /* Call the hook. */
-		    
-	    lua_call (_L, 2, LUA_MULTRET);
+        if (!lua_isnil(_L, -1)) {
+            /* Get the userdata. */
 
-	    if (lua_type (_L, h_0 + 1) == LUA_TNUMBER) {
-		airborne = lua_tointeger (_L, h_0 + 1) == 0;
-	    }
+            t_pushuserdata (_L, 2,
+                             dGeomGetData(data->contact.g1),
+                             dGeomGetData(data->contact.g2));
 
-	    for (i = 0 ; i < 10 ; i += 1) {
-		if (lua_type (_L, h_0 + 2 + i) == LUA_TNUMBER) {
-		    lambda[i] = lua_tonumber (_L, h_0 + 2 + i);
-		}
-	    }
-	}
-		    
-	lua_settop (_L, h_0);
+            /* Call the hook. */
 
-	/* Recheck in case the user requested not contact. */
-    
-	if (!airborne) {
-	    /* Create the contact joint. */
-	
-	    contact.geom = data->contact;
+            lua_call (_L, 2, LUA_MULTRET);
 
-	    /* If the vehicle velocity is very low switch
-	       to normal ode friction as it is more stable.*/
-	
-	    contact.surface.mode = dContactSoftERP | dContactSoftCFM;
-	    if (fabs(V_l) <= 1e-1) {
-		contact.surface.mode |= dContactApprox1;
-		contact.surface.mu = 1;
-	    } else {
-		contact.surface.mu = 0;
-	    }
+            if (lua_type (_L, h_0 + 1) == LUA_TNUMBER) {
+                airborne = lua_tointeger (_L, h_0 + 1) == 0;
+            }
 
-	    {
-		dReal k_s, k_d;
-	    
-		k_s = lambda[8] * data->elasticity[0];
-		k_d = lambda[9] * data->elasticity[1];
+            for (i = 0 ; i < 10 ; i += 1) {
+                if (lua_type (_L, h_0 + 2 + i) == LUA_TNUMBER) {
+                    lambda[i] = lua_tonumber (_L, h_0 + 2 + i);
+                }
+            }
+        }
+
+        lua_settop (_L, h_0);
+
+        /* Recheck in case the user requested not contact. */
+
+        if (!airborne) {
+            /* Create the contact joint. */
+
+            contact.geom = data->contact;
+
+            /* If the vehicle velocity is very low switch
+               to normal ode friction as it is more stable.*/
+
+            contact.surface.mode = dContactSoftERP | dContactSoftCFM;
+            if (fabs(V_l) <= 1e-1) {
+                contact.surface.mode |= dContactApprox1;
+                contact.surface.mu = 1;
+            } else {
+                contact.surface.mu = 0;
+            }
+
+            {
+                dReal k_s, k_d;
+
+                k_s = lambda[8] * data->elasticity[0];
+                k_d = lambda[9] * data->elasticity[1];
 
                 t_convert_from_spring(k_s, k_d,
                                       &contact.surface.soft_erp,
                                       &contact.surface.soft_cfm);
-	    }
-	
-	    joint = dJointCreateContact (_WORLD, _GROUP, &contact);
-	    dJointSetFeedback (joint, &self->feedback);
-	    dJointAttach (joint,
-			  dGeomGetBody (data->contact.g1),
-			  dGeomGetBody (data->contact.g2));
+            }
 
-	    /* if (self->tag == 1) { */
-	    /*     fprintf (stderr, "%f, %f, %f\n", */
-	    /* 	     t, contact.geom.pos[2], contact.geom.depth); */
-	    /* } */
+            joint = dJointCreateContact (_WORLD, _GROUP, &contact);
+            dJointSetFeedback (joint, &self->feedback);
+            dJointAttach (joint,
+                          dGeomGetBody (data->contact.g1),
+                          dGeomGetBody (data->contact.g2));
 
-	    if (fabs(V_l) > 1e-1) {
-		[self evaluateWithStep: h andFactors: lambda];
+            /* if (self->tag == 1) { */
+            /*     fprintf (stderr, "%f, %f, %f\n", */
+            /*       t, contact.geom.pos[2], contact.geom.depth); */
+            /* } */
 
-		dBodyAddForceAtPos (self->body,
-				    data->longitudinal[0] * self->F_x,
-				    data->longitudinal[1] * self->F_x,
-				    data->longitudinal[2] * self->F_x,
-				    p[0], p[1], p[2]);
+            if (fabs(V_l) > 1e-1) {
+                [self evaluateWithStep: h andFactors: lambda];
 
-		dBodyAddForceAtPos (self->body,
-				    -data->lateral[0] * self->F_y,
-				    -data->lateral[1] * self->F_y,
-				    -data->lateral[2] * self->F_y,
-				    p[0], p[1], p[2]);
+                dBodyAddForceAtPos (self->body,
+                                    data->longitudinal[0] * self->F_x,
+                                    data->longitudinal[1] * self->F_x,
+                                    data->longitudinal[2] * self->F_x,
+                                    p[0], p[1], p[2]);
 
-		dBodyAddTorque (self->body,
-				-data->contact.normal[0] * self->M_z,
-				-data->contact.normal[1] * self->M_z,
-				-data->contact.normal[2] * self->M_z);
+                dBodyAddForceAtPos (self->body,
+                                    -data->lateral[0] * self->F_y,
+                                    -data->lateral[1] * self->F_y,
+                                    -data->lateral[2] * self->F_y,
+                                    p[0], p[1], p[2]);
 
-		/* Set the rolling resistance torque. */
-	
-		dJointSetAMotorParam (self->damper, dParamFMax,
-				      self->F_z * lambda[7] * self->resistance * r_e);
-	    }
-	} else {
-	    dJointSetAMotorParam (self->damper, dParamFMax, 0);
-	}
+                dBodyAddTorque (self->body,
+                                -data->contact.normal[0] * self->M_z,
+                                -data->contact.normal[1] * self->M_z,
+                                -data->contact.normal[2] * self->M_z);
+
+                /* Set the rolling resistance torque. */
+
+                dJointSetAMotorParam (self->damper, dParamFMax,
+                                      self->F_z * lambda[7] * self->resistance * r_e);
+            }
+        } else {
+            dJointSetAMotorParam (self->damper, dParamFMax, 0);
+        }
     }
-    
+
     [super stepBy: h at: t];
 }
 
@@ -463,9 +463,9 @@ static dColliderFn * getCollider (int num)
     data = dGeomGetClassData (self->geom);
 
     if (!data->airborne) {
-	self->F_z = dDOT(self->feedback.f1, data->contact.normal);
+        self->F_z = dDOT(self->feedback.f1, data->contact.normal);
     } else {
-	self->F_z = 0;
+        self->F_z = 0;
     }
 
     /* printf ("%f, %f, %f\n", feedback.f1[0], feedback.f1[1], feedback.f1[2]); */
@@ -478,7 +478,7 @@ static dColliderFn * getCollider (int num)
     struct wheeldata *data;
 
     data = dGeomGetClassData (self->geom);
-      
+
     lua_newtable (_L);
 
     lua_pushnumber (_L, data->elasticity[0]);
@@ -495,7 +495,7 @@ static dColliderFn * getCollider (int num)
     struct wheeldata *data;
 
     data = dGeomGetClassData (self->geom);
-      
+
     lua_newtable (_L);
 
     lua_pushnumber (_L, data->radii[0]);
@@ -518,9 +518,9 @@ static dColliderFn * getCollider (int num)
 {
     /* Parameters for pure and combined
        longitudinal slip. */
-  
+
     lua_newtable (_L);
-      
+
     lua_pushnumber (_L, self->C_x);
     lua_rawseti (_L, 3, 1);
 
@@ -567,7 +567,7 @@ static dColliderFn * getCollider (int num)
 {
     /* Parameters for pure and combined
        lateral slip. */
-   		
+
     lua_newtable (_L);
 
     lua_pushnumber (_L, self->C_y);
@@ -708,12 +708,12 @@ static dColliderFn * getCollider (int num)
 -(int) _get_relaxation
 {
     int i;
-    
+
     lua_newtable (_L);
 
     for (i = 0 ; i < 3 ; i += 1) {
-	lua_pushnumber (_L, self->relaxation[i]);
-	lua_rawseti (_L, 3, i + 1);
+        lua_pushnumber (_L, self->relaxation[i]);
+        lua_rawseti (_L, 3, i + 1);
     }
 
     return 1;
@@ -765,16 +765,16 @@ static dColliderFn * getCollider (int num)
 -(int) _get_scaling
 {
     int i;
-    
+
     struct wheeldata *data;
 
     data = dGeomGetClassData (self->geom);
 
     lua_newtable(_L);
-	
+
     for (i = 0 ; i < 10 ; i += 1) {
-	lua_pushnumber (_L, data->lambda[i]);
-	lua_rawseti (_L, -2, i + 1);
+        lua_pushnumber (_L, data->lambda[i]);
+        lua_rawseti (_L, -2, i + 1);
     }
 
     return 1;
@@ -897,7 +897,7 @@ static dColliderFn * getCollider (int num)
 
     lua_pushinteger (_L, 5);
     lua_gettable (_L, 3);
-    self->p_Ey1 = lua_tonumber (_L, -1);  
+    self->p_Ey1 = lua_tonumber (_L, -1);
 
     lua_pushinteger (_L, 6);
     lua_gettable (_L, 3);
@@ -1061,12 +1061,12 @@ static dColliderFn * getCollider (int num)
 -(void) _set_relaxation
 {
     int i;
-    
+
     for (i = 0 ; i < 3 ; i += 1) {
-	lua_pushinteger (_L, i + 1);
-	lua_gettable (_L, 3);
-	self->relaxation[i] = lua_tonumber (_L, -1);
-	lua_pop (_L, 1);
+        lua_pushinteger (_L, i + 1);
+        lua_gettable (_L, 3);
+        self->relaxation[i] = lua_tonumber (_L, -1);
+        lua_pop (_L, 1);
     }
 }
 
@@ -1078,23 +1078,23 @@ static dColliderFn * getCollider (int num)
 -(void) _set_scaling
 {
     int i;
-    
+
     struct wheeldata *data;
 
     data = dGeomGetClassData (self->geom);
 
     for (i = 0 ; i < 10 ; i += 1) {
-	lua_pushinteger (_L, i + 1);
-	lua_gettable (_L, 3);
-	data->lambda[i] = lua_tonumber (_L, -1);
-	lua_pop (_L, 1);
+        lua_pushinteger (_L, i + 1);
+        lua_gettable (_L, 3);
+        data->lambda[i] = lua_tonumber (_L, -1);
+        lua_pop (_L, 1);
     }
 }
 
 -(void) _set_camber
 {
     double one[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-	
+
     self->gamma = lua_tonumber (_L, 3);
     [self evaluateWithStep: 0 andFactors: one];
 }
@@ -1102,7 +1102,7 @@ static dColliderFn * getCollider (int num)
 -(void) _set_slip
 {
     double one[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-	
+
     self->kappa = lua_tonumber (_L, 3);
     [self evaluateWithStep: 0 andFactors: one];
 }
@@ -1110,11 +1110,11 @@ static dColliderFn * getCollider (int num)
 -(void) _set_sideslip
 {
     double one[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-	
+
     self->beta = lua_tonumber (_L, 3);
     [self evaluateWithStep: 0 andFactors: one];
 }
- 
+
 -(void) _set_dynamic
 {
     double one[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
@@ -1123,7 +1123,7 @@ static dColliderFn * getCollider (int num)
         lua_rawgeti (_L, 3, 3);
         self->F_z = lua_tonumber (_L, -1);
         lua_pop (_L, 1);
-        
+
         [self evaluateWithStep: 0 andFactors: one];
     }
 }

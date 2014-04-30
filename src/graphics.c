@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -86,58 +86,58 @@ static unsigned int *keys;
 static int keys_n;
 
 static void APIENTRY debug_callback (GLenum source,
-				     GLenum type,
-				     GLuint id,
-				     GLenum severity,
-				     GLsizei length,
-				     const GLchar *message,
-				     const void *userParam)
+                                     GLenum type,
+                                     GLuint id,
+                                     GLenum severity,
+                                     GLsizei length,
+                                     const GLchar *message,
+                                     const void *userParam)
 {
     int c;
     const char *s;
 
     switch (type) {
     case GL_DEBUG_TYPE_ERROR_ARB:
-	c = 31;
-	s = "error";
-	break;
+        c = 31;
+        s = "error";
+        break;
     case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB:
-	c = 35;
-	s = "deprecated behavior";
-	break;
+        c = 35;
+        s = "deprecated behavior";
+        break;
     case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:
-	c = 33;
-	s = "undefined behavior";
-	break;
+        c = 33;
+        s = "undefined behavior";
+        break;
     case GL_DEBUG_TYPE_PERFORMANCE_ARB:
-	c = 36;
-	s = "performance warning";
-	break;
+        c = 36;
+        s = "performance warning";
+        break;
     case GL_DEBUG_TYPE_PORTABILITY_ARB:
-	c = 34;
-	s = "portability warning";
-	break;
+        c = 34;
+        s = "portability warning";
+        break;
     case GL_DEBUG_TYPE_OTHER_ARB:default:
-	c = 37;
-	s = "";
-	break;
+        c = 37;
+        s = "";
+        break;
     }
 
     t_print_message("%sGL %s %d:%s %s\n",
-		    t_ansi_color(c, 1),
-		    s, id,
-		    t_ansi_color(0, 0),
-		    message);
+                    t_ansi_color(c, 1),
+                    s, id,
+                    t_ansi_color(0, 0),
+                    message);
 
     /* Ignore this kind of message from now on. */
 
     if (reportonce) {
-	glDebugMessageControlARB (source, type, GL_DONT_CARE,
-				  1, &id, GL_FALSE);
+        glDebugMessageControlARB (source, type, GL_DONT_CARE,
+                                  1, &id, GL_FALSE);
     }
 
     if (interrupt) {
-	raise(2);
+        raise(2);
     }
 }
 
@@ -150,40 +150,40 @@ static void update_projection()
 
     switch (projection) {
     case FRUSTUM:
-	a = (double)width / height;
+        a = (double)width / height;
 
-	/* Set planes based on frustum.  This will result in the same
-	 * matrix as:
-	 *     gluPerspective (frustum[0], a, frustum[1], frustum[2]);
-	 *
-	 * Note: intentional absence of break at the end.
-	 */
+        /* Set planes based on frustum.  This will result in the same
+         * matrix as:
+         *     gluPerspective (frustum[0], a, frustum[1], frustum[2]);
+         *
+         * Note: intentional absence of break at the end.
+         */
 
-	planes[4] = frustum[1];
-	planes[5] = frustum[2];
-	planes[3] = frustum[1] * tan(0.5 * frustum[0]);
-	planes[2] = -planes[3];
+        planes[4] = frustum[1];
+        planes[5] = frustum[2];
+        planes[3] = frustum[1] * tan(0.5 * frustum[0]);
+        planes[2] = -planes[3];
 
-	planes[0] = planes[2] * a;
-	planes[1] = planes[3] * a;
+        planes[0] = planes[2] * a;
+        planes[1] = planes[3] * a;
     case PERSPECTIVE:
-	P[0] = 2 * planes[4] / (planes[1] - planes[0]);
-	P[8] = (planes[1] + planes[0]) / (planes[1] - planes[0]);
-	P[5] = 2 * planes[4] / (planes[3] - planes[2]);
-	P[9] = (planes[3] + planes[2]) / (planes[3] - planes[2]);
-	P[10] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
-	P[14] = -2 * planes[5] * planes[4] / (planes[5] - planes[4]);
-	P[11] = -1;
-	break;
+        P[0] = 2 * planes[4] / (planes[1] - planes[0]);
+        P[8] = (planes[1] + planes[0]) / (planes[1] - planes[0]);
+        P[5] = 2 * planes[4] / (planes[3] - planes[2]);
+        P[9] = (planes[3] + planes[2]) / (planes[3] - planes[2]);
+        P[10] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
+        P[14] = -2 * planes[5] * planes[4] / (planes[5] - planes[4]);
+        P[11] = -1;
+        break;
     case ORTHOGRAPHIC:
-	P[0] = 2 / (planes[1] - planes[0]);
-	P[12] = -(planes[1] + planes[0]) / (planes[1] - planes[0]);
-	P[5] = 2 / (planes[3] - planes[2]);
-	P[13] = -(planes[3] + planes[2]) / (planes[3] - planes[2]);
-	P[10] = -2 / (planes[5] - planes[4]);
-	P[14] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
-	P[15] = 1;
-	break;
+        P[0] = 2 / (planes[1] - planes[0]);
+        P[12] = -(planes[1] + planes[0]) / (planes[1] - planes[0]);
+        P[5] = 2 / (planes[3] - planes[2]);
+        P[13] = -(planes[3] + planes[2]) / (planes[3] - planes[2]);
+        P[10] = -2 / (planes[5] - planes[4]);
+        P[14] = -(planes[5] + planes[4]) / (planes[5] - planes[4]);
+        P[15] = 1;
+        break;
     }
 
     t_load_projection(P);
@@ -201,21 +201,21 @@ static void update_projection()
             T_f[i] = transform[i];                                      \
         }                                                               \
                                                                         \
-	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
+        glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
                                                                         \
-	glBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,		\
-			PROJECTION_SIZE, P_f);                          \
-	glBufferSubData(GL_UNIFORM_BUFFER, TRANSFORM_OFFSET,		\
-			TRANSFORM_SIZE, T_f);                           \
-									\
-	if(0) {								\
+        glBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,		\
+                        PROJECTION_SIZE, P_f);                          \
+        glBufferSubData(GL_UNIFORM_BUFFER, TRANSFORM_OFFSET,		\
+                        TRANSFORM_SIZE, T_f);                           \
+                                                                        \
+        if(0) {								\
             float M[16];						\
-									\
+                                                                        \
             glGetBufferSubData(GL_UNIFORM_BUFFER, PROJECTION_OFFSET,    \
                                PROJECTION_SIZE, M);                     \
                                                                         \
             _TRACEM(4, 4, ".5f", M);                                    \
-	}								\
+        }								\
     }
 
 void t_load_projection (double *matrix)
@@ -258,31 +258,31 @@ void t_copy_projection(double *matrix)
             T_f[i] = transform[i];                                      \
         }                                                               \
                                                                         \
-	glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
-	glBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,		\
-			MODELVIEW_SIZE, M_f);                           \
-	glBufferSubData(GL_UNIFORM_BUFFER, TRANSFORM_OFFSET,		\
-			TRANSFORM_SIZE, T_f);                           \
-									\
-	if(0) {								\
+        glBindBuffer(GL_UNIFORM_BUFFER, buffer);			\
+        glBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,		\
+                        MODELVIEW_SIZE, M_f);                           \
+        glBufferSubData(GL_UNIFORM_BUFFER, TRANSFORM_OFFSET,		\
+                        TRANSFORM_SIZE, T_f);                           \
+                                                                        \
+        if(0) {								\
             float N[16];						\
-									\
+                                                                        \
             glGetBufferSubData(GL_UNIFORM_BUFFER, MODELVIEW_OFFSET,     \
                                MODELVIEW_SIZE, N);                      \
-									\
+                                                                        \
             _TRACEM(4, 4, ".5f", N);                                    \
-	}								\
+        }								\
     }
 
 void t_load_modelview (double *matrix, t_MatrixLoadMode mode)
 {
     if (mode == T_MULTIPLY) {
-	double M[16];
+        double M[16];
 
-	t_concatenate_4T(M, modelviews[modelviews_n], matrix);
-	memcpy(modelviews[modelviews_n], M, 16 * sizeof(double));
+        t_concatenate_4T(M, modelviews[modelviews_n], matrix);
+        memcpy(modelviews[modelviews_n], M, 16 * sizeof(double));
     } else {
-	memcpy(modelviews[modelviews_n], matrix, 16 * sizeof(double));
+        memcpy(modelviews[modelviews_n], matrix, 16 * sizeof(double));
     }
 
     SET_MODELVIEW(modelviews[modelviews_n]);
@@ -291,10 +291,10 @@ void t_load_modelview (double *matrix, t_MatrixLoadMode mode)
 void t_push_modelview (double *matrix, t_MatrixLoadMode mode)
 {
     if (mode == T_MULTIPLY) {
-	t_concatenate_4T(modelviews[modelviews_n + 1],
+        t_concatenate_4T(modelviews[modelviews_n + 1],
                          modelviews[modelviews_n], matrix);
     } else {
-	memcpy(modelviews[modelviews_n + 1], matrix, 16 * sizeof(double));
+        memcpy(modelviews[modelviews_n + 1], matrix, 16 * sizeof(double));
     }
 
     modelviews_n += 1;
@@ -404,12 +404,12 @@ void t_warp_pointer (int x, int y)
     }
 
     t_begin_gpu_interval(&self->latency);
-    
-    while ((event = gdk_event_get()) != NULL) {
-	assert(event);
 
-	/* _TRACE ("%d\n", event->type); */
-	assert(event);
+    while ((event = gdk_event_get()) != NULL) {
+        assert(event);
+
+        /* _TRACE ("%d\n", event->type); */
+        assert(event);
 
         /* Ignore double/triple-click events for now.  Individual
          * press/release event sets are generated as expected. */
@@ -420,30 +420,30 @@ void t_warp_pointer (int x, int y)
             continue;
         }
 
-	/* Ignore consecutive keypresses for the same key.  These are
-	 * always a result of key autorepeat. */
+        /* Ignore consecutive keypresses for the same key.  These are
+         * always a result of key autorepeat. */
 
-	if (event->type == GDK_KEY_PRESS) {
-	    unsigned int k;
-	    int i, j = -1, skip = 0;
+        if (event->type == GDK_KEY_PRESS) {
+            unsigned int k;
+            int i, j = -1, skip = 0;
 
-	    k = ((GdkEventKey *)event)->keyval;
+            k = ((GdkEventKey *)event)->keyval;
 
-	    for (i = 0 ; i < keys_n ; i += 1) {
+            for (i = 0 ; i < keys_n ; i += 1) {
                 /* Find an empty spot in case we need to store the
                  * key. */
 
-		if (keys[i] == 0) {
-		    j = i;
-		}
+                if (keys[i] == 0) {
+                    j = i;
+                }
 
                 /* Check if it's been pressed already. */
 
-		if (keys[i] == k) {
+                if (keys[i] == k) {
                     skip = 1;
                     break;
-		}
-	    }
+                }
+            }
 
             /* Store the key making space if necesarry. */
 
@@ -451,93 +451,93 @@ void t_warp_pointer (int x, int y)
                 gdk_event_free (event);
                 continue;
             } else if (j >= 0) {
-		keys[j] = k;
-	    } else {
-		if (i == keys_n) {
-		    keys_n += 1;
-		    keys = realloc (keys, keys_n * sizeof(unsigned int));
-		}
+                keys[j] = k;
+            } else {
+                if (i == keys_n) {
+                    keys_n += 1;
+                    keys = realloc (keys, keys_n * sizeof(unsigned int));
+                }
 
-		keys[i] = k;
-	    }
-	} else if (event->type == GDK_KEY_RELEASE) {
-	    unsigned int k;
-	    int i;
+                keys[i] = k;
+            }
+        } else if (event->type == GDK_KEY_RELEASE) {
+            unsigned int k;
+            int i;
 
-	    k = ((GdkEventKey *)event)->keyval;
+            k = ((GdkEventKey *)event)->keyval;
 
             /* Remove the key from the list. */
 
-	    for (i = 0 ; i < keys_n ; i += 1) {
-		if (keys[i] == k) {
-		    keys[i] = 0;
-		    break;
-		}
-	    }
-	}
+            for (i = 0 ; i < keys_n ; i += 1) {
+                if (keys[i] == k) {
+                    keys[i] = 0;
+                    break;
+                }
+            }
+        }
 
-	switch(event->type) {
-	case GDK_CONFIGURE:
-	    width = ((GdkEventConfigure *)event)->width;
-	    height = ((GdkEventConfigure *)event)->height;
+        switch(event->type) {
+        case GDK_CONFIGURE:
+            width = ((GdkEventConfigure *)event)->width;
+            height = ((GdkEventConfigure *)event)->height;
 
-	    glViewport (0, 0, width, height);
+            glViewport (0, 0, width, height);
 
-	    /* If a projection frustum has been specified update the
-	     * planes as the viewport aspect ratio has probably
-	     * changed. */
+            /* If a projection frustum has been specified update the
+             * planes as the viewport aspect ratio has probably
+             * changed. */
 
-	    if (projection == FRUSTUM) {
-		/* Set planes based on frustum. */
+            if (projection == FRUSTUM) {
+                /* Set planes based on frustum. */
 
-		update_projection();
-	    }
+                update_projection();
+            }
 
             t_pushuserdata (_L, 1, self);
-	    t_callhook (_L, configure, 1, 0);
-	    break;
-	case GDK_FOCUS_CHANGE:
-	    t_pushuserdata (_L, 1, self);
+            t_callhook (_L, configure, 1, 0);
+            break;
+        case GDK_FOCUS_CHANGE:
+            t_pushuserdata (_L, 1, self);
 
-	    if (((GdkEventFocus *)event)->in == TRUE) {
-		t_callhook (_L, focus, 1, 0);
-	    } else {
-		t_callhook (_L, defocus, 1, 0);
-	    }
-	    break;
-	case GDK_DELETE:
-	    t_callhook (_L, delete, 0, 0);
-	    break;
-	case GDK_NOTHING:
-	case GDK_MAP:
-	case GDK_UNMAP:
-	case GDK_WINDOW_STATE:
-	case GDK_VISIBILITY_NOTIFY:
-	    break;
-	case GDK_KEY_PRESS: case GDK_KEY_RELEASE:
-	case GDK_BUTTON_PRESS: case GDK_BUTTON_RELEASE:
-	case GDK_SCROLL: case GDK_MOTION_NOTIFY:
+            if (((GdkEventFocus *)event)->in == TRUE) {
+                t_callhook (_L, focus, 1, 0);
+            } else {
+                t_callhook (_L, defocus, 1, 0);
+            }
+            break;
+        case GDK_DELETE:
+            t_callhook (_L, delete, 0, 0);
+            break;
+        case GDK_NOTHING:
+        case GDK_MAP:
+        case GDK_UNMAP:
+        case GDK_WINDOW_STATE:
+        case GDK_VISIBILITY_NOTIFY:
+            break;
+        case GDK_KEY_PRESS: case GDK_KEY_RELEASE:
+        case GDK_BUTTON_PRESS: case GDK_BUTTON_RELEASE:
+        case GDK_SCROLL: case GDK_MOTION_NOTIFY:
             [Input addEvent: event];
             continue;
-	default:
+        default:
             assert(0);
-	}
+        }
 
-	gdk_event_free (event);
+        gdk_event_free (event);
     }
 
     /* Draw the scene. */
 
     glClear(GL_DEPTH_BUFFER_BIT |
-	    GL_COLOR_BUFFER_BIT |
-	    GL_STENCIL_BUFFER_BIT);
+            GL_COLOR_BUFFER_BIT |
+            GL_STENCIL_BUFFER_BIT);
 
     t_end_cpu_interval (&self->core);
 
     frames += 1;
 
     for (root = [Root nodes] ; root ; root = (Root *)root->right) {
-	t_draw_subtree (root, frames);
+        t_draw_subtree (root, frames);
     }
 }
 
@@ -1049,22 +1049,22 @@ void t_warp_pointer (int x, int y)
                 glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 
                 /* glDebugMessageControlARB (GL_DONT_CARE, */
-                /* 			  GL_DONT_CARE, */
-                /* 			  GL_DEBUG_SEVERITY_HIGH_ARB, */
-                /* 			  0, NULL, */
-                /* 			  high ? GL_TRUE : GL_FALSE); */
+                /*                        GL_DONT_CARE, */
+                /*                        GL_DEBUG_SEVERITY_HIGH_ARB, */
+                /*                        0, NULL, */
+                /*                        high ? GL_TRUE : GL_FALSE); */
 
                 /* glDebugMessageControlARB (GL_DONT_CARE, */
-                /* 			  GL_DONT_CARE, */
-                /* 			  GL_DEBUG_SEVERITY_MEDIUM_ARB, */
-                /* 			  0, NULL, */
-                /* 			  medium ? GL_TRUE : GL_FALSE); */
+                /*                        GL_DONT_CARE, */
+                /*                        GL_DEBUG_SEVERITY_MEDIUM_ARB, */
+                /*                        0, NULL, */
+                /*                        medium ? GL_TRUE : GL_FALSE); */
 
                 /* glDebugMessageControlARB (GL_DONT_CARE, */
-                /* 			  GL_DONT_CARE, */
-                /* 			  GL_DEBUG_SEVERITY_LOW_ARB, */
-                /* 			  0, NULL, */
-                /* 			  low ? GL_TRUE : GL_FALSE); */
+                /*                        GL_DONT_CARE, */
+                /*                        GL_DEBUG_SEVERITY_LOW_ARB, */
+                /*                        0, NULL, */
+                /*                        low ? GL_TRUE : GL_FALSE); */
             }
 
             /* Print useful debug information. */
@@ -1206,33 +1206,33 @@ void t_warp_pointer (int x, int y)
     /* Update the window if the state has toggled. */
 
     if (window) {
-	if (!hide && lua_toboolean (_L, 3)) {
-	    gdk_window_hide (window);
-	    gdk_flush();
-	}
+        if (!hide && lua_toboolean (_L, 3)) {
+            gdk_window_hide (window);
+            gdk_flush();
+        }
 
-	if (hide && !lua_toboolean (_L, 3)) {
-	    gdk_window_show (window);
-	    gdk_window_raise (window);
-	    /* gdk_window_focus (window, GDK_CURRENT_TIME); */
+        if (hide && !lua_toboolean (_L, 3)) {
+            gdk_window_show (window);
+            gdk_window_raise (window);
+            /* gdk_window_focus (window, GDK_CURRENT_TIME); */
 
-	    if (width == gdk_screen_width() &&
-		height == gdk_screen_height()) {
-		gdk_window_fullscreen (window);
-	    }
+            if (width == gdk_screen_width() &&
+                height == gdk_screen_height()) {
+                gdk_window_fullscreen (window);
+            }
 
-	    gdk_flush();
+            gdk_flush();
 
-	    /* Clear the window's color buffers to the
-	       canvas color. */
+            /* Clear the window's color buffers to the
+               canvas color. */
 
-	    glDrawBuffer (GL_FRONT_AND_BACK);
-	    glClear (GL_COLOR_BUFFER_BIT);
-	    glFlush();
-	    glDrawBuffer (GL_BACK);
-	}
+            glDrawBuffer (GL_FRONT_AND_BACK);
+            glClear (GL_COLOR_BUFFER_BIT);
+            glFlush();
+            glDrawBuffer (GL_BACK);
+        }
 
-	gdk_window_flush (window);
+        gdk_window_flush (window);
     }
 
     hide = lua_toboolean (_L, 3);
@@ -1288,23 +1288,23 @@ void t_warp_pointer (int x, int y)
     n = lua_rawlen(_L, 3);
 
     if (n == 3) {
-	for (i = 0 ; i < 3 ; i += 1) {
-	    lua_pushinteger (_L, i + 1);
-	    lua_gettable (_L, 3);
-	    frustum[i] = lua_tonumber(_L, -1);
-	    lua_pop (_L, 1);
-	}
+        for (i = 0 ; i < 3 ; i += 1) {
+            lua_pushinteger (_L, i + 1);
+            lua_gettable (_L, 3);
+            frustum[i] = lua_tonumber(_L, -1);
+            lua_pop (_L, 1);
+        }
 
-	projection = FRUSTUM;
+        projection = FRUSTUM;
     } else {
-	for (i = 0 ; i < 6 ; i += 1) {
-	    lua_pushinteger (_L, i + 1);
-	    lua_gettable (_L, 3);
-	    planes[i] = lua_tonumber(_L, -1);
-	    lua_pop (_L, 1);
-	}
+        for (i = 0 ; i < 6 ; i += 1) {
+            lua_pushinteger (_L, i + 1);
+            lua_gettable (_L, 3);
+            planes[i] = lua_tonumber(_L, -1);
+            lua_pop (_L, 1);
+        }
 
-	projection = PERSPECTIVE;
+        projection = PERSPECTIVE;
     }
 
     update_projection();
@@ -1315,10 +1315,10 @@ void t_warp_pointer (int x, int y)
     int i;
 
     for (i = 0 ; i < 6 ; i += 1) {
-	lua_pushinteger (_L, i + 1);
-	lua_gettable (_L, 3);
-	planes[i] = lua_tonumber(_L, -1);
-	lua_pop (_L, 1);
+        lua_pushinteger (_L, i + 1);
+        lua_gettable (_L, 3);
+        planes[i] = lua_tonumber(_L, -1);
+        lua_pop (_L, 1);
     }
 
     projection = ORTHOGRAPHIC;
@@ -1334,9 +1334,9 @@ void t_warp_pointer (int x, int y)
                                    ARRAY_TDOUBLE, 1, 3);
 
     glClearColor (array->values.doubles[0],
-		  array->values.doubles[1],
-		  array->values.doubles[2],
-		  0);
+                  array->values.doubles[1],
+                  array->values.doubles[2],
+                  0);
 }
 
 -(void) _set_colorbuffer

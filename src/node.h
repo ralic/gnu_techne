@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -49,11 +49,11 @@ struct protocol {
     Class class;
     int size;
     struct {
-	const char *name;
-	SEL selector;
+        const char *name;
+        SEL selector;
     } *properties[2];
 };
-    
+
 @interface Node: Object {
 @public
     Node *left, *right, *up, *down, **orphans;
@@ -62,23 +62,23 @@ struct protocol {
 
     const char **prerequisites;
     int prerequisites_n;
-    
+
     t_CPUProfilingInterval core;
-    
+
     struct {
-	lua_Number number;
-	const char *string;
-	int reference;
+        lua_Number number;
+        const char *string;
+        int reference;
     } key;
-    
+
     struct {
-	const char *string;
-	int reference;
+        const char *string;
+        int reference;
     } alias;
-    
+
     struct {
-	const char *string;
-	int reference;
+        const char *string;
+        int reference;
     } tag;
 
     double index;

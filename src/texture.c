@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -33,11 +33,11 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
     object = t_testnode(_L, index, [Texture class]);
 
     if (!object) {
-	return NULL;
+        return NULL;
     }
 
     if (object->target != target) {
-	return NULL;
+        return NULL;
     }
 
     return object;
@@ -50,10 +50,10 @@ Texture *t_totexture (lua_State *L, int index, GLenum target)
     texture = t_testtexture(L, index, target);
 
     if(!texture) {
-	lua_pushfstring (L,
-			 "Texture expected, got %s).",
-			 lua_typename (L, lua_type (L, index)));
-	lua_error (L);
+        lua_pushfstring (L,
+                         "Texture expected, got %s).",
+                         lua_typename (L, lua_type (L, index)));
+        lua_error (L);
     }
 
     return texture;
@@ -62,26 +62,26 @@ Texture *t_totexture (lua_State *L, int index, GLenum target)
 static void map_array_to_texture (array_Array *array,
                                   GLenum *gltype, GLenum *internal,
                                   GLenum *format)
-    
+
 {
     const GLenum formats[][3][5][2] = {
         /* R */
 
-        {            
+        {
             {
-                {GL_R32F, GL_RED}, {GL_NONE, GL_NONE}, 
+                {GL_R32F, GL_RED}, {GL_NONE, GL_NONE},
                 {GL_R32I, GL_RED_INTEGER}, {GL_R32UI, GL_RED_INTEGER},
                 {GL_NONE, GL_NONE}
             },
 
             {
-                {GL_R16F, GL_RED}, {GL_R16, GL_RED}, 
+                {GL_R16F, GL_RED}, {GL_R16, GL_RED},
                 {GL_R16I, GL_RED_INTEGER}, {GL_R16UI, GL_RED_INTEGER},
                 {GL_R16_SNORM, GL_RED}
             },
 
             {
-                {GL_NONE, GL_NONE}, {GL_R8, GL_RED}, 
+                {GL_NONE, GL_NONE}, {GL_R8, GL_RED},
                 {GL_R8I, GL_RED_INTEGER}, {GL_R8UI, GL_RED_INTEGER},
                 {GL_R8_SNORM, GL_RED}
             },
@@ -89,21 +89,21 @@ static void map_array_to_texture (array_Array *array,
 
         {
             /* RG */
-            
+
             {
-                {GL_RG32F, GL_RG}, {GL_NONE, GL_NONE}, 
+                {GL_RG32F, GL_RG}, {GL_NONE, GL_NONE},
                 {GL_RG32I, GL_RG_INTEGER}, {GL_RG32UI, GL_RG_INTEGER},
                 {GL_NONE, GL_NONE}
             },
 
             {
-                {GL_RG16F, GL_RG}, {GL_RG16, GL_RG}, 
+                {GL_RG16F, GL_RG}, {GL_RG16, GL_RG},
                 {GL_RG16I, GL_RG_INTEGER}, {GL_RG16UI, GL_RG_INTEGER},
                 {GL_RG16_SNORM, GL_RG}
             },
 
             {
-                {GL_NONE, GL_NONE}, {GL_RG8, GL_RG}, 
+                {GL_NONE, GL_NONE}, {GL_RG8, GL_RG},
                 {GL_RG8I, GL_RG_INTEGER}, {GL_RG8UI, GL_RG_INTEGER},
                 {GL_RG8_SNORM, GL_RG}
             },
@@ -111,43 +111,43 @@ static void map_array_to_texture (array_Array *array,
 
         {
             /* RGB */
-            
+
             {
-                {GL_RGB32F, GL_RGB}, {GL_NONE, GL_NONE}, 
+                {GL_RGB32F, GL_RGB}, {GL_NONE, GL_NONE},
                 {GL_RGB32I, GL_RGB_INTEGER}, {GL_RGB32UI, GL_RGB_INTEGER},
                 {GL_NONE, GL_NONE}
             },
 
             {
-                {GL_RGB16F, GL_RGB}, {GL_RGB16, GL_RGB}, 
+                {GL_RGB16F, GL_RGB}, {GL_RGB16, GL_RGB},
                 {GL_RGB16I, GL_RGB_INTEGER}, {GL_RGB16UI, GL_RGB_INTEGER},
                 {GL_RGB16_SNORM, GL_RGB}
             },
 
             {
-                {GL_NONE, GL_NONE}, {GL_RGB8, GL_RGB}, 
+                {GL_NONE, GL_NONE}, {GL_RGB8, GL_RGB},
                 {GL_RGB8I, GL_RGB_INTEGER}, {GL_RGB8UI, GL_RGB_INTEGER},
                 {GL_RGB8_SNORM, GL_RGB}
             },
         },
-            
+
         {
             /* RGBA */
-                
+
             {
-                {GL_RGBA32F, GL_RGBA}, {GL_NONE, GL_NONE}, 
+                {GL_RGBA32F, GL_RGBA}, {GL_NONE, GL_NONE},
                 {GL_RGBA32I, GL_RGBA_INTEGER}, {GL_RGBA32UI, GL_RGBA_INTEGER},
                 {GL_NONE, GL_NONE}
             },
 
             {
-                {GL_RGBA16F, GL_RGBA}, {GL_RGBA16, GL_RGBA}, 
+                {GL_RGBA16F, GL_RGBA}, {GL_RGBA16, GL_RGBA},
                 {GL_RGBA16I, GL_RGBA_INTEGER}, {GL_RGBA16UI, GL_RGBA_INTEGER},
                 {GL_RGBA16_SNORM, GL_RGBA}
             },
 
             {
-                {GL_NONE, GL_NONE}, {GL_RGBA8, GL_RGBA}, 
+                {GL_NONE, GL_NONE}, {GL_RGBA8, GL_RGBA},
                 {GL_RGBA8I, GL_RGBA_INTEGER}, {GL_RGBA8UI, GL_RGBA_INTEGER},
                 {GL_RGBA8_SNORM, GL_RGBA}
             },
@@ -199,7 +199,7 @@ static void map_array_to_texture (array_Array *array,
 static void complete_if_needed(Texture *texture)
 {
     int mode, base, max;
-    
+
     glBindTexture(texture->target, texture->name);
     glGetTexParameteriv(texture->target, GL_TEXTURE_MIN_FILTER, &mode);
     glGetTexParameteriv(texture->target, GL_TEXTURE_BASE_LEVEL, &base);
@@ -207,7 +207,7 @@ static void complete_if_needed(Texture *texture)
 
     if (mode != GL_NEAREST && mode != GL_LINEAR && base == max) {
         int i, width;
-        
+
         glTexParameteri(texture->target, GL_TEXTURE_MAX_LEVEL, 1000);
         glGenerateMipmap(texture->target);
 
@@ -215,7 +215,7 @@ static void complete_if_needed(Texture *texture)
             glGetTexLevelParameteriv(texture->target, i, GL_TEXTURE_WIDTH,
                                      &width);
         }
-        
+
         glTexParameteri(texture->target, GL_TEXTURE_MAX_LEVEL, i - 2);
     }
 
@@ -228,7 +228,7 @@ static void complete_if_needed(Texture *texture)
 {
     self->target = target_in;
     self->name = name_in;
-    
+
     [super init];
 }
 
@@ -236,7 +236,7 @@ static void complete_if_needed(Texture *texture)
 {
     self->target = target_in;
     glGenTextures(1, &self->name);
-    
+
     [super init];
 }
 
@@ -252,7 +252,7 @@ static void complete_if_needed(Texture *texture)
                                  GL_TEXTURE_WRAP_T,
                                  GL_TEXTURE_WRAP_R};
     int i, mode;
-    
+
     lua_createtable(_L, 3, 0);
 
     for (i = 0 ; i < 3 ; i += 1) {
@@ -268,7 +268,7 @@ static void complete_if_needed(Texture *texture)
 
         lua_rawseti (_L, -2, i + 1);
     }
-    
+
     return 1;
 }
 
@@ -312,7 +312,7 @@ static void complete_if_needed(Texture *texture)
 -(int) _get_lod
 {
     float f;
-    
+
     lua_createtable(_L, 3, 0);
 
     glBindTexture(self->target, self->name);
@@ -336,7 +336,7 @@ static void complete_if_needed(Texture *texture)
 {
     if (lua_istable(_L, 3)) {
         glBindTexture(self->target, self->name);
-        
+
         lua_rawgeti(_L, 3, 1);
         if(lua_isnumber(_L, -1)) {
             glTexParameterf(self->target, GL_TEXTURE_MIN_LOD,
@@ -365,7 +365,7 @@ static void complete_if_needed(Texture *texture)
     const GLenum parameters[] = {GL_TEXTURE_MIN_FILTER,
                                  GL_TEXTURE_MAG_FILTER};
     int i, mode;
-    
+
     lua_createtable(_L, 3, 0);
 
     for (i = 0 ; i < 2 ; i += 1) {
@@ -388,7 +388,7 @@ static void complete_if_needed(Texture *texture)
 
         lua_rawseti (_L, -2, i + 1);
     }
-    
+
     return 1;
 }
 
@@ -442,7 +442,7 @@ static void complete_if_needed(Texture *texture)
 -(int) _get_texels
 {
     int i, base, max, rank;
-    
+
     glBindTexture(self->target, self->name);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
@@ -453,7 +453,7 @@ static void complete_if_needed(Texture *texture)
     case GL_TEXTURE_2D: rank = 3; break;
     default: assert(0);
     }
-    
+
     lua_newtable(_L);
 
     for (i = base ; i <= max ; i += 1) {
@@ -468,7 +468,7 @@ static void complete_if_needed(Texture *texture)
                                  &size[0]);
         glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_DEPTH,
                                  &size[2]);
-        
+
         glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_RED_TYPE,
                                  &channels[0][0]);
         glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_RED_SIZE,
@@ -487,7 +487,7 @@ static void complete_if_needed(Texture *texture)
                                  &channels[3][1]);
 
         /* Figure out the array type. */
-        
+
         switch (channels[0][0]) {
         case GL_FLOAT: type = ARRAY_TFLOAT; break;
         case GL_SIGNED_NORMALIZED: type = ARRAY_TNCHAR; break;
@@ -499,16 +499,16 @@ static void complete_if_needed(Texture *texture)
 
         if (type != ARRAY_TFLOAT) {
             n = channels[0][1] / 8;
-        
+
             if (type > 0) {
                 type -= 2 * ((n > 3 ? 3 : n) - 1);
             }  else {
                 type += 2 * ((n > 3 ? 3 : n) - 1);
             }
         }
-        
+
         /* Count the number of channels. */
-        
+
         for(n = 0 ; channels[n][0] != GL_NONE ; n += 1);
         size[rank - 1] = n;
 
@@ -518,7 +518,7 @@ static void complete_if_needed(Texture *texture)
         glGetTexImage(self->target, i, format, gltype, array->values.any);
         lua_rawseti(_L, 3, i + 1);
     }
-    
+
     return 1;
 }
 
@@ -528,7 +528,7 @@ static void complete_if_needed(Texture *texture)
 
     /* If a single texel array is specified wrap it in a table and
      * default minification filtering to linear. */
-    
+
     if (array_isarray (_L, 3)) {
         lua_createtable(_L, 1, 0);
         lua_insert(_L, 3);
@@ -537,7 +537,7 @@ static void complete_if_needed(Texture *texture)
         glBindTexture(self->target, self->name);
         glTexParameteri(self->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     }
-    
+
     if (!lua_istable (_L, 3)) {
         t_print_error("Invalid value specified for texel data.\n");
         abort();
@@ -548,17 +548,17 @@ static void complete_if_needed(Texture *texture)
 
     glBindTexture(self->target, self->name);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    
+
     lua_pushnil(_L);
-    
+
     while (lua_next(_L, 3)) {
         array_Array *texels;
         GLenum type, internal, format;
         int i, h;
-        
+
         i = lua_tointeger(_L, -2) - 1;
         h = lua_gettop(_L);
-        
+
         if (!lua_isnil(_L, -1)) {
             texels = array_testarray (_L, -1);
 
@@ -582,7 +582,7 @@ static void complete_if_needed(Texture *texture)
             /* _TRACE ("%d, %x, %x, %x\n", texels->type, type, internal, format); */
 
             /* Create the texture object. */
-            
+
             switch(self->target) {
             case GL_TEXTURE_2D:
                 glTexImage2D (self->target, i, internal,

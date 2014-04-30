@@ -16,7 +16,7 @@ uniform float clustering;
 
 void main() {
     int i;
-    
+
     i = index_v[0];
 
     if (i < 0) {
@@ -25,15 +25,15 @@ void main() {
 
         return;
     }
-    
+
     gl_TessLevelOuter[0] = 1;
     gl_TessLevelOuter[1] = clustering - 1;
-    
-    color_tc = color_v[0];    
+
+    color_tc = color_v[0];
     position_tc[gl_InvocationID] = position_v[0];
     index_tc = i;
     distance_tc = distance_v[0];
 
     apex_tc = apex_v[0]; left_tc = left_v[0]; right_tc = right_v[0];
-    stratum_tc = stratum_v[0]; 
+    stratum_tc = stratum_v[0];
 }

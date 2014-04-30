@@ -1,16 +1,16 @@
--- Copyright (C) 2010-2011 Papavasileiou Dimitris                           
---                                                                      
--- This program is free software: you can redistribute it and/or modify 
--- it under the terms of the GNU General Public License as published by 
--- the Free Software Foundation, either version 3 of the License, or    
--- (at your option) any later version.                                  
---                                                                      
--- This program is distributed in the hope that it will be useful,      
--- but WITHOUT ANY WARRANTY; without even the implied warranty of       
--- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
--- GNU General Public License for more details.                         
---                                                                      
--- You should have received a copy of the GNU General Public License    
+-- Copyright (C) 2010-2011 Papavasileiou Dimitris
+--
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local string = require "string"
@@ -75,10 +75,10 @@ local function update (self, rho, theta, phi)
 
    a = math.clamp (current[2] - rest[2], -math.pi, math.pi)
    b = math.clamp (current[3] - rest[3], -math.pi, math.pi)
-   
+
    stops[2][1] = {a, a}
    stops[1][1] = {b, b}
-   
+
    self.stops = stops
 end
 
@@ -94,7 +94,7 @@ local info = primitives.root {
 
 local orbit = primitives.transform {
    position = parameters.position,
-   
+
    universal = joints.universal {
       link = function (self)
          local p, R, R_p, RT, R_pT
@@ -109,14 +109,14 @@ local orbit = primitives.transform {
 
          self.anchor = p
          self.axes = {
-            R_pT[3], RT[1], 
+            R_pT[3], RT[1],
          }
 
          self.stops = {
             {{0, 0}, compliance, 0},
             {{0, 0}, compliance, 0},
          }
-         
+
          self.torso = bodies.point {
             position = p,
             mass = mass,
@@ -143,7 +143,7 @@ local orbit = primitives.transform {
          bindings['[Rubberband]down-button-3'] = function(sequence, button)
             initial = {current[1], current[2], current[3]}
          end
-         
+
          bindings['[Rubberband]relative-axis-0'] = function(sequence, value)
             sensitivity = math.clamp (sensitivity + value, 1, 10)
 

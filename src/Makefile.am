@@ -35,9 +35,9 @@ $(BUILT_SOURCES): glsl/stringify
 noinst_PROGRAMS = glsl/stringify
 
 glsl_stringify_SOURCES = glsl/stringify.c
-glsl_stringify_CPPFLAGS = 
+glsl_stringify_CPPFLAGS =
 glsl_stringify_CFLAGS = -Wall
-glsl_stringify_LDFLAGS = 
+glsl_stringify_LDFLAGS =
 
 opengl.c gl.h glx.h: mkopengl.sh
 	./mkopengl.sh

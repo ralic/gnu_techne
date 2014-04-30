@@ -1,7 +1,7 @@
 vec3 rgb_to_hsv (vec3 rgb)
 {
     float H, M, m, C;
-    
+
     M = max(max (rgb.r, rgb.g), rgb.b);
     m = min(min (rgb.r, rgb.g), rgb.b);
     C = M - m;

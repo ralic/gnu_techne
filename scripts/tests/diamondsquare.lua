@@ -1,16 +1,16 @@
--- Copyright (C) 2010-2011 Papavasileiou Dimitris                           
---                                                                      
--- This program is free software: you can redistribute it and/or modify 
--- it under the terms of the GNU General Public License as published by 
--- the Free Software Foundation, either version 3 of the License, or    
--- (at your option) any later version.                                  
---                                                                      
--- This program is distributed in the hope that it will be useful,      
--- but WITHOUT ANY WARRANTY; without even the implied warranty of       
--- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
--- GNU General Public License for more details.                         
---                                                                      
--- You should have received a copy of the GNU General Public License    
+-- Copyright (C) 2010-2011 Papavasileiou Dimitris
+--
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 -- An adaptatiob of the heightmap module
@@ -32,7 +32,7 @@ local function square(map, x, y, d, f)
       if 0 <= y - d then
          sum, num = sum + map[x - d + 1][y - d + 1], num + 1
       end
-      
+
       if y + d <= height then
          sum, num = sum + map[x - d + 1][y + d + 1], num + 1
       end
@@ -142,4 +142,3 @@ local function defaultf(map, x, y, d, h)
 end
 
 return diamondsquare(size, defaultf)
-

@@ -1,4 +1,4 @@
--- Copyright (C) 2012 Papavasileiou Dimitris                             
+-- Copyright (C) 2012 Papavasileiou Dimitris
 --
 -- Permission is hereby granted, free of charge, to any person
 -- obtaining a copy of this software and associated documentation
@@ -37,19 +37,19 @@ controllers['Rubberband'] = function(parameters)
       graphics.grabinput = true
 
       -- Add the rubber-band graphics.
-      
+
       rubberband.overlay.knob = shading.flat {
          color = {1, 0.7, 0, 0.9},
-         
+
          shape = shapes.points {},
       }
-      
+
       rubberband.overlay.vector = shading.flat {
          color = color,
          shape = shapes.lines {},
       }
 
-      engaged = button      
+      engaged = button
    end
 
    local function disengage(rubberband, button)
@@ -57,10 +57,10 @@ controllers['Rubberband'] = function(parameters)
 
       rubberband.overlay.knob = nil
       rubberband.overlay.vector = nil
-      
+
       engaged = false
    end
-   
+
    rubberband = primitives.event {
       overlay = shading.overlay {
          normalized = false,
@@ -69,7 +69,7 @@ controllers['Rubberband'] = function(parameters)
 
          cursor = shading.flat {
             color = {1, 0.7, 0, 0.9},
-            
+
             shape = shapes.points {},
          },
       },
@@ -86,30 +86,30 @@ controllers['Rubberband'] = function(parameters)
                overlay.vector.shape.positions = array.floats {anchor, position}
             end
          end,
-         
+
          absolute = function (self, axis, value)
             if absolute then
                absolute (self.ancestors[2], axis,
                          value - (anchor and anchor[axis + 1] or 0))
             end
          end,
-         
+
          relative = function (self, axis, value)
             if relative then
                relative (self.ancestors[2], axis, value)
             end
          end,
-         
+
          buttonpress = function (self, button)
             if not engaged then
                engage(self.parent, button)
             end
-            
+
             if buttonpress and (button ~= 2 or not latched) then
                buttonpress (self.ancestors[2], button)
             end
          end,
-         
+
          buttonrelease = function (self, button)
             if (button ~= 2 or latched) and engaged == button then
                disengage(self.parent, button)
@@ -118,7 +118,7 @@ controllers['Rubberband'] = function(parameters)
             if button == 2 then
                latched = not latched
             end
-            
+
             if buttonrelease and (button ~= 2 or not latched) then
                buttonrelease (self.ancestors[2], button)
             end
@@ -169,7 +169,7 @@ controllers['Rubberband'] = function(parameters)
    for key, value in pairs (parameters) do
       rubberband[key] = value
    end
-   
+
    return rubberband
 end
 

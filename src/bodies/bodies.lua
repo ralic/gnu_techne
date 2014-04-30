@@ -1,16 +1,16 @@
--- Copyright (C) 2009 Papavasileiou Dimitris                             
---                                                                      
--- This program is free software: you can redistribute it and/or modify 
--- it under the terms of the GNU General Public License as published by 
--- the Free Software Foundation, either version 3 of the License, or    
--- (at your option) any later version.                                  
---                                                                      
--- This program is distributed in the hope that it will be useful,      
--- but WITHOUT ANY WARRANTY; without even the implied warranty of       
--- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
--- GNU General Public License for more details.                         
---                                                                      
--- You should have received a copy of the GNU General Public License    
+-- Copyright (C) 2009 Papavasileiou Dimitris
+--
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local core = require 'bodies.core'
@@ -24,34 +24,34 @@ local shapes = require 'shapes'
 
 return {
    point = function (parameters)
-	    local point, oldmeta
+            local point, oldmeta
 
-	    point = core.point (parameters)
+            point = core.point (parameters)
 
-	    point.volume = shading.wireframe {
+            point.volume = shading.wireframe {
                shading = shading.flat {
                   color = {1, 1, 0, 1},
 
                   shape = shapes.points {
                         positions = {{0, 0, 0}},
-                        
+
                         -- draw = function (self) print (self.vertices) end,
                                            },
                                                 }
                                         }
-            
-	    return point
-	 end,
+
+            return point
+         end,
 
    box = function (parameters)
-	    local box, oldmeta
+            local box, oldmeta
 
-	    box = core.box (parameters)
+            box = core.box (parameters)
 
-	    box.volume = shading.wireframe {
+            box.volume = shading.wireframe {
                shading = shading.flat {
                   color = {1, 0, 0, 1},
-                  
+
                   shape = shapes.box {
                      size = box.size,
 
@@ -60,26 +60,26 @@ return {
                                       },
                                            }
 
-	    oldmeta = getmetatable(box)
-	    replacemetatable(box, {
-				__newindex = function (self, key, value)
-						if key == "size" then
-						   self.volume.shape.size = value
-						end
-						
-						oldmeta.__newindex (self, key, value)
-					     end
-			     })
+            oldmeta = getmetatable(box)
+            replacemetatable(box, {
+                                __newindex = function (self, key, value)
+                                                if key == "size" then
+                                                   self.volume.shape.size = value
+                                                end
 
-	    return box
-	 end,
+                                                oldmeta.__newindex (self, key, value)
+                                             end
+                             })
+
+            return box
+         end,
 
    cylinder = function (parameters)
-	    local cylinder, oldmeta
+            local cylinder, oldmeta
 
-	    cylinder = core.cylinder (parameters)
+            cylinder = core.cylinder (parameters)
 
-	    cylinder.volume = shading.wireframe {
+            cylinder.volume = shading.wireframe {
                shading = shading.flat {
                   color = {1, 0, 0, 1},
 
@@ -91,28 +91,28 @@ return {
                                       },
                                                 }
 
-	    oldmeta = getmetatable(cylinder)
-	    replacemetatable(cylinder, {
-				__newindex = function (self, key, value)
+            oldmeta = getmetatable(cylinder)
+            replacemetatable(cylinder, {
+                                __newindex = function (self, key, value)
                                    if key == "radius" then
                                       self.volume.shape.radius = value
                                    elseif key == "length" then
                                       self.volume.shape.length = value
                                    end
-                                   
+
                                    oldmeta.__newindex (self, key, value)
                                 end
                                        })
 
-	    return cylinder
-	 end,
+            return cylinder
+         end,
 
    ball = function (parameters)
-	    local ball, oldmeta
+            local ball, oldmeta
 
-	    ball = core.ball (parameters)
+            ball = core.ball (parameters)
 
-	    ball.volume = shading.wireframe {
+            ball.volume = shading.wireframe {
                shading = shading.flat {
                   color = {1, 0, 0, 1},
 
@@ -124,26 +124,26 @@ return {
                                       },
                                             }
 
-	    oldmeta = getmetatable(ball)
-	    replacemetatable(ball, {
-				__newindex = function (self, key, value)
-						if key == "radius" then
-						   self.volume.shape.radius = value
-						end
-						
-						oldmeta.__newindex (self, key, value)
-					     end
-			     })
+            oldmeta = getmetatable(ball)
+            replacemetatable(ball, {
+                                __newindex = function (self, key, value)
+                                                if key == "radius" then
+                                                   self.volume.shape.radius = value
+                                                end
 
-	    return ball
-	 end,
+                                                oldmeta.__newindex (self, key, value)
+                                             end
+                             })
+
+            return ball
+         end,
 
    plane = function (parameters)
-	    local plane, oldmeta
+            local plane, oldmeta
 
-	    plane = core.plane (parameters)
+            plane = core.plane (parameters)
 
-	    plane.volume = shading.wireframe {
+            plane.volume = shading.wireframe {
                shading = shading.flat {
                   color = {1, 0, 0, 1},
 
@@ -154,11 +154,11 @@ return {
                                       },
                                              }
 
-	    return plane
-	 end,
+            return plane
+         end,
 
    environment = core.environment,
    capsule = core.capsule,
    polyhedron = core.polyhedron,
    system = core.system,
-} 
+}

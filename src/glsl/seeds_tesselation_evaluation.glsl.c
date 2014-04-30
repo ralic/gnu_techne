@@ -6,7 +6,7 @@ patch in float clustering_tc;
 patch in unsigned int instance_tc;
 
 flat out vec3 color_te;
-                                
+
 uniform seeds_evaluation {
     float height;
 };
@@ -14,7 +14,7 @@ uniform seeds_evaluation {
 void main()
 {
     vec3 p;
-    
+
     /* Update the statistics. */
 
     if (clustering_tc > 1) {
@@ -22,7 +22,7 @@ void main()
     } else {
         p = position_tc;
     }
-    
+
     gl_Position = transform * vec4(p + height * gl_TessCoord.x * normal_tc, 1);
     color_te = color_tc;
 }

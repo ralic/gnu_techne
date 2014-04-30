@@ -19,7 +19,7 @@ AM_INIT_AUTOMAKE([nostdinc subdir-objects -Wall -Werror])
 LT_PREREQ([2.2])
 
 AS_CASE([$host_os],
-	[linux-gnu], [	
+	[linux-gnu], [
 		AC_ENABLE_SHARED
 		AC_DISABLE_STATIC
 	],
@@ -67,7 +67,7 @@ PKG_CHECK_MODULES([LUA], [${luaname}])
 if test -z "${LUAC}"; then
    AC_CHECK_PROGS(LUAC, [luac5.2 luac52 luac])
 
-   if test -z "`${LUAC} -v | grep "Lua 5.2"`"; then  
+   if test -z "`${LUAC} -v | grep "Lua 5.2"`"; then
       AC_MSG_ERROR([
 Lua 5.2 was found but the default Lua compiler does not seem to
 be version 5.2.  You have to manually set the variable LUAC to the

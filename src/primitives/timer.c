@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -35,7 +35,7 @@
 {
     [super init];
 
-    self->tick = LUA_REFNIL;    
+    self->tick = LUA_REFNIL;
     self->shortcircuit = 0;
     self->period = 0.0 / 0.0;
     self->source = TECHNE;
@@ -45,7 +45,7 @@
 {
     /* If we're about to get unlinked and our period is infinity
      * tick. */
-        
+
     if (self->linked && isinf(self->period) > 0) {
         self->shortcircuit = 1;
         [self tick];
@@ -55,7 +55,7 @@
     [super toggle];
 
     /* Reset the timer if it's just been linked. */
-    
+
     if (self->linked) {
         self->previous = current(self);
         self->elapsed = 0;
@@ -79,17 +79,17 @@
     self->delta = now - self->previous;
 
     if (self->shortcircuit || self->delta >= self->period) {
-	self->elapsed += self->delta;
-	self->count += 1;
+        self->elapsed += self->delta;
+        self->count += 1;
 
-	t_pushuserdata (_L, 1, self);
-	lua_pushnumber (_L, self->count);
-	lua_pushnumber (_L, self->delta);
-	lua_pushnumber (_L, self->elapsed);
+        t_pushuserdata (_L, 1, self);
+        lua_pushnumber (_L, self->count);
+        lua_pushnumber (_L, self->delta);
+        lua_pushnumber (_L, self->elapsed);
 
-	t_callhook (_L, self->tick, 4, 0);
+        t_callhook (_L, self->tick, 4, 0);
 
-	self->previous = now;
+        self->previous = now;
     }
 }
 
@@ -99,7 +99,7 @@
         self->source == DYNAMICS) {
         [self tick];
     }
-    
+
     [super stepBy: h at: t];
 }
 
@@ -177,7 +177,7 @@
     const char *new;
 
     new = lua_tostring (_L, 3);
-    
+
     if (!strcmp(new, "techne")) {
         self->source = TECHNE;
     } else if (!strcmp(new, "dynamics")) {

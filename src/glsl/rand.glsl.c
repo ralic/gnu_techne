@@ -26,7 +26,7 @@ vec2 hash(uvec2 U, unsigned int k)
 
     for (i = 0 ; i < 4 ; i += 1) {
         umulExtended(U.x, M, Uprime.x, Uprime.y);
-        
+
         U = uvec2(Uprime.x ^ U.y ^ k, Uprime.y);
         k += 0x9E3779B9;
     }

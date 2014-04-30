@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -41,7 +41,7 @@
 {
     unsigned int bits[MAX_EVENT_WORDS];
     struct input_event event;
-    
+
     [super init];
 
     self->device = open(name, O_NONBLOCK | O_RDWR);
@@ -50,36 +50,36 @@
         t_print_warning("Could not open input device %s for writing.  "
                         "Force effects won't be available even if "
                         "supported.", name);
-        
+
         self->device = open(name, O_NONBLOCK | O_RDONLY);
-        self->has_force = 0;            
+        self->has_force = 0;
     } else {
         /* Read the device's supported events. */
-    
+
         memset(bits, 0, sizeof(bits));
         if(ioctl(self->device, EVIOCGBIT(0, sizeof(bits)), bits) < 0) {
             t_print_warning("Could not get the device's capabilities.");
         }
 
         /* Initialize force-feedback if supported. */
-        
+
         if(test(bits, EV_FF)) {
             self->has_force = 1;
-            
+
             self->force[0] = 0;
             self->force[1] = 0;
 
             memset (&self->effect, 0, sizeof(self->effect));
             memset (&event, 0, sizeof(event));
-        
+
             event.type = EV_FF;
             event.code = FF_AUTOCENTER;
             event.value = 0;
-            
+
             if (write(self->device, &event, sizeof(event)) < 0) {
                 t_print_warning("Could not disable auto-center for input device %s", name);
             }
-            
+
             event.type = EV_FF;
             event.code = FF_GAIN;
             event.value = 0xFFFFUL;
@@ -103,8 +103,8 @@
         } else {
             self->has_force = 0;
         }
-    }        
-        
+    }
+
     if (self->device < 0) {
         t_print_warning("Could not open input device %s", name);
     }
@@ -114,30 +114,30 @@
 {
     struct input_event events[64];
     int i, n;
-    
+
     n = read(self->device, events, 64 * sizeof(struct input_event));
 
     if (n > 0) {
         assert (n % sizeof(struct input_event) == 0);
 
         /* Fire the bindings based on the event type. */
-    
+
         for (i = 0 ; i < n / sizeof(struct input_event) ; i += 1) {
             switch(events[i].type) {
             case EV_KEY:
                 t_pushuserdata (_L, 1, self);
                 lua_pushnumber (_L, events[i].code);
-        
+
                 if (events[i].value == 1 || events[i].value == 2) {
                     t_callhook (_L, self->buttonpress, 2, 0);
                 } else {
                     t_callhook (_L, self->buttonrelease, 2, 0);
                 }
 
-                break;                  
+                break;
             case EV_ABS:
                 t_pushuserdata (_L, 1, self);
-		
+
                 lua_pushnumber (_L, events[i].code);
                 lua_pushnumber (_L, events[i].value);
 
@@ -146,7 +146,7 @@
                 break;
             case EV_REL:
                 t_pushuserdata (_L, 1, self);
-		
+
                 lua_pushnumber (_L, events[i].code);
                 lua_pushnumber (_L, events[i].value);
 
@@ -174,7 +174,7 @@
 
     if(self->has_force) {
         lua_newtable (_L);
-        
+
         for(j = 0 ; j < 2 ; j += 1) {
             lua_pushnumber (_L, self->force[j]);
 
@@ -183,33 +183,33 @@
     } else {
         lua_pushnil(_L);
     }
-    
+
     return 1;
 }
 
 -(void) _set_force
 {
     int j;
-    
+
     if(self->has_force && lua_istable (_L, 3)) {
-	for(j = 0 ; j < 2 ; j += 1) {
-	    lua_rawgeti (_L, 3, j + 1);
-	    self->force[j] = lua_tonumber (_L, -1);
-	    lua_pop (_L, 1);
-	}
+        for(j = 0 ; j < 2 ; j += 1) {
+            lua_rawgeti (_L, 3, j + 1);
+            self->force[j] = lua_tonumber (_L, -1);
+            lua_pop (_L, 1);
+        }
 
         if (self->force[0] > 1) {
             self->force[0] = 1;
         } else if (self->force[0] < -1) {
             self->force[0] = -1;
         }
-        
+
         if (self->force[1] >= 0) {
             self->force[1] = fmod(self->force[1], 2 * M_PI);
         } else {
             self->force[1] = fmod(self->force[1], 2 * M_PI) + 2 * M_PI;
         }
-        
+
         self->effect.u.constant.level = self->force > 0 ? self->force[0] * SHRT_MAX : -self->force[0] * SHRT_MIN;
         self->effect.direction = self->force[1] / (2 * M_PI) * USHRT_MAX;
 
@@ -221,21 +221,21 @@
 {
     unsigned int exists[MAX_KEY_WORDS], depressed[MAX_KEY_WORDS];
     int i, j;
-    
+
     /* Read the key map and state. */
-    
+
     memset(exists, 0, sizeof(exists));
     if(ioctl(self->device, EVIOCGBIT(EV_KEY, sizeof(exists)), exists) < 0) {
         t_print_warning("Could not get the device's key map.");
     }
-    
+
     memset(depressed, 0, sizeof(depressed));
     if(ioctl(self->device, EVIOCGKEY(sizeof(depressed)), depressed) < 0) {
         t_print_warning("Could not get the device's key state.");
     }
 
     /* Scan the bitfields and create a table. */
-    
+
     lua_newtable(_L);
 
     for (i = 0 ; i < MAX_KEY_WORDS ; i += 1) {
@@ -261,16 +261,16 @@
     unsigned int exists[MAX_ABSOLUTE_WORDS];
     struct input_absinfo info;
     int i, j;
-    
+
     /* Read the abs map and state. */
-    
+
     memset(exists, 0, sizeof(exists));
     if(ioctl(self->device, EVIOCGBIT(EV_ABS, sizeof(exists)), exists) < 0) {
         t_print_warning("Could not get the device's absolute axis map.");
     }
 
     /* Scan the bitfields and create a table. */
-    
+
     lua_newtable(_L);
 
     for (i = 0 ; i < MAX_ABSOLUTE_WORDS ; i += 1) {
@@ -279,11 +279,11 @@
                 int k;
 
                 k = BITS_PER_WORD * i + j;
-                
+
                 if(ioctl(self->device, EVIOCGABS(k), &info) < 0) {
                     t_print_warning("Could not get the state of absolute axis %d.", k);
                 }
-                
+
                 lua_pushinteger(_L, k);
                 lua_pushnumber(_L, info.value);
                 lua_settable(_L, -3);

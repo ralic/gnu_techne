@@ -10,20 +10,20 @@ out vec3 position_te, normal_te;
 out vec4 color_te;
 out float distance_te;
 out int index_te;
-                                
+
 #ifdef COLLECT_STATISTICS
 layout(binding = 0, offset = 8) uniform atomic_uint segments;
 #endif
-                                
+
 vec2 hash(uvec2 U, unsigned int k);
 vec4 rand4();
-              
+
 uniform grass_debug{
     int debug;
 };
 
 uniform float clustering;
-                                
+
 void main()
 {
     vec2 u;
@@ -38,9 +38,9 @@ void main()
     position_te = ((1 - sqrtux) * apex_tc +
                    sqrtux * (1 - u.y) * left_tc +
                    sqrtux * u.y * right_tc);
-    
+
     normal_te = normalize(cross(left_tc - apex_tc, right_tc - apex_tc));
-    
+
     color_te = color_tc;
     distance_te = distance_tc;
     index_te = index_tc;

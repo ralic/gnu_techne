@@ -19,7 +19,7 @@
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- */    
+ */
 
 #include <string.h>
 #include <stdlib.h>
@@ -53,12 +53,12 @@ static array_Array *pushtransform (lua_State *L, double *M)
 static array_Array *checkreal (lua_State *L, int index)
 {
     array_Array *array;
-    
+
     array = array_checkarray (L, index);
-    
+
     if (array->type != ARRAY_TDOUBLE &&
-	array->type != ARRAY_TFLOAT) {
-	luaL_argerror (L, index, "array has integral type");
+        array->type != ARRAY_TFLOAT) {
+        luaL_argerror (L, index, "array has integral type");
     }
 
     return array;
@@ -67,13 +67,13 @@ static array_Array *checkreal (lua_State *L, int index)
 static void checkrank (lua_State *L, int index, int rank)
 {
     array_Array *array;
-    
+
     array = lua_touserdata (L, index);
-    
+
     if ((rank == 0 && array->rank != 1 && array->rank != 2) ||
-	(rank > 0 && array->rank != rank)) {
-	luaL_argerror (L, index,
-		       "array has incompatible rank");
+        (rank > 0 && array->rank != rank)) {
+        luaL_argerror (L, index,
+                       "array has incompatible rank");
     }
 }
 
@@ -83,20 +83,20 @@ static void checksimilar (lua_State *L, int i, int j)
 
     A = lua_touserdata(L, i);
     B = lua_touserdata(L, j);
-    
+
     if (A->type != B->type) {
-	luaL_argerror (L, j, "array type doesn't match");
-	lua_error (L);
+        luaL_argerror (L, j, "array type doesn't match");
+        lua_error (L);
     }
-    
+
     if (A->rank != B->rank) {
-	luaL_argerror (L, j, "array rank doesn't match");
-	lua_error (L);
+        luaL_argerror (L, j, "array rank doesn't match");
+        lua_error (L);
     }
 
     if (memcmp(A->size, B->size, A->rank * sizeof(int))) {
-	luaL_argerror (L, j, "array size doesn't match");
-	lua_error (L);
+        luaL_argerror (L, j, "array size doesn't match");
+        lua_error (L);
     }
 }
 
@@ -105,14 +105,14 @@ static void checksimilar (lua_State *L, int i, int j)
 #define DEFINE_OPERATION_WRAPPER(OP)		\
     static int OP (lua_State *L)		\
     {						\
-	array_checkarray (L, 1);		\
-	array_checkarray (L, 2);		\
-						\
-	checksimilar(L, 1, 2);			\
-						\
-	arraymath_##OP(L);                      \
-						\
-	return 1;				\
+        array_checkarray (L, 1);		\
+        array_checkarray (L, 2);		\
+                                                \
+        checksimilar(L, 1, 2);			\
+                                                \
+        arraymath_##OP(L);                      \
+                                                \
+        return 1;				\
     }
 
 DEFINE_OPERATION_WRAPPER(add)
@@ -134,9 +134,9 @@ static int combine (lua_State *L)
     luaL_checknumber (L, 4);
 
     checksimilar(L, 1, 2);
-    
+
     arraymath_combine(L);
-    
+
     return 1;
 }
 
@@ -146,7 +146,7 @@ static int raise (lua_State *L)
     luaL_checknumber (L, 2);
 
     arraymath_raise(L);
-    
+
     return 1;
 }
 
@@ -155,7 +155,7 @@ static int range (lua_State *L)
     array_checkarray (L, 1);
 
     arraymath_range(L);
-    
+
     return 2;
 }
 
@@ -164,7 +164,7 @@ static int sum (lua_State *L)
     array_checkarray (L, 1);
 
     arraymath_sum(L);
-    
+
     return 1;
 }
 
@@ -174,7 +174,7 @@ static int scale (lua_State *L)
     luaL_checknumber (L, 2);
 
     arraymath_scale(L);
-    
+
     return 1;
 }
 
@@ -184,7 +184,7 @@ static int offset (lua_State *L)
     luaL_checknumber (L, 2);
 
     arraymath_offset(L);
-    
+
     return 1;
 }
 
@@ -195,7 +195,7 @@ static int scaleoffset (lua_State *L)
     luaL_checknumber (L, 3);
 
     arraymath_scaleoffset(L);
-    
+
     return 1;
 }
 
@@ -205,7 +205,7 @@ static int clamp (lua_State *L)
     luaL_checknumber (L, 2);
 
     arraymath_clamp(L);
-    
+
     return 1;
 }
 
@@ -218,9 +218,9 @@ static int dot (lua_State *L)
     checkrank(L, 1, 1);
     checkrank(L, 2, 1);
     checksimilar (L, 1, 2);
-    
+
     lua_pushnumber (L, arraymath_dot(L));
-    
+
     return 1;
 }
 
@@ -235,12 +235,12 @@ static int cross (lua_State *L)
     checksimilar (L, 1, 2);
 
     if (A->size[0] != 3) {
-	lua_pushstring (L, "Vectors must be three-dimensional.");
-	lua_error (L);
+        lua_pushstring (L, "Vectors must be three-dimensional.");
+        lua_error (L);
     }
 
     arraymath_cross(L);
-    
+
     return 1;
 }
 
@@ -249,7 +249,7 @@ static int normalize (lua_State *L)
     checkreal(L, 1);
     checkrank (L, 1, 1);
     arraymath_normalize(L);
-    
+
     return 1;
 }
 
@@ -258,7 +258,7 @@ static int length (lua_State *L)
     checkreal(L, 1);
     checkrank (L, 1, 1);
     lua_pushnumber (L, arraymath_length(L));
-    
+
     return 1;
 }
 
@@ -271,7 +271,7 @@ static int distance (lua_State *L)
     checksimilar (L, 1, 2);
 
     lua_pushnumber (L, arraymath_distance(L));
-    
+
     return 1;
 }
 
@@ -293,9 +293,9 @@ static int matrix_multiply (lua_State *L)
 #endif
         luaL_argerror (L, 2, "operands are incompatible");
     }
-    
+
     arraymath_matrix_multiply(L);
-    
+
     return 1;
 }
 
@@ -308,16 +308,16 @@ static int matrix_multiplyadd (lua_State *L)
     checkreal (L, 3);
     checkrank (L, 1, 2);
 
-    if ((A->type != B->type) || 
+    if ((A->type != B->type) ||
         (B->rank == 2 && A->size[0] != B->size[1]) ||
         (B->rank == 1 && A->size[0] != B->size[0])) {
         luaL_argerror (L, 2, "operands are incompatible");
     }
 
     checksimilar (L, 2, 3);
-    
+
     arraymath_matrix_multiplyadd(L);
-    
+
     return 1;
 }
 
@@ -326,39 +326,39 @@ static int matrix_multiplyadd (lua_State *L)
 static int apply (lua_State *L)
 {
     array_Array *data;
-    
+
     array_checkcompatible (L, 1,
-			   ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-			   ARRAY_TDOUBLE, 2, 3, 3);
+                           ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                           ARRAY_TDOUBLE, 2, 3, 3);
 
     if (lua_type (L, 2) == LUA_TTABLE) {
-	data = array_checkcompatible (L, 2, ARRAY_TYPE, ARRAY_TDOUBLE);
+        data = array_checkcompatible (L, 2, ARRAY_TYPE, ARRAY_TDOUBLE);
     } else {
-	data = array_checkarray (L, 2);
+        data = array_checkarray (L, 2);
     }
-    
+
     if (data->type != ARRAY_TDOUBLE &&
-	data->type != ARRAY_TFLOAT) {
-	luaL_argerror (L, 2, "Specified array has integer type.");
+        data->type != ARRAY_TFLOAT) {
+        luaL_argerror (L, 2, "Specified array has integer type.");
     }
 
     if (data->size[data->rank - 1] != 3) {
-	lua_pushstring (L,
-			"Array to be transformed must be "
-			"ultimately three-dimensional.");
-	lua_error (L);
+        lua_pushstring (L,
+                        "Array to be transformed must be "
+                        "ultimately three-dimensional.");
+        lua_error (L);
     }
 
     if (lua_gettop (L) > 2) {
-	array_checkcompatible (L, 3,
-			       ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
-			       ARRAY_TDOUBLE, 1, 3);
+        array_checkcompatible (L, 3,
+                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                               ARRAY_TDOUBLE, 1, 3);
 
-	arraymath_apply (L, 3);
+        arraymath_apply (L, 3);
     } else {
-	arraymath_apply (L, 0);
-    }	
-    
+        arraymath_apply (L, 0);
+    }
+
     return 1;
 }
 
@@ -370,22 +370,22 @@ static int scaling (lua_State *L)
     luaL_checkany (L, 1);
 
     if (lua_isnumber (L, 1)) {
-	M[I(0, 0)] = M[I(1, 1)] = M[I(2, 2)] = lua_tonumber (L, 1);
+        M[I(0, 0)] = M[I(1, 1)] = M[I(2, 2)] = lua_tonumber (L, 1);
     } else {
-	A = array_checkcompatible (L, 1,
+        A = array_checkcompatible (L, 1,
                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                    ARRAY_TDOUBLE, 1, 3);
-	u = A->values.doubles;
+        u = A->values.doubles;
 
-	M[I(0, 0)] = u[0];
-	M[I(1, 1)] = u[1];
-	M[I(2, 2)] = u[2];
+        M[I(0, 0)] = u[0];
+        M[I(1, 1)] = u[1];
+        M[I(2, 2)] = u[2];
     }
-    
+
     M[I(0, 1)] = M[I(0, 2)] = M[I(1, 0)] = M[I(1, 2)] = M[I(2, 0)] = M[I(2, 1)] = 0;
-	
+
     pushtransform (L, M);
-    
+
     return 1;
 }
 
@@ -395,7 +395,7 @@ static int shear (lua_State *L)
     double M[9], *u, *n, f;
 
     f = luaL_checknumber (L, 1);
-    
+
     A = array_checkcompatible (L, 2,
                                ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                ARRAY_TDOUBLE, 1, 3);
@@ -417,9 +417,9 @@ static int shear (lua_State *L)
     M[I(2, 0)] = f * u[2] * n[0];
     M[I(2, 1)] = f * u[2] * n[1];
     M[I(2, 2)] = 1 + f * u[2] * n[2];
-   
+
     pushtransform (L, M);
-    
+
     return 1;
 }
 
@@ -442,9 +442,9 @@ static int reflection (lua_State *L)
     M[I(1, 2)] = 2 * u[1] * u[2];
 
     M[I(2, 0)] = M[I(0, 2)]; M[I(2, 1)] = M[I(1, 2)]; M[I(2, 2)] = 1 - 2 * u[2] * u[2];
-   
+
     pushtransform (L, M);
-    
+
     return 1;
 }
 
@@ -454,40 +454,40 @@ static int projection (lua_State *L)
     double M[9], *u, *v;
 
     if (lua_gettop (L) == 1) {
-	A = array_checkcompatible (L, 1,
+        A = array_checkcompatible (L, 1,
                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                    ARRAY_TDOUBLE, 1, 3);
-	u = A->values.doubles;
+        u = A->values.doubles;
 
-	M[I(0, 0)] = u[0] * u[0]; M[I(0, 1)] = u[0] * u[1]; M[I(0, 2)] = u[0] * u[2];
-	M[I(1, 0)] = M[I(0, 1)]; M[I(1, 1)] = u[1] * u[1]; M[I(1, 2)] = u[1] * u[2];
-	M[I(2, 0)] = M[I(0, 2)]; M[I(2, 1)] = M[I(1, 2)]; M[I(2, 2)] = u[2] * u[2];
+        M[I(0, 0)] = u[0] * u[0]; M[I(0, 1)] = u[0] * u[1]; M[I(0, 2)] = u[0] * u[2];
+        M[I(1, 0)] = M[I(0, 1)]; M[I(1, 1)] = u[1] * u[1]; M[I(1, 2)] = u[1] * u[2];
+        M[I(2, 0)] = M[I(0, 2)]; M[I(2, 1)] = M[I(1, 2)]; M[I(2, 2)] = u[2] * u[2];
     } else {
-	A = array_checkcompatible (L, 1,
+        A = array_checkcompatible (L, 1,
                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                    ARRAY_TDOUBLE, 1, 3);
-	B = array_checkcompatible (L, 2,
+        B = array_checkcompatible (L, 2,
                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                    ARRAY_TDOUBLE, 1, 3);
 
-	u = A->values.doubles;
-	v = B->values.doubles;
+        u = A->values.doubles;
+        v = B->values.doubles;
 
         M[I(0, 0)] = v[0] * v[0] + u[0] * u[0];
-	M[I(0, 1)] = v[0] * v[1] + u[0] * u[1];
-	M[I(0, 2)] = v[0] * v[2] + u[0] * u[2];
-	
-	M[I(1, 0)] = M[I(0, 1)];
-	M[I(1, 1)] = v[1] * v[1] + u[1] * u[1];
-	M[I(1, 2)] = v[1] * v[2] + u[1] * u[2];
+        M[I(0, 1)] = v[0] * v[1] + u[0] * u[1];
+        M[I(0, 2)] = v[0] * v[2] + u[0] * u[2];
 
-	M[I(2, 0)] = M[I(0, 2)];
-	M[I(2, 1)] = M[I(1, 2)];
-	M[I(2, 2)] = v[2] * v[2] + u[2] * u[2];
+        M[I(1, 0)] = M[I(0, 1)];
+        M[I(1, 1)] = v[1] * v[1] + u[1] * u[1];
+        M[I(1, 2)] = v[1] * v[2] + u[1] * u[2];
+
+        M[I(2, 0)] = M[I(0, 2)];
+        M[I(2, 1)] = M[I(1, 2)];
+        M[I(2, 2)] = v[2] * v[2] + u[2] * u[2];
     }
-   
+
     pushtransform (L, M);
-    
+
     return 1;
 }
 
@@ -500,9 +500,9 @@ static int rotation (lua_State *L)
                                        ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                        ARRAY_TDOUBLE, 1, 4))) {
         double *q, xx, xy, xz, xt, yy, yz, yt, zz, zt;
-       
+
         q = array->values.doubles;
-        
+
         /* Convert the quaternion to a rotation matrix. */
 
         xx = q[0] * q[0];
@@ -518,78 +518,78 @@ static int rotation (lua_State *L)
         M[I(0, 0)] = 1 - 2 * (yy + zz);
         M[I(0, 1)] = 2 * (xy - zt);
         M[I(0, 2)] = 2 * (xz + yt);
-        
+
         M[I(1, 0)] = 2 * (xy + zt);
         M[I(1, 1)] = 1 - 2 * (xx + zz);
         M[I(1, 2)] = 2 * (yz - xt);
-        
+
         M[I(2, 0)] = 2 * (xz - yt);
         M[I(2, 1)] = 2 * (yz + xt);
-        M[I(2, 2)] = 1 - 2 * (xx + yy); 
+        M[I(2, 2)] = 1 - 2 * (xx + yy);
     } else if (lua_type (L, 1) == LUA_TNUMBER &&
-	lua_type (L, 2) == LUA_TNUMBER) {
-	double theta, c, s;
-	int n;
+        lua_type (L, 2) == LUA_TNUMBER) {
+        double theta, c, s;
+        int n;
 
-	theta = lua_tonumber (L, 1);
-	n = lua_tointeger (L, 2);
-	
-	c = cos(theta);
-	s = sin(theta);
-	
-	if (n == 1) {
-	    /* Rotate around x. */
-	    
-	    M[I(0, 0)] = 1; M[I(0, 1)] = 0; M[I(0, 2)] = 0; 
-	    M[I(1, 0)] = 0; M[I(1, 1)] = c; M[I(1, 2)] = -s; 
-	    M[I(2, 0)] = 0; M[I(2, 1)] = s; M[I(2, 2)] = c;
-	} else if (n == 2) {
-	    /* Rotate around y. */
-	    
-	    M[I(0, 0)] = c; M[I(0, 1)] = 0; M[I(0, 2)] = s; 
-	    M[I(1, 0)] = 0; M[I(1, 1)] = 1; M[I(1, 2)] = 0; 
-	    M[I(2, 0)] = -s; M[I(2, 1)] = 0; M[I(2, 2)] = c;
-	} else if (n == 3) {
-	    /* Rotate around z. */
-	    
-	    M[I(0, 0)] = c; M[I(0, 1)] = -s; M[I(0, 2)] = 0; 
-	    M[I(1, 0)] = s; M[I(1, 1)] = c; M[I(1, 2)] = 0; 
-	    M[I(2, 0)] = 0; M[I(2, 1)] = 0; M[I(2, 2)] = 1;
-	} else {
-	    lua_pushstring (L, "Invalid rotation axis.");
-	    lua_error (L);
-	}
+        theta = lua_tonumber (L, 1);
+        n = lua_tointeger (L, 2);
+
+        c = cos(theta);
+        s = sin(theta);
+
+        if (n == 1) {
+            /* Rotate around x. */
+
+            M[I(0, 0)] = 1; M[I(0, 1)] = 0; M[I(0, 2)] = 0;
+            M[I(1, 0)] = 0; M[I(1, 1)] = c; M[I(1, 2)] = -s;
+            M[I(2, 0)] = 0; M[I(2, 1)] = s; M[I(2, 2)] = c;
+        } else if (n == 2) {
+            /* Rotate around y. */
+
+            M[I(0, 0)] = c; M[I(0, 1)] = 0; M[I(0, 2)] = s;
+            M[I(1, 0)] = 0; M[I(1, 1)] = 1; M[I(1, 2)] = 0;
+            M[I(2, 0)] = -s; M[I(2, 1)] = 0; M[I(2, 2)] = c;
+        } else if (n == 3) {
+            /* Rotate around z. */
+
+            M[I(0, 0)] = c; M[I(0, 1)] = -s; M[I(0, 2)] = 0;
+            M[I(1, 0)] = s; M[I(1, 1)] = c; M[I(1, 2)] = 0;
+            M[I(2, 0)] = 0; M[I(2, 1)] = 0; M[I(2, 2)] = 1;
+        } else {
+            lua_pushstring (L, "Invalid rotation axis.");
+            lua_error (L);
+        }
     } else if (lua_type (L, 1) == LUA_TNUMBER &&
-	       (array = array_testcompatible (L, 2,
+               (array = array_testcompatible (L, 2,
                                               ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                               ARRAY_TDOUBLE, 1, 3))) {
-	double theta, c, c_1, s, *u;
+        double theta, c, c_1, s, *u;
 
-	theta = lua_tonumber (L, 1);
-	u = array->values.doubles;
+        theta = lua_tonumber (L, 1);
+        u = array->values.doubles;
 
-	c = cos(theta);
-	c_1 = 1.0 - c;
-	s = sin(theta);
-        
-	M[I(0, 0)] = c + u[0] * u[0] * c_1;
-	M[I(0, 1)] = u[0] * u[1] * c_1 - u[2] * s;
-	M[I(0, 2)] = u[0] * u[2] * c_1 + u[1] * s;
+        c = cos(theta);
+        c_1 = 1.0 - c;
+        s = sin(theta);
 
-	M[I(1, 0)] = u[1] * u[0] * c_1 + u[2] * s;
-	M[I(1, 1)] = c + u[1] * u[1] * c_1;
-	M[I(1, 2)] = u[1] * u[2] * c_1 - u[0] * s;
+        M[I(0, 0)] = c + u[0] * u[0] * c_1;
+        M[I(0, 1)] = u[0] * u[1] * c_1 - u[2] * s;
+        M[I(0, 2)] = u[0] * u[2] * c_1 + u[1] * s;
 
-	M[I(2, 0)] = u[2] * u[0] * c_1 - u[1] * s;
-	M[I(2, 1)] = u[2] * u[1] * c_1 + u[0] * s;
-	M[I(2, 2)] = c + u[2] * u[2] * c_1;
+        M[I(1, 0)] = u[1] * u[0] * c_1 + u[2] * s;
+        M[I(1, 1)] = c + u[1] * u[1] * c_1;
+        M[I(1, 2)] = u[1] * u[2] * c_1 - u[0] * s;
+
+        M[I(2, 0)] = u[2] * u[0] * c_1 - u[1] * s;
+        M[I(2, 1)] = u[2] * u[1] * c_1 + u[0] * s;
+        M[I(2, 2)] = c + u[2] * u[2] * c_1;
     } else {
-	lua_pushstring (L, "Invalid rotation argument combination.");
-	lua_error (L);
+        lua_pushstring (L, "Invalid rotation argument combination.");
+        lua_error (L);
     }
 
     pushtransform (L, M);
-    
+
     return 1;
 }
 
@@ -609,9 +609,9 @@ static int basis (lua_State *L)
     M = array->values.doubles;
 
     for (j = 0 ; j < n ; j += 1) {
-	M[j] = (j == (i - 1));
+        M[j] = (j == (i - 1));
     }
-    
+
     return 1;
 }
 
@@ -622,44 +622,44 @@ static int diagonal (lua_State *L)
     int j, k, n;
 
     if (lua_type (L, 1) == LUA_TNUMBER) {
-	n = luaL_checknumber (L, 1);
-	d = luaL_checknumber (L, 2);
+        n = luaL_checknumber (L, 1);
+        d = luaL_checknumber (L, 2);
 
-	array = array_createarray (L, ARRAY_TDOUBLE, NULL, 2, n, n);
+        array = array_createarray (L, ARRAY_TDOUBLE, NULL, 2, n, n);
 
-	M = array->values.doubles;
+        M = array->values.doubles;
 
-	for (j = 0 ; j < n ; j += 1) {
-	    for (k = 0 ; k < n ; k += 1) {
-		M[j * n + k] = (j == k) ? d : 0;
-	    }
-	}
+        for (j = 0 ; j < n ; j += 1) {
+            for (k = 0 ; k < n ; k += 1) {
+                M[j * n + k] = (j == k) ? d : 0;
+            }
+        }
     } else {
-	diagonal = array_checkcompatible (L, 1,
+        diagonal = array_checkcompatible (L, 1,
                                           ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
                                           ARRAY_TDOUBLE, 1, 0);
-	n = diagonal->size[0];
-	
-	array = array_createarray (L, ARRAY_TDOUBLE, NULL, 2, n, n);
-	M = array->values.doubles;
-    
-	for (j = 0 ; j < n ; j += 1) {
-	    for (k = 0 ; k < n ; k += 1) {
-		M[j * n + k] = (j == k) ? diagonal->values.doubles[j] : 0;
-	    }
-	}
+        n = diagonal->size[0];
+
+        array = array_createarray (L, ARRAY_TDOUBLE, NULL, 2, n, n);
+        M = array->values.doubles;
+
+        for (j = 0 ; j < n ; j += 1) {
+            for (k = 0 ; k < n ; k += 1) {
+                M[j * n + k] = (j == k) ? diagonal->values.doubles[j] : 0;
+            }
+        }
     }
-    
+
     return 1;
 }
 
 int luaopen_arraymath_core (lua_State *L)
 {
-    const luaL_Reg api[] = {    
-	{"add", add},
-	{"multiply", multiply},
-	{"subtract", subtract},
-	{"divide", divide},
+    const luaL_Reg api[] = {
+        {"add", add},
+        {"multiply", multiply},
+        {"subtract", subtract},
+        {"divide", divide},
 
         {"greater", greater},
         {"greaterequal", greaterequal},
@@ -667,34 +667,34 @@ int luaopen_arraymath_core (lua_State *L)
         {"lessequal", lessequal},
         {"equal", equal},
 
-	{"scale", scale},
-	{"offset", offset},
-	{"scaleoffset", scaleoffset},
-	{"clamp", clamp},
-	{"raise", raise},
-	{"range", range},
-	{"sum", sum},
-	{"combine", combine},
-	    
-	{"dot", dot},
-	{"cross", cross},
-	{"length", length},
-	{"normalize", normalize},
-	{"distance", distance},
-	{"matrixmultiply", matrix_multiply},
-	{"matrixmultiplyadd", matrix_multiplyadd},
-	    
-	{"rotation", rotation},
-	{"shear", shear},
-	{"projection", projection},
-	{"scaling", scaling},
-	{"reflection", reflection},
-	{"apply", apply},
+        {"scale", scale},
+        {"offset", offset},
+        {"scaleoffset", scaleoffset},
+        {"clamp", clamp},
+        {"raise", raise},
+        {"range", range},
+        {"sum", sum},
+        {"combine", combine},
 
-	{"basis", basis},
-	{"diagonal", diagonal},
-	
-	{NULL, NULL}
+        {"dot", dot},
+        {"cross", cross},
+        {"length", length},
+        {"normalize", normalize},
+        {"distance", distance},
+        {"matrixmultiply", matrix_multiply},
+        {"matrixmultiplyadd", matrix_multiplyadd},
+
+        {"rotation", rotation},
+        {"shear", shear},
+        {"projection", projection},
+        {"scaling", scaling},
+        {"reflection", reflection},
+        {"apply", apply},
+
+        {"basis", basis},
+        {"diagonal", diagonal},
+
+        {NULL, NULL}
     };
 
 #if LUA_VERSION_NUM == 501
@@ -702,6 +702,6 @@ int luaopen_arraymath_core (lua_State *L)
 #else
     luaL_newlib (L, api);
 #endif
-    
+
     return 1;
 }

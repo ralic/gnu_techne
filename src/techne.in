@@ -14,9 +14,9 @@ args=()
 
 for arg in "$@"; do
     if [ "$arg" = "--debug" ]; then
-	debug="debug"
+        debug="debug"
     else
-	args+=("$arg")
+        args+=("$arg")
     fi
 done
 

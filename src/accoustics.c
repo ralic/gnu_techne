@@ -1,16 +1,16 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris                             
- *                                                                      
- * This program is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation, either version 3 of the License, or    
- * (at your option) any later version.                                  
- *                                                                      
- * This program is distributed in the hope that it will be useful,      
- * but WITHOUT ANY WARRANTY; without even the implied warranty of       
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
- * GNU General Public License for more details.                         
- *                                                                      
- * You should have received a copy of the GNU General Public License    
+/* Copyright (C) 2009 Papavasileiou Dimitris
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -33,7 +33,7 @@ static Accoustics* instance;
     ALCdevice *device;
     ALCcontext *audio = NULL;
     ALenum error;
-    
+
     [super init];
     lua_pushstring (_L, "accoustics");
     lua_setfield (_L, -2, "tag");
@@ -46,25 +46,25 @@ static Accoustics* instance;
     error = alcGetError(NULL);
 
     if (error != ALC_NO_ERROR) {
-	t_print_error ("I could not open the audio device (%s).\n",
-		       alcGetString(NULL, error));
+        t_print_error ("I could not open the audio device (%s).\n",
+                       alcGetString(NULL, error));
     }
-    
+
     audio = alcCreateContext (device, NULL);
     error = alcGetError(device);
 
     if (error != ALC_NO_ERROR) {
-	t_print_error ("I could not create the audio context (%s).\n",
-		       alcGetString(device, error));
+        t_print_error ("I could not create the audio context (%s).\n",
+                       alcGetString(device, error));
     }
 
     alcMakeContextCurrent(audio);
     alcProcessContext(audio);
 
-    /* Print useful debug information. */    
+    /* Print useful debug information. */
 
     t_print_message ("The audio renderer is: '%s %s'.\n",
-		     alGetString(AL_RENDERER), alGetString(AL_VERSION));
+                     alGetString(AL_RENDERER), alGetString(AL_VERSION));
 
     instance = self;
 }
@@ -77,7 +77,7 @@ static Accoustics* instance;
 -(int) _get_gain
 {
     float g;
-	
+
     alGetListenerf (AL_GAIN, &g);
     lua_pushnumber (_L, g);
 

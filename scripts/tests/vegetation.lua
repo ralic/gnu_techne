@@ -1,16 +1,16 @@
--- Copyright (C) 2010-2011 Papavasileiou Dimitris                           
---                                                                      
--- This program is free software: you can redistribute it and/or modify 
--- it under the terms of the GNU General Public License as published by 
--- the Free Software Foundation, either version 3 of the License, or    
--- (at your option) any later version.                                  
---                                                                      
--- This program is distributed in the hope that it will be useful,      
--- but WITHOUT ANY WARRANTY; without even the implied warranty of       
--- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        
--- GNU General Public License for more details.                         
---                                                                      
--- You should have received a copy of the GNU General Public License    
+-- Copyright (C) 2010-2011 Papavasileiou Dimitris
+--
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require "bindings"
@@ -74,16 +74,16 @@ elevation = topography.elevation {
       {
          {0, .99, .99}, {},
       },
-      
+
       {
          {120 / 360, .99, .99}, {},
       },
-      
+
       {
          {240 / 360, .99, .99}, {},
       },
    },
-   
+
    tiles = {
       {
          {heights, nil, array.nuchars(base), {200, 0}}
@@ -154,11 +154,11 @@ root = primitives.root {
 
    cameraman = options.timed and primitives.timer {
       period = 2,
-      
+
       tick = function(self, ticks)
          self.parent.orbit.azimuth = (ticks % 2 > 0 and 1 or 0) * units.degrees(90)
          self.parent.orbit.elevation = ticks % 2 > 0 and units.degrees(79.5) or units.degrees(81.6)
-         
+
          if ticks > 4 then
             techne.iterate = false
          end

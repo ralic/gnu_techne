@@ -1,4 +1,4 @@
--- Copyright (C) 2012 Papavasileiou Dimitris                             
+-- Copyright (C) 2012 Papavasileiou Dimitris
 --
 -- Permission is hereby granted, free of charge, to any person
 -- obtaining a copy of this software and associated documentation
@@ -36,23 +36,23 @@ local function pretty(a, prefix)
       s = prefix .. "{"
 
       if m >= 1 then
-	 if not number then
-	    s = s .. "\n"
-	 end
-	 
-	 for i = 1, m - 1 do
-	    s = s .. pretty(a[i], prefix .. "  ") .. ", "
+         if not number then
+            s = s .. "\n"
+         end
 
-	    if not number then
-	       s = s .. "\n"
-	    end
-	 end
+         for i = 1, m - 1 do
+            s = s .. pretty(a[i], prefix .. "  ") .. ", "
 
-	 s = s .. pretty(last, prefix .. "  ")
+            if not number then
+               s = s .. "\n"
+            end
+         end
 
-	 if not number then
-	    s = s .. "\n" .. prefix
-	 end
+         s = s .. pretty(last, prefix .. "  ")
+
+         if not number then
+            s = s .. "\n" .. prefix
+         end
       end
 
       return s .. "}"

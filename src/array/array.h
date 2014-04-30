@@ -55,30 +55,30 @@ typedef struct {
     /* Placing the union first allows one to simply cast a pointer to
      * an array struct to a pointer to a suitable numeric type and use
      * it as a normal C array. */
-    
+
     union values {
-	void *any;
-	double *doubles;
-	float *floats;
-	unsigned long *ulongs;
-	signed long *longs;
-	unsigned int *uints;
-	signed int *ints;
-	unsigned short *ushorts;
-	signed short *shorts;
-	unsigned char *uchars;
-	signed char *chars;
+        void *any;
+        double *doubles;
+        float *floats;
+        unsigned long *ulongs;
+        signed long *longs;
+        unsigned int *uints;
+        signed int *ints;
+        unsigned short *ushorts;
+        signed short *shorts;
+        unsigned char *uchars;
+        signed char *chars;
     } values;
 
     array_Type type;
 
     enum {
-	FREE_NOTHING,
-	FREE_SIZE,
-	FREE_VALUES,
-	FREE_BOTH
+        FREE_NOTHING,
+        FREE_SIZE,
+        FREE_VALUES,
+        FREE_BOTH
     } free;
-    
+
     int rank, *size;
     size_t length;     /* The length of the values buffer in bytes. */
 } array_Array;

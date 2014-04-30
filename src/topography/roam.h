@@ -17,6 +17,8 @@
 #ifndef _ROAM_H_
 #define _ROAM_H_
 
+#include "profiling.h"
+
 #define TRIANGLE_CHUNKING_FACTOR (512)
 #define DIAMOND_CHUNKING_FACTOR (1024)
 #define TRIANGLE_POOL (0)
@@ -99,7 +101,7 @@ typedef struct {
     struct diamond *queues[2][QUEUE_SIZE];
     struct triangle *(*roots)[2];
 
-    long long unsigned int intervals[4];
+    t_CPUProfilingInterval setup, reculling, reordering, tessellation;
 
     double canopy, viewport[4], transform[16], planes[6][4];
 

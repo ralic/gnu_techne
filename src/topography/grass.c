@@ -55,7 +55,7 @@ static unsigned int deflections;
 -(void)init
 {
     const char *private[] = {"deflections", "intensity", "direction",
-                             "direction_w"};
+                             "direction_w", "triangles"};
     const char *header;
     ShaderMold *shader;
         
@@ -78,7 +78,7 @@ static unsigned int deflections;
     shader = [ShaderMold alloc];
         
     [shader initWithHandle: NULL];
-    [shader declare: 4 privateUniforms: private];
+    [shader declare: 5 privateUniforms: private];
     
     [shader addSourceString: glsl_grass_vertex for: T_VERTEX_STAGE];
 
@@ -87,15 +87,15 @@ static unsigned int deflections;
                                                     glsl_grass_tesselation_control}
             for: T_TESSELATION_CONTROL_STAGE];
 
-    [shader add: 4
-            sourceStrings: (const char *[4]){header,
-                                             glsl_rand,
+    [shader add: 3
+            sourceStrings: (const char *[3]){glsl_rand,
                                              glsl_vegetation_common,
                                              glsl_grass_tesselation_evaluation}
             for: T_TESSELATION_EVALUATION_STAGE];
 
-    [shader add: 2
-            sourceStrings: (const char *[2]){glsl_vegetation_common,
+    [shader add: 3
+            sourceStrings: (const char *[3]){header,
+                                             glsl_vegetation_common,
                                              glsl_grass_geometry}
             for: T_GEOMETRY_STAGE];
     
@@ -115,7 +115,7 @@ static unsigned int deflections;
     self->locations.direction_w = glGetUniformLocation (self->name,
                                                         "direction_w");
 
-    [self setSamplerUniform: "deflections" to: deflections];
+    t_set_sampler(self, "deflections", deflections);
 }
 
 -(void) bind
@@ -135,12 +135,8 @@ static unsigned int deflections;
 
 -(int) _get_triangles
 {
-    [super _get_];
-
-    /* Convert segments to triangles and normalize. */
+    t_pushcount (_L, &self->triangles);
     
-    lua_pushnumber(_L, lua_tonumber(_L, -1) / self->core.frames * 2);
-
     return 1;
 }
 
@@ -164,6 +160,20 @@ static unsigned int deflections;
     }
 
     [super _set_];
+}
+
+-(void) draw: (int)frame
+{
+    if (_PROFILING) {
+        unsigned int n;
+
+        /* Count two triangles per segment. */
+
+        t_get_and_reset_counter(self, "segments", &n);
+        t_add_count_sample(&self->triangles, 2 * n);
+    }
+
+    [super draw: frame];
 }
 
 @end

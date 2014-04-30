@@ -391,7 +391,8 @@ static ShaderMold *handle;
     }
     
     [self load];
-    [self setSamplerUniform: "texture" to: self->layout->texture];
+
+    t_set_sampler (self, "texture", self->layout->texture);
 }
 
 -(void) free

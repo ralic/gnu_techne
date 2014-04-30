@@ -7,10 +7,6 @@ patch in unsigned int instance_tc;
 out vec3 position_te, tangent_te, bitangent_te, color_te;
 out vec4 plane_te;
 out float distance_te, height_te, parameter_te, depth_te, width_te;
-                                
-#ifdef COLLECT_STATISTICS
-layout(binding = 0, offset = 0) uniform atomic_uint triangles;
-#endif
 
 vec4 rand4();
 void srand(uvec2 seed);
@@ -30,12 +26,6 @@ void main()
 
     p = cluster_seed(apex_tc, left_tc, right_tc, stratum_tc, instance_tc);
     v = rand4();
-    
-    /* Update the statistics. */
-
-#ifdef COLLECT_STATISTICS
-    atomicCounterIncrement(triangles);
-#endif
 
     /* Calculate and set ouput values. */
 

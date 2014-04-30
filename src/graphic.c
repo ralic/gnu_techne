@@ -77,16 +77,7 @@ void t_draw_subtree (Node *root, int frame)
  
 -(int) _get_graphics
 {
-    if (self->graphics.frames > 0) {
-        lua_createtable(_L, 2, 0);
-        lua_pushnumber(_L, (self->graphics.interval * 1e-9 /
-                            self->graphics.frames));
-        lua_rawseti(_L, -2, 1);
-        lua_pushinteger(_L, self->graphics.frames);
-        lua_rawseti(_L, -2, 2);
-    } else {
-        lua_pushnil(_L);
-    }
+    t_pushgraphicsinterval(_L, &self->graphics);
     
     return 1;
 }

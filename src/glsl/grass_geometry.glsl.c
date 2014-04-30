@@ -17,6 +17,10 @@ out vec2 uv_g;
 out float height_g;
 flat out vec3 color_g;
 flat out float distance_g;              
+                                
+#ifdef COLLECT_STATISTICS
+layout(binding = 0, offset = 0) uniform atomic_uint segments;
+#endif
 
 uniform vec3 direction_w;
               
@@ -86,4 +90,12 @@ void main()
 
     gl_PrimitiveID = gl_PrimitiveIDIn;
     EndPrimitive();        
+    
+    /* Update the statistics. */
+
+#ifdef COLLECT_STATISTICS
+    /* Count the segments. */
+    
+    atomicCounterIncrement(segments);
+#endif
 }

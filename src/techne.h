@@ -31,17 +31,21 @@
 typedef enum {
     T_FLUSH_ONLY = 0,
     T_FREEABLE,
-    
+} t_PoolMode;
+
+typedef enum {
     T_LOAD = 0,
     T_MULTIPLY,
+} t_MatrixLoadMode;
     
+typedef enum {
     T_VERTEX_STAGE = 0,
     T_GEOMETRY_STAGE,
     T_FRAGMENT_STAGE,
     T_TESSELATION_CONTROL_STAGE,
     T_TESSELATION_EVALUATION_STAGE,
     T_STAGES_N,
-} t_Enumerated;
+} t_ProcessingStage;
 
 int _PROFILING;
 lua_State *_L;
@@ -63,7 +67,7 @@ long long unsigned int t_get_cpu_time ();
 
 /* Memory pools. */
 
-void *t_build_pool(int factor, size_t size, t_Enumerated mode);
+void *t_build_pool(int factor, size_t size, t_PoolMode mode);
 void *t_allocate_pooled (void *p);
 void t_free_pooled (void *p, void *block);
 void t_reset_pool (void *p);
@@ -77,8 +81,8 @@ void t_push_projection (double *matrix);
 void t_pop_projection ();
 void t_copy_projection(double *matrix);
 
-void t_load_modelview (double *matrix, t_Enumerated mode);
-void t_push_modelview (double *matrix, t_Enumerated mode);
+void t_load_modelview (double *matrix, t_MatrixLoadMode mode);
+void t_push_modelview (double *matrix, t_MatrixLoadMode mode);
 void t_pop_modelview ();
 void t_copy_modelview(double *matrix);
 void t_copy_transform(double *matrix);
@@ -112,7 +116,7 @@ int luaopen_morebase (lua_State *L);
 int luaopen_profiling (lua_State *L);
 
 @interface Techne: Builtin {
-    t_CPUProfile latency;    
+    t_CPUProfilingInterval latency;    
 }
 
 -(int) _get_profiling;

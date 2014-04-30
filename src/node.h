@@ -63,7 +63,7 @@ struct protocol {
     const char **prerequisites;
     int prerequisites_n;
     
-    t_CPUProfile core;
+    t_CPUProfilingInterval core;
     
     struct {
 	lua_Number number;

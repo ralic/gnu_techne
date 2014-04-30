@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
 
 #include "gl.h"
 
@@ -995,10 +996,8 @@ void optimize_geometry(roam_Context *context_in, int frame)
 {
     roam_Tileset *tiles;
     roam_Diamond *d = NULL, *d_0;
-    long long unsigned int t_0, t;
     int i, j, delta, overlap;
     
-    t_0 = t_get_cpu_time();
     context = context_in;
 
     /* Don't optimize more than once per frame. */
@@ -1020,22 +1019,20 @@ void optimize_geometry(roam_Context *context_in, int frame)
 
     calculate_view_frustum(context->planes, context->transform);
 
-    /* Update the setup interval. */
-    
-    context->intervals[0] = (t = t_get_cpu_time()) - t_0, t_0 = t;
-
     /* Reclassify the mesh for the current frame. */
+
+    t_begin_cpu_interval (&context->reculling);
     
     for (i = 0 ; i < tiles->size[0] * tiles->size[1] ; i += 1) {
 	reclassify_subtree(context->roots[i][0], 0);
 	reclassify_subtree(context->roots[i][1], 0);
     }
 
-    /* Update the reclassification interval. */
-    
-    context->intervals[1] = (t = t_get_cpu_time()) - t_0, t_0 = t;
+    t_end_cpu_interval (&context->reculling);
 
     /* Update the queue priorities... */
+    
+    t_begin_cpu_interval (&context->reordering);
     
     reorder_queue(context->queues[0]);
     reorder_queue(context->queues[1]);
@@ -1047,10 +1044,8 @@ void optimize_geometry(roam_Context *context_in, int frame)
 
     context->minimum = i;
     context->maximum = j;
-
-    /* Update the queue reorder interval. */
     
-    context->intervals[2] = (t = t_get_cpu_time()) - t_0, t_0 = t;
+    t_end_cpu_interval (&context->reordering);
 
 #ifdef CHECK_SANITY
     /* Check queue integrity. */
@@ -1078,7 +1073,9 @@ void optimize_geometry(roam_Context *context_in, int frame)
 
        Also make sure we don't continuously split and
        remerge the same diamond. */
-
+    
+    t_begin_cpu_interval (&context->tessellation);
+    
     do {
 	delta = context->visible - context->target;
 	overlap = context->maximum - context->minimum;
@@ -1111,10 +1108,8 @@ void optimize_geometry(roam_Context *context_in, int frame)
     }
 
     context->frame = frame;
-
-    /* Update the split/merge interval. */
     
-    context->intervals[3] = (t = t_get_cpu_time()) - t_0, t_0 = t;
+    t_end_cpu_interval (&context->tessellation);
 
     assert(context->queued[0] + context->queued[1] <= context->triangles);
 

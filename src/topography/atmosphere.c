@@ -311,7 +311,7 @@ static void calculate_sky_color(double azimuth, double elevation,
     /* Bind the sky texture to texture sampler. */
 
     glGenTextures(1, &self->skylight);
-    [self setSamplerUniform: "texture" to: self->skylight];
+    t_set_sampler(self, "texture", self->skylight);
 
     /* Create the shape node. */
     

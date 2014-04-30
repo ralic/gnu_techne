@@ -57,38 +57,31 @@ void t_advance_profiling_frame ()
     frame += 1;
 }
 
-void t_begin_cpu_interval (t_CPUProfile *profile)
+void t_begin_cpu_interval (t_CPUProfilingInterval *profile)
 {
     if (_PROFILING) {
-        assert (profile->frame <= 0);
-
-        /* The absolute value of the frame is the current frame
-         * number, while the sign signifies whether we're currently
-         * measuring an interval (positive) or not (negative). */
-        
-        profile->frames += (profile->frame != -frame);
-        profile->frame = frame;
-        
         profile->total[0] = t_get_cpu_time();
         profile->lua[0] = luatime;
     }
 }
 
-void t_end_cpu_interval (t_CPUProfile *profile)
+void t_pause_cpu_interval (t_CPUProfilingInterval *profile)
 {
     if (_PROFILING) {
-        assert(profile->frame == frame);
-
         /* Accumulate the interval. */
         
         profile->total[1] += (t_get_cpu_time() -
                                 profile->total[0]);
         profile->lua[1] += (luatime -
                               profile->lua[0]);
-        
-        /* Mark the interval as closed. */
-        
-        profile->frame *= -1;
+    }
+}
+
+void t_end_cpu_interval (t_CPUProfilingInterval *profile)
+{
+    if (_PROFILING) {
+        t_pause_cpu_interval (profile);
+        profile->frames += 1;
     }
 }
 
@@ -102,7 +95,7 @@ static struct queryset *allocate_queryset()
     return set;
 }
 
-void t_free_profiling_queries(t_GPUProfile *profile)
+void t_free_profiling_queries(t_GPUProfilingInterval *profile)
 {
     struct queryset *next;
     
@@ -116,7 +109,7 @@ void t_free_profiling_queries(t_GPUProfile *profile)
     t_free_pooled(pool, profile->sets);
 }
 
-static void accumulate_gpu_interval (t_GPUProfile *profile)
+static void accumulate_gpu_interval (t_GPUProfilingInterval *profile)
 {
     GLuint64 t_0, t_1;
             
@@ -129,7 +122,7 @@ static void accumulate_gpu_interval (t_GPUProfile *profile)
     profile->frames += 1;
 }
 
-void t_begin_gpu_interval (t_GPUProfile *profile)
+void t_begin_gpu_interval (t_GPUProfilingInterval *profile)
 {
     if (_PROFILING) {
         if (!profile->sets) {
@@ -166,7 +159,7 @@ void t_begin_gpu_interval (t_GPUProfile *profile)
     }
 }
 
-void t_end_gpu_interval (t_GPUProfile *profile)
+void t_end_gpu_interval (t_GPUProfilingInterval *profile)
 {
     if (_PROFILING) {
         glQueryCounter(profile->sets->left->queries[1], GL_TIMESTAMP);
@@ -174,6 +167,68 @@ void t_end_gpu_interval (t_GPUProfile *profile)
         if (block) {
             accumulate_gpu_interval(profile);
         }
+    }
+}
+
+void t_add_count_sample(t_ProfilingCount *profile, unsigned long int count)
+{
+    if (_PROFILING) {
+        profile->count += count;
+        profile->frames += 1;
+    }
+}
+
+void t_pushcount (lua_State *L, t_ProfilingCount *profile)
+{
+    if (profile->frames > 0) {
+        lua_createtable(_L, 2, 0);
+        lua_pushnumber(_L, (double)profile->count / profile->frames);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger(_L, profile->frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }    
+}
+
+void t_pushcoreinterval (lua_State *L, t_CPUProfilingInterval *profile)
+{
+    if (profile->frames > 0) {
+        lua_createtable(_L, 2, 0);
+        lua_pushnumber(_L,
+                       profile->total[1] * 1e-9 / profile->frames);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger(_L, profile->frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }    
+}
+
+void t_pushuserinterval (lua_State *L, t_CPUProfilingInterval *profile)
+{
+    if (profile->frames > 0) {
+        lua_createtable(_L, 2, 0);
+        lua_pushnumber(_L,
+                       profile->lua[1] * 1e-9 / profile->frames);
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger(_L, profile->frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
+    }
+}
+
+void t_pushgraphicsinterval (lua_State *L, t_GPUProfilingInterval *profile)
+{
+    if (profile->frames > 0) {
+        lua_createtable(_L, 2, 0);
+        lua_pushnumber(_L, (profile->interval * 1e-9 / profile->frames));
+        lua_rawseti(_L, -2, 1);
+        lua_pushinteger(_L, profile->frames);
+        lua_rawseti(_L, -2, 2);
+    } else {
+        lua_pushnil(_L);
     }
 }
 

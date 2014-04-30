@@ -203,7 +203,7 @@
     self->locations.offset = glGetUniformLocation(self->name, "offset");
     self->locations.clustering = glGetUniformLocation(self->name, "clustering");
 
-    self->units.base = [self getUnitForSamplerUniform: "base"];
+    self->units.base = t_sampler_unit(self, "base");
 
     set_splatting_uniforms(self->elevation, self);
 
@@ -355,28 +355,30 @@
 
     for (i = 0 ; i < tiles->size[0] ; i += 1) {    
 	for (j = 0 ; j < tiles->size[1] ; j += 1) {
-            int k, l, n;
+            int k, l, n, m;
             static int highwater[2] = {8, 1024};
 
             seed_tile(l = i * tiles->size[1] + j);
 
             /* Calculate buffer size requirements. */
     
-            for (k = 0, n = 0, b = &seeds->bins[0];
+            for (k = 0, n = 0, m = 0, b = &seeds->bins[0];
                  k < BINS_N;
                  k += 1, b += 1) {
-                int c;
+                int r;
 
                 while (b->fill > highwater[0]) {
                     highwater[0] *= 2;
                 }
 
-                c = (int)round(b->center / seeds->clustering);
+                r = (int)round(b->center / seeds->clustering);
 
-                if (c > 1) {
-                    n += c * b->fill;
+                if (r > 1) {
+                    n += r * b->fill;
+                    m += r * b->fill * seeds->clustering;
                 } else {
                     n += b->fill;
+                    m += b->fill * (int)round(b->center);
                 }
             }
 
@@ -385,11 +387,12 @@
             } else while (n > highwater[1]) {
                 highwater[1] *= 2;
             }
-                
+
             if (_PROFILING) {
-                self->statistics[0] += seeds->triangles_n[0];
-                self->statistics[1] += seeds->triangles_n[1];
-                self->statistics[2] += n;
+                t_add_count_sample (&self->coarse, seeds->triangles_n[0]);
+                t_add_count_sample (&self->fine, seeds->triangles_n[1]);
+                t_add_count_sample (&self->clusters, n);
+                t_add_count_sample (&self->individual, m);
             }
             
             /* Request a new block for the transformed seeds of each
@@ -464,6 +467,17 @@
             /* Clean up after the first stage. */
             
             glEndTransformFeedback();
+
+            if (_PROFILING) {
+                unsigned int n;
+
+                t_get_and_reset_counter (self, "infertile", &n);
+                t_add_count_sample (&self->infertile, n);
+
+                t_get_and_reset_counter (self, "fertile", &n);
+                t_add_count_sample (&self->fertile, n);
+            }
+            
             /* glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 0); */
             /* glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 1); */
             glDisable (GL_RASTERIZER_DISCARD);
@@ -492,7 +506,7 @@
                 
                 glUseProgram(shader->name);
                 [shader bind];
-
+                
                 glBindVertexArray(self->arrays[k + 1]);
                 glDrawTransformFeedbackStream(GL_PATCHES, self->feedback, k);
             }
@@ -547,16 +561,7 @@
 
 -(int) _get_infertile
 {
-    [super _get_];
-
-    /* Normalize the seed counters we got from the shader. */
-    
-    lua_createtable(_L, 2, 0);
-    lua_pushnumber(_L, lua_tonumber(_L, -2) / self->core.frames);
-    lua_rawseti(_L, -2, 1);
-    lua_pushinteger (_L, self->core.frames);
-    lua_rawseti(_L, -2, 2);
-    lua_replace(_L, -2);
+    t_pushcount (_L, &self->infertile);
 
     return 1;
 }
@@ -568,16 +573,7 @@
 
 -(int) _get_fertile
 {
-    [super _get_];
-
-    /* Normalize the seed counters we got from the shader. */
-    
-    lua_createtable(_L, 2, 0);
-    lua_pushnumber(_L, lua_tonumber(_L, -2) / self->core.frames);
-    lua_rawseti(_L, -2, 1);
-    lua_pushinteger (_L, self->core.frames);
-    lua_rawseti(_L, -2, 2);
-    lua_replace(_L, -2);
+    t_pushcount (_L, &self->fertile);
 
     return 1;
 }
@@ -589,11 +585,7 @@
 
 -(int) _get_coarse
 {
-    lua_createtable(_L, 2, 0);
-    lua_pushnumber (_L, self->statistics[0] / self->core.frames);
-    lua_rawseti(_L, -2, 1);
-    lua_pushinteger (_L, self->core.frames);
-    lua_rawseti(_L, -2, 2);
+    t_pushcount (_L, &self->coarse);
 
     return 1;
 }
@@ -605,11 +597,7 @@
 
 -(int) _get_fine
 {
-    lua_createtable(_L, 2, 0);
-    lua_pushnumber (_L, self->statistics[1] / self->core.frames);
-    lua_rawseti(_L, -2, 1);
-    lua_pushinteger (_L, self->core.frames);
-    lua_rawseti(_L, -2, 2);
+    t_pushcount (_L, &self->fine);
 
     return 1;
 }
@@ -621,16 +609,24 @@
 
 -(int) _get_clusters
 {
-    lua_createtable(_L, 2, 0);
-    lua_pushnumber (_L, self->statistics[2] / self->core.frames);
-    lua_rawseti(_L, -2, 1);
-    lua_pushinteger (_L, self->core.frames);
-    lua_rawseti(_L, -2, 2);
+    t_pushcount (_L, &self->clusters);
 
     return 1;
 }
 
 -(void) _set_clusters
+{
+    T_WARN_READONLY;
+}
+
+-(int) _get_seeds
+{
+    t_pushcount (_L, &self->individual);
+
+    return 1;
+}
+
+-(void) _set_seeds
 {
     T_WARN_READONLY;
 }

@@ -95,10 +95,11 @@ typedef struct {
 -(void) initWithHandle: (ShaderMold **)handle_in;
 -(void) declare: (int) n privateUniforms: (const char **) names;
 -(void) add: (const int) n sourceStrings: (const char **) strings
-        for: (t_Enumerated)stage;
--(void) addSourceString: (const char *) source for: (t_Enumerated)stage;
--(void) addSourceFragement: (const char *) fragment for: (t_Enumerated)stage;
--(void) finishAssemblingSourceFor: (t_Enumerated)stage;
+        for: (t_ProcessingStage)stage;
+-(void) addSourceString: (const char *) source for: (t_ProcessingStage)stage;
+-(void) addSourceFragement: (const char *) fragment
+                       for: (t_ProcessingStage)stage;
+-(void) finishAssemblingSourceFor: (t_ProcessingStage)stage;
 -(void) link;
 
 @end
@@ -112,16 +113,23 @@ typedef struct {
     int reference;
 }
 
--(void)load;
--(void)unload;
+-(void) load;
+-(void) unload;
 -(void) bind;
--(unsigned int) getUnitForSamplerUniform: (const char *)uniform_name;
--(void) setSamplerUniform: (const char *)uniform_name to: (unsigned int)texture;
--(void) setSamplerUniform: (const char *)uniform_name to: (unsigned int)texture
-                  atIndex: (int)j;
 
 @end
 
 int t_add_global_block (const char *name, const char *declaration);
+
+unsigned int t_sampler_unit(Shader *shader, const char *uniform_name);
+void t_set_sampler(Shader *shader, const char *uniform_name,
+                   unsigned int texture_name);
+void t_set_indexed_sampler(Shader *shader, const char *uniform_name,
+                           unsigned int texture_name, int j);
+void t_reset_counter(Shader *shader, const char *uniform_name);
+void t_get_counter(Shader *shader, const char *uniform_name,
+                   unsigned int *n);
+void t_get_and_reset_counter(Shader *shader, const char *uniform_name,
+                             unsigned int *n);
 
 #endif

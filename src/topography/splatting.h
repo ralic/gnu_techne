@@ -21,7 +21,7 @@
 #include "elevation.h"
 
 void add_splatting_sources(Elevation *elevation, ShaderMold *shader,
-                           t_Enumerated stage);
+                           t_ProcessingStage stage);
 void set_splatting_uniforms(Elevation *elevation, Shader *shader);
 
 #endif

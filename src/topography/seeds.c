@@ -33,7 +33,6 @@
 -(void)init
 {
     const char *private[] = {"intensity"};
-    const char *header;
     ShaderMold *shader;
         
 #include "glsl/rand.h"
@@ -46,8 +45,6 @@
     [super init];
 
     /* Create the program. */
-    
-    header = _PROFILING ? "#define COLLECT_STATISTICS\n" : "";
 
     [self unload];
     
@@ -63,8 +60,7 @@
                         for: T_TESSELATION_CONTROL_STAGE];
 
     [shader add: 4
-            sourceStrings: (const char *[4]){header,
-                                             glsl_rand,
+            sourceStrings: (const char *[4]){glsl_rand,
                                              glsl_vegetation_common,
                                              glsl_seeds_tesselation_evaluation}
             for: T_TESSELATION_EVALUATION_STAGE];
@@ -72,7 +68,7 @@
     /* Add the fragment source. */
     
     [shader add: 2
-            sourceStrings: (const char *[2]){header, glsl_seeds_fragment}
+            sourceStrings: (const char *[2]){glsl_seeds_fragment}
             for: T_FRAGMENT_STAGE];
 
     [shader link];
@@ -95,22 +91,6 @@
     if (atmosphere) {
         glUniform3fv (self->locations.intensity, 1, atmosphere->intensity);
     }
-}
-
--(int) _get_triangles
-{
-    [super _get_];
-
-    /* Convert segments to triangles and normalize. */
-    
-    lua_pushnumber(_L, lua_tonumber(_L, -1) / self->core.frames * 2);
-
-    return 1;
-}
-
--(void) _set_triangles
-{
-    T_WARN_READONLY;
 }
 
 -(void) _set_

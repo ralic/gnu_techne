@@ -24,7 +24,7 @@
 
 @interface Graphics: Builtin {
 @public
-    t_GPUProfile latency;
+    t_GPUProfilingInterval latency;
 }
 
 -(int) _get_window;

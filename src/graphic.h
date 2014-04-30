@@ -24,7 +24,7 @@
 @public
     int draw;
     
-    t_GPUProfile graphics;
+    t_GPUProfilingInterval graphics;
 }
 
 -(void) draw: (int)frame;

@@ -32,6 +32,8 @@
     unsigned int feedback, *arrays, *vertexbuffers;
     unsigned int statistics[3];
     
+    t_ProfilingCount fine, coarse, clusters, individual, infertile, fertile;
+    
     struct {
         unsigned int intensity, scale, offset, clustering;
         unsigned int thresholds;
@@ -68,6 +70,9 @@
 
 -(int) _get_clusters;
 -(void) _set_clusters;
+
+-(int) _get_seeds;
+-(void) _set_seeds;
 
 -(int) _get_rolloff;
 -(void) _set_rolloff;

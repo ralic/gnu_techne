@@ -25,7 +25,7 @@ struct chunk {
 };
 
 struct pool {
-    t_Enumerated mode;
+    t_PoolMode mode;
     
     struct chunk *chunks, *current;
     int factor, size, chunks_n, blocks_n;
@@ -85,7 +85,7 @@ static struct chunk *add_new_chunk(struct pool *pool)
     return new;
 }
 
-void *t_build_pool(int factor, size_t size, t_Enumerated mode)
+void *t_build_pool(int factor, size_t size, t_PoolMode mode)
 {
     struct pool *pool;
 

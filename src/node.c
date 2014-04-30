@@ -1713,16 +1713,7 @@ static void unlink_node (Node *node)
  
 -(int) _get_core
 {
-    if (self->core.frames > 0) {
-        lua_createtable(_L, 2, 0);
-        lua_pushnumber(_L,
-                       self->core.total[1] * 1e-9 / self->core.frames);
-        lua_rawseti(_L, -2, 1);
-        lua_pushinteger(_L, self->core.frames);
-        lua_rawseti(_L, -2, 2);
-    } else {
-        lua_pushnil(_L);
-    }
+    t_pushcoreinterval(_L, &self->core);
     
     return 1;
 }
@@ -1734,16 +1725,7 @@ static void unlink_node (Node *node)
  
 -(int) _get_user
 {
-    if (self->core.frames > 0) {
-        lua_createtable(_L, 2, 0);
-        lua_pushnumber(_L,
-                       self->core.lua[1] * 1e-9 / self->core.frames);
-        lua_rawseti(_L, -2, 1);
-        lua_pushinteger(_L, self->core.frames);
-        lua_rawseti(_L, -2, 2);
-    } else {
-        lua_pushnil(_L);
-    }
+    t_pushuserinterval(_L, &self->core);
     
     return 1;
 }

@@ -10,7 +10,6 @@ out unsigned int instance_v;
 
 void main()
 {
-
     apex_v = apex;
     left_v = left;
     right_v = right;

@@ -274,7 +274,7 @@ void t_copy_projection(double *matrix)
 	}								\
     }
 
-void t_load_modelview (double *matrix, t_Enumerated mode)
+void t_load_modelview (double *matrix, t_MatrixLoadMode mode)
 {
     if (mode == T_MULTIPLY) {
 	double M[16];
@@ -288,7 +288,7 @@ void t_load_modelview (double *matrix, t_Enumerated mode)
     SET_MODELVIEW(modelviews[modelviews_n]);
 }
 
-void t_push_modelview (double *matrix, t_Enumerated mode)
+void t_push_modelview (double *matrix, t_MatrixLoadMode mode)
 {
     if (mode == T_MULTIPLY) {
 	t_concatenate_4T(modelviews[modelviews_n + 1],

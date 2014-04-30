@@ -26,19 +26,33 @@ typedef struct {
     struct queryset *sets;
     long long unsigned int interval;
     int frames;
-} t_GPUProfile;
+} t_GPUProfilingInterval;
 
 typedef struct {
     long long unsigned int total[2], lua[2];
-    int frame, frames;
-} t_CPUProfile;
+    int frames;
+} t_CPUProfilingInterval;
 
-void t_begin_gpu_interval (t_GPUProfile *profile);
-void t_end_gpu_interval (t_GPUProfile *profile);
-void t_free_profiling_queries(t_GPUProfile *profile);
+typedef struct {
+    long long unsigned int count;
+    int frames;
+} t_ProfilingCount;
 
-void t_begin_cpu_interval (t_CPUProfile *profile);
-void t_end_cpu_interval (t_CPUProfile *profile);
+void t_begin_gpu_interval (t_GPUProfilingInterval *profile);
+void t_end_gpu_interval (t_GPUProfilingInterval *profile);
+void t_free_profiling_queries(t_GPUProfilingInterval *profile);
+
+void t_begin_cpu_interval (t_CPUProfilingInterval *profile);
+void t_pause_cpu_interval (t_CPUProfilingInterval *profile);
+void t_end_cpu_interval (t_CPUProfilingInterval *profile);
+
+void t_add_count_sample(t_ProfilingCount *profile,
+                        unsigned long int count);
+
+void t_pushcoreinterval (lua_State *L, t_CPUProfilingInterval *profile);
+void t_pushuserinterval (lua_State *L, t_CPUProfilingInterval *profile);
+void t_pushgraphicsinterval (lua_State *L, t_GPUProfilingInterval *profile);
+void t_pushcount (lua_State *L, t_ProfilingCount *profile);
 
 void t_enable_profiling ();
 void t_advance_profiling_frame ();

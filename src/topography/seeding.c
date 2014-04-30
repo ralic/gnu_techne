@@ -226,7 +226,7 @@ static void seed_triangle(float *a, float *b_0, float *b_1,
         if(!isnan(A)) {
             A_total += A;
         }
-        
+
         /* This simple search should be preffered to binary searching
          * as the vast majority of seeds are likely to end up in the
          * first bins. */
@@ -390,6 +390,6 @@ void finish_seeding ()
         n += 1;
         A_mean += (A_total - A_mean) / n;
     }
-
+    /* _TRACE ("%d\n", seeding->triangles_n[1]); */
     /* _TRACE ("%f\n", A_mean); */
 }

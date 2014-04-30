@@ -23,7 +23,7 @@
 #include "glsl/splatting.h"
 
 void add_splatting_sources(Elevation *elevation, ShaderMold *shader,
-                           t_Enumerated stage)
+                           t_ProcessingStage stage)
 {
     int i, j, k, l, n;
 
@@ -109,8 +109,8 @@ void set_splatting_uniforms(Elevation *elevation, Shader *shader)
         swatch = &elevation->swatches[i];
         
         for (j = 0 ; j < elevation->bands_n[i] ; j += 1, k += 1) {
-            [shader setSamplerUniform: "detail"
-                                   to: swatch->detail[j]->name atIndex: k];
+            t_set_indexed_sampler(shader, "detail",
+                                  swatch->detail[j]->name, k);
 
             glUniform2fv (resolutions_l + k, 1, swatch->resolutions[j]);
         }

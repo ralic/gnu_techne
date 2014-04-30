@@ -23,8 +23,10 @@
 @interface Grass: VegetationSpecies {
 @public
     struct {
-    unsigned int intensity, direction, direction_w;
+        unsigned int intensity, direction, direction_w;
     } locations;
+
+    t_ProfilingCount triangles;
 }
 
 @end

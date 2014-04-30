@@ -15,7 +15,8 @@ uniform grass_control {
 
 vec3 cluster_stratum(vec3 apex, vec3 left, vec3 right, unsigned int instance);
 
-void main() {
+void main()
+{
     const float bias = 1;
     
     vec4 p_e;

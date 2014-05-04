@@ -97,7 +97,8 @@ int t_get_iterations ()
     }
 
     t = t_get_cpu_time();
-    t_print_message("Ran a total of %d iterations in %.1f seconds at %.1f ms per iteration (%.1f Hz).\n",
+    t_print_message("Ran a total of %d iterations in %.1f seconds at "
+                    "%.1f ms per iteration (%.1f Hz).\n",
                     iterations, t * 1e-9, t * 1e-6 / iterations,
                     iterations / (t * 1e-9));
 }

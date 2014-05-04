@@ -394,7 +394,7 @@ long long unsigned int t_get_dynamics_time ()
         dJointGroupEmpty (_GROUP);
         t_reset_pool (pool);
 
-        t_pause_cpu_interval (&self->core);
+        t_end_cpu_interval (&self->core);
 
         /* Step the tree. */
 

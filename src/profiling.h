@@ -30,7 +30,7 @@ typedef struct {
 
 typedef struct {
     long long unsigned int total[2], lua[2];
-    int frames;
+    int frame, frames;
 } t_CPUProfilingInterval;
 
 typedef struct {
@@ -43,7 +43,6 @@ void t_end_gpu_interval (t_GPUProfilingInterval *profile);
 void t_free_profiling_queries(t_GPUProfilingInterval *profile);
 
 void t_begin_cpu_interval (t_CPUProfilingInterval *profile);
-void t_pause_cpu_interval (t_CPUProfilingInterval *profile);
 void t_end_cpu_interval (t_CPUProfilingInterval *profile);
 
 void t_add_count_sample(t_ProfilingCount *profile,

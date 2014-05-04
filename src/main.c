@@ -510,7 +510,7 @@ int main(int argc, char **argv)
         {0, 0, 0, 0}
     };
 
-    int i, option, profile;
+    int i, option, profile = 0;
 
     _L = luaL_newstate();
 

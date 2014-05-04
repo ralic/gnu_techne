@@ -60,28 +60,33 @@ void t_advance_profiling_frame ()
 void t_begin_cpu_interval (t_CPUProfilingInterval *profile)
 {
     if (_PROFILING) {
+        assert (profile->frame <= 0);
+
+        /* The absolute value of the frame is the current frame
+         * number, while the sign signifies whether we're currently
+         * measuring an interval (positive) or not (negative). */
+
+        profile->frames += (profile->frame != -frame);
+        profile->frame = frame;
+
         profile->total[0] = t_get_cpu_time();
         profile->lua[0] = luatime;
-    }
-}
-
-void t_pause_cpu_interval (t_CPUProfilingInterval *profile)
-{
-    if (_PROFILING) {
-        /* Accumulate the interval. */
-
-        profile->total[1] += (t_get_cpu_time() -
-                                profile->total[0]);
-        profile->lua[1] += (luatime -
-                              profile->lua[0]);
     }
 }
 
 void t_end_cpu_interval (t_CPUProfilingInterval *profile)
 {
     if (_PROFILING) {
-        t_pause_cpu_interval (profile);
-        profile->frames += 1;
+        assert(profile->frame == frame);
+
+        /* Accumulate the interval. */
+
+        profile->total[1] += (t_get_cpu_time() - profile->total[0]);
+        profile->lua[1] += (luatime - profile->lua[0]);
+
+        /* Mark the interval as closed. */
+
+        profile->frame *= -1;
     }
 }
 

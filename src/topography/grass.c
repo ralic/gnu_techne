@@ -55,7 +55,7 @@ static unsigned int deflections;
 -(void)init
 {
     const char *private[] = {"deflections", "intensity", "direction",
-                             "direction_w", "triangles"};
+                             "direction_w", "segments"};
     const char *header;
     ShaderMold *shader;
 

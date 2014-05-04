@@ -31,7 +31,7 @@ if options.tape then
          link = function (self)
             local command
 
-            dynamics.interval = 1 / options.encodingframerate
+            dynamics.interval = 1 / (options.encodingframerate or 24)
             command = string.format ("mencoder /dev/stdin -really-quiet -demuxer rawvideo -rawvideo w=%d:h=%d:format=rgba:fps=%d -flip -ovc x264 -x264encopts tune=%s:preset=%s:crf=%d -o %s", graphics.window[1],
                                      graphics.window[2],
                                      options.encodingframerate or 24,

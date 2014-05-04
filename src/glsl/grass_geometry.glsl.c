@@ -7,8 +7,8 @@ layout(lines) in;
 #endif
 layout(triangle_strip, max_vertices = 4) out;
 
-in vec3 position_te[], tangent_te[], bitangent_te[], color_te[];
-in float distance_te[], height_te[], parameter_te[], depth_te[], width_te[];
+in vec3 position_te[], normal_te[], side_te[], color_te[];
+in float score_te[], height_te[], parameter_te[], depth_te[], width_te[];
 in vec4 plane_te[];
 
 out vec4 position_g;
@@ -16,18 +16,13 @@ out vec3 normal_g;
 out vec2 uv_g;
 out float height_g;
 flat out vec3 color_g;
-flat out float distance_g;
+flat out float score_g;
 
 #ifdef COLLECT_STATISTICS
 layout(binding = 0, offset = 0) uniform atomic_uint segments;
 #endif
 
 uniform vec3 direction_w;
-
-uniform grass_debug{
-    float debug;
-    bool debugtoggle;
-};
 
 void project_shadow(vec4 plane, vec3 direction, inout mat4 modelview);
 
@@ -40,23 +35,32 @@ void main()
 
     color_g = color_te[0];
 
+    /* When casting shadows the geometry shader is invoked twice per
+     * segment, once for the grass geometry and once for the shadow
+     * geometry. */
+
 #ifdef CAST_SHADOWS
     if (gl_InvocationID == 0) {
 #endif
-        distance_g = distance_te[0];
+        score_g = score_te[0];
 
 #ifdef CAST_SHADOWS
     } else {
+        /* Accumulate the shadow projection matrix onto the modelview
+         * matrix.  This will project all geometry onto the ground. */
+
         project_shadow(plane_te[0], direction_w, M);
-        distance_g = -1;
+        score_g = -1;
     }
 #endif
 
+    /* Extrude the tessellated segment along the side vector. */
+
     p_0 = vec4(position_te[0], 1);
     p_1 = vec4(position_te[1], 1);
-    h = 0.5 * width_te[0] * vec4(bitangent_te[0], 0);
+    h = 0.5 * width_te[0] * vec4(side_te[0], 0);
 
-    normal_g = vec3(M * vec4(tangent_te[0], 0));
+    normal_g = vec3(M * vec4(normal_te[0], 0));
     height_g = height_te[0];
 
     uv_g = vec2(1, parameter_te[0]);
@@ -69,7 +73,7 @@ void main()
     gl_Position = P * position_g;
     EmitVertex();
 
-    normal_g = vec3(M * vec4(tangent_te[1], 0));
+    normal_g = vec3(M * vec4(normal_te[1], 0));
     height_g = height_te[1];
 
     uv_g = vec2(1, parameter_te[1]);
@@ -82,20 +86,12 @@ void main()
     gl_Position = P * position_g;
     EmitVertex();
 
-    /* if (!debugtoggle) { */
-    /*     position_g = M * (p_1 + 0.01 * vec4(tangent_te[1], 0)); */
-    /*     gl_Position = P * position_g; */
-    /*     EmitVertex(); */
-    /* } */
-
     gl_PrimitiveID = gl_PrimitiveIDIn;
     EndPrimitive();
 
     /* Update the statistics. */
 
 #ifdef COLLECT_STATISTICS
-    /* Count the segments. */
-
     atomicCounterIncrement(segments);
 #endif
 }

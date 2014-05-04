@@ -155,7 +155,7 @@
             asprintf ((char **)&varyings[8 * i + 1], "stream_%d_left_g", i);
             asprintf ((char **)&varyings[8 * i + 2], "stream_%d_right_g", i);
             asprintf ((char **)&varyings[8 * i + 3], "stream_%d_color_g", i);
-            asprintf ((char **)&varyings[8 * i + 4], "stream_%d_distance_g", i);
+            asprintf ((char **)&varyings[8 * i + 4], "stream_%d_score_g", i);
             asprintf ((char **)&varyings[8 * i + 5], "stream_%d_clustering_g", i);
             asprintf ((char **)&varyings[8 * i + 6], "stream_%d_instance_g", i);
             varyings[8 * i + 7] = "gl_NextBuffer";
@@ -292,7 +292,7 @@
                               (void *)(9 * sizeof(float)));
         glEnableVertexAttribArray(i);
 
-        i = glGetAttribLocation(child->name, "distance");
+        i = glGetAttribLocation(child->name, "score");
         glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, TRANSFORMED_SEED_SIZE,
                               (void *)(12 * sizeof(float)));
         glEnableVertexAttribArray(i);

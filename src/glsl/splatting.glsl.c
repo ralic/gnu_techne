@@ -25,7 +25,7 @@ uniform splatingDebug {
 float hsv_distance (vec3 tuple, vec3 reference, vec3 weights);
 vec3 rgb_to_hsv (vec3 rgb);
 
-float splat_distance(const vec3 hsv, const int i, const int j)
+float splat_score(const vec3 hsv, const int i, const int j)
 {
     return pow(hsv_distance (hsv, references[i], weights[i]), -separation);
 }
@@ -60,7 +60,7 @@ vec3 compose(const vec2 uv)
 
             k = BANDS[2 * i] + j;
 
-            D = splat_distance(H, i, j);
+            D = splat_score(H, i, j);
             T = vec3(texture2D(detail[k], uv / resolutions[k]));
 
             C += D;

@@ -87,5 +87,6 @@ AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 grass/Makefile
 		 src/techne
-                 grass/grassdemo])
+                 grass/grassdemo
+                 grass/runtests])
 AC_OUTPUT

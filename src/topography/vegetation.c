@@ -30,6 +30,7 @@
 #include "splatting.h"
 #include "shader.h"
 
+static int dontrasterize, donttessellate;
 /* static unsigned int queries[2]; */
 
 @implementation Vegetation
@@ -60,6 +61,20 @@
     self->reference_1 = luaL_ref (_L, LUA_REGISTRYINDEX);
 
     [super init];
+
+    /* Get the configuration. */
+
+    lua_getglobal (_L, "options");
+
+    lua_getfield (_L, -1, "dontrasterize");
+    dontrasterize = lua_toboolean(_L, -1);
+    lua_pop (_L, 1);
+
+    lua_getfield (_L, -1, "donttessellate");
+    donttessellate = lua_toboolean(_L, -1);
+    lua_pop (_L, 1);
+
+    lua_pop (_L, 1);
 
     /* Initialize seeding. */
 
@@ -480,7 +495,10 @@
 
             /* glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 0); */
             /* glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, 1); */
-            glDisable (GL_RASTERIZER_DISCARD);
+
+            if (!dontrasterize) {
+                glDisable (GL_RASTERIZER_DISCARD);
+            }
 
             /* unsigned int N[2]; */
             /* glGetQueryObjectuiv(queries[0], GL_QUERY_RESULT, &N[0]); */
@@ -491,29 +509,35 @@
 
             /* Bind the second stage shader and draw the seeds. */
 
-            glEnable (GL_DEPTH_TEST);
-            glEnable (GL_SAMPLE_ALPHA_TO_COVERAGE);
-            glEnable (GL_SAMPLE_ALPHA_TO_ONE);
+            if (!donttessellate) {
+                glEnable (GL_DEPTH_TEST);
+                glEnable (GL_SAMPLE_ALPHA_TO_COVERAGE);
+                glEnable (GL_SAMPLE_ALPHA_TO_ONE);
 
-            for (k = 0 ; k < self->elevation->swatches_n ; k += 1) {
-                Shader *shader;
+                for (k = 0 ; k < self->elevation->swatches_n ; k += 1) {
+                    Shader *shader;
 
-                shader = self->species[k];
+                    shader = self->species[k];
 
-                if (!shader) {
-                    continue;
+                    if (!shader) {
+                        continue;
+                    }
+
+                    glUseProgram(shader->name);
+                    [shader bind];
+
+                    glBindVertexArray(self->arrays[k + 1]);
+                    glDrawTransformFeedbackStream(GL_PATCHES, self->feedback, k);
                 }
 
-                glUseProgram(shader->name);
-                [shader bind];
-
-                glBindVertexArray(self->arrays[k + 1]);
-                glDrawTransformFeedbackStream(GL_PATCHES, self->feedback, k);
+                glDisable (GL_DEPTH_TEST);
+                glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
+                glDisable (GL_SAMPLE_ALPHA_TO_ONE);
             }
 
-            glDisable (GL_DEPTH_TEST);
-            glDisable (GL_SAMPLE_ALPHA_TO_COVERAGE);
-            glDisable (GL_SAMPLE_ALPHA_TO_ONE);
+            if (dontrasterize) {
+                glDisable (GL_RASTERIZER_DISCARD);
+            }
         }
     }
 

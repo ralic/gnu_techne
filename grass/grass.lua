@@ -37,7 +37,7 @@ local samples = resources.dofile ("grass/elevation.lc")
 local imagery = resources.dofile ("grass/imagery.lc")
 local r = 1
 
-local elevation = topography.elevation {    
+local elevation = topography.elevation {
    depth = 11,
    resolution = {5, 5},
 
@@ -77,10 +77,10 @@ local elevation = topography.elevation {
             },
          },
       },
-   
+
       {
          {40 / 360, 0.2, nil},
-         
+
          {
             {
                textures.planar {
@@ -90,7 +90,7 @@ local elevation = topography.elevation {
                },
                arraymath.scale({1, 1}, 0.1 * r),
             },
-            
+
             {
                textures.planar {
                   texels = resources.dofile ("grass/dirt-detail-2.lc"),
@@ -99,7 +99,7 @@ local elevation = topography.elevation {
                },
                arraymath.scale({1, 1}, 0.01 * r),
             },
-            
+
             {
                textures.planar {
                   texels = resources.dofile ("grass/dirt-detail-3.lc"),
@@ -111,7 +111,7 @@ local elevation = topography.elevation {
          },
       },
    },
-   
+
    tiles = {
       {
          {
@@ -133,7 +133,7 @@ local blade = textures.planar{
 root = primitives.root {
    atmosphere = topography.atmosphere {
       tag = "atmosphere",
-      
+
       size = {1024, 512},
 
       turbidity = 4,
@@ -155,15 +155,15 @@ root = primitives.root {
          target = 20000,
       },
    },
-   
-   vegetation = elevation.vegetation {
+
+   vegetation = not options.nograss and elevation.vegetation {
       tag = "vegetation",
 
       horizon = 70,
       rolloff = 0.75,
       ceiling = 9455,
       density = 80000,
-      clustering = 8,
+      clustering = options.clustering or 8,
 
       topography.grass {
          mask = blade,
@@ -196,7 +196,7 @@ root = primitives.root {
    timer = options.timed and primitives.timer {
       source = "iterations",
       period = 30 * (type(options.timed) == "number" and options.timed or 30) + 1,
-      
+
       tick = function(self)
          techne.iterate = false
       end,
@@ -215,7 +215,7 @@ root.path = staging.bezier {
 
    step = function (self, h, t)
    end,
-   
+
    transform = function (self)
       local t = dynamics.time
 
@@ -237,7 +237,7 @@ root.path = staging.bezier {
             c[3][3] * t +
             c[3][4]
       end
-      
+
       -- trace (dynamics.time, self.speed)
    end,
 

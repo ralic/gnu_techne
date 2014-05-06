@@ -1,5 +1,5 @@
 in vec3 apex, left, right, color;
-in float distance;
+in float score;
 in float clustering;
 in unsigned int instance;
 

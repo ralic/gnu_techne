@@ -15,8 +15,6 @@ void main()
 {
     vec3 p;
 
-    /* Update the statistics. */
-
     if (clustering_tc > 1) {
         p = cluster_seed(apex_tc, left_tc, right_tc, stratum_tc, instance_tc);
     } else {

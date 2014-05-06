@@ -162,12 +162,12 @@ root = primitives.root {
       horizon = 70,
       rolloff = 0.75,
       ceiling = 9455,
-      density = 80000,
+      density = 100000,
       clustering = options.clustering or 8,
 
       topography.grass {
          tag = "grass",
-         
+
          mask = blade,
          detail = 8,
          height = {0.035, 0.065},

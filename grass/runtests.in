@@ -5,25 +5,25 @@ exec_prefix=@exec_prefix@
 bindir=@bindir@
 
 # Normal run
-${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run1.d -Oprofile=tags.techne.latency -Oprofile=tags.graphics.latency -Oprofile=tags.graphics.core -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics -Oprofile=tags.vegetation.infertile -Oprofile=tags.vegetation.fertile -Oprofile=tags.grass.triangles
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run1.d -Oprofilingperiod=24 -Oprofile=tags.techne.latency -Oprofile=tags.graphics.latency -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics -Oprofile=tags.vegetation.infertile -Oprofile=tags.vegetation.fertile -Oprofile=tags.grass.triangles
 
 # Without grass
-${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Onograss -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run2.d -Oprofile=tags.techne.latency -Oprofile=tags.graphics.latency -Oprofile=tags.graphics.core
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Onograss -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run2.d -Oprofilingperiod=24 -Oprofile=tags.techne.latency -Oprofile=tags.graphics.latency -Oprofile=tags.graphics.core
 
 # No rasterization
-${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run3.d -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run3.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 
 # No tessellation
-${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odonttessellate -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run4.d -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odonttessellate -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run4.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 
 # clustering=1
-${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=1 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run5.d -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=1 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run5.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 
 # clustering=4
-${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=4 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run6.d -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=4 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run6.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 
 # clustering=8
-${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=8 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run7.d -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=8 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run7.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 
 # clustering=12
-${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=12 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run8.d -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=12 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run8.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics

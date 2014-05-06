@@ -166,6 +166,8 @@ root = primitives.root {
       clustering = options.clustering or 8,
 
       topography.grass {
+         tag = "grass",
+         
          mask = blade,
          detail = 8,
          height = {0.035, 0.065},

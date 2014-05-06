@@ -197,7 +197,7 @@ root = primitives.root {
 
    timer = options.timed and primitives.timer {
       source = "iterations",
-      period = 30 * (type(options.timed) == "number" and options.timed or 30) + 1,
+      period = 24 * (type(options.timed) == "number" and options.timed or 30) + 1,
 
       tick = function(self)
          techne.iterate = false

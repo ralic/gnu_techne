@@ -59,16 +59,16 @@
                                                     glsl_seeds_tesselation_control}
                         for: T_TESSELATION_CONTROL_STAGE];
 
-    [shader add: 4
-            sourceStrings: (const char *[4]){glsl_rand,
+    [shader add: 3
+            sourceStrings: (const char *[3]){glsl_rand,
                                              glsl_vegetation_common,
                                              glsl_seeds_tesselation_evaluation}
             for: T_TESSELATION_EVALUATION_STAGE];
 
     /* Add the fragment source. */
 
-    [shader add: 2
-            sourceStrings: (const char *[2]){glsl_seeds_fragment}
+    [shader add: 1
+            sourceStrings: (const char *[1]){glsl_seeds_fragment}
             for: T_FRAGMENT_STAGE];
 
     [shader link];

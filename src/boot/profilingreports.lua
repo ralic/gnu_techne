@@ -59,7 +59,7 @@ if options.periodicprofile then
             period = options.profilingperiod or 30,
 
             tick = function (self, tick, delta, elapsed)
-               local n, row = #expressions, ""
+               local n, row = #expressions, string.format("%d, ", elapsed)
 
                for i = 1, n  do
                   local x
@@ -128,7 +128,7 @@ else
    -- table.
 
    profiler = primitives.root {
-      tag = "node-profiler",
+      tag = "profiler",
       index = -1 / 0,
 
       unlink = function(self)

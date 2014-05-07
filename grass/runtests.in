@@ -4,26 +4,29 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@
 
-# Normal run
+# Run 1: normal run
 ${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run1.d -Oprofilingperiod=24 -Oprofile=tags.techne.latency -Oprofile=tags.graphics.latency -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics -Oprofile=tags.vegetation.infertile -Oprofile=tags.vegetation.fertile -Oprofile=tags.grass.triangles
 
-# Without grass
+# Run 2: no grass
 ${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Onograss -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run2.d -Oprofilingperiod=24 -Oprofile=tags.techne.latency -Oprofile=tags.graphics.latency -Oprofile=tags.graphics.core
 
-# No rasterization
+# Run 3: no rasterization
 ${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run3.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 
-# No tessellation
+# Run 4: no rasterization or tessellation
 ${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odonttessellate -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run4.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 
-# clustering=1
+# Run 5: No rasterization, 1 seed / cluster
 ${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=1 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run5.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 
-# clustering=4
-${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=4 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run6.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
+# Run 6: No rasterization, 2 seeds / cluster
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=2 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run6.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 
-# clustering=8
-${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=8 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run7.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
+# Run 7: No rasterization, 4 seeds / cluster
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=4 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run7.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 
-# clustering=12
+# Run 8: No rasterization, 12 seeds / cluster
 ${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=12 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run8.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
+
+# Run 9: No rasterization, 16 seeds / cluster
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odontrasterize -Oclustering=16 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run9.d -Oprofilingperiod=24 -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics

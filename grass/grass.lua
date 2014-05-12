@@ -1,7 +1,7 @@
 local graphics = require 'graphics'
 local units = require 'units'
 
-graphics.samples = 4
+graphics.samples = 8
 graphics.window = options.fullscreen and graphics.screen or {options.width or 1280, options.height or 800}
 graphics.title = "Grass"
 graphics.hide = false
@@ -159,7 +159,7 @@ root = primitives.root {
    vegetation = not options.nograss and elevation.vegetation {
       tag = "vegetation",
 
-      horizon = 70,
+      horizon = 100,
       rolloff = 0.75,
       ceiling = 9455,
       density = 100000,

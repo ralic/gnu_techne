@@ -44,7 +44,8 @@ static void reset_freeable_chunk (struct pool *pool, struct chunk *chunk)
      * next. */
 
     for (i = 0, chunk->blocks = NULL ; i < pool->factor ; i += 1) {
-        block = (struct block *)(((char *)chunk) + sizeof (struct chunk) + i * pool->size);
+        block = (struct block *)(((char *)chunk) + sizeof (struct chunk) +
+                                 i * pool->size);
         block->next = chunk->blocks;
         chunk->blocks = block;
     }

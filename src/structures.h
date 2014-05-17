@@ -5,45 +5,45 @@
 
 #define t_link_after(node, sibling)             \
     {                                           \
-        (node)->left = (sibling);		\
-        (node)->right = (sibling)->right;	\
+        (node)->left = (sibling);               \
+        (node)->right = (sibling)->right;       \
                                                 \
-        if ((sibling)->right) {			\
-            (sibling)->right->left = (node);	\
-        }					\
+        if ((sibling)->right) {                 \
+            (sibling)->right->left = (node);    \
+        }                                       \
                                                 \
-        (sibling)->right = (node);		\
+        (sibling)->right = (node);              \
     }
 
-#define t_link_before(node, sibling, head)	\
+#define t_link_before(node, sibling, head)      \
     {                                           \
-        (node)->right = (sibling);		\
-        (node)->left = (sibling)->left;		\
+        (node)->right = (sibling);              \
+        (node)->left = (sibling)->left;         \
                                                 \
-        if ((sibling)->left) {			\
-            (sibling)->left->right = (node);	\
-        } else {				\
-            *head = node;			\
-        }					\
+        if ((sibling)->left) {                  \
+            (sibling)->left->right = (node);    \
+        } else {                                \
+            *head = node;                       \
+        }                                       \
                                                 \
-        (sibling)->left = (node);		\
+        (sibling)->left = (node);               \
     }
 
-#define t_link_between(node, brother, sister, head)	\
-    {							\
-        if (brother) {					\
-            t_link_after(node, brother);		\
-        } else {					\
-            t_link_before(node, sister, head);		\
-        }						\
+#define t_link_between(node, brother, sister, head)     \
+    {                                                   \
+        if (brother) {                                  \
+            t_link_after(node, brother);                \
+        } else {                                        \
+            t_link_before(node, sister, head);          \
+        }                                               \
     }
 
-#define t_link_at_head(node, list)		\
+#define t_link_at_head(node, list)              \
     {                                           \
-        (node)->left = NULL;			\
-        (node)->right = *(list);		\
-        (*(list))->left = (node);		\
-        *(list) = (node);			\
+        (node)->left = NULL;                    \
+        (node)->right = *(list);                \
+        (*(list))->left = (node);               \
+        *(list) = (node);                       \
     }
 
 #define t_unlink_from(node, list)                       \
@@ -100,23 +100,23 @@
 
 /* Circular doubly-linked lists. */
 
-#define t_circular_link_after(node, sibling)		\
-    {							\
-        (node)->left = (sibling);			\
-        (node)->right = (sibling)->right;		\
-        (sibling)->right->left = (node);		\
-        (sibling)->right = (node);			\
+#define t_circular_link_after(node, sibling)    \
+    {                                           \
+        (node)->left = (sibling);               \
+        (node)->right = (sibling)->right;       \
+        (sibling)->right->left = (node);        \
+        (sibling)->right = (node);              \
     }
 
-#define t_circular_link_before(node, sibling)			\
-    {								\
-        (node)->right = (sibling);				\
-        (node)->left = (sibling)->left;				\
-        (sibling)->left->right = (node);			\
-        (sibling)->left = (node);				\
+#define t_circular_link_before(node, sibling)   \
+    {                                           \
+        (node)->right = (sibling);              \
+        (node)->left = (sibling)->left;         \
+        (sibling)->left->right = (node);        \
+        (sibling)->left = (node);               \
     }
 
-#define t_circular_unlink(node)			\
+#define t_circular_unlink(node)                 \
     {                                           \
         (node)->left->right = (node)->right;    \
         (node)->right->left = (node)->left;     \

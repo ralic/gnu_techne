@@ -104,14 +104,11 @@ void t_free_profiling_queries(t_GPUProfilingInterval *profile)
 {
     struct queryset *next;
 
-    while((next = profile->sets->right)) {
+    while(profile->sets && (next = profile->sets->right)) {
         t_circular_unlink(next);
         glDeleteQueries(2, next->queries);
         t_free_pooled(pool, next);
     }
-
-    glDeleteQueries(2, profile->sets->queries);
-    t_free_pooled(pool, profile->sets);
 }
 
 static void accumulate_gpu_interval (t_GPUProfilingInterval *profile)

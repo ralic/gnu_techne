@@ -1,7 +1,7 @@
 local graphics = require 'graphics'
 local units = require 'units'
 
-graphics.samples = 4
+graphics.samples = 8
 graphics.window = options.fullscreen and graphics.screen or {options.width or 1280, options.height or 800}
 graphics.title = "Grass"
 graphics.hide = false
@@ -16,7 +16,7 @@ local resources = require 'resources'
 local textures = require 'textures'
 local primitives = require 'primitives'
 local topography = require 'topography'
-
+local widgets = require 'widgets'
 local techne = require 'techne'
 local dynamics = require 'dynamics'
 
@@ -131,6 +131,55 @@ local blade = textures.planar{
 }
 
 root = primitives.root {
+   title = options.title and widgets.display {
+      index = 1 / 0,
+
+      layout = widgets.layout {
+         index = 2,
+
+         align = {-1, -1},
+         padding = {0.01, 0, 0.004},
+
+         text = "<span font=\"Tex Gyre Adventor Bold 18\" color=\"White\">Scattering grass (and other tessellated objects) over terrain in real time</span>"
+      },
+
+      shadow = widgets.layout {
+         index = 1,
+
+         align = {-1, -1},
+         padding = {0.008, 0, 0.003},
+
+         text = "<span font=\"Tex Gyre Adventor Bold 18\" color=\"Black\">Scattering grass (and other tessellated objects) over terrain in real time</span>"
+      },
+                                            },
+   timer = options.timer and widgets.display {
+      index = 1 / 0,
+
+      timer = primitives.timer {
+         period = 0.1,
+         source = "dynamics",
+
+         tick = function (self, tick, delta, elapsed)
+            self.parent.layout.text = string.format("<span font=\"Tex Gyre Adventor Bold 18\" color=\"White\">%.1f</span>", elapsed)
+            self.parent.shadow.text = string.format("<span font=\"Tex Gyre Adventor Bold 18\" color=\"Black\">%.1f</span>", elapsed)
+         end
+      },
+
+      layout = widgets.layout {
+         index = 2,
+
+         align = {1, -1},
+         padding = {0, 0.01, 0.004},
+      },
+
+      shadow = widgets.layout {
+         index = 1,
+
+         align = {1, -1},
+         padding = {0, 0.008, 0.003},
+      },
+                                             },
+
    atmosphere = topography.atmosphere {
       tag = "atmosphere",
 
@@ -193,7 +242,7 @@ root = primitives.root {
       -- },
    },
 
-   timer = options.timed and primitives.timer {
+   timeout = options.timed and primitives.timer {
       source = "dynamics",
       period = 30,
 

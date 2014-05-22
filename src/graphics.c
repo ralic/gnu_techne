@@ -793,6 +793,13 @@ void t_warp_pointer (int x, int y)
     return 1;
 }
 
+-(int) _get_frames
+{
+    lua_pushinteger(_L, frames);
+
+    return 1;
+}
+
 -(void) _set_window
 {
     GdkGeometry geometry;
@@ -1444,6 +1451,11 @@ void t_warp_pointer (int x, int y)
     } else {
         samples = lua_tointeger(_L, 3);
     }
+}
+
+-(void) _set_frames
+{
+    T_WARN_READONLY;
 }
 
 @end

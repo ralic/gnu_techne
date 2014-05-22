@@ -50,6 +50,7 @@
 -(int) _get_stencilbits;
 -(int) _get_samples;
 -(int) _get_latency;
+-(int) _get_frames;
 
 -(void) _set_window;
 -(void) _set_hide;
@@ -74,6 +75,7 @@
 -(void) _set_stencilbits;
 -(void) _set_samples;
 -(void) _set_latency;
+-(void) _set_frames;
 
 @end
 

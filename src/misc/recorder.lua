@@ -19,6 +19,7 @@ local primitives = require 'primitives'
 local string = require 'string'
 local io = require 'io'
 local array = require 'array'
+local arraymath = require 'arraymath'
 local pipe
 
 if options.tape then
@@ -31,13 +32,13 @@ if options.tape then
          link = function (self)
             local command
 
-            dynamics.interval = 1 / (options.encodingframerate or 24)
+            dynamics.interval = 1 / (options.framerate or 24)
             command = string.format ("mencoder /dev/stdin -really-quiet -demuxer rawvideo -rawvideo w=%d:h=%d:format=rgba:fps=%d -flip -ovc x264 -x264encopts tune=%s:preset=%s:crf=%d -o %s", graphics.window[1],
                                      graphics.window[2],
-                                     options.encodingframerate or 24,
-                                     options.encodingtune or "animation",
-                                     options.encodingpreset or "veryslow",
-                                     options.encodingcrf or 23,
+                                     options.framerate or 24,
+                                     options.tune or "animation",
+                                     options.preset or "veryslow",
+                                     options.crf or 23,
                                      options.tape)
 
             print(string.format ("Output is being recorded using " ..
@@ -52,7 +53,34 @@ if options.tape then
 
          draw = function (self)
             if self.recording then
-               pipe:write (array.dump(graphics.colorbuffer))
+
+               if (options.fadein and type(options.fadein) == "number" and
+                   graphics.frames < options.fadein) then
+                  pipe:write (array.dump(
+                                 arraymath.scale(graphics.colorbuffer,
+                                                 graphics.frames /
+                                                    options.fadein)))
+               elseif (options.fadein and type(options.fadein) == "table" and
+                          (graphics.frames >= options.fadein[1] and
+                           graphics.frames < options.fadein[2])) then
+                  local c
+
+                  c = (graphics.frames - options.fadein[1]) /
+                     (options.fadein[2] - options.fadein[1])
+
+                  pipe:write (array.dump(arraymath.scale(graphics.colorbuffer,
+                                                         c)))
+               elseif (options.fadeout and
+                       graphics.frames > options.fadeout[1]) then
+                  local c
+
+                  c = (options.fadeout[2] - graphics.frames) /
+                      (options.fadeout[2] - options.fadeout[1])
+                  pipe:write (array.dump( arraymath.scale(graphics.colorbuffer,
+                                                          c)))
+               else
+                  pipe:write (array.dump(graphics.colorbuffer))
+               end
             end
          end,
 

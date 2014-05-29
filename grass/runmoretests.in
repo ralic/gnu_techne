@@ -10,6 +10,9 @@ ${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odetail=8 -Odensity=1
 # Run 2: N = 8, rho = 100e3, not rasterized
 ${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odetail=8 -Odensity=100000 -Odontrasterize -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run_N8_rho100_noraster.d -Oprofilingperiod=24 -Oprofile=tags.techne.latency -Oprofile=tags.graphics.latency -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 
+# Run 2.5: N = 8, rho = 100e3, not tessellated
+${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odetail=8 -Odensity=100000 -Odontrasterize -Odonttessellate -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run_N8_rho100_notess.d -Oprofilingperiod=24 -Oprofile=tags.techne.latency -Oprofile=tags.graphics.latency -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
+
 # Run 3: N = 8, rho = 50e3, rasterized
 ${bindir}/grassdemo -p -Ocontext=4.2 -Ofullscreen -Otimed -Odetail=8 -Odensity=50000 -e 'require"dynamics".interval=1/24' -Operiodicprofile=./run_N8_rho50.d -Oprofilingperiod=24 -Oprofile=tags.techne.latency -Oprofile=tags.graphics.latency -Oprofile=tags.vegetation.core -Oprofile=tags.vegetation.graphics
 

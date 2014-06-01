@@ -13,8 +13,8 @@ vec2 hash(unsigned int R, unsigned int L, unsigned int k);
 vec2 rand2();
 uvec2 srand();
 
-vec3 compose(const vec2 uv);
-float splat_score(const vec3 hsv, const int i, const int j);
+vec3 compose(vec2 uv);
+float splat_score(vec3 hsv, int i);
 vec3 cluster_center(vec3 apex, vec3 left, vec3 right, unsigned int instance);
 
 #ifdef COLLECT_STATISTICS
@@ -41,7 +41,7 @@ void main()
          i += 1) {
         float d;
 
-        d = splat_score(hsv, i, 0);
+        d = splat_score(hsv, i);
 
         /* Keep track of the two highest scores. */
 

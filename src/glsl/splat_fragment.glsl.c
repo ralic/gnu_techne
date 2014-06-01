@@ -5,7 +5,7 @@ in vec2 uv;
 uniform float turbidity, factor, beta_p;
 uniform vec3 direction, intensity, beta_r;
 
-vec3 compose(const vec2 uv);
+vec3 compose(vec2 uv);
 
 void main()
 {

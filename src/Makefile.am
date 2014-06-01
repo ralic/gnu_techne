@@ -14,8 +14,6 @@ bin_SCRIPTS = techne
 
 BUILT_SOURCES = gl.h glx.h glsl/splat_vertex.h glsl/splat_fragment.h	\
 		glsl/color.h glsl/rand.h glsl/vegetation_common.h	\
-		glsl/vegetation_tesselation_control.h			\
-		glsl/vegetation_tesselation_evaluation.h		\
 		glsl/vegetation_geometry.h glsl/vegetation_vertex.h	\
 		glsl/transform_block.h glsl/preamble.h glsl/splatting.h	\
 		glsl/grass_tesselation_control.h			\

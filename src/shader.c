@@ -961,7 +961,8 @@ void t_get_and_reset_counter(Shader *shader, const char *uniform_name,
                 /* Cache the sampler location. */
 
                 glGetActiveUniformName (self->name, list[i], l, NULL, buffer);
-                uniform->sampler.location = glGetUniformLocation (self->name, buffer);
+                uniform->sampler.location = glGetUniformLocation (self->name,
+                                                                  buffer);
 
                 /* Map the sampler type to texture target. */
 

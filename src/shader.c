@@ -48,132 +48,132 @@ struct {
     const char **fragments;
 } pipelines[T_STAGES_N];
 
-#define TYPE_ERROR()							\
-    {									\
-        t_print_error("Value assigned to uniform variable '%s' of "	\
-                      "shader '%s' is of unsuitable type.\n",		\
-                      k, [self name]);					\
-        abort();							\
+#define TYPE_ERROR()                                                    \
+    {                                                                   \
+        t_print_error("Value assigned to uniform variable '%s' of "     \
+                      "shader '%s' is of unsuitable type.\n",           \
+                      k, [self name]);                                  \
+        abort();                                                        \
     }
 
-#define READ_SINGLE(value, length)					\
-    {									\
+#define READ_SINGLE(value, length)                                      \
+    {                                                                   \
         glGetBufferSubData (GL_UNIFORM_BUFFER, u->offset, length,       \
                             value);                                     \
     }
 
-#define UPDATE_SINGLE(value, length)					\
-    {									\
-        glBufferSubData (GL_UNIFORM_BUFFER, u->offset, length, value);	\
+#define UPDATE_SINGLE(value, length)                                    \
+    {                                                                   \
+        glBufferSubData (GL_UNIFORM_BUFFER, u->offset, length, value);  \
     }
 
-#define READ_ARRAY(size_0, stride_0, value, length)			\
-    {									\
-        void *b;							\
-        int i;								\
-                                                                        \
-        b = glMapBuffer (GL_UNIFORM_BUFFER, GL_WRITE_ONLY);		\
-                                                                        \
-        for(i = 0 ; i < size_0 ; i += 1) {				\
-            memcpy((void *)value + i * length,                          \
-                   b + u->offset + i * stride_0,                        \
-                   length);						\
-        }								\
-                                                                        \
-        glUnmapBuffer (GL_UNIFORM_BUFFER);				\
+#define READ_ARRAY(size_0, stride_0, value, length)             \
+    {                                                           \
+        void *b;                                                \
+        int i;                                                  \
+                                                                \
+        b = glMapBuffer (GL_UNIFORM_BUFFER, GL_WRITE_ONLY);     \
+                                                                \
+        for(i = 0 ; i < size_0 ; i += 1) {                      \
+            memcpy((void *)value + i * length,                  \
+                   b + u->offset + i * stride_0,                \
+                   length);                                     \
+        }                                                       \
+                                                                \
+        glUnmapBuffer (GL_UNIFORM_BUFFER);                      \
     }
 
-#define UPDATE_ARRAY(size_0, stride_0, value, length)			\
-    {									\
-        void *b;							\
-        int i;								\
-                                                                        \
-        b = glMapBuffer (GL_UNIFORM_BUFFER, GL_WRITE_ONLY);		\
-                                                                        \
-        for(i = 0 ; i < size_0 ; i += 1) {				\
-            memcpy(b + u->offset + i * stride_0,			\
-                   (void *)value + i * length,				\
-                   length);						\
-        }								\
-                                                                        \
-        glUnmapBuffer (GL_UNIFORM_BUFFER);				\
+#define UPDATE_ARRAY(size_0, stride_0, value, length)           \
+    {                                                           \
+        void *b;                                                \
+        int i;                                                  \
+                                                                \
+        b = glMapBuffer (GL_UNIFORM_BUFFER, GL_WRITE_ONLY);     \
+                                                                \
+        for(i = 0 ; i < size_0 ; i += 1) {                      \
+            memcpy(b + u->offset + i * stride_0,                \
+                   (void *)value + i * length,                  \
+                   length);                                     \
+        }                                                       \
+                                                                \
+        glUnmapBuffer (GL_UNIFORM_BUFFER);                      \
     }
 
-#define READ_MATRIX_ARRAY(size_0, stride_0, size_1, stride_1,		\
-                            value, length)				\
-    {									\
-        void *b;							\
-        int i, j;							\
+#define READ_MATRIX_ARRAY(size_0, stride_0, size_1, stride_1,           \
+                            value, length)                              \
+    {                                                                   \
+        void *b;                                                        \
+        int i, j;                                                       \
                                                                         \
-        b = glMapBuffer (GL_UNIFORM_BUFFER, GL_WRITE_ONLY);		\
+        b = glMapBuffer (GL_UNIFORM_BUFFER, GL_WRITE_ONLY);             \
                                                                         \
-        for(j = 0 ; j < size_1 ; j += 1) {				\
-            for(i = 0 ; i < size_0 ; i += 1) {				\
-                memcpy((void *)value + (j * size_0 + i) * length,	\
-                       b + u->offset + i * stride_0 + j * stride_1,	\
-                       length);						\
-            }								\
-        }								\
+        for(j = 0 ; j < size_1 ; j += 1) {                              \
+            for(i = 0 ; i < size_0 ; i += 1) {                          \
+                memcpy((void *)value + (j * size_0 + i) * length,       \
+                       b + u->offset + i * stride_0 + j * stride_1,     \
+                       length);                                         \
+            }                                                           \
+        }                                                               \
                                                                         \
-        glUnmapBuffer (GL_UNIFORM_BUFFER);				\
+        glUnmapBuffer (GL_UNIFORM_BUFFER);                              \
     }
 
-#define UPDATE_MATRIX_ARRAY(size_0, stride_0, size_1, stride_1,		\
-                            value, length)				\
-    {									\
-        void *b;							\
-        int i, j;							\
+#define UPDATE_MATRIX_ARRAY(size_0, stride_0, size_1, stride_1,         \
+                            value, length)                              \
+    {                                                                   \
+        void *b;                                                        \
+        int i, j;                                                       \
                                                                         \
-        b = glMapBuffer (GL_UNIFORM_BUFFER, GL_WRITE_ONLY);		\
+        b = glMapBuffer (GL_UNIFORM_BUFFER, GL_WRITE_ONLY);             \
                                                                         \
-        for(j = 0 ; j < size_1 ; j += 1) {				\
-            for(i = 0 ; i < size_0 ; i += 1) {				\
-                memcpy(b + u->offset + i * stride_0 + j * stride_1,	\
-                       (void *)value + (j * size_0 + i) * length,	\
-                       length);						\
-            }								\
-        }								\
+        for(j = 0 ; j < size_1 ; j += 1) {                              \
+            for(i = 0 ; i < size_0 ; i += 1) {                          \
+                memcpy(b + u->offset + i * stride_0 + j * stride_1,     \
+                       (void *)value + (j * size_0 + i) * length,       \
+                       length);                                         \
+            }                                                           \
+        }                                                               \
                                                                         \
-        glUnmapBuffer (GL_UNIFORM_BUFFER);				\
+        glUnmapBuffer (GL_UNIFORM_BUFFER);                              \
     }
 
-#define UPDATE_VALUE(size_0, stride_0, size_1, stride_1, elements,	\
+#define UPDATE_VALUE(size_0, stride_0, size_1, stride_1, elements,      \
                      ctype, gltype, arraytype, ismatrix)                \
-    {									\
+    {                                                                   \
         array_Array *array = NULL;                                      \
-        ctype n;							\
+        ctype n;                                                        \
                                                                         \
-        if (size_0 == 1 && size_1 == 1) {				\
+        if (size_0 == 1 && size_1 == 1) {                               \
             /* This is a non-array value. */                            \
                                                                         \
-            if (elements == 1) {					\
+            if (elements == 1) {                                        \
                 /* A scalar. */                                         \
                                                                         \
                 if (gltype == GL_BOOL) {                                \
                     if (lua_type (_L, 3) != LUA_TBOOLEAN) {             \
-                        TYPE_ERROR();					\
+                        TYPE_ERROR();                                   \
                     }                                                   \
                                                                         \
-                    n = (ctype)lua_toboolean (_L, 3);			\
+                    n = (ctype)lua_toboolean (_L, 3);                   \
                 } else {                                                \
                     if (lua_type (_L, 3) != LUA_TNUMBER) {              \
                         TYPE_ERROR();                                   \
                     }                                                   \
                                                                         \
-                    n = (ctype)lua_tonumber (_L, 3);			\
+                    n = (ctype)lua_tonumber (_L, 3);                    \
                 }                                                       \
                                                                         \
-                UPDATE_SINGLE (&n, elements * sizeof(ctype));		\
-            } else {							\
+                UPDATE_SINGLE (&n, elements * sizeof(ctype));           \
+            } else {                                                    \
                 /* A vector. */                                         \
                                                                         \
                 array = array_testcompatible (_L, 3,                    \
-                                              ARRAY_TYPE | ARRAY_RANK,	\
-                                              arraytype, 1);		\
+                                              ARRAY_TYPE | ARRAY_RANK,  \
+                                              arraytype, 1);            \
                                                                         \
-                if(!array) {						\
-                    TYPE_ERROR();					\
-                }							\
+                if(!array) {                                            \
+                    TYPE_ERROR();                                       \
+                }                                                       \
                                                                         \
                 /* Adjust the array to the uniform's size if            \
                  * needed. */                                           \
@@ -188,13 +188,13 @@ struct {
                     }                                                   \
                 }                                                       \
                                                                         \
-                UPDATE_SINGLE (array->values.any,			\
-                               elements * sizeof(ctype));		\
-            }								\
+                UPDATE_SINGLE (array->values.any,                       \
+                               elements * sizeof(ctype));               \
+            }                                                           \
         } else if (size_1 == 1) {                                       \
             /* This is either an array or a matrix. */                  \
                                                                         \
-            if (elements == 1) {					\
+            if (elements == 1) {                                        \
                 /* A scalar array, adjust to size if needed. */         \
                                                                         \
                 array_testcompatible (_L, 3,                            \
@@ -202,7 +202,7 @@ struct {
                                       arraytype, 1);                    \
                                                                         \
                 array = array_adjust(_L, 3, NULL, 1, size_0);           \
-            } else {							\
+            } else {                                                    \
                 /* Either a vector array or a matrix. */                \
                                                                         \
                 array = array_testcompatible (_L, 3,                    \
@@ -220,14 +220,14 @@ struct {
                     memset (defaults, 0, sizeof (defaults));            \
                                                                         \
                     if(ismatrix) {                                      \
-                        if (size_0 == elements) {			\
-                            /* If this is a matrix initialize the	\
-                             *  defaults to the unit matrix. */		\
+                        if (size_0 == elements) {                       \
+                            /* If this is a matrix initialize the       \
+                             *  defaults to the unit matrix. */         \
                                                                         \
-                            for(i = 0 ; i < size_0 ; i += 1) {		\
-                                defaults[i][i] = 1;			\
-                            }						\
-                        }						\
+                            for(i = 0 ; i < size_0 ; i += 1) {          \
+                                defaults[i][i] = 1;                     \
+                            }                                           \
+                        }                                               \
                     } else {                                            \
                         /* If this is a vector array adjust each        \
                          * element to {0, 0, 0, 1}. */                  \
@@ -242,24 +242,24 @@ struct {
                     array = array_adjust(_L, 3, defaults,               \
                                          2, size_0, elements);          \
                 }                                                       \
-            }								\
+            }                                                           \
                                                                         \
-            if(!array) {						\
-                TYPE_ERROR();						\
-            }								\
+            if(!array) {                                                \
+                TYPE_ERROR();                                           \
+            }                                                           \
                                                                         \
-            UPDATE_ARRAY (size_0, stride_0, array->values.any,		\
-                          elements * sizeof(ctype));			\
-        } else {							\
+            UPDATE_ARRAY (size_0, stride_0, array->values.any,          \
+                          elements * sizeof(ctype));                    \
+        } else {                                                        \
             /* A matrix array. */                                       \
                                                                         \
             array = array_testcompatible (_L, 3,                        \
                                           ARRAY_TYPE | ARRAY_RANK,      \
                                           arraytype, 3);                \
                                                                         \
-            if(!array) {						\
-                TYPE_ERROR();						\
-            }								\
+            if(!array) {                                                \
+                TYPE_ERROR();                                           \
+            }                                                           \
                                                                         \
             /* This inversion is intentional: size_1 is the array       \
              * size, hence the number of matrices in the array and      \
@@ -273,21 +273,21 @@ struct {
             }                                                           \
                                                                         \
             UPDATE_MATRIX_ARRAY (size_0, stride_0, size_1, stride_1,    \
-                                 array->values.any,			\
-                                 elements * sizeof(ctype));		\
-        }								\
+                                 array->values.any,                     \
+                                 elements * sizeof(ctype));             \
+        }                                                               \
     }
 
-#define READ_VALUE(size_0, stride_0, size_1, stride_1, elements,	\
+#define READ_VALUE(size_0, stride_0, size_1, stride_1, elements,        \
                    ctype, gltype, arraytype, ismatrix)                  \
-    {									\
+    {                                                                   \
         array_Array *array;                                             \
         ctype n;                                                        \
                                                                         \
-        if (size_0 == 1 && size_1 == 1) {				\
+        if (size_0 == 1 && size_1 == 1) {                               \
             /* This is a non-array value. */                            \
                                                                         \
-            if (elements == 1) {					\
+            if (elements == 1) {                                        \
                 /* A scalar. */                                         \
                                                                         \
                 READ_SINGLE (&n, sizeof(ctype));                        \
@@ -297,107 +297,107 @@ struct {
                 } else {                                                \
                     lua_pushnumber (_L, n);                             \
                 }                                                       \
-            } else {							\
+            } else {                                                    \
                 /* A vector. */                                         \
                                                                         \
                 array = array_createarray (_L, arraytype, NULL, 1, elements); \
                                                                         \
                 READ_SINGLE (array->values.any,                         \
                              elements * sizeof(ctype));                 \
-            }								\
+            }                                                           \
         } else if (size_1 == 1) {                                       \
             /* This is either an array or a matrix. */                  \
                                                                         \
-            if (elements == 1) {					\
+            if (elements == 1) {                                        \
                 /* A scalar array. */                                   \
                                                                         \
                 array = array_createarray (_L, arraytype, NULL, 1, size_0); \
-            } else {							\
+            } else {                                                    \
                 /* Either a vector array or a matrix. */                \
                                                                         \
                 array = array_createarray (_L, arraytype, NULL, 2,      \
                                    size_0, elements);                   \
-            }								\
+            }                                                           \
                                                                         \
             READ_ARRAY (size_0, stride_0, array->values.any,            \
-                        elements * sizeof(ctype));			\
-        } else {							\
+                        elements * sizeof(ctype));                      \
+        } else {                                                        \
             /* A matrix array. */                                       \
                                                                         \
             array = array_createarray(_L, arraytype, NULL, 3, size_1, size_0, \
                                       elements);                        \
                                                                         \
             READ_MATRIX_ARRAY (size_0, stride_0, size_1, stride_1,      \
-                               array->values.any,			\
-                               elements * sizeof(ctype));		\
-        }								\
+                               array->values.any,                       \
+                               elements * sizeof(ctype));               \
+        }                                                               \
     }
 
-#define CASE_BLOCK_S_V(ctype, gltype, arraytype)           \
-    case gltype:                                           \
-        DO_VALUE(u->size, u->arraystride, 1, 0, 1,     \
-                 ctype, gltype, arraytype, 0); break;              \
-    case gltype##_VEC2:                                    \
-        DO_VALUE(u->size, u->arraystride, 1, 0, 2,         \
-                     ctype, gltype, arraytype, 0); break;          \
-    case gltype##_VEC3:                                    \
-        DO_VALUE(u->size, u->arraystride, 1, 0, 3,         \
-                     ctype, gltype, arraytype, 0); break;          \
-    case gltype##_VEC4:                                    \
-        DO_VALUE(u->size, u->arraystride, 1, 0, 4,         \
-                     ctype, gltype, arraytype, 0); break;          \
+#define CASE_BLOCK_S_V(ctype, gltype, arraytype)                \
+    case gltype:                                                \
+        DO_VALUE(u->size, u->arraystride, 1, 0, 1,              \
+                 ctype, gltype, arraytype, 0); break;           \
+    case gltype##_VEC2:                                         \
+        DO_VALUE(u->size, u->arraystride, 1, 0, 2,              \
+                     ctype, gltype, arraytype, 0); break;       \
+    case gltype##_VEC3:                                         \
+        DO_VALUE(u->size, u->arraystride, 1, 0, 3,              \
+                     ctype, gltype, arraytype, 0); break;       \
+    case gltype##_VEC4:                                         \
+        DO_VALUE(u->size, u->arraystride, 1, 0, 4,              \
+                     ctype, gltype, arraytype, 0); break;
 
-#define CASE_BLOCK_M(ctype, gltype, arraytype)				\
-    case gltype##_MAT2:							\
-    DO_VALUE(2, u->matrixstride, u->size, u->arraystride, 2,	\
-                 ctype, gltype, arraytype, 1); break;				\
-    case gltype##_MAT3:							\
-    DO_VALUE(3, u->matrixstride, u->size, u->arraystride, 3,	\
-                 ctype, gltype, arraytype, 1); break;				\
-    case gltype##_MAT4:							\
-    DO_VALUE(4, u->matrixstride, u->size, u->arraystride, 4,	\
-                 ctype, gltype, arraytype, 1); break;				\
-                                                                        \
-    case gltype##_MAT2x3:						\
-    DO_VALUE(2, u->matrixstride, u->size, u->arraystride, 3,	\
-                 ctype, gltype, arraytype, 1); break;				\
-    case gltype##_MAT2x4:						\
-    DO_VALUE(2, u->matrixstride, u->size, u->arraystride, 4,	\
-                 ctype, gltype, arraytype, 1); break;				\
-    case gltype##_MAT3x2:						\
-    DO_VALUE(3, u->matrixstride, u->size, u->arraystride, 2,	\
-                 ctype, gltype, arraytype, 1); break;				\
-    case gltype##_MAT3x4:						\
-    DO_VALUE(3, u->matrixstride, u->size, u->arraystride, 4,	\
-                 ctype, gltype, arraytype, 1); break;				\
-                                                                        \
-    case gltype##_MAT4x2:						\
-    DO_VALUE(4, u->matrixstride, u->size, u->arraystride, 2,	\
-                 ctype, gltype, arraytype, 1); break;				\
-    case gltype##_MAT4x3:						\
-    DO_VALUE(4, u->matrixstride, u->size, u->arraystride, 3,	\
-                 ctype, gltype, arraytype, 1); break;				\
+#define CASE_BLOCK_M(ctype, gltype, arraytype)                  \
+    case gltype##_MAT2:                                         \
+    DO_VALUE(2, u->matrixstride, u->size, u->arraystride, 2,    \
+                 ctype, gltype, arraytype, 1); break;           \
+    case gltype##_MAT3:                                         \
+    DO_VALUE(3, u->matrixstride, u->size, u->arraystride, 3,    \
+                 ctype, gltype, arraytype, 1); break;           \
+    case gltype##_MAT4:                                         \
+    DO_VALUE(4, u->matrixstride, u->size, u->arraystride, 4,    \
+                 ctype, gltype, arraytype, 1); break;           \
+                                                                \
+    case gltype##_MAT2x3:                                       \
+    DO_VALUE(2, u->matrixstride, u->size, u->arraystride, 3,    \
+                 ctype, gltype, arraytype, 1); break;           \
+    case gltype##_MAT2x4:                                       \
+    DO_VALUE(2, u->matrixstride, u->size, u->arraystride, 4,    \
+                 ctype, gltype, arraytype, 1); break;           \
+    case gltype##_MAT3x2:                                       \
+    DO_VALUE(3, u->matrixstride, u->size, u->arraystride, 2,    \
+                 ctype, gltype, arraytype, 1); break;           \
+    case gltype##_MAT3x4:                                       \
+    DO_VALUE(3, u->matrixstride, u->size, u->arraystride, 4,    \
+                 ctype, gltype, arraytype, 1); break;           \
+                                                                \
+    case gltype##_MAT4x2:                                       \
+    DO_VALUE(4, u->matrixstride, u->size, u->arraystride, 2,    \
+                 ctype, gltype, arraytype, 1); break;           \
+    case gltype##_MAT4x3:                                       \
+    DO_VALUE(4, u->matrixstride, u->size, u->arraystride, 3,    \
+                 ctype, gltype, arraytype, 1); break;
 
-#define DO_UNIFORM(uniform)						\
-    {									\
-        shader_Basic *u;						\
+#define DO_UNIFORM(uniform)                                             \
+    {                                                                   \
+        shader_Basic *u;                                                \
                                                                         \
-        u = uniform;							\
+        u = uniform;                                                    \
                                                                         \
-        glBindBuffer(GL_UNIFORM_BUFFER, self->blocks[u->block]);	\
+        glBindBuffer(GL_UNIFORM_BUFFER, self->blocks[u->block]);        \
                                                                         \
-        switch (u->type) {						\
-            CASE_BLOCK_S_V(double, GL_DOUBLE, ARRAY_TDOUBLE);		\
-            CASE_BLOCK_M(double, GL_DOUBLE, ARRAY_TDOUBLE);		\
+        switch (u->type) {                                              \
+            CASE_BLOCK_S_V(double, GL_DOUBLE, ARRAY_TDOUBLE);           \
+            CASE_BLOCK_M(double, GL_DOUBLE, ARRAY_TDOUBLE);             \
                                                                         \
-            CASE_BLOCK_S_V(float, GL_FLOAT, ARRAY_TFLOAT);		\
-            CASE_BLOCK_M(float, GL_FLOAT, ARRAY_TFLOAT);		\
+            CASE_BLOCK_S_V(float, GL_FLOAT, ARRAY_TFLOAT);              \
+            CASE_BLOCK_M(float, GL_FLOAT, ARRAY_TFLOAT);                \
                                                                         \
-            CASE_BLOCK_S_V(int, GL_INT, ARRAY_TINT);			\
-            CASE_BLOCK_S_V(unsigned int, GL_UNSIGNED_INT, ARRAY_TUINT);	\
-            CASE_BLOCK_S_V(unsigned char, GL_BOOL, ARRAY_TUCHAR);	\
+            CASE_BLOCK_S_V(int, GL_INT, ARRAY_TINT);                    \
+            CASE_BLOCK_S_V(unsigned int, GL_UNSIGNED_INT, ARRAY_TUINT); \
+            CASE_BLOCK_S_V(unsigned char, GL_BOOL, ARRAY_TUCHAR);       \
         default: _TRACE ("%x\n", u->type);abort();                      \
-        }								\
+        }                                                               \
     }
 
 static int next_uniform(lua_State *L)
@@ -1265,7 +1265,7 @@ void t_get_and_reset_counter(Shader *shader, const char *uniform_name,
 
     /* Skip this if the shader has no uniforms. */
 
-    if (self->blocks_n == 0) {
+    if (self->blocks_n == 0 || lua_type(_L, 2) != LUA_TSTRING) {
         return [super _get_];
     }
 

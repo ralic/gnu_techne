@@ -30,8 +30,8 @@
 
 #include "blades.h"
 
-#define N_K 32               /* Number of stiffness samples. */
-#define N_S 32               /* Number of blade segments. */
+#define N_K 16               /* Number of stiffness samples. */
+#define N_S 16               /* Number of blade segments. */
 
 static unsigned int deflections;
 

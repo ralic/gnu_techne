@@ -13,12 +13,15 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+local resources = require "resources"
+
+resources.dofile ("utils/basic.lua", "Vegetation test", 1024, 768)
+
 require "bindings"
 
 local io = require "io"
 local array = require "array"
 local arraymath = require "arraymath"
-local resources = require "resources"
 local graphics = require "graphics"
 local primitives = require "primitives"
 local topography = require "topography"
@@ -26,8 +29,6 @@ local shading = require "shading"
 local textures = require "textures"
 local units = require "units"
 local bindings = require "bindings.default"
-
-resources.dofile ("utils/basic.lua", "Vegetation test", 1024, 768)
 
 graphics.perspective = {units.degrees(50), 0.1, 10000}
 
@@ -96,7 +97,7 @@ root = primitives.root {
                                 radius = -1000,
                                 azimuth = units.degrees(0),
                                 elevation = units.degrees(81.6)
-                                                }),
+   }),
 
    atmosphere = topography.atmosphere {
       size = {1024, 512},
@@ -107,7 +108,7 @@ root = primitives.root {
       mie = 7e-5,
 
       sun = {1.74, units.degrees(45)},
-                                      },
+   },
 
    wireframe = shading.wireframe {
       enabled = false,
@@ -163,8 +164,8 @@ root = primitives.root {
             techne.iterate = false
          end
       end,
-                                }
-                       }
+                                                  }
+}
 
 bindings['h'] = function()
    root.wireframe.shader.shape.optimize = not root.wireframe.splat.shape.optimize
@@ -178,7 +179,7 @@ bindings['f'] = function()
    root.wireframe.splat = shading.flat {
       color = {0, 1, 0, 1},
       shape = root.wireframe.splat.shape
-                                       }
+   }
 end
 
 bindings['space'] = function()

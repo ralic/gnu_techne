@@ -13,13 +13,14 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local math = require "math"
 local resources = require "resources"
+
+resources.dofile "utils/basic.lua"
+
+local math = require "math"
 local graphics = require "graphics"
 local primitives = require "primitives"
 local widgets = require "widgets"
-
-resources.dofile "utils/basic.lua"
 
 graphics.perspective = {45, 0.1, 10000}
 
@@ -38,7 +39,7 @@ root = primitives.root {
                color = {1, 1, 1},
                align = {-1, 1},
                padding = {0.03, 0.01, 0.01, 0.02},
-                           },
+            },
 
             bar = widgets.layout {
                text = '<span font="Sans 17" color="White">bar</span>',
@@ -46,8 +47,8 @@ root = primitives.root {
                align = {1, 1},
 
                padding = {0.01, 0.025, 0.01, 0.02},
-                           },
-                     },
+            },
+         },
 
          second = widgets.row {
             padding = {0.01, 0.025, 0.01, 0.02},
@@ -57,16 +58,16 @@ root = primitives.root {
                color = {1, 1, 1},
 
                padding = {0.03, 0.01, 0.01, 0.02},
-                           },
+            },
 
             barfoo = widgets.layout {
                text = '<span font="Sans 17" color="White">barfoo</span>',
                color = {1, 1, 1},
 
                padding = {0.01, 0.025, 0.01, 0.02},
-                           },
-                     },
-                     },
+            },
+         },
+      },
 
       assembly = widgets.assembly {
          align = {1, 1},
@@ -77,11 +78,12 @@ root = primitives.root {
                   offset = {0.1 * math.cos(-(i - 4) / 12 * 2 * math.pi),
                             0.1 * math.sin(-(i - 4) / 12 * 2 * math.pi)},
 
-                  text = '<span font="Sans 17" color="White">' .. tostring(i) .. '</span>',
+                  text = '<span font="Sans 17" color="White">' ..
+                     tostring(i) .. '</span>',
                   color = {1, 1, 1},
-                                        }
+               }
             end
          end
-                       }
-                         }
-                       }
+      }
+   }
+}

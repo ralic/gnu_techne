@@ -13,16 +13,17 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local array = require "array"
 local resources = require "resources"
+
+resources.dofile "utils/basic.lua"
+
+local array = require "array"
 local graphics = require "graphics"
 local dynamics = require "dynamics"
 local primitives = require "primitives"
 local shapes = require "shapes"
 local shading = require "shading"
 local textures = require "textures"
-
-resources.dofile "utils/basic.lua"
 
 graphics.perspective = {45, 0.1, 10000}
 dynamics.timescale = 0

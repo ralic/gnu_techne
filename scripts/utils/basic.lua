@@ -13,22 +13,20 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-require "bindings"
-
 local techne = require "techne"
 local graphics = require "graphics"
-local dynamics = require "dynamics"
-local bindings = require "bindings.basic"
-
 local title, defaultwidth, defaultheight = ...
 
 techne.iterate = true
-
+graphics.samples = 0
 graphics.window = options.fullscreen and graphics.screen or
                   {options.width or defaultwidth or 800,
                    options.height or defaultheight or 600}
 graphics.title = title or 'Techne'
 graphics.hide = false
+
+require "bindings"
+local bindings = require "bindings.basic"
 
 bindings['escape'] = function ()
                         techne.iterate = false

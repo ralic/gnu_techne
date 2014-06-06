@@ -13,9 +13,12 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+local resources = require "resources"
+
+resources.dofile "utils/basic.lua"
+
 local array = require "array"
 local arraymath = require "arraymath"
-local resources = require "resources"
 local graphics = require "graphics"
 local dynamics = require "dynamics"
 local primitives = require "primitives"
@@ -24,8 +27,6 @@ local shading = require "shading"
 local textures = require "textures"
 local units = require "units"
 local staging = require "staging"
-
-resources.dofile "utils/basic.lua"
 
 graphics.perspective = {45, 0.1, 10}
 dynamics.timestep = 0.1
@@ -41,20 +42,21 @@ root = primitives.root {
    camera = primitives.transform {
       position = {0, 0, -3},
 
-   path = staging.bezier {
-      speed = 1,
-      vertices = {
-         {-1.000000, 0.000000, 0.000000},
-         {-0.992566, 0.998582, 0.124704},
-         {1.003843, 0.980272, 0.540104},
-         {1.000000, -0.000000, 0.737727},
-         {0.996157, -0.980271, 0.935349},
-         {-1.007554, -1.003466, 0.998973},
-         {-1.006137, -0.003986, 1.232722},
-      },
+      path = staging.bezier {
+         speed = 1,
+         vertices = {
+            {-1.000000, 0.000000, 0.000000},
+            {-0.992566, 0.998582, 0.124704},
+            {1.003843, 0.980272, 0.540104},
+            {1.000000, -0.000000, 0.737727},
+            {0.996157, -0.980271, 0.935349},
+            {-1.007554, -1.003466, 0.998973},
+            {-1.006137, -0.003986, 1.232722},
+         },
 
-      frame = resources.dofile ("scripts/utils/frame.lua", {
-                                   scale = 0.1,
-      }),
-   }}
+         frame = resources.dofile ("scripts/utils/frame.lua", {
+                                      scale = 0.1,
+         }),
+      }
+   }
 }

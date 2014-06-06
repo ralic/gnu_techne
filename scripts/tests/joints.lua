@@ -14,6 +14,9 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local resources = require "resources"
+
+resources.dofile "utils/basic.lua"
+
 local graphics = require "graphics"
 local dynamics = require "dynamics"
 local primitives = require "primitives"
@@ -21,8 +24,6 @@ local joints = require "joints"
 local bodies = require "bodies"
 local physics = require "physics"
 local units = require "units"
-
-resources.dofile "utils/basic.lua"
 
 local r_w, d_w = 0.65, 0.4
 
@@ -37,7 +38,7 @@ root = primitives.root {
 
    environment = bodies.environment {
       plane = bodies.plane {},
-                                    },
+   },
 
    base = bodies.box {
       position = {-1, 0, 0.2},
@@ -54,9 +55,9 @@ root = primitives.root {
 
             size = {0.4, 0.4, 0.2},
             mass = physics.boxmass (0.0001, 0.4, 0.4, 0.2),
-                           },
-                                  }
-                        },
+         },
+      }
+   },
 
    otherbase = bodies.box {
       position = {0, 0, 0.2},
@@ -75,13 +76,13 @@ root = primitives.root {
             length = 0.2,
 
             mass = physics.cylindermass (0.0001, 0.5, 0.2),
-                                    },
-                           },
+         },
+      },
 
       slider = joints.slider {
          inverted = true,
          axis = {0, 0, 1},
          stops = {{-1, -1}, {3000, 1000}, 0.1},
-                             }
-                          },
-                       }
+      }
+   },
+}

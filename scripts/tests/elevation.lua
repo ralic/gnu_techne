@@ -13,19 +13,20 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+local resources = require "resources"
+
+resources.dofile "utils/basic.lua"
+
 require 'bindings'
 
 local math = require "math"
 local array = require "array"
-local resources = require "resources"
 local graphics = require "graphics"
 local primitives = require "primitives"
 local topography = require "topography"
 local shading = require "shading"
 local units = require "units"
 local bindings = require 'bindings.default'
-
-resources.dofile "utils/basic.lua"
 
 local heights = resources.dofile ("tests/diamondsquare.lua", 512, 0.0012)
 
@@ -54,9 +55,9 @@ root = primitives.root {
 
          shape = elevation.shape {
             target = 15000,
-                                 }
-                            }
-                                 },
+         }
+      }
+   },
 
    cameraman = options.timed and primitives.timer {
       period = 1,
@@ -71,8 +72,8 @@ root = primitives.root {
             techne.iterate = false
          end
       end,
-                                }
-                       }
+                                                  }
+}
 
 bindings['h'] = function()
    root.wireframe.shader.shape.optimize = not root.wireframe.shader.shape.optimize

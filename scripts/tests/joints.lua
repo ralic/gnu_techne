@@ -22,7 +22,7 @@ local dynamics = require "dynamics"
 local primitives = require "primitives"
 local joints = require "joints"
 local bodies = require "bodies"
-local physics = require "physics"
+local utilities = require "utilities"
 local units = require "units"
 
 local r_w, d_w = 0.65, 0.4
@@ -44,7 +44,7 @@ root = primitives.root {
       position = {-1, 0, 0.2},
 
       size = {0.5, 0.5, 0.2},
-      mass = physics.boxmass (0.0001, 0.5, 0.5, 0.2),
+      mass = utilities.boxmass (0.0001, 0.5, 0.5, 0.2),
 
       slider = joints.slider {
          axis = {0, 0, 1},
@@ -54,7 +54,7 @@ root = primitives.root {
             position = {-1, 0, 0.7},
 
             size = {0.4, 0.4, 0.2},
-            mass = physics.boxmass (0.0001, 0.4, 0.4, 0.2),
+            mass = utilities.boxmass (0.0001, 0.4, 0.4, 0.2),
          },
       }
    },
@@ -63,7 +63,7 @@ root = primitives.root {
       position = {0, 0, 0.2},
 
       size = {0.5, 0.5, 0.2},
-      mass = physics.boxmass (0.0001, 0.5, 0.5, 0.2),
+      mass = utilities.boxmass (0.0001, 0.5, 0.5, 0.2),
 
       hinge = joints.hinge {
          axis = {0, 0, 1},
@@ -75,7 +75,7 @@ root = primitives.root {
             radius = 0.5,
             length = 0.2,
 
-            mass = physics.cylindermass (0.0001, 0.5, 0.2),
+            mass = utilities.cylindermass (0.0001, 0.5, 0.2),
          },
       },
 

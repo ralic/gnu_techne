@@ -24,6 +24,7 @@ local primitives = require "primitives"
 local shapes = require "shapes"
 local shading = require "shading"
 local textures = require "textures"
+local utilities = require "utilities"
 
 graphics.perspective = {45, 0.1, 10000}
 dynamics.timescale = 0
@@ -43,10 +44,14 @@ root = primitives.root {
 
       texture = textures.planar {
          texels = array.nuchars(pixels)
-                                },
+
+         link = function(self)
+            utilities.generatemipmaps(self)
+         end,
+      },
 
       shape = shapes.rectangle {
          size = {1, 1}
-                               }
-                           }
-                       }
+      }
+   }
+}

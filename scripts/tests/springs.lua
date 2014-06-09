@@ -21,7 +21,7 @@ local math = require "math"
 local joints = require "joints"
 local bodies = require "bodies"
 local primitives = require "primitives"
-local physics = require "physics"
+local utilities = require "utilities"
 local units = require "units"
 
 graphics.perspective = {45, 0.1, 10000}
@@ -121,10 +121,10 @@ root.timer = primitives.timer {
    period = 3,
 
    tick = function()
-      physics.addforce(a[3], {100 * math.random() - 50,
+      utilities.addforce(a[3], {100 * math.random() - 50,
                               100 * math.random() - 50,
                               0})
 
-      physics.addforce(b[3], {0, 0, 100 * math.random() - 50})
+      utilities.addforce(b[3], {0, 0, 100 * math.random() - 50})
    end
 }

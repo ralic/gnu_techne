@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -36,7 +37,7 @@ Texture *t_testtexture (lua_State *L, int index, GLenum target)
         return NULL;
     }
 
-    if (object->target != target) {
+    if (target != 0 && object->target != target) {
         return NULL;
     }
 
@@ -51,7 +52,7 @@ Texture *t_totexture (lua_State *L, int index, GLenum target)
 
     if(!texture) {
         lua_pushfstring (L,
-                         "Texture expected, got %s).",
+                         "Texture expected, got %s.",
                          lua_typename (L, lua_type (L, index)));
         lua_error (L);
     }
@@ -185,7 +186,8 @@ static void map_array_to_texture (array_Array *array,
     case ARRAY_TFLOAT:
         *gltype = GL_FLOAT; m = 0; n = 0; break;
     default:
-        t_print_error("Texel data specified for texture is of unsuitable type.\n");
+        t_print_error("Texel data specified for texture is of "
+                      "unsuitable type.\n");
         abort();
     }
 
@@ -194,32 +196,6 @@ static void map_array_to_texture (array_Array *array,
 
     *internal = pair[0];
     *format = pair[1];
-}
-
-static void complete_if_needed(Texture *texture)
-{
-    int mode, base, max;
-
-    glBindTexture(texture->target, texture->name);
-    glGetTexParameteriv(texture->target, GL_TEXTURE_MIN_FILTER, &mode);
-    glGetTexParameteriv(texture->target, GL_TEXTURE_BASE_LEVEL, &base);
-    glGetTexParameteriv(texture->target, GL_TEXTURE_MAX_LEVEL, &max);
-
-    if (mode != GL_NEAREST && mode != GL_LINEAR && base == max) {
-        int i, width;
-
-        glTexParameteri(texture->target, GL_TEXTURE_MAX_LEVEL, 1000);
-        glGenerateMipmap(texture->target);
-
-        for(i = base, width = 1 ; width > 0 ; i += 1) {
-            glGetTexLevelParameteriv(texture->target, i, GL_TEXTURE_WIDTH,
-                                     &width);
-        }
-
-        glTexParameteri(texture->target, GL_TEXTURE_MAX_LEVEL, i - 2);
-    }
-
-    glBindTexture(texture->target, 0);
 }
 
 @implementation Texture
@@ -434,8 +410,6 @@ static void complete_if_needed(Texture *texture)
 
             lua_pop(_L, 1);
         }
-
-        complete_if_needed(self);
     }
 }
 
@@ -451,6 +425,7 @@ static void complete_if_needed(Texture *texture)
 
     switch(self->target)  {
     case GL_TEXTURE_2D: rank = 3; break;
+    case GL_TEXTURE_3D: case GL_TEXTURE_2D_ARRAY: rank = 4; break;
     default: assert(0);
     }
 
@@ -462,12 +437,22 @@ static void complete_if_needed(Texture *texture)
         array_Array *array;
         int channels[4][2], size[4], n;
 
-        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_WIDTH,
-                                 &size[1]);
-        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_HEIGHT,
-                                 &size[0]);
-        glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_DEPTH,
-                                 &size[2]);
+        switch(self->target) {
+        case GL_TEXTURE_2D:
+            glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_WIDTH,
+                                     &size[0]);
+            glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_HEIGHT,
+                                     &size[1]);
+        break;
+        case GL_TEXTURE_3D: case GL_TEXTURE_2D_ARRAY:
+            glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_DEPTH,
+                                     &size[0]);
+            glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_WIDTH,
+                                     &size[1]);
+            glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_HEIGHT,
+                                     &size[2]);
+            break;
+        }
 
         glGetTexLevelParameteriv(self->target, i, GL_TEXTURE_RED_TYPE,
                                  &channels[0][0]);
@@ -524,7 +509,7 @@ static void complete_if_needed(Texture *texture)
 
 -(void) _set_texels
 {
-    int base, max;
+    int i, n, max;
 
     /* If a single texel array is specified wrap it in a table and
      * default minification filtering to linear. */
@@ -543,79 +528,118 @@ static void complete_if_needed(Texture *texture)
         abort();
     }
 
-    base = 1000;
-    max = 0;
-
     glBindTexture(self->target, self->name);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     lua_pushnil(_L);
 
-    while (lua_next(_L, 3)) {
+    n = lua_rawlen(_L, 3);
+
+    for (i = 0, max = 0 ; i < n ; i += 1) {
         array_Array *texels;
         GLenum type, internal, format;
-        int i, h;
+        int h, allocated;
 
-        i = lua_tointeger(_L, -2) - 1;
         h = lua_gettop(_L);
+        lua_rawgeti(_L, 3, i + 1);
 
-        if (!lua_isnil(_L, -1)) {
-            texels = array_testarray (_L, -1);
+        texels = array_testarray (_L, -1);
 
-            if (!texels) {
-                t_print_error("Invalid value specified for texel data at level %d.\n", i);
-                abort();
-            }
+        if (!texels) {
+            t_print_error("Invalid value specified for texel data "
+                          "at level %d.\n", i);
+            abort();
+        }
+
+        if ((self->target == GL_TEXTURE_2D && texels->rank != 3) ||
+            ((self->target == GL_TEXTURE_3D ||
+              self->target == GL_TEXTURE_2D_ARRAY) && texels->rank != 4)) {
+            t_print_error("Texel data at level %d is of unsuitable "
+                          "rank.\n", i);
+            abort();
+        }
+
+        map_array_to_texture(texels, &type, &internal, &format);
+
+        /* _TRACEV (3, "d", texels->size); */
+        /* _TRACE ("%d, %x, %x, %x\n", texels->type, type, internal,
+           format); */
+
+        /* Create the texture object. */
+        glGetTexParameteriv (self->target, GL_TEXTURE_IMMUTABLE_FORMAT,
+                             &allocated);
+
+        if (!allocated) {
+            int maxsize;
+
+            assert (i == 0);
 
             switch(self->target) {
             case GL_TEXTURE_2D:
-                if (texels->rank != 3) {
-                    t_print_error("Texel data at level %d is of unsuitable rank.\n", i);
-                    abort();
-                }
+                maxsize = texels->size[0] > texels->size[1] ?
+                    texels->size[0] : texels->size[1];
+
+                glTexStorage2D (self->target,
+                                (int)log2(maxsize) + 1,
+                                internal,
+                                texels->size[0], texels->size[1]);
                 break;
-            }
+            case GL_TEXTURE_2D_ARRAY:
+                maxsize = texels->size[1] > texels->size[2] ?
+                    texels->size[1] : texels->size[2];
 
-            map_array_to_texture(texels, &type, &internal, &format);
+                glTexStorage3D (self->target,
+                                (int)log2(maxsize) + 1,
+                                internal,
+                                texels->size[1], texels->size[2],
+                                texels->size[0]);
+                break;
+            case GL_TEXTURE_3D:
+                maxsize = texels->size[1] > texels->size[2] ?
+                    texels->size[1] : texels->size[2];
+                maxsize = maxsize > texels->size[0] ?
+                    maxsize : texels->size[0];
 
-            /* _TRACEV (3, "d", texels->size); */
-            /* _TRACE ("%d, %x, %x, %x\n", texels->type, type, internal, format); */
-
-            /* Create the texture object. */
-
-            switch(self->target) {
-            case GL_TEXTURE_2D:
-                glTexImage2D (self->target, i, internal,
-                              texels->size[0], texels->size[1], 0,
-                              format, type, texels->values.any);
+                glTexStorage3D (self->target,
+                                (int)log2(maxsize) + 1,
+                                internal,
+                                texels->size[1], texels->size[2],
+                                texels->size[0]);
                 break;
             default:
                 t_print_error("Unsupported texture target.\n");
                 abort();
             }
+        }
 
-            lua_pop(_L, 1);
+        switch(self->target) {
+        case GL_TEXTURE_2D:
+            glTexSubImage2D (self->target, i,
+                             0, 0, texels->size[0], texels->size[1],
+                             format, type, texels->values.any);
+            break;
+        case GL_TEXTURE_3D: case GL_TEXTURE_2D_ARRAY:
+            glTexSubImage3D (self->target, i,
+                             0, 0, 0,
+                             texels->size[1], texels->size[2], texels->size[0],
+                             format, type, texels->values.any);
+            break;
+        default:
+            t_print_error("Unsupported texture target.\n");
+            abort();
+        }
 
-            if (base > i) {
-                base = i;
-            }
+        lua_pop(_L, 1);
 
-            if (max < i) {
-                max = i;
-            }
-        } else {
-            glTexImage2D (self->target, i, GL_RGB,
-                          0, 0, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        if (max < i) {
+            max = i;
         }
 
         lua_settop(_L, h - 1);
     }
 
-    /* glTexParameteri(self->target, GL_TEXTURE_BASE_LEVEL, base); */
-    /* glTexParameteri(self->target, GL_TEXTURE_MAX_LEVEL, max); */
+    glTexParameteri(self->target, GL_TEXTURE_MAX_LEVEL, max);
     glBindTexture(self->target, 0);
-
-    complete_if_needed(self);
 }
 
 @end

@@ -23,32 +23,34 @@
 
 #include "texture.h"
 
-#define DEFINE_TEXTURE(texture, target)				\
-    static int export_##texture (lua_State *L)			\
-    {								\
-        [[Texture alloc] initWithTarget: target];               \
-                                                                \
-        /* ...and initialize it. */				\
-                                                                \
-        if(lua_istable(L, 1)) {					\
-            lua_pushnil(L);					\
-                                                                \
-            while(lua_next(L, 1)) {				\
-                lua_pushvalue(L, -2);				\
-                lua_insert(L, -2);				\
-                lua_settable(L, 2);				\
-            }							\
-        }							\
-                                                                \
-        return 1;						\
+#define DEFINE_TEXTURE(texture, target)                 \
+    static int export_##texture (lua_State *L)          \
+    {                                                   \
+        [[Texture alloc] initWithTarget: target];       \
+                                                        \
+        /* ...and initialize it. */                     \
+                                                        \
+        if(lua_istable(L, 1)) {                         \
+            lua_pushnil(L);                             \
+                                                        \
+            while(lua_next(L, 1)) {                     \
+                lua_pushvalue(L, -2);                   \
+                lua_insert(L, -2);                      \
+                lua_settable(L, 2);                     \
+            }                                           \
+        }                                               \
+                                                        \
+        return 1;                                       \
     }
 
 DEFINE_TEXTURE(planar, GL_TEXTURE_2D)
+DEFINE_TEXTURE(volume, GL_TEXTURE_3D)
 
 int luaopen_textures_core (lua_State *L)
 {
     const luaL_Reg textures[] = {
         {"planar", export_planar},
+        {"volume", export_volume},
         {NULL, NULL}
     };
 

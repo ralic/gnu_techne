@@ -80,16 +80,17 @@ nobase_pkglib_LTLIBRARIES = array/core.la arraymath/core.la		\
 			    shapes/core.la widgets/core.la		\
 			    automotive/core.la shading/core.la 		\
 			    topography/core.la textures/core.la 	\
-			    aeronautics/core.la	staging/core.la
+			    aeronautics/core.la	staging/core.la		\
+			    utilities/core.la
 
-pkglib_LTLIBRARIES = misc/physics.la meteorology.la
+pkglib_LTLIBRARIES = meteorology.la
 
 dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    arraymath/arraymath.lua bodies/bodies.lua		\
 		    primitives/primitives.lua shapes/shapes.lua		\
 		    misc/bindings.lua misc/units.lua			\
 		    misc/resources.lua automotive/automotive.lua	\
-		    widgets/widgets.lua misc/serialize.lua		\
+		    widgets/widgets.lua	utilities/utilities.lua		\
 		    shading/shading.lua controllers/controllers.lua 	\
 		    topography/topography.lua textures/textures.lua	\
 		    staging/staging.lua aeronautics/aeronautics.lua     \
@@ -185,10 +186,10 @@ shading_core_la_LIBADD = ${GL_LIBS} ${AM_LDADD}
 
 EXTRA_shading_core_la_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h
 
-misc_physics_la_SOURCES = misc/physics.c
-misc_physics_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
-misc_physics_la_LDFLAGS = -module -avoid-version -no-undefined
-misc_physics_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
+utilities_core_la_SOURCES = utilities/core.c
+utilities_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS} ${GL_CFLAGS}
+utilities_core_la_LDFLAGS = -module -avoid-version -no-undefined
+utilities_core_la_LIBADD = ${ODE_LIBS} ${GL_LIBS} ${AM_LDADD}
 
 shapes_core_la_SOURCES = shapes/core.c
 shapes_core_la_CFLAGS = ${AM_CFLAGS} ${GL_CFLAGS}

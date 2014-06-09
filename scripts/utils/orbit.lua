@@ -24,7 +24,7 @@ local joints = require "joints"
 local bindings = require "bindings.orbit"
 local widgets = require "widgets"
 local controllers = require "controllers"
-local physics = require "physics"
+local utilities = require "utilities"
 
 local parameters = ...
 

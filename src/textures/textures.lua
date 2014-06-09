@@ -13,6 +13,26 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local textures = require 'textures.core'
+local core = require 'textures.core'
+
+local textures = {}
+
+for k, v in pairs(core) do
+   textures[k] = v
+end
+
+textures.planar = function (parameters)
+   local planar
+   local texels
+
+   -- Specify the texels last so that we can properly decide whether
+   -- to generate mipmaps or not.
+   
+   texels, parameters.texels = parameters.texels, nil
+   planar = core.planar (parameters)
+   planar.texels = texels
+
+   return planar
+end
 
 return textures

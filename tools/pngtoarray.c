@@ -22,116 +22,146 @@
 
 int main(int argc, char **argv)
 {
-   png_structp png;
-   png_infop info;
-   png_bytep *rows;
-   int width, height, depth, i, j, k, raw = 0;
-   FILE *fp;
+    png_structp png;
+    png_infop info;
+    png_bytep *rows;
+    int width, height, components, i, j, k, n, raw = 0;
+    const char *name;
+    FILE *fp;
 
-   opterr = 0;
+    opterr = 0;
 
-   while ((k = getopt (argc, argv, "r")) != -1)
-       switch (k)
-       {
-       case 'r':
-           raw = 1;
-           break;
-       case '?':
-           if (isprint (optopt)) {
-               fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-           } else {
-               fprintf (stderr,
-                        "Unknown option character `\\x%x'.\n",
-                        optopt);
-           }
+    while ((k = getopt (argc, argv, "r")) != -1)
+        switch (k)
+        {
+        case 'r':
+            raw = 1;
+            break;
+        case '?':
+            if (isprint (optopt)) {
+                fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+            } else {
+                fprintf (stderr,
+                         "Unknown option character `\\x%x'.\n",
+                         optopt);
+            }
 
-           return 1;
-       default:
-           abort ();
-       }
+            return 1;
+        default:
+            abort ();
+        }
 
-   if(argv[optind]) {
-       fp = fopen(argv[optind], "rb");
-   } else {
-       fp = stdin;
-   }
+    if (!raw) {
+        fputs("local array = require \"array\"\n\n"
+              "return ", stdout);
+    }
 
-   if (fp == NULL) {
-       fprintf(stderr, "%s: %s: %s.", argv[0], argv[1], strerror(errno));
-       return 1;
-   }
+    for (n = 0 ; n < (argc > optind ? argc - optind : 1) ; n += 1) {
+        if(argc > optind) {
+            name = argv[optind + n];
+            fp = fopen(name, "rb");
+        } else {
+            name = "standard input";
+            fp = stdin;
+        }
 
-   png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+        if (fp == NULL) {
+            fprintf(stderr, "%s: %s: %s.", argv[0], name, strerror(errno));
+            return 1;
+        }
 
-   if (png == NULL) {
-       fprintf(stderr,
-               "%s: %s: could not create read struct.",
-               argv[0], argv[1]);
-       fclose(fp);
+        png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
-       return 2;
-   }
+        if (png == NULL) {
+            fprintf(stderr,
+                    "%s: %s: could not create read struct.",
+                    argv[0], name);
+            fclose(fp);
 
-   info = png_create_info_struct(png);
+            return 2;
+        }
 
-   if (info == NULL) {
-       png_destroy_read_struct(&png, NULL, NULL);
-       fprintf(stderr,
-               "%s: %s: could not create info struct.",
-               argv[0], argv[1]);
-       fclose(fp);
+        info = png_create_info_struct(png);
 
-       return 3;
-   }
+        if (info == NULL) {
+            png_destroy_read_struct(&png, NULL, NULL);
+            fprintf(stderr,
+                    "%s: %s: could not create info struct.",
+                    argv[0], name);
+            fclose(fp);
 
-   if (setjmp(png_jmpbuf(png))) {
-       png_destroy_read_struct(&png, &info, NULL);
-       fprintf(stderr,
-               "%s: %s: something went wrong while reading the png file.",
-               argv[0], argv[1]);
-       fclose(fp);
+            return 3;
+        }
 
-       return 4;
-   }
+        if (setjmp(png_jmpbuf(png))) {
+            png_destroy_read_struct(&png, &info, NULL);
+            fprintf(stderr,
+                    "%s: %s: something went wrong while reading the png file.",
+                    argv[0], name);
+            fclose(fp);
 
-   png_init_io(png, fp);
-   png_set_sig_bytes(png, 0);
-   png_read_png(png, info,
-                PNG_TRANSFORM_PACKING | PNG_TRANSFORM_STRIP_16,
-                NULL);
+            return 4;
+        }
 
-   /* At this point we have read the entire image */
+        png_init_io(png, fp);
+        png_set_sig_bytes(png, 0);
 
-   width = png_get_image_width(png, info);
-   height = png_get_image_height(png, info);
-   depth = png_get_channels(png, info);
-   rows = png_get_rows(png, info);
+        /* At this point we have read the entire image */
 
-   if (!raw) {
-       fputs("local array = require \"array\"\n\n"
-             "return ", stdout);
-   }
+        png_read_png(png, info,
+                     PNG_TRANSFORM_PACKING | PNG_TRANSFORM_STRIP_16,
+                     NULL);
 
-   fprintf(stdout, "array.nuchars (%d, %d, %d, \"", width, height, depth);
+        rows = png_get_rows(png, info);
 
-   for(i = height - 1 ; i >= 0 ; i -= 1) {
-       for(j = 0 ; j < width ; j += 1) {
-           for(k = 0 ; k < depth ; k += 1) {
-               fprintf(stdout, "\\%03d", rows[i][j * depth + k]);
-           }
-       }
-   }
+        /* Write the header if this is the first image or check that
+         * the dimensions match the previous layers. */
 
-   fputs("\")", stdout);
+        if (n == 0) {
+            width = png_get_image_width(png, info);
+            height = png_get_image_height(png, info);
+            components = png_get_channels(png, info);
 
-   if (!raw) {
-       fputc('\n', stdout);
-   }
+            if (argc - optind > 1) {
+                fprintf(stdout, "array.nuchars (%d, %d, %d, %d, \"",
+                        argc - optind, width, height, components);
+            } else {
+                fprintf(stdout, "array.nuchars (%d, %d, %d, \"",
+                        width, height, components);
+            }
+        } else if (width != png_get_image_width(png, info) ||
+                   height != png_get_image_height(png, info) ||
+                   components != png_get_channels(png, info)) {
+            png_destroy_read_struct(&png, NULL, NULL);
+            fprintf(stderr,
+                    "%s: %s: dimensions of layers do not match.\n",
+                    argv[0], name);
+            fclose(fp);
 
-   /* Clean up. */
+            return 5;
+        }
 
-   png_destroy_read_struct(&png, &info, NULL);
-   fclose(fp);
+        for(i = height - 1 ; i >= 0 ; i -= 1) {
+            for(j = 0 ; j < width ; j += 1) {
+                for(k = 0 ; k < components ; k += 1) {
+                    fprintf(stdout, "\\%03d", rows[i][j * components + k]);
+                }
+            }
+        }
 
-   return 0;
+        /* Close the image file. */
+
+        png_destroy_read_struct(&png, &info, NULL);
+        fclose(fp);
+    }
+
+    printf ("%d %d\n", optind, argc);
+
+    fputs("\")", stdout);
+
+    if (!raw) {
+        fputc('\n', stdout);
+    }
+
+    return 0;
 }

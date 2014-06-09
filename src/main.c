@@ -671,12 +671,9 @@ int main(int argc, char **argv)
                 "coroutine", "string", "table",
                 "math", "bit32", "io", "os", "debug",
 
-                "serialize", "units", "bindings",
-                "resources", "array", "arraymath",
-                "joints", "primitives", "bodies",
-                "shading", "shapes", "automotive",
-                "widgets", "controllers", "textures",
-                "topography", "physics"
+                "utilities", "units", "resources",
+                "array", "arraymath", "joints", "primitives",
+                "bodies"
             };
             int i, n;
 
@@ -785,7 +782,7 @@ int main(int argc, char **argv)
                 "  -l MODULE, --load=MODULE                       "
                 "Load the specified module during initialization.\n"
                 "  -a, --load-all                                 "
-                "Load all modules during initialization.\n"
+                "Load all modules that can be loaded during initialization.\n"
                 "  -O OPTION[=VALUE], --option OPTION[=VALUE]     "
                 "Set the option OPTION with value VALUE.\n"
                 "  -i, --interactive                              "

@@ -289,13 +289,13 @@ static void complete_if_needed(Texture *texture)
             mode = lua_tolstring(_L, -1, &l);
 
             if (mode) {
-                if (!xstrnlcmp("clamp", mode, l)) {
+                if (!strcmp("clamp", mode)) {
                     glTexParameteri(self->target, parameters[i],
                                     GL_CLAMP_TO_EDGE);
-                } else if (!xstrnlcmp("repeat", mode, l)) {
+                } else if (!strcmp("repeat", mode)) {
                     glTexParameteri(self->target, parameters[i],
                                     GL_REPEAT);
-                } else if (!xstrnlcmp("mirror", mode, l)) {
+                } else if (!strcmp("mirror", mode)) {
                     glTexParameteri(self->target, parameters[i],
                                     GL_MIRRORED_REPEAT);
                 } else {
@@ -408,22 +408,22 @@ static void complete_if_needed(Texture *texture)
             mode = lua_tolstring(_L, -1, &l);
 
             if (mode) {
-                if (!xstrnlcmp("nearest", mode, l)) {
+                if (!strcmp("nearest", mode)) {
                     glTexParameteri(self->target, parameters[i],
                                     GL_NEAREST);
-                } else if (!xstrnlcmp("linear", mode, l)) {
+                } else if (!strcmp("linear", mode)) {
                     glTexParameteri(self->target, parameters[i],
                                     GL_LINEAR);
-                } else if (!xstrnlcmp("nearest-mipmap-nearest", mode, l)) {
+                } else if (!strcmp("nearest-mipmap-nearest", mode)) {
                     glTexParameteri(self->target, parameters[i],
                                     GL_NEAREST_MIPMAP_NEAREST);
-                } else if (!xstrnlcmp("linear-mipmap-nearest", mode, l)) {
+                } else if (!strcmp("linear-mipmap-nearest", mode)) {
                     glTexParameteri(self->target, parameters[i],
                                     GL_LINEAR_MIPMAP_NEAREST);
-                } else if (!xstrnlcmp("nearest-mipmap-linear", mode, l)) {
+                } else if (!strcmp("nearest-mipmap-linear", mode)) {
                     glTexParameteri(self->target, parameters[i],
                                     GL_NEAREST_MIPMAP_LINEAR);
-                } else if (!xstrnlcmp("linear-mipmap-linear", mode, l)) {
+                } else if (!strcmp("linear-mipmap-linear", mode)) {
                     glTexParameteri(self->target, parameters[i],
                                     GL_LINEAR_MIPMAP_LINEAR);
                 } else {

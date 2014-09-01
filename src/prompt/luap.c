@@ -32,7 +32,7 @@
 #include "prompt.h"
 
 #if !defined(LUA_INIT)
-#define LUA_INIT		"LUA_INIT"
+#define LUA_INIT "LUA_INIT"
 #endif
 
 #if LUA_VERSION_NUM == 502
@@ -213,10 +213,22 @@ int main(int argc, char **argv)
 
     if (!done || interactive) {
         if (isatty (STDIN_FILENO)) {
+            char *home;
+
             greet();
             fprintf (stdout, "\n");
 
-            luap_sethistory (L, "~/.lua_history");
+            home = getenv("HOME");
+
+            {
+                char path[strlen(home) + sizeof("/.lua_history")];
+
+                strcpy(path, home);
+                strcat(path, "/.lua_history");
+
+                luap_sethistory (L, path);
+            }
+
             luap_setprompts (L, ">  ", ">> ");
             luap_enter(L);
         } else {

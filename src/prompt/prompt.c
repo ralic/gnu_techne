@@ -39,10 +39,6 @@
 #include <sys/ioctl.h>
 #endif
 
-#ifdef HAVE_WORDEXP
-#include <wordexp.h>
-#endif
-
 #include <lualib.h>
 #include <lauxlib.h>
 
@@ -278,7 +274,7 @@ static char *table_key_completions (const char *text, int state)
                                   q, lua_tostring (_L, -1), q);
                 }
             } else {
-                candidate = (char *)lua_tolstring (_L, -1, &l);
+                candidate = strdup((char *)lua_tolstring (_L, -1, &l));
             }
 
             m = strlen(token);
@@ -287,11 +283,20 @@ static char *table_key_completions (const char *text, int state)
                 char *match;
 
                 if (token > text) {
+                    /* Were not completing a global variable.  Put the
+                     * completed string together out of the table and
+                     * the key. */
+
                     match = (char *)malloc ((token - text) + l + 1);
                     strncpy (match, text, token - text);
                     strcpy (match + (token - text), candidate);
+
+                    free(candidate);
                 } else {
-                    match = strdup (candidate);
+                    /* Return the whole candidate as is, to be freed
+                     * by Readline. */
+
+                    match = candidate;
                 }
 
                 /* Suppress the newline when completing a table
@@ -302,6 +307,8 @@ static char *table_key_completions (const char *text, int state)
                 }
 
                 return match;
+            } else {
+                free(candidate);
             }
         }
     }
@@ -354,7 +361,8 @@ static char *generator (const char *text, int state)
          * complete file names inside strings. */
 
         for (start = text;
-             *start && *(start - 1) != '\'' && *(start - 1) != '"';
+             *start && (start == text ||
+                        (*(start - 1) != '\'' && *(start - 1) != '"'));
              start += 1);
 
         if (*start != '\0') {
@@ -710,25 +718,30 @@ static void describe (lua_State *L, int index)
     } else if (type == LUA_TNIL) {
         n = asprintf (&s, "%snil%s", COLOR(7), COLOR(8));
         dump_string (s, n);
+        free(s);
     } else if (type == LUA_TBOOLEAN) {
         n = asprintf (&s, "%s%s%s",
                       COLOR(7),
                       lua_toboolean (L, index) ? "true" : "false",
                       COLOR(8));
         dump_string (s, n);
+        free(s);
     } else if (type == LUA_TFUNCTION) {
         n = asprintf (&s, "<%sfunction:%s %p>",
                       COLOR(7), COLOR(8), lua_topointer (L, index));
         dump_string (s, n);
+        free(s);
     } else if (type == LUA_TUSERDATA) {
         n = asprintf (&s, "<%suserdata:%s %p>",
                       COLOR(7), COLOR(8), lua_topointer (L, index));
 
         dump_string (s, n);
+        free(s);
     } else if (type == LUA_TTHREAD) {
         n = asprintf (&s, "<%sthread:%s %p>",
                       COLOR(7), COLOR(8), lua_topointer (L, index));
         dump_string (s, n);
+        free(s);
     } else if (type == LUA_TTABLE) {
         int i, l, n, oldindent, multiline, nobreak;
 
@@ -740,6 +753,7 @@ static void describe (lua_State *L, int index)
 
             n = asprintf (&s, "{ %s...%s }", COLOR(7), COLOR(8));
             dump_string (s, n);
+            free(s);
 
             return;
         }
@@ -763,6 +777,7 @@ static void describe (lua_State *L, int index)
                 n = asprintf (&s, "{ %s[%d]...%s }",
                               COLOR(7), -(i + 1), COLOR(8));
                 dump_string (s, n);
+                free(s);
                 lua_pop (L, 2);
 
                 return;
@@ -1002,23 +1017,8 @@ void luap_setprompts(lua_State *L, const char *single, const char *multi)
 
 void luap_sethistory(lua_State *L, const char *file)
 {
-#ifdef HAVE_WORDEXP
-    wordexp_t words;
-
-    wordexp(file, &words, 0);
-
-    if (words.we_wordc != 1) {
-        logfile = NULL;
-    } else {
-        logfile = (char *)realloc (logfile, strlen(words.we_wordv[0]) + 1);
-        strcpy (logfile, words.we_wordv[0]);
-    }
-
-    wordfree (&words);
-#else
     logfile = realloc (logfile, strlen(file) + 1);
     strcpy (logfile, file);
-#endif
 }
 
 void luap_setcolor(lua_State *L, int enable)
@@ -1156,6 +1156,7 @@ void luap_enter(lua_State *L)
             }
         }
 
+        free (prepended);
         free (line);
     }
 

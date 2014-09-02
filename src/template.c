@@ -1,7 +1,6 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <string.h>
-#include <alloca.h>
 #include <ctype.h>
 
 #define BEGIN_FIELD_TAG ("<@")
@@ -64,7 +63,6 @@ int t_compiletemplate(lua_State *L, const char *source)
          * undelimited data and. */
 
         if (!intag) {
-            char *equal;
             int i, n;
 
             /* Look for the start of the tag delimiter. */
@@ -83,13 +81,18 @@ int t_compiletemplate(lua_State *L, const char *source)
                      * that the string won't be closed prematurely. */
 
                     n = calculate_level(c);
-                    for (i = 0, equal = alloca(n + 1);
-                         i < n;
-                         equal[i] = '=', i += 1);
-                    equal[n] = '\0';
 
-                    lua_pushfstring (L, " _pieces[#_pieces + 1] = [%s[%s]%s]; ",
-                                     equal, c, equal);
+                    {
+                        char equal[n + 1];
+
+                        for (i = 0 ; i < n ; equal[i] = '=', i += 1);
+                        equal[n] = '\0';
+
+                        lua_pushfstring (L,
+                                         " _pieces[#_pieces + 1] = "
+                                         "[%s[%s]%s]; ",
+                                         equal, c, equal);
+                    }
                 } else {
                     /* Complain if no start-of-tag delimiter was found
                      * and we're inside a block.  This means the block

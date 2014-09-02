@@ -43,11 +43,11 @@
             name = gdk_keyval_name (k);
 
             if (k > 255 || !isalnum(k)) {
-                char *new, *c;
+                char *c, new[strlen(name) + 1];
 
                 /* Make a temporary copy of the name and down-case it. */
 
-                new = strcpy(alloca(strlen(name) + 1), name);
+                strcpy(new, name);
 
                 for (c = new ; *c ; c += 1) {
                     if (isupper(*c)) {

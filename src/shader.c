@@ -748,6 +748,10 @@ void t_get_and_reset_counter(Shader *shader, const char *uniform_name,
         }
 
         glShaderSource(shader, n + 2, sources, NULL);
+
+        for (i = 2 ; i < n + 2 ; i += 1) {
+            free ((char *)sources[i]);
+        }
     } else {
         const char *sources[n + 1];
 
@@ -761,6 +765,10 @@ void t_get_and_reset_counter(Shader *shader, const char *uniform_name,
         }
 
         glShaderSource(shader, n + 1, sources, NULL);
+
+        for (i = 1 ; i < n + 1 ; i += 1) {
+            free ((char *)sources[i]);
+        }
     }
 
     glCompileShader(shader);

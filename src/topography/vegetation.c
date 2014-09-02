@@ -132,6 +132,8 @@
             }
             for: T_VERTEX_STAGE];
 
+    free ((char *)header);
+
     /* Render the geometry shader. */
 
     lua_createtable(_L, 0, 1);
@@ -156,9 +158,11 @@
             asprintf ((char **)&varyings[8 * i + 2], "stream_%d_right_g", i);
             asprintf ((char **)&varyings[8 * i + 3], "stream_%d_color_g", i);
             asprintf ((char **)&varyings[8 * i + 4], "stream_%d_score_g", i);
-            asprintf ((char **)&varyings[8 * i + 5], "stream_%d_clustering_g", i);
-            asprintf ((char **)&varyings[8 * i + 6], "stream_%d_instance_g", i);
-            varyings[8 * i + 7] = "gl_NextBuffer";
+            asprintf ((char **)&varyings[8 * i + 5],
+                      "stream_%d_clustering_g", i);
+            asprintf ((char **)&varyings[8 * i + 6],
+                      "stream_%d_instance_g", i);
+            asprintf ((char **)&varyings[8 * i + 7], "gl_NextBuffer");
         }
 
         /* Submit all varyings but the last gl_NextBuffer (which means
@@ -166,6 +170,10 @@
 
         glTransformFeedbackVaryings(shader->name, 8 * n - 1, varyings,
                                     GL_INTERLEAVED_ATTRIBS);
+
+        for (i = 0 ; i < 8 * n ; i += 1) {
+            free((char *)varyings[i]);
+        }
     }
 
     [shader link];

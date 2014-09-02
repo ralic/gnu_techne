@@ -61,8 +61,6 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     graphic.h texture.c texture.h template.c 		\
 		     profiling.c profiling.h
 
-EXTRA_techne_bin_SOURCES = compat/asprintf.h
-
 techne_bin_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS} ${GL_CFLAGS}		\
 		    ${OPENAL_CFLAGS} ${ODE_CFLAGS} ${MHD_CFLAGS}
 techne_bin_LDFLAGS = -export-dynamic

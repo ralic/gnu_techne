@@ -718,7 +718,7 @@ int main(int argc, char **argv)
             int i, n;
 
             if (!access (optarg, F_OK)) {
-                path = optarg;
+                path = strdup(optarg);
             } else {
                 lua_getfield (_L, -1, "prefix");
 
@@ -746,6 +746,8 @@ int main(int argc, char **argv)
 
                         if (!access (path, F_OK)) {
                             break;
+                        } else {
+                            free (path);
                         }
                     }
 
@@ -771,6 +773,8 @@ int main(int argc, char **argv)
                 }
 
                 t_print_message ("Compiled the input file %s\n", path);
+
+                free (path);
             }
         } else if (option == 'p') {
             profile = 1;

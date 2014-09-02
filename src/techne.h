@@ -17,12 +17,6 @@
 #ifndef _TECHNE_H_
 #define _TECHNE_H_
 
-/* Workarounds for buggy platforms. */
-
-#ifndef HAVE_ASPRINTF
-#include <compat/asprintf.h>
-#endif
-
 #include <lua.h>
 #include <assert.h>
 

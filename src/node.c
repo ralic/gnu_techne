@@ -154,7 +154,6 @@ static int constructnode (lua_State *L)
 static void pushname (lua_State *L, Class class)
 {
     const char *name;
-    char *lower;
     int i, n;
 
     name = [class name];
@@ -162,13 +161,18 @@ static void pushname (lua_State *L, Class class)
     /* Make a temporary copy of the name and down-case it. */
 
     n = strlen(name);
-    lower = strcpy(alloca(n + 1), name);
 
-    for (i = 0 ; i < n ; i += 1) {
-        lower[i] = tolower(lower[i]);
+    {
+        char lower[n + 1];
+
+        strcpy(lower, name);
+
+        for (i = 0 ; i < n ; i += 1) {
+            lower[i] = tolower(lower[i]);
+        }
+
+        lua_pushstring (L, lower);
     }
-
-    lua_pushstring (L, lower);
 }
 
 void t_exportnodes (lua_State *L, Class *classes)

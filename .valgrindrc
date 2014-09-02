@@ -1,0 +1,4 @@
+--trace-children=yes
+--leak-check=full
+--log-file=valgrind.log
+--suppressions=valgrind.supp

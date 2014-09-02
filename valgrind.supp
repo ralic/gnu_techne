@@ -1,0 +1,50 @@
+{
+   _dl_init-leak
+   Memcheck:Leak
+   ...
+   fun:_dl_init
+   ...
+}
+
+{
+   __libc_csu_init-leak
+   Memcheck:Leak
+   fun:malloc
+   fun:objc_malloc
+   ...
+   fun:__objc_exec_class
+   fun:__libc_csu_init
+   fun:(below main)
+}
+
+{
+   r600_dri-leak
+   Memcheck:Leak
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/dri/r600_dri.so
+   ...
+}
+
+{
+   libgdk-x11-2.0-leak
+   Memcheck:Leak
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libgdk-x11-2.0.so*
+   ...
+}
+
+{
+   libpangocairo-1.0-leak
+   Memcheck:Leak
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so*
+   ...
+}
+
+{
+   libpango-1.0-leak
+   Memcheck:Leak
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libpango-1.0.so*
+   ...
+}

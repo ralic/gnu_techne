@@ -161,12 +161,6 @@ static void match_attribute_to_buffer (unsigned int program,
         normalized = GL_FALSE;
         integral = 0;
         break;
-    case ARRAY_TULONG:
-    case ARRAY_TLONG:
-        t_print_error("Array used for vertex attribute data is of "
-                      "unsuitable type.\n");
-        abort();
-        break;
     case ARRAY_TUINT:
         type = GL_UNSIGNED_INT;
         integral = buffer->type > 0;

@@ -56,10 +56,6 @@ static size_t sizeof_element (array_Type type)
         return sizeof (double);
     case ARRAY_TFLOAT:
         return sizeof (float);
-    case ARRAY_TULONG:
-        return sizeof (unsigned long);
-    case ARRAY_TLONG:
-        return sizeof (long);
     case ARRAY_TUINT:
         return sizeof (unsigned int);
     case ARRAY_TINT:
@@ -85,18 +81,6 @@ static void write_element (array_Array *array, int i, lua_Number value)
         break;
     case ARRAY_TFLOAT:
         array->values.floats[i] = value;
-        break;
-    case ARRAY_TULONG:
-        array->values.ulongs[i] = value;
-        break;
-    case ARRAY_TNULONG:
-        array->values.ulongs[i] = value * ULONG_MAX;
-        break;
-    case ARRAY_TLONG:
-        array->values.longs[i] = value;
-        break;
-    case ARRAY_TNLONG:
-        array->values.longs[i] = value * LONG_MAX;
         break;
     case ARRAY_TUINT:
         array->values.uints[i] = value;
@@ -144,14 +128,6 @@ static lua_Number read_element (array_Array *array, int i)
         return (lua_Number)array->values.doubles[i];
     case ARRAY_TFLOAT:
         return (lua_Number)array->values.floats[i];
-    case ARRAY_TULONG:
-        return (lua_Number)array->values.ulongs[i];
-    case ARRAY_TNULONG:
-        return (lua_Number)array->values.ulongs[i] / ULONG_MAX;
-    case ARRAY_TLONG:
-        return (lua_Number)array->values.longs[i];
-    case ARRAY_TNLONG:
-        return (lua_Number)array->values.longs[i] / LONG_MAX;
     case ARRAY_TUINT:
         return (lua_Number)array->values.uints[i];
     case ARRAY_TNUINT:
@@ -188,10 +164,6 @@ static void *reference_element (array_Array *array, int i)
         return &array->values.doubles[i];
     case ARRAY_TFLOAT:
         return &array->values.floats[i];
-    case ARRAY_TULONG:
-        return &array->values.ulongs[i];
-    case ARRAY_TLONG:
-        return &array->values.longs[i];
     case ARRAY_TUINT:
         return &array->values.uints[i];
     case ARRAY_TINT:
@@ -366,9 +338,9 @@ static int __gc (lua_State *L)
 
 static int __tostring (lua_State *L)
 {
-    const char *typenames[] = {"double", "float", "unsigned long", "long",
-                               "unsigned int", "int", "unsigned short",
-                               "short", "unsigned char", "char"};
+    const char *typenames[] = {"double", "float", "unsigned int", "int",
+                               "unsigned short", "short",
+                               "unsigned char", "char"};
     array_Array *array;
     int i;
 
@@ -692,18 +664,6 @@ static array_Array *fromuserdata (lua_State *L, int index, array_Array *array)
     case ARRAY_TFLOAT:                                                  \
         CAST1(A, B->values.floats, FACTORA, N);                         \
         break;                                                          \
-    case ARRAY_TULONG:                                                  \
-        CAST1(A, B->values.ulongs, FACTORA, N);                         \
-        break;                                                          \
-    case ARRAY_TNULONG:                                                 \
-        CAST1(A, B->values.ulongs, FACTORA / (double)ULONG_MAX, N);     \
-        break;                                                          \
-    case ARRAY_TLONG:                                                   \
-        CAST1(A, B->values.longs, FACTORA, N);                          \
-        break;                                                          \
-    case ARRAY_TNLONG:                                                  \
-        CAST1(A, B->values.longs, FACTORA / (double)LONG_MAX, N);       \
-        break;                                                          \
     case ARRAY_TUINT:                                                   \
         CAST1(A, B->values.uints, FACTORA, N);                          \
         break;                                                          \
@@ -776,18 +736,6 @@ static array_Array *fromarray (lua_State *L, int index, array_Array *array)
         break;
     case ARRAY_TFLOAT:
         CAST2(array->values.floats, B, 1, n);
-        break;
-    case ARRAY_TULONG:
-        CAST2(array->values.ulongs, B, 1, n);
-        break;
-    case ARRAY_TNULONG:
-        CAST2(array->values.ulongs, B, ULONG_MAX, n);
-        break;
-    case ARRAY_TLONG:
-        CAST2(array->values.longs, B, 1, n);
-        break;
-    case ARRAY_TNLONG:
-        CAST2(array->values.longs, B, LONG_MAX, n);
         break;
     case ARRAY_TUINT:
         CAST2(array->values.uints, B, 1, n);
@@ -1516,7 +1464,7 @@ array_Array *array_slice (lua_State *L, int index, ...)
 
     return sliced;
 }
-#include <errno.h>
+
 array_Array *array_transposev (lua_State *L, int index, int *indices)
 {
     array_Array *array, transposed;

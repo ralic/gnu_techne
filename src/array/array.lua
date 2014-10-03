@@ -21,6 +21,7 @@
 -- SOFTWARE.
 
 local array = require 'array.core'
+local table = require "table"
 
 local function pretty(a, prefix)
    if type(a) == "number" then
@@ -60,7 +61,7 @@ local function pretty(a, prefix)
 end
 
 local function size(a)
-   return type(a) == "number" and {} or {#a, unpack(size(a[1]))}
+   return type(a) == "number" and {} or {#a, table.unpack(size(a[1]))}
 end
 
 array.pretty = pretty

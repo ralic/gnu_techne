@@ -32,13 +32,7 @@
 #include "array/array.h"
 #include "arraymath.h"
 
-/* #define ARRAYMATH_COLUMN_MAJOR */
-
-#ifdef ARRAYMATH_COLUMN_MAJOR
-#define I(i, j) (i * 3 + j)
-#else
 #define I(i, j) (j * 3 + i)
-#endif
 
 static array_Array *pushtransform (lua_State *L, double *M)
 {
@@ -72,8 +66,7 @@ static void checkrank (lua_State *L, int index, int rank)
 
     if ((rank == 0 && array->rank != 1 && array->rank != 2) ||
         (rank > 0 && array->rank != rank)) {
-        luaL_argerror (L, index,
-                       "array has incompatible rank");
+        luaL_argerror (L, index, "array has incompatible rank");
     }
 }
 
@@ -102,17 +95,25 @@ static void checksimilar (lua_State *L, int i, int j)
 
 /* Arithmetic operations API. */
 
-#define DEFINE_OPERATION_WRAPPER(OP)		\
-    static int OP (lua_State *L)		\
-    {						\
-        array_checkarray (L, 1);		\
-        array_checkarray (L, 2);		\
+#define DEFINE_OPERATION_WRAPPER(OP)            \
+    static int OP (lua_State *L)                \
+    {                                           \
+        if (lua_type (L, 1) != LUA_TNUMBER) {   \
+            array_checkarray (L, 1);            \
+        }                                       \
                                                 \
-        checksimilar(L, 1, 2);			\
+        if (lua_type (L, 2) != LUA_TNUMBER) {   \
+            array_checkarray (L, 2);            \
+        }                                       \
+                                                \
+        if (lua_type (L, 1) != LUA_TNUMBER &&   \
+            lua_type (L, 2) != LUA_TNUMBER) {   \
+            checksimilar(L, 1, 2);              \
+        }                                       \
                                                 \
         arraymath_##OP(L);                      \
                                                 \
-        return 1;				\
+        return 1;                               \
     }
 
 DEFINE_OPERATION_WRAPPER(add)
@@ -125,84 +126,53 @@ DEFINE_OPERATION_WRAPPER(greaterequal)
 DEFINE_OPERATION_WRAPPER(less)
 DEFINE_OPERATION_WRAPPER(lessequal)
 DEFINE_OPERATION_WRAPPER(equal)
+DEFINE_OPERATION_WRAPPER(logicaland)
+DEFINE_OPERATION_WRAPPER(logicalor)
 
-static int combine (lua_State *L)
-{
-    array_checkarray (L, 1);
-    array_checkarray (L, 2);
-    luaL_checknumber (L, 3);
-    luaL_checknumber (L, 4);
+DEFINE_OPERATION_WRAPPER(power)
 
-    checksimilar(L, 1, 2);
+#define DEFINE_UNARY_OPERATION_WRAPPER(OP)      \
+    static int OP (lua_State *L)                \
+    {                                           \
+        array_checkarray (L, 1);                \
+                                                \
+        arraymath_##OP(L);                      \
+                                                \
+        return 1;                               \
+    }
 
-    arraymath_combine(L);
+DEFINE_UNARY_OPERATION_WRAPPER (negate)
+DEFINE_UNARY_OPERATION_WRAPPER (absolute)
+DEFINE_UNARY_OPERATION_WRAPPER (logicalnot)
+DEFINE_UNARY_OPERATION_WRAPPER (range)
+DEFINE_UNARY_OPERATION_WRAPPER (sum)
+DEFINE_UNARY_OPERATION_WRAPPER (product)
 
-    return 1;
-}
+#define DEFINE_TRANSCENDENTAL_WRAPPER(FUNC, OP) \
+    static int FUNC (lua_State *L)              \
+    {                                           \
+        array_checkarray (L, 1);                \
+                                                \
+        arraymath_##OP(L);                      \
+                                                \
+        return 1;                               \
+    }
 
-static int raise (lua_State *L)
-{
-    array_checkarray (L, 1);
-    luaL_checknumber (L, 2);
-
-    arraymath_raise(L);
-
-    return 1;
-}
-
-static int range (lua_State *L)
-{
-    array_checkarray (L, 1);
-
-    arraymath_range(L);
-
-    return 2;
-}
-
-static int sum (lua_State *L)
-{
-    array_checkarray (L, 1);
-
-    arraymath_sum(L);
-
-    return 1;
-}
-
-static int scale (lua_State *L)
-{
-    array_checkarray (L, 1);
-    luaL_checknumber (L, 2);
-
-    arraymath_scale(L);
-
-    return 1;
-}
-
-static int offset (lua_State *L)
-{
-    array_checkarray (L, 1);
-    luaL_checknumber (L, 2);
-
-    arraymath_offset(L);
-
-    return 1;
-}
-
-static int scaleoffset (lua_State *L)
-{
-    array_checkarray (L, 1);
-    luaL_checknumber (L, 2);
-    luaL_checknumber (L, 3);
-
-    arraymath_scaleoffset(L);
-
-    return 1;
-}
+DEFINE_TRANSCENDENTAL_WRAPPER(ceiling, ceiling)
+DEFINE_TRANSCENDENTAL_WRAPPER(_floor, floor)
+DEFINE_TRANSCENDENTAL_WRAPPER(sine, sine)
+DEFINE_TRANSCENDENTAL_WRAPPER(cosine, cosine)
+DEFINE_TRANSCENDENTAL_WRAPPER(tangent, tangent)
+DEFINE_TRANSCENDENTAL_WRAPPER(arcsine, arcsine)
+DEFINE_TRANSCENDENTAL_WRAPPER(arccosine, arccosine)
+DEFINE_TRANSCENDENTAL_WRAPPER(arctangent, arctangent)
+DEFINE_TRANSCENDENTAL_WRAPPER(logarithm, logarithm)
 
 static int clamp (lua_State *L)
 {
     array_checkarray (L, 1);
     luaL_checknumber (L, 2);
+    luaL_checknumber (L, 3);
 
     arraymath_clamp(L);
 
@@ -275,48 +245,24 @@ static int distance (lua_State *L)
     return 1;
 }
 
-static int matrix_multiply (lua_State *L)
+static int matrixmultiply (lua_State *L)
 {
     array_Array *A, *B;
 
     A = checkreal (L, 1);
     B = checkreal (L, 2);
-    checkrank (L, 1, 2);
 
-    if ((A->type != B->type) ||
-#ifdef ARRAYMATH_COLUMN_MAJOR
-        (B->rank == 2 && A->size[0] != B->size[1]) ||
-        (B->rank == 1 && A->size[0] != B->size[0])) {
-#else
-        (B->rank == 2 && A->size[1] != B->size[0]) ||
-        (B->rank == 1 && A->size[1] != B->size[0])) {
-#endif
+    checkrank (L, 1, 0);
+    checkrank (L, 2, A->rank == 1 ? 2 : 0);
+
+    if (A->type != B->type ||
+        (A->rank == 1 && A->size[0] != B->size[1]) ||
+        ((B->rank == 1 || A->rank == B->rank) && A->size[1] != B->size[0])) {
+
         luaL_argerror (L, 2, "operands are incompatible");
     }
 
-    arraymath_matrix_multiply(L);
-
-    return 1;
-}
-
-static int matrix_multiplyadd (lua_State *L)
-{
-    array_Array *A, *B;
-
-    A = checkreal (L, 1);
-    B = checkreal (L, 2);
-    checkreal (L, 3);
-    checkrank (L, 1, 2);
-
-    if ((A->type != B->type) ||
-        (B->rank == 2 && A->size[0] != B->size[1]) ||
-        (B->rank == 1 && A->size[0] != B->size[0])) {
-        luaL_argerror (L, 2, "operands are incompatible");
-    }
-
-    checksimilar (L, 2, 3);
-
-    arraymath_matrix_multiplyadd(L);
+    arraymath_matrixmultiply(L);
 
     return 1;
 }
@@ -382,7 +328,8 @@ static int scaling (lua_State *L)
         M[I(2, 2)] = u[2];
     }
 
-    M[I(0, 1)] = M[I(0, 2)] = M[I(1, 0)] = M[I(1, 2)] = M[I(2, 0)] = M[I(2, 1)] = 0;
+    M[I(0, 1)] = M[I(0, 2)] = M[I(1, 0)] =
+        M[I(1, 2)] = M[I(2, 0)] = M[I(2, 1)] = 0;
 
     pushtransform (L, M);
 
@@ -441,7 +388,9 @@ static int reflection (lua_State *L)
     M[I(1, 1)] = 1 - 2 * u[1] * u[1];
     M[I(1, 2)] = 2 * u[1] * u[2];
 
-    M[I(2, 0)] = M[I(0, 2)]; M[I(2, 1)] = M[I(1, 2)]; M[I(2, 2)] = 1 - 2 * u[2] * u[2];
+    M[I(2, 0)] = M[I(0, 2)];
+    M[I(2, 1)] = M[I(1, 2)];
+    M[I(2, 2)] = 1 - 2 * u[2] * u[2];
 
     pushtransform (L, M);
 
@@ -459,9 +408,17 @@ static int projection (lua_State *L)
                                    ARRAY_TDOUBLE, 1, 3);
         u = A->values.doubles;
 
-        M[I(0, 0)] = u[0] * u[0]; M[I(0, 1)] = u[0] * u[1]; M[I(0, 2)] = u[0] * u[2];
-        M[I(1, 0)] = M[I(0, 1)]; M[I(1, 1)] = u[1] * u[1]; M[I(1, 2)] = u[1] * u[2];
-        M[I(2, 0)] = M[I(0, 2)]; M[I(2, 1)] = M[I(1, 2)]; M[I(2, 2)] = u[2] * u[2];
+        M[I(0, 0)] = u[0] * u[0];
+        M[I(0, 1)] = u[0] * u[1];
+        M[I(0, 2)] = u[0] * u[2];
+
+        M[I(1, 0)] = M[I(0, 1)];
+        M[I(1, 1)] = u[1] * u[1];
+        M[I(1, 2)] = u[1] * u[2];
+
+        M[I(2, 0)] = M[I(0, 2)];
+        M[I(2, 1)] = M[I(1, 2)];
+        M[I(2, 2)] = u[2] * u[2];
     } else {
         A = array_checkcompatible (L, 1,
                                    ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
@@ -561,7 +518,8 @@ static int rotation (lua_State *L)
         }
     } else if (lua_type (L, 1) == LUA_TNUMBER &&
                (array = array_testcompatible (L, 2,
-                                              ARRAY_TYPE | ARRAY_RANK | ARRAY_SIZE,
+                                              ARRAY_TYPE | ARRAY_RANK |
+                                              ARRAY_SIZE,
                                               ARRAY_TDOUBLE, 1, 3))) {
         double theta, c, c_1, s, *u;
 
@@ -660,29 +618,40 @@ int luaopen_arraymath_core (lua_State *L)
         {"multiply", multiply},
         {"subtract", subtract},
         {"divide", divide},
+        {"negate", negate},
 
         {"greater", greater},
         {"greaterequal", greaterequal},
         {"less", less},
         {"lessequal", lessequal},
         {"equal", equal},
+        {"logicaland", logicaland},
+        {"logicalor", logicalor},
+        {"logicalnot", logicalnot},
 
-        {"scale", scale},
-        {"offset", offset},
-        {"scaleoffset", scaleoffset},
+        {"absolute", absolute},
         {"clamp", clamp},
-        {"raise", raise},
         {"range", range},
         {"sum", sum},
-        {"combine", combine},
+        {"product", product},
+
+        {"floor", _floor},
+        {"ceiling", ceiling},
+        {"power", power},
+        {"arcsine", arcsine},
+        {"arccosine", arccosine},
+        {"arctangent", arctangent},
+        {"sine", sine},
+        {"cosine", cosine},
+        {"tangent", tangent},
+        {"logarithm", logarithm},
 
         {"dot", dot},
         {"cross", cross},
         {"length", length},
         {"normalize", normalize},
         {"distance", distance},
-        {"matrixmultiply", matrix_multiply},
-        {"matrixmultiplyadd", matrix_multiplyadd},
+        {"matrixmultiply", matrixmultiply},
 
         {"rotation", rotation},
         {"shear", shear},
@@ -702,6 +671,42 @@ int luaopen_arraymath_core (lua_State *L)
 #else
     luaL_newlib (L, api);
 #endif
+
+    /* Get the metatable of arrays. */
+
+    array_createarray (L, ARRAY_TDOUBLE, NULL, 1, 1);
+    lua_getmetatable(L, -1);
+    lua_replace(L, -2);
+
+    lua_pushstring(L, "__add");
+    lua_pushcfunction(L, (lua_CFunction)add);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "__sub");
+    lua_pushcfunction(L, (lua_CFunction)subtract);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "__mul");
+    lua_pushcfunction(L, (lua_CFunction)multiply);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "__div");
+    lua_pushcfunction(L, (lua_CFunction)divide);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "__unm");
+    lua_pushcfunction(L, (lua_CFunction)negate);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "__pow");
+    lua_pushcfunction(L, (lua_CFunction)power);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "__concat");
+    lua_pushcfunction(L, (lua_CFunction)matrixmultiply);
+    lua_settable(L, -3);
+
+    lua_pop(L, 1);
 
     return 1;
 }

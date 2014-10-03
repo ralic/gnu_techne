@@ -29,26 +29,22 @@
 #define ARRAY_SIZE 4
 
 typedef enum {
-    ARRAY_TNULONG = -3,
-    ARRAY_TNLONG = -4,
-    ARRAY_TNUINT = -5,
-    ARRAY_TNINT = -6,
-    ARRAY_TNUSHORT = -7,
-    ARRAY_TNSHORT = -8,
-    ARRAY_TNUCHAR = -9,
-    ARRAY_TNCHAR = -10,
+    ARRAY_TNUINT = -3,
+    ARRAY_TNINT = -4,
+    ARRAY_TNUSHORT = -5,
+    ARRAY_TNSHORT = -6,
+    ARRAY_TNUCHAR = -7,
+    ARRAY_TNCHAR = -8,
 
     ARRAY_TDOUBLE = 1,
     ARRAY_TFLOAT = 2,
 
-    ARRAY_TULONG = 3,
-    ARRAY_TLONG = 4,
-    ARRAY_TUINT = 5,
-    ARRAY_TINT = 6,
-    ARRAY_TUSHORT = 7,
-    ARRAY_TSHORT = 8,
-    ARRAY_TUCHAR = 9,
-    ARRAY_TCHAR = 10
+    ARRAY_TUINT = 3,
+    ARRAY_TINT = 4,
+    ARRAY_TUSHORT = 5,
+    ARRAY_TSHORT = 6,
+    ARRAY_TUCHAR = 7,
+    ARRAY_TCHAR = 8
 } array_Type;
 
 typedef struct {
@@ -60,8 +56,6 @@ typedef struct {
         void *any;
         double *doubles;
         float *floats;
-        unsigned long *ulongs;
-        signed long *longs;
         unsigned int *uints;
         signed int *ints;
         unsigned short *ushorts;

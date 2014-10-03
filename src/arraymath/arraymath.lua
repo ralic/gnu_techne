@@ -42,11 +42,11 @@ function arraymath.mapaxis(u, v)
 end
 
 function arraymath.fromnode(node, vector)
-   return arraymath.apply (node.orientation, vector)
+   return arraymath.matrixmultiply (node.orientation, vector)
 end
 
 function arraymath.tonode(node, vector)
-   return arraymath.apply (array.transpose(node.orientation), vector)
+   return arraymath.matrixmultiply (array.transpose(node.orientation), vector)
 end
 
 function arraymath.concatenate(...)
@@ -58,18 +58,6 @@ function arraymath.concatenate(...)
    for i = 3, #matrices do
       M = arraymath.matrixmultiply(M, matrices[i])
    end
-
-   return M
-end
-
-function arraymath.minimum(A)
-   local m, _ = arraymath.range(A)
-
-   return m
-end
-
-function arraymath.maximum(A)
-   local _, M = arraymath.range(A)
 
    return M
 end

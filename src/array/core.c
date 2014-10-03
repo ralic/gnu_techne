@@ -254,7 +254,6 @@ static int transpose (lua_State *L)
     return 1;
 }
 
-
 int luaopen_array_core (lua_State *L)
 {
     const luaL_Reg api[] = {
@@ -285,14 +284,6 @@ int luaopen_array_core (lua_State *L)
     lua_pushcclosure (L, create, 1);
     lua_setfield (L, -2, "floats");
 
-    lua_pushinteger (L, ARRAY_TULONG);
-    lua_pushcclosure (L, create, 1);
-    lua_setfield (L, -2, "ulongs");
-
-    lua_pushinteger (L, ARRAY_TLONG);
-    lua_pushcclosure (L, create, 1);
-    lua_setfield (L, -2, "longs");
-
     lua_pushinteger (L, ARRAY_TUINT);
     lua_pushcclosure (L, create, 1);
     lua_setfield (L, -2, "uints");
@@ -316,14 +307,6 @@ int luaopen_array_core (lua_State *L)
     lua_pushinteger (L, ARRAY_TCHAR);
     lua_pushcclosure (L, create, 1);
     lua_setfield (L, -2, "chars");
-
-    lua_pushinteger (L, ARRAY_TNULONG);
-    lua_pushcclosure (L, create, 1);
-    lua_setfield (L, -2, "nulongs");
-
-    lua_pushinteger (L, ARRAY_TNLONG);
-    lua_pushcclosure (L, create, 1);
-    lua_setfield (L, -2, "nlongs");
 
     lua_pushinteger (L, ARRAY_TNUINT);
     lua_pushcclosure (L, create, 1);

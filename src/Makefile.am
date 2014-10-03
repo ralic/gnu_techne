@@ -1,8 +1,7 @@
 mybindir = $(pkglibdir)
 modulesdir = ${pkgdatadir}/modules
 
-AM_CPPFLAGS = -x objective-c \
-	      -D_GNU_SOURCE -DGL_GLEXT_PROTOTYPES -DARRAYMATH_COLUMN_MAJOR\
+AM_CPPFLAGS = -x objective-c -D_GNU_SOURCE -DGL_GLEXT_PROTOTYPES	  \
 	      -DPKGDATADIR='"$(pkgdatadir)"' -DPKGLIBDIR='"$(pkglibdir)"' \
 	      -include common.h
 AM_CFLAGS = -Wall -Wno-div-by-zero -I$(top_srcdir) -I$(srcdir) ${LUA_CFLAGS}

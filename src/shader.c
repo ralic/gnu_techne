@@ -837,7 +837,9 @@ void t_get_and_reset_counter(Shader *shader, const char *uniform_name,
     int i, j, k, n;
     int u;
 
+    i = GL_FALSE;
     glGetProgramiv(self->name, GL_LINK_STATUS, &i);
+
     if (i == GL_TRUE) {
         t_print_error("Attempting to link already linked program.\n");
         abort();
@@ -845,8 +847,11 @@ void t_get_and_reset_counter(Shader *shader, const char *uniform_name,
 
     glLinkProgram(self->name);
 
-    /* Validate the shader and print the info logs if necessary. */
+    /* Validate the shader and print the info logs if necessary.
+     * (glGetProgram* does not write to the supplied variable or error
+     * so i, j, k, etc. should be initialized.) */
 
+    i = j = k = n = 0;
     glGetProgramiv(self->name, GL_LINK_STATUS, &i);
     glGetProgramiv(self->name, GL_ATTACHED_SHADERS, &n);
     glGetProgramiv(self->name, GL_ACTIVE_ATTRIBUTES, &j);
@@ -912,6 +917,7 @@ void t_get_and_reset_counter(Shader *shader, const char *uniform_name,
      * manage the memory that will hold the actual values for each
      * instance of the program. */
 
+    u = 0;
     glGetProgramiv (self->name, GL_ACTIVE_UNIFORMS, &u);
 
     if (u > 0) {

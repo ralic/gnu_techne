@@ -517,6 +517,7 @@ static void match_attribute_to_buffer (unsigned int program,
      * find out what kind of data we're supposed to have in our
      * buffers. */
 
+    j = GL_FALSE;
     glGetProgramiv(parent->name, GL_LINK_STATUS, &j);
 
     if (j != GL_TRUE) {

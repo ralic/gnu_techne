@@ -17,7 +17,7 @@ local array = require 'array'
 local arraymath = require 'arraymath.core'
 
 function arraymath.zero(...)
-   return arraymath.scale(array.doubles(...), 0)
+   return arraymath.multiply(array.doubles(...), 0)
 end
 
 function arraymath.tensor(u, v)

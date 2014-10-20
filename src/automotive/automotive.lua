@@ -79,8 +79,7 @@ return {
                   c = self.gain or 0.3 / 628
 
                   a = fourstroke.anchor
-                  e = arraymath.combine(a, fourstroke.axis,
-                                        1, d + c * fourstroke.rate)
+                  e = a + fourstroke.axis * (d + c * fourstroke.rate)
 
                   self.lines.positions = array.doubles {a, e}
                   self.points.positions = array.doubles {a, e}
@@ -112,7 +111,7 @@ return {
                      self.run.lines.positions = array.doubles {a, b}
                      self.run.points.positions = array.doubles {a, b}
 
-                     e = arraymath.combine(a, chain.velocity, 1, c)
+                     e = a + chain.velocity * c
 
                      self.vector.lines.positions = array.doubles {a, e}
                   end

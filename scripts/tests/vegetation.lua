@@ -40,7 +40,7 @@ if not file then
 
    heights = array.nushorts(resources.dofile ("tests/diamondsquare.lua", 4096, 0.000125))
    m, M = arraymath.range(heights)
-   heights = arraymath.scale(arraymath.offset (heights, -m), 1 / (M - m))
+   heights = (heights - m) / (M - m)
 
    file = io.open (".heightmap", "w")
    file:write (array.dump(heights))

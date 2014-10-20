@@ -57,9 +57,8 @@ if options.tape then
                if (options.fadein and type(options.fadein) == "number" and
                    graphics.frames < options.fadein) then
                   pipe:write (array.dump(
-                                 arraymath.scale(graphics.colorbuffer,
-                                                 graphics.frames /
-                                                    options.fadein)))
+                                 graphics.colorbuffer * (graphics.frames /
+                                                            options.fadein)))
                elseif (options.fadein and type(options.fadein) == "table" and
                           (graphics.frames >= options.fadein[1] and
                            graphics.frames < options.fadein[2])) then
@@ -68,16 +67,14 @@ if options.tape then
                   c = (graphics.frames - options.fadein[1]) /
                      (options.fadein[2] - options.fadein[1])
 
-                  pipe:write (array.dump(arraymath.scale(graphics.colorbuffer,
-                                                         c)))
+                  pipe:write (array.dump(graphics.colorbuffer, c))
                elseif (options.fadeout and
                        graphics.frames > options.fadeout[1]) then
                   local c
 
                   c = (options.fadeout[2] - graphics.frames) /
                       (options.fadeout[2] - options.fadeout[1])
-                  pipe:write (array.dump( arraymath.scale(graphics.colorbuffer,
-                                                          c)))
+                  pipe:write (array.dump(graphics.colorbuffer * c))
                else
                   pipe:write (array.dump(graphics.colorbuffer))
                end

@@ -87,7 +87,7 @@ joints.hinge = function (parameters)
             c = self.gain or 1 / 628
 
             a = hinge.anchor
-            e = arraymath.combine(a, hinge.axis, 1, d + c * hinge.rate)
+            e = a + hinge.axis * (d + c * hinge.rate)
 
             self.lines.positions = array.doubles {a, e}
             self.points.positions = array.doubles {a, e}
@@ -172,19 +172,19 @@ joints.slider = function (parameters)
          end
 
          if a and b then
-            L = arraymath.dot (arraymath.subtract(b, a), x)
-            c = arraymath.combine (a, x, 1, L)
-            e = arraymath.combine(a, x, 1, -d)
+            L = arraymath.dot (b - a, x)
+            c = a + x * L
+            e = a - x * d
 
             self.rod.lines.positions = array.doubles {a, e}
             self.tube.lines.positions = array.doubles {e, c}
          elseif a then
-            e = arraymath.combine(a, x, 1, -d)
+            e = a - x * d
 
             self.rod.lines.positions = array.doubles {a, e}
             self.tube.lines.positions = nil
          else
-            e = arraymath.combine(b, x, 1, d)
+            e = b + x * d
 
             self.rod.lines.positions = nil
             self.tube.lines.positions = array.doubles {e, b}
@@ -226,9 +226,8 @@ joints.universal = function (parameters)
 
             a = universal.anchor
             x, y = table.unpack(universal.axes)
-            e = arraymath.combine(a, x, 1, d + c * universal.rates[1])
-
-            f = arraymath.combine(a, y, 1, d + c * universal.rates[2])
+            e = a + x * (d + c * universal.rates[1])
+            f = a + y * (d + c * universal.rates[2])
 
             self.lines.positions = array.doubles {f, a, e}
             self.points.positions = array.doubles {f, a, e}

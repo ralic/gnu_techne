@@ -348,56 +348,6 @@ static int panic(lua_State *L)
     abort();
 }
 
-static int internal_loader(lua_State *L)
-{
-    lua_CFunction loader;
-
-    loader = lua_topointer(L, 2);
-    loader (L);
-
-    return 1;
-}
-
-static int internal_searcher(lua_State *L)
-{
-    const char *name;
-    const struct {
-        const char *name;
-        lua_CFunction loader;
-    } list[] = {
-        {"techne", luaopen_techne},
-        {"graphics", luaopen_graphics},
-        {"dynamics", luaopen_dynamics},
-        {"accoustics", luaopen_accoustics},
-        {"input", luaopen_input},
-        {"network", luaopen_network},
-
-        {"coroutine", luaopen_coroutine},
-        {"string", luaopen_string},
-        {"table", luaopen_table},
-        {"math", luaopen_moremath},
-        {"bit32", luaopen_bit32},
-        {"io", luaopen_io},
-        {"os", luaopen_os},
-        {"debug", luaopen_debug},
-    };
-    int i;
-
-    name = lua_tostring (L, 1);
-
-    for (i = 0 ; i < sizeof(list) / sizeof(list[0]) ; i += 1) {
-        if (!strcmp(list[i].name, name)) {
-            lua_pushcfunction(L, internal_loader);
-            lua_pushlightuserdata(L, list[i].loader);
-
-            return 2;
-        }
-    }
-
-    lua_pushnil(L);
-    return 1;
-}
-
 const char *t_ansi_color (int i, int j)
 {
     char *strings[][2] = {
@@ -571,14 +521,40 @@ int main(int argc, char **argv)
     lua_concat (_L, 2);
     lua_setfield (_L, -2, "cpath");
 
-    /* Add a module searcher for all internal modules. */
+    /* Add module loaders for all internal modules. */
 
-    lua_getfield (_L, -1, "searchers");
-    lua_pushcfunction (_L, internal_searcher);
-    lua_rawseti (_L, -2, lua_rawlen(_L, -2) + 1);
-    lua_setfield (_L, -2, "searchers");
+    lua_getfield (_L, -1, "preload");
+    {
+        const struct {
+            const char *name;
+            lua_CFunction loader;
+        } list[] = {
+            {"techne", luaopen_techne},
+            {"graphics", luaopen_graphics},
+            {"dynamics", luaopen_dynamics},
+            {"accoustics", luaopen_accoustics},
+            {"input", luaopen_input},
+            {"network", luaopen_network},
 
-    lua_pop (_L, 1);
+            {"coroutine", luaopen_coroutine},
+            {"string", luaopen_string},
+            {"table", luaopen_table},
+            {"math", luaopen_moremath},
+            {"bit32", luaopen_bit32},
+            {"io", luaopen_io},
+            {"os", luaopen_os},
+            {"debug", luaopen_debug},
+        };
+        int i;
+
+        for (i = 0 ; i < sizeof(list) / sizeof(list[0]) ; i += 1) {
+            lua_pushstring(_L, list[i].name);
+            lua_pushcfunction(_L, list[i].loader);
+            lua_settable(_L, -3);
+        }
+    }
+
+    lua_pop (_L, 2);
 
     lua_atpanic (_L, panic);
 

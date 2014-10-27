@@ -139,6 +139,7 @@ static void display_matches (char **matches, int num_matches, int max_length)
     rl_on_new_line ();
 }
 
+#ifdef COMPLETE_KEYWORDS
 static char *keyword_completions (const char *text, int state)
 {
     static const char **c, *keywords[] = {
@@ -170,7 +171,9 @@ static char *keyword_completions (const char *text, int state)
 
     return NULL;
 }
+#endif
 
+#ifdef COMPLETE_TABLE_KEYS
 static char *table_key_completions (const char *text, int state)
 {
     static const char *c, *token;
@@ -364,7 +367,9 @@ static char *table_key_completions (const char *text, int state)
 
     return NULL;
 }
+#endif
 
+#ifdef COMPLETE_MODULES
 static char *module_completions (const char *text, int state)
 {
     char *match = NULL;
@@ -403,21 +408,66 @@ static char *module_completions (const char *text, int state)
             lua_gettable(_L, -2);
 
             /* If it's not an already loaded module, check whether the
-             * input is an available module by trying to load it. */
+             * input is an available module by searching for it and/or
+             * trying to load it. */
 
             if (!lua_toboolean(_L, -1)) {
+                int load = 1;
+
+                lua_pop(_L, 2);
+
+#ifdef CONFIRM_MODULE_LOAD
+                /* Look for the module as require would and ask the
+                 * user whether it should be loaded or not. */
+
+                lua_getfield(_L, -1, "searchers");
+                lua_pushnil(_L);
+
+                while((load = lua_next(_L, -2))) {
+                    lua_pushstring(_L, text);
+                    lua_call(_L, 1, 1);
+
+                    if (lua_isfunction(_L, -1)) {
+                        print_output ("\nLoad module '%s' (y or n)", text);
+
+                        if (rl_read_key() == 'y') {
+                            lua_pop(_L, 3);
+                            break;
+                        } else {
+                            print_output ("\n");
+                            rl_on_new_line ();
+
+                            /* If it was found but not loaded, return
+                             * the module name as a match to avoid
+                             * asking the user againg if the tab key
+                             * is pressed repeatedly. */
+
+                            lua_settop(_L, h);
+                            return strdup(text);
+                        }
+                    }
+
+                    lua_pop(_L, 1);
+                }
+#endif
+
+                if (load) {
                 lua_pushfstring (_L, "%s=require(\"%s\")", text, text);
 
                 if (luaL_loadstring (_L, lua_tostring (_L, -1)) == LUA_OK &&
                     lua_pcall (_L, 0, 0, 0) == LUA_OK) {
+#ifdef CONFIRM_MODULE_LOAD
+                print_output (" ...loaded\n");
+#else
+                print_output ("\nLoaded module '%s'.\n", text);
+#endif
 
-                    print_output ("\n%sLoaded module '%s'%s.\n",
-                                  COLOR(7), text, COLOR(0));
-                    rl_on_new_line ();
+                rl_on_new_line ();
 
-                    lua_settop(_L, h - 1);
-                    return NULL;
-                }
+                lua_settop(_L, h - 1);
+                return NULL;
+            }
+            }
             } else {
                 lua_settop(_L, h - 1);
                 return NULL;
@@ -546,6 +596,7 @@ static char *module_completions (const char *text, int state)
 
     return match;
 }
+#endif
 
 static char *generator (const char *text, int state)
 {
@@ -559,6 +610,7 @@ static char *generator (const char *text, int state)
     /* Try to complete a keyword. */
 
     if (which == 0) {
+#ifdef COMPLETE_KEYWORDS
         match = keyword_completions (text, state);
 
         if (!match) {
@@ -567,11 +619,15 @@ static char *generator (const char *text, int state)
         } else {
             return match;
         }
+#else
+    which += 1;
+#endif
     }
 
     /* Try to complete a module name. */
 
     if (which == 1) {
+#ifdef COMPLETE_MODULES
         match = module_completions (text, state);
 
         if (!match) {
@@ -580,11 +636,15 @@ static char *generator (const char *text, int state)
         } else {
             return match;
         }
+#else
+    which += 1;
+#endif
     }
 
     /* Try to complete a table access. */
 
     if (which == 2) {
+#ifdef COMPLETE_TABLE_KEYS
         match = table_key_completions (text, state);
 
         if (!match) {
@@ -593,22 +653,58 @@ static char *generator (const char *text, int state)
         } else {
             return match;
         }
+#else
+    which += 1;
+#endif
     }
 
-    /* Try to complete a filename. */
+#ifdef COMPLETE_FILE_NAMES
+    /* Try to complete a file name. */
 
     if (which == 3) {
-        const char *start;
+        static const char *start;
+        const char *s;
+        int quoted, escape;
 
-        /* Ignore any unquoted characters, we'll only be trying to
-         * complete file names inside strings. */
+        if (state == 0) {
+            /* We'll only be trying to complete file names inside
+             * strings.  Find where the last open quote is. */
 
-        for (start = text;
-             *start && (start == text ||
-                        (*(start - 1) != '\'' && *(start - 1) != '"'));
-             start += 1);
+            for (quoted = escape = 0, start = NULL, s = text + 1;
+                 *(s - 1) != '\0';
+                 s += 1) {
+                if (escape) {
+                    escape = 0;
+                    continue;
+                }
 
-        if (*start != '\0') {
+                switch (*(s - 1)) {
+                case '\\': escape = 1; break;
+                case '\'':
+                    if (quoted == 0) {
+                        quoted = 1;
+                        start = s;
+                    } else if (quoted == 1) {
+                        quoted = 0;
+                        start = NULL;
+                    }
+
+                    break;
+                case '"':
+                    if (quoted == 0) {
+                        quoted = 2;
+                        start = s;
+                    } else if (quoted == 2) {
+                        quoted = 0;
+                        start = NULL;
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        if (start != NULL) {
             int n;
 
             /* Don't append a space at the end of the match.  It isn't
@@ -629,6 +725,7 @@ static char *generator (const char *text, int state)
             }
         }
     }
+#endif
 
     return match;
 }
@@ -642,6 +739,7 @@ static char **complete (const char *text, int start, int end)
     matches = rl_completion_matches (text, generator);
     lua_settop (_L, h);
 
+    rl_attempted_completion_over = 1;
     /* { */
     /*     char **m; */
 

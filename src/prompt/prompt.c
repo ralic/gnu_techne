@@ -228,7 +228,7 @@ static char *table_key_completions (const char *text, int state)
            lua_pcall (_L, 2, 2, 0) == 0) {
         char *candidate;
         size_t l, m;
-        int nospace, type, keytype;
+        int suppress, type, keytype;
 
         if (lua_isnil(_L, -2)) {
             return NULL;
@@ -238,7 +238,7 @@ static char *table_key_completions (const char *text, int state)
          * make use of them later on. */
 
         type = lua_type (_L, -1);
-        nospace = (type == LUA_TTABLE || type == LUA_TUSERDATA ||
+        suppress = (type == LUA_TTABLE || type == LUA_TUSERDATA ||
                    type == LUA_TFUNCTION);
 
         keytype = LUA_TNIL;
@@ -251,7 +251,7 @@ static char *table_key_completions (const char *text, int state)
                 /* There are no keys in the table so we won't want to
                  * index it.  Add a space. */
 
-                nospace = 0;
+                suppress = 0;
             }
         }
 
@@ -313,21 +313,12 @@ static char *table_key_completions (const char *text, int state)
                 if (l == m) {
 #endif
                     if (type == LUA_TFUNCTION) {
-                        candidate = realloc(candidate, l + 2);
-                        candidate[l] = '(';
-                        candidate[l + 1] = '\0';
-                        l += 1;
+                        rl_completion_append_character = '('; suppress = 0;
                     } else if (type == LUA_TTABLE) {
                         if (keytype == LUA_TSTRING) {
-                            candidate = realloc(candidate, l + 2);
-                            candidate[l] = '.';
-                            candidate[l + 1] = '\0';
-                            l += 1;
+                            rl_completion_append_character  = '.'; suppress = 0;
                         } else if (keytype != LUA_TNIL) {
-                            candidate = realloc(candidate, l + 2);
-                            candidate[l] = '[';
-                            candidate[l + 1] = '\0';
-                            l += 1;
+                            rl_completion_append_character  = '['; suppress = 0;
                         }
                     }
 #ifndef ALWAYS_APPEND_SUFFIXES
@@ -354,7 +345,7 @@ static char *table_key_completions (const char *text, int state)
                 /* Suppress the newline when completing a table
                  * or other potentially complex value. */
 
-                if (nospace) {
+                if (suppress) {
                     rl_completion_suppress_append = 1;
                 }
 
@@ -710,7 +701,7 @@ static char *generator (const char *text, int state)
             /* Don't append a space at the end of the match.  It isn't
              * very helpful in this context. */
 
-            rl_completion_suppress_append = 1;
+            rl_completion_append_character = quoted == 1 ? '\'' : '"';
 
             match = rl_filename_completion_function (start, state);
             if (match) {

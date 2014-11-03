@@ -178,8 +178,11 @@ static char *table_key_completions (const char *text, int state)
 {
     static const char *c, *token;
     static char oper;
+    static int h;
 
     if (state == 0) {
+        h = lua_gettop(_L);
+
         /* Scan to the beginning of the to-be-completed token. */
 
         for (c = text + strlen (text) - 1;
@@ -202,6 +205,7 @@ static char *table_key_completions (const char *text, int state)
                 (lua_type (_L, -1) != LUA_TUSERDATA &&
                  lua_type (_L, -1) != LUA_TTABLE)) {
 
+                lua_settop(_L, h);
                 return NULL;
             }
         } else {
@@ -217,6 +221,8 @@ static char *table_key_completions (const char *text, int state)
         lua_insert (_L, -2);
         if(lua_type (_L, -2) != LUA_TFUNCTION ||
            lua_pcall (_L, 1, 3, 0)) {
+
+            lua_settop(_L, h);
             return NULL;
         }
     }
@@ -231,6 +237,7 @@ static char *table_key_completions (const char *text, int state)
         int suppress, type, keytype;
 
         if (lua_isnil(_L, -2)) {
+            lua_settop(_L, h);
             return NULL;
         }
 
@@ -356,6 +363,7 @@ static char *table_key_completions (const char *text, int state)
         }
     }
 
+    lua_settop(_L, h);
     return NULL;
 }
 #endif
@@ -608,11 +616,15 @@ static char *module_completions (const char *text, int state)
 
         lua_pushnil(_L);
         lua_rawseti(_L, -4, lua_tointeger(_L, -3));
+
+        /* Pop key/value. */
+
+        lua_pop(_L, 2);
+    } else {
+        /* Pop the empty table. */
+
+        lua_pop(_L, 1);
     }
-
-    /* Pops either key/value or nil and empty table. */
-
-    lua_pop(_L, 2);
 
     return match;
 }
@@ -670,13 +682,10 @@ static char *generator (const char *text, int state)
         if (text[0] == '\'' || text[0] == '"') {
             int n;
 
-            /* Don't append a space at the end of the match.  It isn't
-             * very helpful in this context. */
-
             match = rl_filename_completion_function (text + 1, state);
 
             if (match) {
-                /* If a match was produced, prepend the unquoted
+                /* If a match was produced, add the quote
                  * characters. */
 
                 n = strlen (match);
@@ -686,41 +695,14 @@ static char *generator (const char *text, int state)
                 match[0] = text[0];
                 match[n + 1] = text[0];
                 match[n + 2] = '\0';
+
+                rl_filename_completion_desired = 1;
             }
         }
     }
 #endif
 
     return match;
-}
-
-static char **complete (const char *text, int start, int end)
-{
-    char **matches;
-    int h;
-
-    h = lua_gettop (_L);
-    matches = rl_completion_matches (text, generator);
-    lua_settop (_L, h);
-
-    rl_attempted_completion_over = 1;
-
-    /* { */
-    /*     char **m; */
-
-    /*     if (matches) { */
-    /*         puts("\n*** matches"); */
-    /*         for (m = matches ; *m ; m += 1) { */
-    /*             printf ("* %s\n", *m); */
-    /*         } */
-    /*     } else { */
-    /*         puts("\n*** no matches"); */
-    /*     } */
-
-    /*     rl_on_new_line(); */
-    /* } */
-
-    return matches;
 }
 #endif
 
@@ -1374,7 +1356,7 @@ void luap_enter(lua_State *L)
     if (!initialized) {
 #ifdef HAVE_LIBREADLINE
         rl_basic_word_break_characters = " \t\n`@$><=;|&{(";
-        rl_attempted_completion_function = complete;
+        rl_completion_entry_function = generator;
         rl_completion_display_matches_hook = display_matches;
 
         rl_add_defun ("lua-describe-stack", describe_stack, META('s'));

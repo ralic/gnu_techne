@@ -38,15 +38,15 @@ CFLAGS+= -DCOMPLETE_FILE_NAMES	# File names.
 
 # The autocompleter can complete module names as if they were already
 # require'd and available as a global variable.  Once the module name
-# is fully completed a further tab press requires the module and
-# exports it as a global variable so that all further tab-completions
-# now apply to the module's table.
+# is fully completed a further tab press loads the module and exports
+# it as a global variable so that all further tab-completions now
+# apply to the module's table.
 #
 # Uncomment the following line to disable this functionality.  Module
 # names will then only be completed inside strings (for use with
 # require).
 
-CFLAGS+= -DNO_MODULE_LOAD
+# CFLAGS+= -DNO_MODULE_LOAD
 
 # Uncomment to make the auto-completer ask for confirmation before
 # loading a module.

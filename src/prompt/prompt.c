@@ -260,6 +260,13 @@ static char *table_key_completions (const char *text, int state)
 
                 suppress = 0;
             }
+        } else if (type == LUA_TUSERDATA) {
+            if(luaL_getmetafield(_L, -1, "__pairs")) {
+                lua_pop(_L, 1);
+                keytype = LUA_TSTRING;
+            } else {
+                suppress = 0;
+            }
         }
 
         /* Pop the value, keep the key. */
@@ -321,7 +328,7 @@ static char *table_key_completions (const char *text, int state)
 #endif
                     if (type == LUA_TFUNCTION) {
                         rl_completion_append_character = '('; suppress = 0;
-                    } else if (type == LUA_TTABLE) {
+                    } else if (type == LUA_TTABLE || type == LUA_TUSERDATA) {
                         if (keytype == LUA_TSTRING) {
                             rl_completion_append_character  = '.'; suppress = 0;
                         } else if (keytype != LUA_TNIL) {
@@ -408,84 +415,93 @@ static char *module_completions (const char *text, int state)
             return NULL;
         }
 
-        if (!ondot && !quoted && text[0] != '\0') {
-            lua_getfield(_L, -1, "loaded");
-            lua_pushstring(_L, text);
-            lua_gettable(_L, -2);
+        /* If it's an already loaded module, export it to the globals
+         * table, if needed and quit. */
 
-            /* If it's not an already loaded module, check whether the
-             * input is an available module by searching for it and/or
-             * trying to load it. */
+        lua_getfield(_L, -1, "loaded");
+        lua_pushstring(_L, text);
+        lua_gettable(_L, -2);
 
-            if (!lua_toboolean(_L, -1)) {
-                int load = 1;
+        if (lua_toboolean(_L, -1)) {
+            lua_getglobal(_L, text);
 
-                lua_pop(_L, 2);
-
-#ifdef CONFIRM_MODULE_LOAD
-                /* Look for the module as require would and ask the
-                 * user whether it should be loaded or not. */
-
-                lua_getfield(_L, -1, "searchers");
-                lua_pushnil(_L);
-
-                while((load = lua_next(_L, -2))) {
-                    lua_pushstring(_L, text);
-                    lua_call(_L, 1, 1);
-
-                    if (lua_isfunction(_L, -1)) {
-                        char c;
-
-                        print_output ("\nLoad module '%s' (y or n)", text);
-
-                        while ((c = tolower(rl_read_key())) != 'y' && c != 'n');
-
-                        if (c == 'y') {
-                            lua_pop(_L, 3);
-                            break;
-                        } else {
-                            print_output ("\n");
-                            rl_on_new_line ();
-
-                            /* If it was found but not loaded, return
-                             * the module name as a match to avoid
-                             * asking the user againg if the tab key
-                             * is pressed repeatedly. */
-
-                            lua_settop(_L, h);
-                            return strdup(text);
-                        }
-                    }
-
-                    lua_pop(_L, 1);
-                }
-#endif
-
-                /* Load the model if needed. */
-
-                if (load) {
-                    lua_pushfstring (_L, "%s=require(\"%s\")", text, text);
-
-                    if (luaL_loadstring (_L, lua_tostring (_L, -1)) == LUA_OK &&
-                        lua_pcall (_L, 0, 0, 0) == LUA_OK) {
-#ifdef CONFIRM_MODULE_LOAD
-                        print_output (" ...loaded\n");
-#else
-                        print_output ("\nLoaded module '%s'.\n", text);
-#endif
-
-                        rl_on_new_line ();
-
-                        lua_settop(_L, h - 1);
-                        return NULL;
-                    }
-                }
-            } else {
-                lua_settop(_L, h - 1);
-                return NULL;
+            if (lua_isnil(_L, -1)) {
+                lua_pop(_L, 1);
+                lua_setglobal(_L, text);
             }
 
-            /* Clean up but leave the package.table on the stack. */
+            lua_settop(_L, h - 1);
+            return NULL;
+        }
+
+        lua_pop(_L, 2);
+
+        /* Check whether the input is an available module by
+         * searching for it and/or trying to load it. */
+
+        if (!ondot && !quoted && text[0] != '\0') {
+            int load = 1;
+
+#ifdef CONFIRM_MODULE_LOAD
+            /* Look for the module as require would and ask the
+             * user whether it should be loaded or not. */
+
+            lua_getfield(_L, -1, "searchers");
+            lua_pushnil(_L);
+
+            while((load = lua_next(_L, -2))) {
+                lua_pushstring(_L, text);
+                lua_call(_L, 1, 1);
+
+                if (lua_isfunction(_L, -1)) {
+                    char c;
+
+                    print_output ("\nLoad module '%s' (y or n)", text);
+
+                    while ((c = tolower(rl_read_key())) != 'y' && c != 'n');
+
+                    if (c == 'y') {
+                        lua_pop(_L, 3);
+                        break;
+                    } else {
+                        print_output ("\n");
+                        rl_on_new_line ();
+
+                        /* If it was found but not loaded, return
+                         * the module name as a match to avoid
+                         * asking the user again if the tab key
+                         * is pressed repeatedly. */
+
+                        lua_settop(_L, h);
+                        return strdup(text);
+                    }
+                }
+
+                lua_pop(_L, 1);
+            }
+#endif
+
+            /* Load the model if needed. */
+
+            if (load) {
+                lua_pushfstring (_L, "%s=require(\"%s\")", text, text);
+
+                if (luaL_loadstring (_L, lua_tostring (_L, -1)) == LUA_OK &&
+                    lua_pcall (_L, 0, 0, 0) == LUA_OK) {
+#ifdef CONFIRM_MODULE_LOAD
+                    print_output (" ...loaded\n");
+#else
+                    print_output ("\nLoaded module '%s'.\n", text);
+#endif
+
+                    rl_on_new_line ();
+
+                    lua_settop(_L, h - 1);
+                    return NULL;
+                }
+            }
+
+            /* Clean up but leave the package table on the stack. */
 
             lua_settop(_L, h + 1);
         }
@@ -502,7 +518,15 @@ static char *module_completions (const char *text, int state)
                     !strncmp(text + quoted, lua_tostring(_L, -1),
                              strlen(text + quoted))) {
 
-                lua_pushstring(_L, text);
+                if (quoted) {
+                    lua_pushlstring(_L, text, 1);
+                    lua_pushstring(_L, lua_tostring(_L, -2));
+                    lua_pushlstring(_L, text, 1);
+                    lua_concat(_L, 3);
+                } else {
+                    lua_pushstring(_L, lua_tostring(_L, -1));
+                }
+
                 lua_rawseti (_L, h, (n += 1));
             }
         }

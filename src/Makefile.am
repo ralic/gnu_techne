@@ -2,9 +2,8 @@ mybindir = $(pkglibdir)
 modulesdir = ${pkgdatadir}/modules
 
 AM_CPPFLAGS = -x objective-c -D_GNU_SOURCE -DGL_GLEXT_PROTOTYPES	  \
-	      -DPKGDATADIR='"$(pkgdatadir)"' -DPKGLIBDIR='"$(pkglibdir)"' \
-	      -include common.h
-AM_CFLAGS = -Wall -Wno-div-by-zero -I$(top_srcdir) -I$(srcdir) ${LUA_CFLAGS}
+	      -I$(top_srcdir) -I$(srcdir) -include common.h
+AM_CFLAGS = -Wall -Wno-div-by-zero ${LUA_CFLAGS}
 AM_LDADD = -lobjc -lm
 
 bin_SCRIPTS = techne
@@ -43,7 +42,7 @@ EXTRA_DIST = $(BUILT_SOURCES:.h=.glsl.c) mkopengl.sh
 
 # The main programs
 
-nobase_mybin_PROGRAMS = techne.bin browser.bin
+nobase_mybin_PROGRAMS = techne.bin
 
 techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     node.c node.h opengl.c gl.h glx.h graphics.c	\
@@ -60,16 +59,24 @@ techne_bin_SOURCES = techne.c techne.h main.c object.c object.h		\
 		     graphic.h texture.c texture.h template.c 		\
 		     profiling.c profiling.h
 
+techne_bin_CPPFLAGS = ${AM_CPPFLAGS} -DPKGDATADIR='"$(pkgdatadir)"' 	\
+		      -DPKGLIBDIR='"$(pkglibdir)"'
 techne_bin_CFLAGS = ${AM_CFLAGS} ${GDK_CFLAGS} ${GL_CFLAGS}		\
 		    ${OPENAL_CFLAGS} ${ODE_CFLAGS} ${MHD_CFLAGS}
 techne_bin_LDFLAGS = -export-dynamic
 techne_bin_LDADD = ${LUA_LIBS} ${GDK_LIBS} ${GL_LIBS} ${OPENAL_LIBS}	\
 		   ${ODE_LIBS} ${MHD_LIBS} ${AM_LDADD}
 
-browser_bin_CFLAGS = ${AM_CFLAGS} ${WEBKIT_CFLAGS} -I/usr/include/GNUstep/ -D_NATIVE_OBJC_EXCEPTIONS=1 ${GTK_CFLAGS}
-browser_bin_LDADD = ${WEBKIT_LIBS} ${GTK_LIBS} ${AM_LDADD}
+if BUILD_BROWSER
+   nobase_mybin_PROGRAMS += browser.bin
+
+   browser_bin_CFLAGS = ${AM_CFLAGS} ${WEBKIT_CFLAGS} -I/usr/include/GNUstep/ -D_NATIVE_OBJC_EXCEPTIONS=1 ${GTK_CFLAGS}
+   browser_bin_LDADD = ${WEBKIT_LIBS} ${GTK_LIBS} ${AM_LDADD}
+endif
 
 # The modules
+
+pkglib_LTLIBRARIES = misc/physics.la libmeteorology.la meteorology.la
 
 nobase_pkglib_LTLIBRARIES = array/core.la arraymath/core.la		\
 			    joints/core.la bodies/core.la		\
@@ -78,8 +85,6 @@ nobase_pkglib_LTLIBRARIES = array/core.la arraymath/core.la		\
 			    automotive/core.la shading/core.la 		\
 			    topography/core.la textures/core.la 	\
 			    aeronautics/core.la	staging/core.la
-
-pkglib_LTLIBRARIES = misc/physics.la meteorology.la
 
 dist_modules_DATA = joints/joints.lua array/array.lua			\
 		    arraymath/arraymath.lua bodies/bodies.lua		\
@@ -180,8 +185,6 @@ shading_core_la_CFLAGS = ${AM_CFLAGS} ${GL_CFLAGS}
 shading_core_la_LDFLAGS = -module -avoid-version -no-undefined
 shading_core_la_LIBADD = ${GL_LIBS} ${AM_LDADD}
 
-EXTRA_shading_core_la_SOURCES = glsl/flat_vertex.h glsl/flat_fragment.h
-
 misc_physics_la_SOURCES = misc/physics.c
 misc_physics_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 misc_physics_la_LDFLAGS = -module -avoid-version -no-undefined
@@ -214,29 +217,30 @@ automotive_core_la_SOURCES = automotive/core.c automotive/chain.c	\
 		  	     automotive/fourstroke.h			\
 		  	     automotive/wheel.c automotive/wheel.h	\
 		  	     automotive/racetrack.c			\
-		  	     automotive/racetrack.h			\
-			     topography/elevation_body.c 		\
-			     topography/elevation.h			\
-			     topography/roam.c topography/roam.h
+		  	     automotive/racetrack.h
 
 automotive_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
 automotive_core_la_LDFLAGS = -module -avoid-version -no-undefined
-automotive_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
+automotive_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD} topography/topography_core_la-roam.lo
 
-meteorology_la_SOURCES = meteorology/meteorology.c \
-			      	     meteorology/meteorology.h
+libmeteorology_la_SOURCES = meteorology/libmeteorology.c \
+			    meteorology/libmeteorology.h
 
+libmeteorology_la_CFLAGS = ${AM_CFLAGS}
+libmeteorology_la_LDFLAGS = -avoid-version -no-undefined
+libmeteorology_la_LIBADD = ${AM_LDADD}
+
+meteorology_la_SOURCES = meteorology/meteorology.c meteorology/meteorology.h
 meteorology_la_CFLAGS = ${AM_CFLAGS}
 meteorology_la_LDFLAGS = -module -avoid-version -no-undefined
-meteorology_la_LIBADD = ${AM_LDADD}
-techne_bin_LDADD += meteorology.la
+meteorology_la_LIBADD = ${AM_LDADD} libmeteorology.la
 
 aeronautics_core_la_SOURCES = aeronautics/core.c aeronautics/airplane.c	\
 			      aeronautics/airplane.h
 
 aeronautics_core_la_CFLAGS = ${AM_CFLAGS} ${ODE_CFLAGS}
-aeronautics_core_la_LDFLAGS = -module -avoid-version -no-undefined -L$(mybindir)
-aeronautics_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD}
+aeronautics_core_la_LDFLAGS = -module -avoid-version -no-undefined
+aeronautics_core_la_LIBADD = ${ODE_LIBS} ${AM_LDADD} libmeteorology.la
 
 staging_core_la_SOURCES = staging/core.c staging/bezier.c staging/bezier.h
 staging_core_la_CFLAGS = ${AM_CFLAGS}

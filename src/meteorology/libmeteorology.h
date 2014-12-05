@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Papavasileiou Dimitris
+/* Copyright (C) 2014 Papavasileiou Dimitris
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,23 +14,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _METEOROLOGY_H_
-#define _METEOROLOGY_H_
+#ifndef _LIBMETEOROLOGY_H_
+#define _LIBMETEOROLOGY_H_
 
-#include "builtin.h"
+typedef enum {
+    METEOROLOGY_TEMPERATURE = 0,
+    METEOROLOGY_PRESSURE,
+    METEOROLOGY_DENSITY,
+} meteorology_SampleType;
 
-@interface Meteorology: Builtin {
-}
-
--(int) _get_temperature;
--(int) _get_pressure;
--(int) _get_density;
--(void) _set_temperature;
--(void) _set_pressure;
--(void) _set_density;
-
-@end
-
-int luaopen_meteorology (lua_State *L);
+double get_sample_at (meteorology_SampleType type, double h);
+void get_samples (meteorology_SampleType type,
+                  const double **samples, int *length);
+void set_samples (meteorology_SampleType type,
+                  const double *samples, const int length);
 
 #endif

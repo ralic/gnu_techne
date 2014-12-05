@@ -4,13 +4,12 @@
 AC_INIT(techne, 0.3)
 AC_PREREQ(2.61)
 
-AC_GNU_SOURCE
-
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/main.c])
 
+AC_GNU_SOURCE
 AC_CANONICAL_HOST
 
 AM_INIT_AUTOMAKE([nostdinc subdir-objects -Wall -Werror])
@@ -34,6 +33,7 @@ AS_CASE([$host_os],
 AC_PROG_CC
 AM_PROG_CC_C_O
 AM_PROG_AR
+AC_PROG_LN_S
 
 LT_INIT([dlopen])
 
@@ -80,20 +80,26 @@ PKG_CHECK_MODULES([ODE], [ode])
 PKG_CHECK_MODULES([GDK], [gdk-2.0])
 PKG_CHECK_MODULES([GL], [x11 gl glu])
 PKG_CHECK_MODULES([MHD], [libmicrohttpd])
-PKG_CHECK_MODULES([WEBKIT], [webkit-1.0])
-dnl PKG_CHECK_MODULES([MAGICKWAND], [MagickWand])
-dnl PKG_CHECK_MODULES([GVC], [libgvc])
 
 dnl Check whether building of the tools was requested and add needed
 dnl dependencies.
 
-AC_ARG_WITH([tools], AS_HELP_STRING([--with-tools],
-                                    [Build development tools.]))
+AC_ARG_ENABLE([tools], AS_HELP_STRING([--enable-tools],
+                                    [Build the development tools.]))
+AM_CONDITIONAL([BUILD_TOOLS], [test x$enable_tools = xyes])
 
-if test "x$with_tools" = "xyes"; then
+if test "x$enable_tools" = "xyes"; then
    PKG_CHECK_MODULES([LIBPNG], [libpng])
 
    AC_CONFIG_FILES([tools/Makefile])
+fi
+
+AC_ARG_ENABLE([browser], AS_HELP_STRING([--enable-browser],
+                                      [Build the browser.]))
+AM_CONDITIONAL([BUILD_BROWSER], [test x$enable_browser = xyes])
+
+if test "x$enable_browser" = "xyes"; then
+   PKG_CHECK_MODULES([WEBKIT], [webkit-1.0])
 fi
 
 # Checks for library functions.

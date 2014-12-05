@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../meteorology/meteorology.h"
+#include "../meteorology/libmeteorology.h"
 #include "techne.h"
 #include "array/array.h"
 #include "dynamics.h"
@@ -393,7 +393,7 @@ static double lookup (double x, double *values, int length)
     v_H = dBodyGetLinearVel(self->bodies[0]);
     omega_H = dBodyGetAngularVel(self->bodies[0]);
 
-    rho = get_density_at (r_H[2]);
+    rho = get_sample_at (METEOROLOGY_DENSITY, r_H[2]);
 
     /* Now to calculate all needed scalar quantities. */
 
